@@ -47,6 +47,7 @@
     </properties>
     <modules>
         <module>embeddeddb</module>
+        <module>jdbi</module>
         <module>locker</module>
     </modules>
     <dependencyManagement>
@@ -54,6 +55,11 @@
             <dependency>
                 <groupId>com.ning.billing.commons</groupId>
                 <artifactId>killbill-embeddeddb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ning.billing.commons</groupId>
+                <artifactId>killbill-jdbi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

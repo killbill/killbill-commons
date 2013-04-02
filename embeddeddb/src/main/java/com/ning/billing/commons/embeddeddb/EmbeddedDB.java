@@ -97,7 +97,7 @@ public abstract class EmbeddedDB {
             if (!WHITESPACE_ONLY.matcher(statement).matches()) {
                 try {
                     // TODO consider batch approach
-                    executeQuery(statement);
+                    execute(statement);
                 } catch (SQLException e) {
                     throw new IOException(e);
                 }
@@ -118,6 +118,27 @@ public abstract class EmbeddedDB {
             executeQuery("truncate table " + table);
         } catch (SQLException e) {
             throw new IOException(e);
+        }
+    }
+
+    protected void execute(final String query) throws SQLException, IOException {
+        execute(query, new ResultSetJob());
+    }
+
+    protected void execute(final String query, final ResultSetJob job) throws SQLException, IOException {
+        final Connection connection = getConnection();
+
+        Statement statement = null;
+        try {
+            statement = connection.createStatement();
+            if (statement.execute(query)) {
+                job.work(statement.getResultSet());
+            }
+        } finally {
+            if (statement != null) {
+                statement.close();
+            }
+            connection.close();
         }
     }
 
