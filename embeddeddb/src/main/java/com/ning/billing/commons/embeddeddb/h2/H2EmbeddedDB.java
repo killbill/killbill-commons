@@ -76,6 +76,8 @@ public class H2EmbeddedDB extends EmbeddedDB {
             // Start a web server for debugging (http://127.0.0.1:8082/)
             server = Server.createWebServer(new String[]{}).start();
             started.set(true);
+            logger.info(String.format("H2 started on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
+                                      getJdbcConnectionString(), getUsername(), getPassword()));
         } catch (SQLException e) {
             throw new IOException(e);
         }
