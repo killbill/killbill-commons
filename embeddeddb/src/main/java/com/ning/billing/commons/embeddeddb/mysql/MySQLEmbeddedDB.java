@@ -169,6 +169,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             } catch (FileNotFoundException e) {
                 throw new IOException(e);
             }
+            logger.info("MySQL stopped: " + getCmdLineConnectionString());
         }
     }
 
