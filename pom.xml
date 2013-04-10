@@ -372,6 +372,7 @@
                                     <exclude>.git/**</exclude>
                                     <exclude>.gitignore</exclude>
                                     <exclude>**/.classpath</exclude>
+                                    <exclude>README.md</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
