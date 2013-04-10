@@ -9,3 +9,5 @@
 *.ear
 
 target
+pom.xml.releaseBackup
+release.properties
