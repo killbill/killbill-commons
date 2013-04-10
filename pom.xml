@@ -153,6 +153,11 @@
                 <version>5.0.12</version>
             </dependency>
             <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>stringtemplate</artifactId>
+                <version>3.2.1</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jdbi</groupId>
                 <artifactId>jdbi</artifactId>
                 <version>2.48</version>

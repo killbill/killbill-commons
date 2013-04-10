@@ -1,0 +1,5 @@
+group Something;
+
+delete(tableName) ::= <<
+delete from <tableName>;
+>>
