@@ -88,20 +88,24 @@ public class MySqlGlobalLocker implements GlobalLocker {
 
     private GlobalLock lock(final String lockName) throws LockFailedException {
         Connection connection = null;
+        boolean obtained = false;
         try {
             connection = dataSource.getConnection();
-            final boolean obtained = mysqlGlobalLockDao.lock(connection, lockName, timeout);
+            obtained = mysqlGlobalLockDao.lock(connection, lockName, timeout);
             if (obtained) {
                 return new MysqlGlobalLock(connection, lockName);
             }
-        } catch (SQLException ignored) {
-        }
-
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                logger.warn("Unable to close connection", e);
+        } catch (SQLException e) {
+            logger.warn("Unable to obtain lock for " + lockName, e);
+        } finally {
+            if (!obtained) {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        logger.warn("Unable to close connection", e);
+                    }
+                }
             }
         }
         throw new LockFailedException();

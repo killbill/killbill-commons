@@ -43,7 +43,7 @@ public class MysqlGlobalLock implements GlobalLock {
         try {
             mysqlGlobalLockDao.releaseLock(connection, lockName);
         } catch (SQLException e) {
-            logger.warn("Unable to release lock", e);
+            logger.warn("Unable to release lock for " + lockName, e);
         } finally {
             try {
                 connection.close();
