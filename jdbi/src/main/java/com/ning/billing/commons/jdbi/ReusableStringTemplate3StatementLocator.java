@@ -75,7 +75,8 @@ public class ReusableStringTemplate3StatementLocator implements StatementLocator
         }
     }
 
-    public String locate(final String name, final StatementContext ctx) throws Exception {
+    // Note! This code needs to be thread safe. We just synchronize the whole method for now, we could probably do better...
+    public synchronized String locate(final String name, final StatementContext ctx) throws Exception {
         if (group.isDefined(name)) {
             final StringTemplate t = group.lookupTemplate(name);
             for (final Map.Entry<String, Object> entry : ctx.getAttributes().entrySet()) {
