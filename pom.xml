@@ -24,7 +24,7 @@
     <groupId>com.ning.billing.commons</groupId>
     <artifactId>killbill-commons</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.2-SNAPSHOT</version>
+    <version>0.1.2</version>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>
     <url>http://github.com/killbill/killbill-commons</url>
