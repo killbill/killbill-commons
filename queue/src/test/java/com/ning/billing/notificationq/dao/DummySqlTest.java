@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package com.ning.billing.notificationq;
+package com.ning.billing.notificationq.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,6 +32,8 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.skife.jdbi.v2.sqlobject.stringtemplate.ExternalizedSqlViaStringTemplate3;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
+
+import com.ning.billing.notificationq.DummyObject;
 
 
 @ExternalizedSqlViaStringTemplate3()

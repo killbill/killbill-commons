@@ -33,7 +33,7 @@ public class TestPersistentEventBus  {
         final DBI dbi = null;
         final PersistentBusConfig config = null;
         final Clock clock = new ClockMock();
-        testEventBusBase = new TestEventBusBase(new PersistentInternalBus(dbi, clock, config));
+        testEventBusBase = new TestEventBusBase(new DefaultBusService(dbi, clock, config));
     }
 
     @Test(groups = "slow")

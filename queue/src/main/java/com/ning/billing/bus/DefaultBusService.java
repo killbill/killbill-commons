@@ -19,11 +19,8 @@ package com.ning.billing.bus;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-
-import javax.inject.Inject;
 
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.Transaction;
@@ -33,7 +30,6 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import com.ning.billing.Hostname;
 import com.ning.billing.bus.dao.BusEventEntry;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
@@ -42,11 +38,11 @@ import com.ning.billing.util.clock.Clock;
 
 import com.google.common.eventbus.EventBus;
 
-public class PersistentInternalBus extends PersistentQueueBase implements InternalBus {
+public class DefaultBusService extends PersistentQueueBase implements BusService {
 
     private static final long DELTA_IN_PROCESSING_TIME_MS = 1000L * 60L * 5L; // 5 minutes
 
-    private static final Logger log = LoggerFactory.getLogger(PersistentInternalBus.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultBusService.class);
 
     private final PersistentBusSqlDao dao;
 
@@ -76,8 +72,7 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
           */
     }
 
-    @Inject
-    public PersistentInternalBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
+    public DefaultBusService(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {

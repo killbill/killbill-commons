@@ -26,7 +26,7 @@ public class TestEventBus {
 
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
-        testEventBusBase = new TestEventBusBase(new InMemoryInternalBus());
+        testEventBusBase = new TestEventBusBase(new InMemoryBusService());
     }
 
     @Test(groups = "fast")

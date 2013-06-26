@@ -16,11 +16,9 @@
 
 package com.ning.billing.bus;
 
-import java.util.UUID;
-
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
-public interface InternalBus {
+public interface BusService {
 
 
     public static final String EVENT_BUS_GROUP_NAME = "bus-grp";
@@ -77,8 +75,7 @@ public interface InternalBus {
     /**
      * Post an event asynchronously
      *
-     *
-     * @param event   to be posted
+     * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
     public void post(BusInternalEvent event) throws EventBusException;
@@ -87,8 +84,7 @@ public interface InternalBus {
      * Post an event from within a transaction.
      * Guarantees that the event is persisted on disk from within the same transaction
      *
-     *
-     * @param event   to be posted
+     * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
     public void postFromTransaction(BusInternalEvent event, final Transmogrifier transmogrifier) throws EventBusException;

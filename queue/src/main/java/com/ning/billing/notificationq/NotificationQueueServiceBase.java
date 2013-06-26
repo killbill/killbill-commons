@@ -19,18 +19,14 @@ package com.ning.billing.notificationq;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.skife.jdbi.v2.IDBI;
 
-import com.ning.billing.Hostname;
 import com.ning.billing.util.clock.Clock;
 
 
 public abstract class NotificationQueueServiceBase extends NotificationQueueDispatcher implements NotificationQueueService {
 
 
-    @Inject
     public NotificationQueueServiceBase(final Clock clock, final NotificationQueueConfig config, final IDBI dbi) {
         super(clock, config, dbi);
     }

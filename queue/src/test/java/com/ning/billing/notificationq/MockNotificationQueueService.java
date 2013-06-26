@@ -21,8 +21,6 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import com.ning.billing.Hostname;
 import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
 import com.ning.billing.util.clock.Clock;
@@ -30,7 +28,6 @@ import com.ning.billing.util.clock.Clock;
 
 public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
-    @Inject
     public MockNotificationQueueService(final Clock clock, final NotificationQueueConfig config) {
         super(clock, config, null);
     }

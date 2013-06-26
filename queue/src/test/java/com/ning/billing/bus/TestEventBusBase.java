@@ -21,8 +21,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 
 import com.ning.billing.DefaultBusInternalEvent;
 
@@ -35,9 +33,9 @@ public class TestEventBusBase {
 
     protected static final Logger log = LoggerFactory.getLogger(TestEventBusBase.class);
 
-    private final InternalBus eventBus;
+    private final BusService eventBus;
 
-    public TestEventBusBase(final InternalBus eventBus) {
+    public TestEventBusBase(final BusService eventBus) {
         this.eventBus = eventBus;
     }
 

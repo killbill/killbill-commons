@@ -35,6 +35,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.dao.DummySqlTest;
 import com.ning.billing.util.clock.Clock;
 import com.ning.billing.util.clock.ClockMock;
 

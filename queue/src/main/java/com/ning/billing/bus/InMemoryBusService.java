@@ -27,10 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.AsyncEventBus;
 
-public class InMemoryInternalBus implements InternalBus {
+public class InMemoryBusService implements BusService {
 
 
-    private static final Logger log = LoggerFactory.getLogger(InMemoryInternalBus.class);
+    private static final Logger log = LoggerFactory.getLogger(InMemoryBusService.class);
 
     private final EventBusDelegate delegate;
     private final AtomicBoolean isInitialized;
@@ -60,7 +60,7 @@ public class InMemoryInternalBus implements InternalBus {
         }
     }
 
-    public InMemoryInternalBus() {
+    public InMemoryBusService() {
 
         final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);
         final Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -101,7 +101,7 @@ public class InMemoryInternalBus implements InternalBus {
     @Override
     public void start() {
         if (isInitialized.compareAndSet(false, true)) {
-            log.info("InMemoryBus started...");
+            log.info("InMemoryBusService started...");
 
         }
     }
@@ -116,10 +116,10 @@ public class InMemoryInternalBus implements InternalBus {
     @Override
     public void stop() {
         if (isInitialized.compareAndSet(true, false)) {
-            log.info("InMemoryBus stopping...");
+            log.info("InMemoryBusService stopping...");
             delegate.completeDispatch();
             delegate.stop();
-            log.info("InMemoryBus stopped...");
+            log.info("InMemoryBusService stopped...");
         }
     }
 }
