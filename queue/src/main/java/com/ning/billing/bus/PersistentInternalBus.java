@@ -19,6 +19,7 @@ package com.ning.billing.bus;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -28,15 +29,18 @@ import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
+import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import com.ning.billing.Hostname;
+import com.ning.billing.bus.dao.BusEventEntry;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
 import com.ning.billing.queue.PersistentQueueBase;
+import com.ning.billing.util.clock.Clock;
 
 import com.google.common.eventbus.EventBus;
-import com.google.inject.Inject;
 
 public class PersistentInternalBus extends PersistentQueueBase implements InternalBus {
 
@@ -48,8 +52,6 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
 
     private final EventBusDelegate eventBusDelegate;
     private final Clock clock;
-    private final String hostname;
-    private final InternalCallContextFactory internalCallContextFactory;
 
     private volatile boolean isStarted;
 
@@ -75,20 +77,18 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
     }
 
     @Inject
-    public PersistentInternalBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config, final InternalCallContextFactory internalCallContextFactory) {
+    public PersistentInternalBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
-                return new Thread(new ThreadGroup(DefaultBusService.EVENT_BUS_GROUP_NAME),
+                return new Thread(new ThreadGroup(EVENT_BUS_GROUP_NAME),
                                   r,
-                                  DefaultBusService.EVENT_BUS_TH_NAME);
+                                  EVENT_BUS_TH_NAME);
             }
         }), config.getNbThreads(), config);
         this.dao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
-        this.hostname = Hostname.get();
-        this.internalCallContextFactory = internalCallContextFactory;
         this.isStarted = false;
     }
 
@@ -106,10 +106,7 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
 
     @Override
     public int doProcessEvents() {
-
-        // TODO API_FIX Retrieving and clearing bus events is not done per tenant so pass default INTERNAL_TENANT_RECORD_ID; not sure this is something we want to do anyway ?
-        final InternalCallContext context = internalCallContextFactory.createInternalCallContext(InternalCallContextFactory.INTERNAL_TENANT_RECORD_ID, null, "PersistentBus", CallOrigin.INTERNAL, UserType.SYSTEM, null);
-        final List<BusEventEntry> events = getNextBusEvent(context);
+        final List<BusEventEntry> events = getNextBusEvent();
         if (events.size() == 0) {
             return 0;
         }
@@ -121,8 +118,7 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);
-            final InternalCallContext rehydratedContext = internalCallContextFactory.createInternalCallContext(cur.getTenantRecordId(), cur.getAccountRecordId(), context);
-            dao.clearBusEvent(cur.getId(), hostname, rehydratedContext);
+            dao.clearBusEvent(cur.getId(), Hostname.get());
         }
         return result;
     }
@@ -132,18 +128,16 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
         return isStarted;
     }
 
-    private List<BusEventEntry> getNextBusEvent(final InternalCallContext context) {
+    private List<BusEventEntry> getNextBusEvent() {
         final Date now = clock.getUTCNow().toDate();
         final Date nextAvailable = clock.getUTCNow().plus(DELTA_IN_PROCESSING_TIME_MS).toDate();
 
-        final List<BusEventEntry> entries = dao.getNextBusEventEntries(config.getPrefetchAmount(), hostname, now, context);
+        final List<BusEventEntry> entries = dao.getNextBusEventEntries(config.getPrefetchAmount(), Hostname.get(), now);
         final List<BusEventEntry> claimedEntries = new LinkedList<BusEventEntry>();
         for (final BusEventEntry entry : entries) {
-            // We need to re-hydrate the context with the record ids from the BusEventEntry
-            final InternalCallContext rehydratedContext = internalCallContextFactory.createInternalCallContext(entry.getTenantRecordId(), entry.getAccountRecordId(), context);
-            final boolean claimed = (dao.claimBusEvent(hostname, nextAvailable, entry.getId(), now, rehydratedContext) == 1);
+            final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getId(), now) == 1);
             if (claimed) {
-                dao.insertClaimedHistory(hostname, now, entry.getId(), rehydratedContext);
+                dao.insertClaimedHistory(Hostname.get(), now, entry.getId());
                 claimedEntries.add(entry);
             }
         }
@@ -169,13 +163,13 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
     }
 
     @Override
-    public void post(final BusInternalEvent event, final InternalCallContext context) throws EventBusException {
+    public void post(final BusInternalEvent event) throws EventBusException {
         if (isStarted) {
             dao.inTransaction(TransactionIsolationLevel.READ_COMMITTED, new Transaction<Void, PersistentBusSqlDao>() {
                 @Override
                 public Void inTransaction(final PersistentBusSqlDao transactional,
                                           final TransactionStatus status) throws Exception {
-                    postFromTransaction(event, context, transactional);
+                    postFromTransaction(event, transactional);
                     return null;
                 }
             });
@@ -185,21 +179,21 @@ public class PersistentInternalBus extends PersistentQueueBase implements Intern
     }
 
     @Override
-    public void postFromTransaction(final BusInternalEvent event, final EntitySqlDaoWrapperFactory<EntitySqlDao> entitySqlDaoWrapperFactory, final InternalCallContext context)
+    public void postFromTransaction(final BusInternalEvent event, final Transmogrifier transmogrifier)
             throws EventBusException {
-        final PersistentBusSqlDao transactional = entitySqlDaoWrapperFactory.transmogrify(PersistentBusSqlDao.class);
+        final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
         if (isStarted) {
-            postFromTransaction(event, context, transactional);
+            postFromTransaction(event, transactional);
         } else {
             log.warn("Attempting to post event " + event + " in a non initialized bus");
         }
     }
 
-    private void postFromTransaction(final BusInternalEvent event, final InternalCallContext context, final PersistentBusSqlDao transactional) {
+    private void postFromTransaction(final BusInternalEvent event, final PersistentBusSqlDao transactional) {
         try {
             final String json = objectMapper.writeValueAsString(event);
-            final BusEventEntry entry = new BusEventEntry(hostname, event.getClass().getName(), json, context.getUserToken(), context.getAccountRecordId(), context.getTenantRecordId());
-            transactional.insertBusEvent(entry, context);
+            final BusEventEntry entry = new BusEventEntry(Hostname.get(), event.getClass().getName(), json, event.getUserToken(), event.getAccountRecordId(), event.getTenantRecordId());
+            transactional.insertBusEvent(entry);
         } catch (Exception e) {
             log.error("Failed to post BusEvent " + event, e);
         }

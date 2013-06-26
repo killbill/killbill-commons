@@ -20,15 +20,16 @@ import javax.inject.Inject;
 
 import org.skife.jdbi.v2.IDBI;
 
+import com.ning.billing.util.clock.Clock;
+
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
 
     private final IDBI dbi;
 
     @Inject
-    public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config,
-                                           final InternalCallContextFactory internalCallContextFactory) {
-        super(clock, config, dbi, internalCallContextFactory);
+    public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config) {
+        super(clock, config, dbi);
         this.dbi = dbi;
     }
 

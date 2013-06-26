@@ -23,9 +23,12 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
 import org.joda.time.DateTime;
+import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
+
+import com.ning.billing.Hostname;
+import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.util.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -65,9 +68,9 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final InternalCallContext context) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
         final String json = objectMapper.writeValueAsString(notificationKey);
-        final Notification notification = new DefaultNotification("MockQueue", hostname, notificationKey.getClass().getName(), json, context.getUserToken(),
+        final Notification notification = new DefaultNotification("MockQueue", hostname, notificationKey.getClass().getName(), json, userToken,
                                                                   UUID.randomUUID(), futureNotificationTime, null, 0L);
         synchronized (notifications) {
             notifications.add(notification);
@@ -75,38 +78,38 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao, final DateTime futureNotificationTime,
-                                                        final NotificationKey notificationKey, final InternalCallContext context) throws IOException {
-        recordFutureNotification(futureNotificationTime, notificationKey, context);
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
+        recordFutureNotification(futureNotificationTime, notificationKey, userToken, accountRecordId, tenantRecordId);
+    }
+
+
+    @Override
+    public List<Notification> getFutureNotificationsForAccount(final long accountRecordId) {
+        return getFutureNotificationsForAccountFromTransaction(accountRecordId, null);
     }
 
     @Override
-    public List<Notification> getFutureNotificationsForAccount(final InternalCallContext context) {
-        return getFutureNotificationsForAccountFromTransaction(null, context);
-    }
-
-    @Override
-    public List<Notification> getFutureNotificationsForAccountFromTransaction(@Nullable final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao,
-                                                                              final InternalCallContext context) {
+    public List<Notification> getFutureNotificationsForAccountFromTransaction(final long accountRecordId, final Transmogrifier transmogrifier) {
         final List<Notification> result = new ArrayList<Notification>();
         synchronized (notifications) {
             for (final Notification notification : notifications) {
-                if (notification.getAccountRecordId().equals(context.getAccountRecordId()) && notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
+                if (notification.getAccountRecordId().equals(accountRecordId) && notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
                     result.add(notification);
                 }
             }
         }
-
         return result;
     }
 
+
+
     @Override
-    public void removeNotification(final UUID notificationId, final InternalCallContext context) {
-        removeNotificationFromTransaction(null, notificationId, context);
+    public void removeNotification(final UUID notificationId) {
+        removeNotificationFromTransaction(null, notificationId);
     }
 
     @Override
-    public void removeNotificationFromTransaction(@Nullable final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao, final UUID notificationId, final InternalCallContext context) {
+    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final UUID notificationId) {
         synchronized (notifications) {
             for (final Notification cur : notifications) {
                 if (cur.getId().equals(notificationId)) {
@@ -130,6 +133,11 @@ public class MockNotificationQueue implements NotificationQueue {
     @Override
     public String getQueueName() {
         return queueName;
+    }
+
+    @Override
+    public String getHostName() {
+        return null;
     }
 
     @Override

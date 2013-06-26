@@ -22,16 +22,18 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.skife.jdbi.v2.IDBI;
+import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
+import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
+import com.ning.billing.util.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
     private final NotificationSqlDao dao;
-    private final String hostname;
     private final String svcName;
     private final String queueName;
     private final NotificationQueueHandler handler;
@@ -48,66 +50,67 @@ public class DefaultNotificationQueue implements NotificationQueue {
         this.queueName = queueName;
         this.handler = handler;
         this.dao = dbi.onDemand(NotificationSqlDao.class);
-        this.hostname = Hostname.get();
         this.notificationQueueService = notificationQueueService;
         this.objectMapper = new ObjectMapper();
         this.clock = clock;
     }
 
+
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime,
-                                         final NotificationKey notificationKey,
-                                         final InternalCallContext context) throws IOException {
-        recordFutureNotificationInternal(futureNotificationTime, notificationKey, dao, context);
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
+        recordFutureNotificationInternal(futureNotificationTime, notificationKey, dao, userToken, accountRecordId, tenantRecordId);
+
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao,
-                                                        final DateTime futureNotificationTime,
-                                                        final NotificationKey notificationKey,
-                                                        final InternalCallContext context) throws IOException {
-        final NotificationSqlDao transactionalNotificationDao = transactionalDao.transmogrify(NotificationSqlDao.class);
-        recordFutureNotificationInternal(futureNotificationTime, notificationKey, transactionalNotificationDao, context);
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey,
+                                                        final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
+        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
+        recordFutureNotificationInternal(futureNotificationTime, notificationKey, transactionalNotificationDao, userToken, accountRecordId, tenantRecordId);
     }
+
+
 
     private void recordFutureNotificationInternal(final DateTime futureNotificationTime,
                                                   final NotificationKey notificationKey,
                                                   final NotificationSqlDao thisDao,
-                                                  final InternalCallContext context) throws IOException {
+                                                  final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
         final String json = objectMapper.writeValueAsString(notificationKey);
         final UUID futureUserToken = UUID.randomUUID();
 
-        final Notification notification = new DefaultNotification(getFullQName(), hostname, notificationKey.getClass().getName(), json,
-                                                                  context.getUserToken(), futureUserToken, futureNotificationTime, context.getAccountRecordId(), context.getTenantRecordId());
-        thisDao.insertNotification(notification, context);
+        final Notification notification = new DefaultNotification(getFullQName(), Hostname.get(), notificationKey.getClass().getName(), json,
+                                                                  userToken, futureUserToken, futureNotificationTime, accountRecordId, tenantRecordId);
+        thisDao.insertNotification(notification);
     }
 
     @Override
-    public List<Notification> getFutureNotificationsForAccount(final InternalCallContext context) {
-        return getFutureNotificationsForAccountInternal(dao, context);
+    public List<Notification> getFutureNotificationsForAccount(final long accountRecordId) {
+        return getFutureNotificationsForAccountInternal(dao, accountRecordId);
     }
 
     @Override
-    public List<Notification> getFutureNotificationsForAccountFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao,
-                                                                              final InternalCallContext context) {
-        final NotificationSqlDao transactionalNotificationDao = transactionalDao.transmogrify(NotificationSqlDao.class);
-        return getFutureNotificationsForAccountInternal(transactionalNotificationDao, context);
+    public List<Notification> getFutureNotificationsForAccountFromTransaction(final long accountRecordId, final Transmogrifier transmogrifier) {
+        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
+        return getFutureNotificationsForAccountInternal(transactionalNotificationDao, accountRecordId);
     }
 
-    private List<Notification> getFutureNotificationsForAccountInternal(final NotificationSqlDao transactionalDao, final InternalCallContext context) {
-        return transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), context);
+
+    private List<Notification> getFutureNotificationsForAccountInternal(final NotificationSqlDao transactionalDao, final long accountRecordId) {
+        return transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), accountRecordId);
+    }
+
+
+    @Override
+    public void removeNotification(final UUID notificationId) {
+        dao.removeNotification(notificationId.toString());
     }
 
     @Override
-    public void removeNotification(final UUID notificationId, final InternalCallContext context) {
-        dao.removeNotification(notificationId.toString(), context);
+    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final UUID notificationId) {
+        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
+        transactionalNotificationDao.removeNotification(notificationId.toString());
     }
 
-    @Override
-    public void removeNotificationFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao, final UUID notificationId, final InternalCallContext context) {
-        final NotificationSqlDao transactionalNotificationDao = transactionalDao.transmogrify(NotificationSqlDao.class);
-        transactionalNotificationDao.removeNotification(notificationId.toString(), context);
-    }
 
     @Override
     public String getFullQName() {
@@ -122,6 +125,11 @@ public class DefaultNotificationQueue implements NotificationQueue {
     @Override
     public String getQueueName() {
         return queueName;
+    }
+
+    @Override
+    public String getHostName() {
+        return null;
     }
 
     @Override

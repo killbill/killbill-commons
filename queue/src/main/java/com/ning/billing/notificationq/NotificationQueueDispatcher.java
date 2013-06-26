@@ -33,6 +33,8 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ning.billing.Hostname;
+import com.ning.billing.util.clock.Clock;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
 import com.ning.billing.queue.PersistentQueueBase;
@@ -51,11 +53,9 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
     private static final String NOTIFICATION_THREAD_NAME = "Notification-queue-dispatch";
 
     private final NotificationQueueConfig config;
-    private final String hostname;
     private final AtomicLong nbProcessedEvents;
     private final NotificationSqlDao dao;
 
-    protected final InternalCallContextFactory internalCallContextFactory;
     protected final Clock clock;
     protected final Map<String, NotificationQueue> queues;
 
@@ -68,7 +68,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
     private final Map<String, Histogram> perQueueProcessingTime;
 
     // Package visibility on purpose
-    NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final InternalCallContextFactory internalCallContextFactory) {
+    NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi) {
         super("NotificationQ", Executors.newFixedThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -87,8 +87,6 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
         this.clock = clock;
         this.config = config;
         this.dao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
-        this.internalCallContextFactory = internalCallContextFactory;
-        this.hostname = Hostname.get();
         this.nbProcessedEvents = new AtomicLong();
 
         this.queues = new TreeMap<String, NotificationQueue>();
@@ -96,7 +94,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
         this.pendingNotifications = Metrics.newGauge(NotificationQueueDispatcher.class, "pending-notifications", new Gauge<Integer>() {
             @Override
             public Integer value() {
-                return dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate(), createCallContext(null, null)) : 0;
+                return dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
             }
         });
 
@@ -130,10 +128,6 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
         return nbProcessedEvents;
     }
 
-    public String getHostname() {
-        return hostname;
-    }
-
     public Clock getClock() {
         return clock;
     }
@@ -158,7 +152,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
 
         logDebug("ENTER doProcessEvents");
         // Finding and claiming notifications is not done per tenant (yet?)
-        final List<Notification> notifications = getReadyNotifications(createCallContext(null, null));
+        final List<Notification> notifications = getReadyNotifications();
         if (notifications.size() == 0) {
             logDebug("EXIT doProcessEvents");
             return 0;
@@ -185,7 +179,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
 
             handleNotificationWithMetrics(handler, cur, key);
             result++;
-            clearNotification(cur, createCallContext(cur.getTenantRecordId(), cur.getAccountRecordId()));
+            clearNotification(cur);
             logDebug("done handling notification %s, key = %s for time %s", cur.getId(), cur.getNotificationKey(), cur.getEffectiveDate());
         }
         return result;
@@ -217,15 +211,15 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
         processedNotificationsSinceStart.inc();
     }
 
-    private void clearNotification(final Notification cleared, final InternalCallContext context) {
-        dao.clearNotification(cleared.getId().toString(), getHostname(), context);
+    private void clearNotification(final Notification cleared) {
+        dao.clearNotification(cleared.getId().toString(), Hostname.get());
     }
 
-    private List<Notification> getReadyNotifications(final InternalCallContext context) {
+    private List<Notification> getReadyNotifications() {
         final Date now = getClock().getUTCNow().toDate();
         final Date nextAvailable = getClock().getUTCNow().plus(CLAIM_TIME_MS).toDate();
 
-        final List<Notification> input = dao.getReadyNotifications(now, getHostname(), config.getPrefetchAmount() , context);
+        final List<Notification> input = dao.getReadyNotifications(now, Hostname.get(), config.getPrefetchAmount());
 
         final List<Notification> claimedNotifications = new ArrayList<Notification>();
         for (final Notification cur : input) {
@@ -239,18 +233,18 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
             logDebug("about to claim notification %s,  key = %s for time %s",
                      cur.getId(), cur.getNotificationKey(), cur.getEffectiveDate());
 
-            final boolean claimed = (dao.claimNotification(getHostname(), nextAvailable, cur.getId().toString(), now, context) == 1);
+            final boolean claimed = (dao.claimNotification(Hostname.get(), nextAvailable, cur.getId().toString(), now) == 1);
             logDebug("claimed notification %s, key = %s for time %s result = %s",
                      cur.getId(), cur.getNotificationKey(), cur.getEffectiveDate(), claimed);
 
             if (claimed) {
                 claimedNotifications.add(cur);
-                dao.insertClaimedHistory(getHostname(), now, cur.getId().toString(), context);
+                dao.insertClaimedHistory(Hostname.get(), now, cur.getId().toString());
             }
         }
 
         for (final Notification cur : claimedNotifications) {
-            if (cur.getOwner() != null && !cur.getOwner().equals(getHostname())) {
+            if (cur.getOwner() != null && !cur.getOwner().equals(Hostname.get())) {
                 log.warn("NotificationQueue stealing notification {} from {}", new Object[]{ cur, cur.getOwner()});
             }
         }
@@ -263,10 +257,6 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
             final String realDebug = String.format(format, args);
             log.debug(String.format("Thread %d  %s", Thread.currentThread().getId(), realDebug));
         }
-    }
-
-    private InternalCallContext createCallContext(@Nullable final Long tenantRecordId, @Nullable final Long accountRecordId) {
-        return internalCallContextFactory.createInternalCallContext(tenantRecordId, accountRecordId, "NotificationQueue", CallOrigin.INTERNAL, UserType.SYSTEM, null);
     }
 
 

@@ -20,6 +20,8 @@ import org.skife.config.Config;
 import org.skife.config.Default;
 import org.skife.config.Description;
 
+import com.ning.billing.queue.PersistentQueueConfig;
+
 
 public interface NotificationQueueConfig extends PersistentQueueConfig {
 

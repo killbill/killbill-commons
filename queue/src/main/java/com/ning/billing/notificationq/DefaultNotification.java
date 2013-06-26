@@ -21,9 +21,10 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 
 
-public class DefaultNotification extends EntityBase implements Notification {
+public class DefaultNotification implements Notification {
 
     private final long ordering;
+    private final UUID id;
     private final String owner;
     private final String createdOwner;
     private final String queueName;
@@ -41,8 +42,8 @@ public class DefaultNotification extends EntityBase implements Notification {
                                final DateTime nextAvailableDate, final PersistentQueueEntryLifecycleState lifecycleState,
                                final String notificationKeyClass, final String notificationKey, final UUID userToken, final UUID futureUserToken,
                                final DateTime effectiveDate, final Long accountRecordId, final Long tenantRecordId) {
-        super(id);
         this.ordering = ordering;
+        this.id = id;
         this.owner = owner;
         this.createdOwner = createdOwner;
         this.queueName = queueName;
@@ -62,6 +63,11 @@ public class DefaultNotification extends EntityBase implements Notification {
                                final Long accountRecordId, final Long tenantRecordId) {
         this(-1L, UUID.randomUUID(), createdOwner, null, queueName, null, PersistentQueueEntryLifecycleState.AVAILABLE,
              notificationKeyClass, notificationKey, userToken, futureUserToken, effectiveDate, accountRecordId, tenantRecordId);
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
     }
 
     @Override

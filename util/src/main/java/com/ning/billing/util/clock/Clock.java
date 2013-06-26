@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 Ning, Inc.
+ * Copyright 2010-2011 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -14,13 +14,21 @@
  * under the License.
  */
 
-package com.ning.billing.bus;
+package com.ning.billing.util.clock;
 
-import org.skife.config.ConfigSource;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
 
-public class InMemoryBusModule extends BusModule {
+public interface Clock {
 
-    public InMemoryBusModule(final ConfigSource configSource) {
-        super(BusType.MEMORY, configSource);
-    }
+    public DateTime getNow(DateTimeZone tz);
+
+    public DateTime getUTCNow();
+
+    public LocalDate getUTCToday();
+
+    public LocalDate getToday(DateTimeZone timeZone);
+
+    //public DateTime addDuration(DateTime input, IDuration duration);
 }

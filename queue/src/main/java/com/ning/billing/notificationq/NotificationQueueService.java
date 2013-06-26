@@ -20,6 +20,8 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
+import com.ning.billing.queue.QueueLifecycle;
+
 
 public interface NotificationQueueService extends QueueLifecycle {
 
@@ -56,7 +58,6 @@ public interface NotificationQueueService extends QueueLifecycle {
 
     /**
      * Creates a new NotificationQueue for a given associated with the given service and queueName
-     *
      * @param svcName   the name of the service using that queue
      * @param queueName a name for that queue (unique per service)
      * @param handler   the handler required for notifying the caller of state change

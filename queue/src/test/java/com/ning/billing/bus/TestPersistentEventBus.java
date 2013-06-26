@@ -16,19 +16,24 @@
 
 package com.ning.billing.bus;
 
+import org.skife.jdbi.v2.DBI;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-public class TestPersistentEventBus extends UtilTestSuiteWithEmbeddedDB {
+import com.ning.billing.util.clock.Clock;
+import com.ning.billing.util.clock.ClockMock;
+
+public class TestPersistentEventBus  {
 
 
     private TestEventBusBase testEventBusBase;
 
-    @Override
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        super.beforeClass();
-        testEventBusBase = new TestEventBusBase(eventBus, internalCallContext);
+        final DBI dbi = null;
+        final PersistentBusConfig config = null;
+        final Clock clock = new ClockMock();
+        testEventBusBase = new TestEventBusBase(new PersistentInternalBus(dbi, clock, config));
     }
 
     @Test(groups = "slow")

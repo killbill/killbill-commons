@@ -23,12 +23,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.ning.billing.Hostname;
+import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
+import com.ning.billing.util.clock.Clock;
+
 
 public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
     @Inject
     public MockNotificationQueueService(final Clock clock, final NotificationQueueConfig config) {
-        super(clock, config, null, null);
+        super(clock, config, null);
     }
 
 
@@ -73,7 +77,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
         for (final Notification cur : readyNotifications) {
             final NotificationKey key = deserializeEvent(cur.getNotificationKeyClass(), cur.getNotificationKey());
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getAccountRecordId(), cur.getTenantRecordId());
-            final DefaultNotification processedNotification = new DefaultNotification(-1L, cur.getId(), getHostname(), getHostname(),
+            final DefaultNotification processedNotification = new DefaultNotification(-1L, cur.getId(), Hostname.get(), Hostname.get(),
                                                                                       "MockQueue", getClock().getUTCNow().plus(CLAIM_TIME_MS),
                                                                                       PersistentQueueEntryLifecycleState.PROCESSED, cur.getNotificationKeyClass(),
                                                                                       cur.getNotificationKey(), cur.getUserToken(), cur.getFutureUserToken(), cur.getEffectiveDate(),
@@ -86,4 +90,5 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
         queue.markProcessedNotifications(oldNotifications, processedNotifications);
         return result;
     }
+
 }

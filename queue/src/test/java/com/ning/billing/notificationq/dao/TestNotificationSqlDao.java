@@ -21,26 +21,33 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.ning.billing.notificationq.DefaultNotification;
+import com.ning.billing.notificationq.Notification;
+import com.ning.billing.notificationq.dao.NotificationSqlDao.NotificationSqlMapper;
+import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class TestNotificationSqlDao extends UtilTestSuiteWithEmbeddedDB {
+public class TestNotificationSqlDao  {
 
     private static final String hostname = "Yop";
 
-    private NotificationSqlDao dao;
+    private static final long TENANT_RECORD_ID = 37;
 
-    @Override
+    private NotificationSqlDao dao;
+    private DBI dbi;
+
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        super.beforeClass();
-        dao = getDBI().onDemand(NotificationSqlDao.class);
+        dao = dbi.onDemand(NotificationSqlDao.class);
     }
 
     @Test(groups = "slow")
@@ -51,12 +58,12 @@ public class TestNotificationSqlDao extends UtilTestSuiteWithEmbeddedDB {
         final String notificationKey = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
         final Notification notif = new DefaultNotification("testBasic", hostname, notificationKey.getClass().getName(), notificationKey, UUID.randomUUID(), UUID.randomUUID(), effDt,
-                                                           accountRecordId, internalCallContext.getTenantRecordId());
-        dao.insertNotification(notif, internalCallContext);
+                                                           accountRecordId, TENANT_RECORD_ID);
+        dao.insertNotification(notif);
 
         Thread.sleep(1000);
         final DateTime now = new DateTime();
-        final List<Notification> notifications = dao.getReadyNotifications(now.toDate(), hostname, 3, internalCallContext);
+        final List<Notification> notifications = dao.getReadyNotifications(now.toDate(), hostname, 3);
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);
 
@@ -68,9 +75,9 @@ public class TestNotificationSqlDao extends UtilTestSuiteWithEmbeddedDB {
         assertEquals(notification.getNextAvailableDate(), null);
 
         final DateTime nextAvailable = now.plusMinutes(5);
-        final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getId().toString(), now.toDate(), internalCallContext);
+        final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getId().toString(), now.toDate());
         assertEquals(res, 1);
-        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getId().toString(), internalCallContext);
+        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getId().toString());
 
         notification = fetchNotification(notification.getId().toString());
         assertEquals(notification.getNotificationKey(), notificationKey);
@@ -79,7 +86,7 @@ public class TestNotificationSqlDao extends UtilTestSuiteWithEmbeddedDB {
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
         validateDate(notification.getNextAvailableDate(), nextAvailable);
 
-        dao.clearNotification(notification.getId().toString(), ownerId, internalCallContext);
+        dao.clearNotification(notification.getId().toString(), ownerId);
 
         notification = fetchNotification(notification.getId().toString());
         assertEquals(notification.getNotificationKey(), notificationKey);
@@ -90,7 +97,7 @@ public class TestNotificationSqlDao extends UtilTestSuiteWithEmbeddedDB {
     }
 
     private Notification fetchNotification(final String notificationId) {
-        return getDBI().withHandle(new HandleCallback<Notification>() {
+        return dbi.withHandle(new HandleCallback<Notification>() {
             @Override
             public Notification withHandle(final Handle handle) throws Exception {
                 return handle.createQuery("   select" +
@@ -137,15 +144,4 @@ public class TestNotificationSqlDao extends UtilTestSuiteWithEmbeddedDB {
         final DateTime result = input.minus(input.getMillisOfSecond());
         return result.toDateTime(DateTimeZone.UTC);
     }
-
-    /*
-    public static class TestNotificationSqlDaoModule extends AbstractModule {
-
-        @Override
-        protected void configure() {
-            final IDBI dbi = getDBI();
-            bind(IDBI.class).toInstance(dbi);
-        }
-    }
-    */
 }

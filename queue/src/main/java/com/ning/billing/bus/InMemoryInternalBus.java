@@ -62,15 +62,15 @@ public class InMemoryInternalBus implements InternalBus {
 
     public InMemoryInternalBus() {
 
-        final ThreadGroup group = new ThreadGroup(DefaultBusService.EVENT_BUS_GROUP_NAME);
+        final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);
         final Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
-                return new Thread(group, r, DefaultBusService.EVENT_BUS_TH_NAME);
+                return new Thread(group, r, EVENT_BUS_TH_NAME);
             }
         });
 
-        this.delegate = new EventBusDelegate(DefaultBusService.EVENT_BUS_IDENTIFIER, group, executor);
+        this.delegate = new EventBusDelegate(EVENT_BUS_IDENTIFIER, group, executor);
         this.isInitialized = new AtomicBoolean(false);
     }
 
@@ -87,13 +87,13 @@ public class InMemoryInternalBus implements InternalBus {
     }
 
     @Override
-    public void post(final BusInternalEvent event, final InternalCallContext context) throws EventBusException {
+    public void post(final BusInternalEvent event) throws EventBusException {
         checkInitialized("post");
         delegate.post(event);
     }
 
     @Override
-    public void postFromTransaction(final BusInternalEvent event, final EntitySqlDaoWrapperFactory<EntitySqlDao> entitySqlDaoWrapperFactory, final InternalCallContext context) throws EventBusException {
+    public void postFromTransaction(final BusInternalEvent event, final Transmogrifier transmogrifier) throws EventBusException {
         checkInitialized("postFromTransaction");
         delegate.post(event);
     }

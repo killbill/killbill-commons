@@ -22,7 +22,9 @@ import org.joda.time.DateTime;
 
 import com.ning.billing.queue.PersistentQueueEntryLifecycle;
 
-public interface Notification extends PersistentQueueEntryLifecycle, Entity {
+public interface Notification extends PersistentQueueEntryLifecycle {
+
+    public UUID getId();
 
     public Long getOrdering();
 
@@ -38,4 +40,10 @@ public interface Notification extends PersistentQueueEntryLifecycle, Entity {
     // The user token can be used as a trace to follow events (e.g. all bus events triggered as a result of a
     // claimed notification will share the same user token)
     public UUID getFutureUserToken();
+
+    public UUID getUserToken();
+
+    public Long getTenantRecordId();
+
+    public Long getAccountRecordId();
 }

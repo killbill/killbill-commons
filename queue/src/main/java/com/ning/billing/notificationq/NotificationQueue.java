@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
+import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.queue.QueueLifecycle;
@@ -36,47 +37,46 @@ public interface NotificationQueue extends QueueLifecycle {
      */
     public void recordFutureNotification(final DateTime futureNotificationTime,
                                          final NotificationKey notificationKey,
-                                         final InternalCallContext context)
+                                         final UUID userToken,
+                                         final long accountRecordId,
+                                         final long tenantRecordId)
             throws IOException;
 
     /**
      * Record from within a transaction the need to be called back when the notification is ready
      *
-     * @param transactionalDao       the transactionalDao
      * @param futureNotificationTime the time at which the notification is ready
      * @param notificationKey        the key for that notification
      */
-    public void recordFutureNotificationFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao,
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier,
                                                         final DateTime futureNotificationTime,
                                                         final NotificationKey notificationKey,
-                                                        final InternalCallContext context)
+                                                        final UUID userToken,
+                                                        final long accountRecordId,
+                                                        final long tenantRecordId)
             throws IOException;
 
     /**
      * Retrieve all future pending notifications for a given account (taken from the context)
      * Results are ordered by effective date asc.
      *
-     * @param context internal call context
      * @return future notifications matching that key
      */
-    public List<Notification> getFutureNotificationsForAccount(final InternalCallContext context);
+    public List<Notification> getFutureNotificationsForAccount(final long accountRecordId);
 
     /**
      * Retrieve all future pending notifications for a given account (taken from the context) in a transaction.
      * Results are ordered by effective date asc.
      *
-     * @param context internal call context
      * @return future notifications matching that key
      */
-    public List<Notification> getFutureNotificationsForAccountFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao,
-                                                                              final InternalCallContext context);
+    public List<Notification> getFutureNotificationsForAccountFromTransaction(final long accountRecordId,
+                                                                              final Transmogrifier transmogrifier);
 
-    public void removeNotification(final UUID notificationId,
-                                   final InternalCallContext context);
+    public void removeNotification(final UUID notificationId);
 
-    public void removeNotificationFromTransaction(final EntitySqlDaoWrapperFactory<EntitySqlDao> transactionalDao,
-                                                  final UUID notificationId,
-                                                  final InternalCallContext context);
+    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier,
+                                                  final UUID notificationId);
 
     /**
      * @return the name of that queue
@@ -92,6 +92,8 @@ public interface NotificationQueue extends QueueLifecycle {
      * @return the queue name associated
      */
     public String getQueueName();
+
+    public String getHostName();
 
     public NotificationQueueHandler getHandler();
 }

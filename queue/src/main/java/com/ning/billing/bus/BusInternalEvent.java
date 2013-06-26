@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -16,26 +16,15 @@
 
 package com.ning.billing.bus;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import java.util.UUID;
 
+public interface BusInternalEvent {
 
-public class TestEventBus {
+    public String getBusEventType();
 
-    private TestEventBusBase testEventBusBase;
+    public UUID getUserToken();
 
-    @BeforeClass(groups = "fast")
-    public void beforeClass() throws Exception {
-        testEventBusBase = new TestEventBusBase(new InMemoryInternalBus());
-    }
+    public Long getTenantRecordId();
 
-    @Test(groups = "fast")
-    public void testSimple() {
-        testEventBusBase.testSimple();
-    }
-
-    @Test(groups = "fast")
-    public void testDifferentType() {
-        testEventBusBase.testDifferentType();
-    }
+    public Long getAccountRecordId();
 }

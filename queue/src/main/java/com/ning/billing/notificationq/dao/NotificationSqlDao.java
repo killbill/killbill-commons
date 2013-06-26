@@ -35,8 +35,11 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 import org.skife.jdbi.v2.sqlobject.stringtemplate.UseStringTemplate3StatementLocator;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
+import com.ning.billing.commons.jdbi.binder.BinderBase;
+import com.ning.billing.commons.jdbi.mapper.MapperBase;
 import com.ning.billing.notificationq.DefaultNotification;
 import com.ning.billing.notificationq.Notification;
+import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
 
 @UseStringTemplate3StatementLocator()
 public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, CloseMe {
@@ -45,44 +48,37 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
     @Mapper(NotificationSqlMapper.class)
     public List<Notification> getReadyNotifications(@Bind("now") Date now,
                                                     @Bind("owner") String owner,
-                                                    @Bind("max") int max,
-                                                    @InternalTenantContextBinder final InternalTenantContext context);
+                                                    @Bind("max") int max);
 
     @SqlQuery
-    public int getPendingCountNotifications(@Bind("now") Date now,
-                                            @InternalTenantContextBinder final InternalTenantContext context);
+    public int getPendingCountNotifications(@Bind("now") Date now);
 
     @SqlQuery
     @Mapper(NotificationSqlMapper.class)
     public List<Notification> getFutureNotificationsForAccount(@Bind("now") Date now,
                                                                @Bind("queueName") String queueName,
-                                                               @InternalTenantContextBinder final InternalTenantContext context);
+                                                               @Bind("accountRecordId") long accountRecordId);
 
     @SqlUpdate
-    public void removeNotification(@Bind("id") String id,
-                                   @InternalTenantContextBinder final InternalTenantContext context);
+    public void removeNotification(@Bind("id") String id);
 
     @SqlUpdate
     public int claimNotification(@Bind("owner") String owner,
                                  @Bind("nextAvailable") Date nextAvailable,
                                  @Bind("id") String id,
-                                 @Bind("now") Date now,
-                                 @InternalTenantContextBinder final InternalCallContext context);
+                                 @Bind("now") Date now);
 
     @SqlUpdate
     public void clearNotification(@Bind("id") String id,
-                                  @Bind("owner") String owner,
-                                  @InternalTenantContextBinder final InternalCallContext context);
+                                  @Bind("owner") String owner);
 
     @SqlUpdate
-    public void insertNotification(@Bind(binder = NotificationSqlDaoBinder.class) Notification evt,
-                                   @InternalTenantContextBinder final InternalCallContext context);
+    public void insertNotification(@Bind(binder = NotificationSqlDaoBinder.class) Notification evt);
 
     @SqlUpdate
     public void insertClaimedHistory(@Bind("ownerId") String ownerId,
                                      @Bind("claimedDate") Date claimedDate,
-                                     @Bind("notificationId") String notificationId,
-                                     @InternalTenantContextBinder final InternalCallContext context);
+                                     @Bind("notificationId") String notificationId);
 
     public static class NotificationSqlDaoBinder extends BinderBase implements Binder<Bind, Notification> {
 
@@ -100,6 +96,9 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             stmt.bind("processingAvailableDate", getDate(evt.getNextAvailableDate()));
             stmt.bind("processingOwner", evt.getOwner());
             stmt.bind("processingState", PersistentQueueEntryLifecycleState.AVAILABLE.toString());
+            stmt.bind("userToken", evt.getUserToken());
+            stmt.bind("accountRecordId", evt.getAccountRecordId());
+            stmt.bind("accountTenantId", evt.getTenantRecordId());
         }
     }
 
