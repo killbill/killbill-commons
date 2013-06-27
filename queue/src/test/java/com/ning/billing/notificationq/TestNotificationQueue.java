@@ -34,6 +34,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.ning.billing.TestSetup;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.DummySqlTest;
 import com.ning.billing.util.clock.Clock;
@@ -48,16 +49,13 @@ import static com.jayway.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.testng.Assert.assertEquals;
 
-public class TestNotificationQueue {
+public class TestNotificationQueue extends TestSetup {
 
     private final Logger log = LoggerFactory.getLogger(TestNotificationQueue.class);
 
     private final static UUID TOKEN_ID = UUID.randomUUID();
     private final static long ACCOUNT_RECORD_ID = 65;
     private final static long TENANT_RECORD_ID = 34;
-
-    private DBI dbi;
-    private Clock clock;
 
     private NotificationQueueService queueService;
 
@@ -90,19 +88,17 @@ public class TestNotificationQueue {
         }
     }
 
+    @Override
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        final DBI dbi = null;
-        final Clock clock = new ClockMock();
-        final NotificationQueueConfig config = null;
-        queueService = new DefaultNotificationQueueService(dbi, clock, config);
+        super.beforeClass();
+        queueService = new DefaultNotificationQueueService(getDBI(), clock, getNotificationQueueConfig());
     }
 
+    @Override
     @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
-
-        // Reset time to real value
-        //clock.resetDeltaFromReality();
+        super.beforeMethod();
         eventsReceived = 0;
     }
 
@@ -141,7 +137,7 @@ public class TestNotificationQueue {
 
         expectedNotifications.put(notificationKey, Boolean.FALSE);
 
-        DummySqlTest dummyDbi = dbi.onDemand(DummySqlTest.class);
+        DummySqlTest dummyDbi = getDBI().onDemand(DummySqlTest.class);
         dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
             @Override
             public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
@@ -205,7 +201,7 @@ public class TestNotificationQueue {
             expectedNotifications.put(notificationKey, Boolean.FALSE);
 
 
-            DummySqlTest dummyDbi = dbi.onDemand(DummySqlTest.class);
+            DummySqlTest dummyDbi = getDBI().onDemand(DummySqlTest.class);
             dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
                 @Override
                 public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
@@ -296,7 +292,7 @@ public class TestNotificationQueue {
         expectedNotificationsFred.put(notificationKeyFred, Boolean.FALSE);
         expectedNotificationsFred.put(notificationKeyBarney, Boolean.FALSE);
 
-        DummySqlTest dummyDbi = dbi.onDemand(DummySqlTest.class);
+        DummySqlTest dummyDbi = getDBI().onDemand(DummySqlTest.class);
         dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
             @Override
             public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {

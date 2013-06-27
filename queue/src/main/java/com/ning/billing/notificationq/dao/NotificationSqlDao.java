@@ -78,7 +78,9 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
     @SqlUpdate
     public void insertClaimedHistory(@Bind("ownerId") String ownerId,
                                      @Bind("claimedDate") Date claimedDate,
-                                     @Bind("notificationId") String notificationId);
+                                     @Bind("notificationId") String notificationId,
+                                     @Bind("accountRecordId") long accountRecordId,
+                                     @Bind("tenantRecordId") long tenantRecordId);
 
     public static class NotificationSqlDaoBinder extends BinderBase implements Binder<Bind, Notification> {
 
@@ -88,7 +90,6 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             stmt.bind("createdDate", getDate(new DateTime()));
             stmt.bind("creatingOwner", evt.getCreatedOwner());
             stmt.bind("className", evt.getNotificationKeyClass());
-            // The current user token will be bound with the InternalTenantContextBinder
             stmt.bind("futureUserToken", getUUIDString(evt.getFutureUserToken()));
             stmt.bind("notificationKey", evt.getNotificationKey());
             stmt.bind("effectiveDate", getDate(evt.getEffectiveDate()));
@@ -96,9 +97,9 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             stmt.bind("processingAvailableDate", getDate(evt.getNextAvailableDate()));
             stmt.bind("processingOwner", evt.getOwner());
             stmt.bind("processingState", PersistentQueueEntryLifecycleState.AVAILABLE.toString());
-            stmt.bind("userToken", evt.getUserToken());
+            stmt.bind("userToken", getUUIDString(evt.getUserToken()));
             stmt.bind("accountRecordId", evt.getAccountRecordId());
-            stmt.bind("accountTenantId", evt.getTenantRecordId());
+            stmt.bind("tenantRecordId", evt.getTenantRecordId());
         }
     }
 

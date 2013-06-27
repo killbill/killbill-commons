@@ -25,24 +25,24 @@ import com.ning.billing.queue.PersistentQueueConfig;
 
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
-    @Config("killbill.billing.util.persistent.bus.prefetch")
+    @Config("killbill.billing.persistent.bus.prefetch")
     @Default("5")
     @Description("Number of bus events to fetch from the database at once")
     public abstract int getPrefetchAmount();
 
     @Override
-    @Config("killbill.billing.util.persistent.bus.sleep")
+    @Config("killbill.billing.persistent.bus.sleep")
     @Default("3000")
     @Description("Time in milliseconds to sleep between runs")
     public abstract long getSleepTimeMs();
 
     @Override
-    @Config("killbill.billing.util.persistent.bus.off")
+    @Config("killbill.billing.persistent.bus.off")
     @Default("false")
     @Description("Whether to turn off the persistent bus")
     public abstract boolean isProcessingOff();
 
-    @Config("killbill.billing.util.persistent.bus.nbThreads")
+    @Config("killbill.billing.persistent.bus.nbThreads")
     @Default("3")
     @Description("Number of threads to use")
     public abstract int getNbThreads();

@@ -132,7 +132,7 @@ public class DefaultBusService extends PersistentQueueBase implements BusService
         for (final BusEventEntry entry : entries) {
             final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getId(), now) == 1);
             if (claimed) {
-                dao.insertClaimedHistory(Hostname.get(), now, entry.getId());
+                dao.insertClaimedHistory(Hostname.get(), now, entry.getId(), entry.getAccountRecordId(), entry.getTenantRecordId());
                 claimedEntries.add(entry);
             }
         }

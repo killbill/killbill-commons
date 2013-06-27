@@ -25,24 +25,24 @@ import com.ning.billing.queue.PersistentQueueConfig;
 
 public interface NotificationQueueConfig extends PersistentQueueConfig {
 
-    @Config("killbill.billing.util.notificationq.prefetch")
+    @Config("killbill.billing.notificationq.prefetch")
     @Default("7")
     @Description("Number of notifications to fetch from the database at once")
     public int getPrefetchAmount();
 
     @Override
-    @Config("killbill.billing.util.notificationq.sleep")
+    @Config("killbill.billing.notificationq.sleep")
     @Default("3000")
     @Description("Time in milliseconds to sleep between runs")
     public long getSleepTimeMs();
 
     @Override
-    @Config("killbill.billing.util.notificationq.notification.off")
+    @Config("killbill.billing.notificationq.notification.off")
     @Default("false")
     @Description("Whether to turn off the notification queue")
     public boolean isProcessingOff();
 
-    @Config("killbill.billing.util.notificationq.notification.nbThreads")
+    @Config("killbill.billing.notificationq.notification.nbThreads")
     @Default("1")
     @Description("Number of threads to use")
     public int getNbThreads();

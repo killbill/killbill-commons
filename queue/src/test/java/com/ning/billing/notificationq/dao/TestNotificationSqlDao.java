@@ -28,6 +28,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.ning.billing.TestSetup;
 import com.ning.billing.notificationq.DefaultNotification;
 import com.ning.billing.notificationq.Notification;
 import com.ning.billing.notificationq.dao.NotificationSqlDao.NotificationSqlMapper;
@@ -36,18 +37,18 @@ import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntry
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class TestNotificationSqlDao  {
+public class TestNotificationSqlDao extends TestSetup {
 
     private static final String hostname = "Yop";
 
     private static final long TENANT_RECORD_ID = 37;
 
     private NotificationSqlDao dao;
-    private DBI dbi;
 
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        dao = dbi.onDemand(NotificationSqlDao.class);
+        super.beforeClass();
+        dao = getDBI().onDemand(NotificationSqlDao.class);
     }
 
     @Test(groups = "slow")
@@ -77,7 +78,7 @@ public class TestNotificationSqlDao  {
         final DateTime nextAvailable = now.plusMinutes(5);
         final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getId().toString(), now.toDate());
         assertEquals(res, 1);
-        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getId().toString());
+        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getId().toString(), accountRecordId, TENANT_RECORD_ID);
 
         notification = fetchNotification(notification.getId().toString());
         assertEquals(notification.getNotificationKey(), notificationKey);
@@ -97,7 +98,7 @@ public class TestNotificationSqlDao  {
     }
 
     private Notification fetchNotification(final String notificationId) {
-        return dbi.withHandle(new HandleCallback<Notification>() {
+        return getDBI().withHandle(new HandleCallback<Notification>() {
             @Override
             public Notification withHandle(final Handle handle) throws Exception {
                 return handle.createQuery("   select" +

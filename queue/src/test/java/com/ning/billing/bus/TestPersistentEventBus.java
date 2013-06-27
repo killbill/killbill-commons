@@ -16,25 +16,40 @@
 
 package com.ning.billing.bus;
 
-import org.skife.jdbi.v2.DBI;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.ning.billing.util.clock.Clock;
-import com.ning.billing.util.clock.ClockMock;
+import com.ning.billing.TestSetup;
 
-public class TestPersistentEventBus  {
+public class TestPersistentEventBus extends TestSetup {
 
 
     private TestEventBusBase testEventBusBase;
+    private BusService busService;
 
+    @Override
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        final DBI dbi = null;
-        final PersistentBusConfig config = null;
-        final Clock clock = new ClockMock();
-        testEventBusBase = new TestEventBusBase(new DefaultBusService(dbi, clock, config));
+        super.beforeClass();
+        busService = new DefaultBusService(getDBI(), clock, getPersistentBusConfig());
+        testEventBusBase = new TestEventBusBase(busService);
     }
+
+    @Override
+    @BeforeMethod(groups = "fast")
+    public void beforeMethod() throws Exception {
+        super.beforeMethod();
+        busService.start();
+    }
+
+    @AfterMethod(groups = "fast")
+    public void afterMethod() throws Exception {
+        busService.stop();
+        super.afterMethod();
+    }
+
 
     @Test(groups = "slow")
     public void testSimple() {

@@ -239,7 +239,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
 
             if (claimed) {
                 claimedNotifications.add(cur);
-                dao.insertClaimedHistory(Hostname.get(), now, cur.getId().toString());
+                dao.insertClaimedHistory(Hostname.get(), now, cur.getId().toString(), cur.getAccountRecordId(), cur.getTenantRecordId());
             }
         }
 

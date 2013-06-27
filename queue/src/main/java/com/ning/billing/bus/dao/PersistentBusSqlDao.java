@@ -68,7 +68,9 @@ public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>,
     @SqlUpdate
     public void insertClaimedHistory(@Bind("ownerId") String owner,
                                      @Bind("claimedDate") Date claimedDate,
-                                     @Bind("busEventId") long id);
+                                     @Bind("busEventId") long id,
+                                     @Bind("accountRecordId") long accountRecordId,
+                                     @Bind("tenantRecordId") long tenantRecordId);
 
     public static class PersistentBusSqlBinder extends BinderBase implements Binder<Bind, BusEventEntry> {
 

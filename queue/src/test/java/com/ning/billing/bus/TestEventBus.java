@@ -16,18 +16,33 @@
 
 package com.ning.billing.bus;
 
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 
 public class TestEventBus {
 
     private TestEventBusBase testEventBusBase;
+    private BusService busService;
 
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
-        testEventBusBase = new TestEventBusBase(new InMemoryBusService());
+        busService = new InMemoryBusService();
+        testEventBusBase = new TestEventBusBase(busService);
     }
+
+    @BeforeMethod(groups = "fast")
+    public void beforeMethod() throws Exception {
+        busService.start();
+    }
+
+    @AfterMethod(groups = "fast")
+    public void afterMethod() throws Exception {
+        busService.stop();
+    }
+
 
     @Test(groups = "fast")
     public void testSimple() {
