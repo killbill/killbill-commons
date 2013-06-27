@@ -27,13 +27,13 @@ public class TestPersistentEventBus extends TestSetup {
 
 
     private TestEventBusBase testEventBusBase;
-    private BusService busService;
+    private PersistentBus busService;
 
     @Override
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        busService = new DefaultBusService(getDBI(), clock, getPersistentBusConfig());
+        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig());
         testEventBusBase = new TestEventBusBase(busService);
     }
 

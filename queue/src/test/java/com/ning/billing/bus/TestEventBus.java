@@ -25,11 +25,11 @@ import org.testng.annotations.Test;
 public class TestEventBus {
 
     private TestEventBusBase testEventBusBase;
-    private BusService busService;
+    private PersistentBus busService;
 
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
-        busService = new InMemoryBusService();
+        busService = new InMemoryPersistentBus();
         testEventBusBase = new TestEventBusBase(busService);
     }
 

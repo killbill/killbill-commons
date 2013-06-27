@@ -33,13 +33,13 @@ public class TestEventBusBase {
 
     protected static final Logger log = LoggerFactory.getLogger(TestEventBusBase.class);
 
-    private final BusService eventBus;
+    private final PersistentBus eventBus;
 
-    public TestEventBusBase(final BusService eventBus) {
+    public TestEventBusBase(final PersistentBus eventBus) {
         this.eventBus = eventBus;
     }
 
-    public static class MyEvent extends DefaultBusInternalEvent implements BusInternalEvent {
+    public static class MyEvent extends DefaultBusInternalEvent implements BusPersistentEvent {
         private final String name;
         private final Long value;
         private final String type;
@@ -55,12 +55,6 @@ public class TestEventBusBase {
             this.name = name;
             this.value = value;
             this.type = type;
-        }
-
-        @JsonIgnore
-        @Override
-        public String getBusEventType() {
-            return String.valueOf(type);
         }
 
         public String getName() {
@@ -89,7 +83,7 @@ public class TestEventBusBase {
         }
     }
 
-    public static final class MyOtherEvent extends DefaultBusInternalEvent implements BusInternalEvent {
+    public static final class MyOtherEvent extends DefaultBusInternalEvent implements BusPersistentEvent {
 
         private final String name;
         private final Double value;
@@ -106,12 +100,6 @@ public class TestEventBusBase {
             this.name = name;
             this.value = value;
             this.type = type;
-        }
-
-        @JsonIgnore
-        @Override
-        public String getBusEventType() {
-            return type;
         }
 
 

@@ -18,7 +18,7 @@ package com.ning.billing.bus;
 
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
-public interface BusService {
+public interface PersistentBus {
 
 
     public static final String EVENT_BUS_GROUP_NAME = "bus-grp";
@@ -78,7 +78,7 @@ public interface BusService {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void post(BusInternalEvent event) throws EventBusException;
+    public void post(BusPersistentEvent event) throws EventBusException;
 
     /**
      * Post an event from within a transaction.
@@ -87,7 +87,7 @@ public interface BusService {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusInternalEvent event, final Transmogrifier transmogrifier) throws EventBusException;
+    public void postFromTransaction(BusPersistentEvent event, final Transmogrifier transmogrifier) throws EventBusException;
 
 
 }

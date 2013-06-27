@@ -27,10 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.AsyncEventBus;
 
-public class InMemoryBusService implements BusService {
+public class InMemoryPersistentBus implements PersistentBus {
 
 
-    private static final Logger log = LoggerFactory.getLogger(InMemoryBusService.class);
+    private static final Logger log = LoggerFactory.getLogger(InMemoryPersistentBus.class);
 
     private final EventBusDelegate delegate;
     private final AtomicBoolean isInitialized;
@@ -60,7 +60,7 @@ public class InMemoryBusService implements BusService {
         }
     }
 
-    public InMemoryBusService() {
+    public InMemoryPersistentBus() {
 
         final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);
         final Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -87,13 +87,13 @@ public class InMemoryBusService implements BusService {
     }
 
     @Override
-    public void post(final BusInternalEvent event) throws EventBusException {
+    public void post(final BusPersistentEvent event) throws EventBusException {
         checkInitialized("post");
         delegate.post(event);
     }
 
     @Override
-    public void postFromTransaction(final BusInternalEvent event, final Transmogrifier transmogrifier) throws EventBusException {
+    public void postFromTransaction(final BusPersistentEvent event, final Transmogrifier transmogrifier) throws EventBusException {
         checkInitialized("postFromTransaction");
         delegate.post(event);
     }
@@ -101,7 +101,7 @@ public class InMemoryBusService implements BusService {
     @Override
     public void start() {
         if (isInitialized.compareAndSet(false, true)) {
-            log.info("InMemoryBusService started...");
+            log.info("InMemoryPersistentBus started...");
 
         }
     }
@@ -116,10 +116,10 @@ public class InMemoryBusService implements BusService {
     @Override
     public void stop() {
         if (isInitialized.compareAndSet(true, false)) {
-            log.info("InMemoryBusService stopping...");
+            log.info("InMemoryPersistentBus stopping...");
             delegate.completeDispatch();
             delegate.stop();
-            log.info("InMemoryBusService stopped...");
+            log.info("InMemoryPersistentBus stopped...");
         }
     }
 }

@@ -18,9 +18,7 @@ package com.ning.billing.bus;
 
 import java.util.UUID;
 
-public interface BusInternalEvent {
-
-    public String getBusEventType();
+public interface BusPersistentEvent {
 
     public UUID getUserToken();
 

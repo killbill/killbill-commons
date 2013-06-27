@@ -38,11 +38,11 @@ import com.ning.billing.util.clock.Clock;
 
 import com.google.common.eventbus.EventBus;
 
-public class DefaultBusService extends PersistentQueueBase implements BusService {
+public class DefaultPersistentBus extends PersistentQueueBase implements PersistentBus {
 
     private static final long DELTA_IN_PROCESSING_TIME_MS = 1000L * 60L * 5L; // 5 minutes
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultBusService.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
 
     private final PersistentBusSqlDao dao;
 
@@ -72,7 +72,7 @@ public class DefaultBusService extends PersistentQueueBase implements BusService
           */
     }
 
-    public DefaultBusService(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
+    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -109,7 +109,7 @@ public class DefaultBusService extends PersistentQueueBase implements BusService
         int result = 0;
         for (final BusEventEntry cur : events) {
             final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeAccountAndTenantRecordId(cur.getBusEventJson(), cur.getAccountRecordId(), cur.getTenantRecordId());
-            final BusInternalEvent evt = deserializeEvent(cur.getBusEventClass(), jsonWithAccountAndTenantRecorId);
+            final BusPersistentEvent evt = deserializeEvent(cur.getBusEventClass(), jsonWithAccountAndTenantRecorId);
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);
@@ -158,7 +158,7 @@ public class DefaultBusService extends PersistentQueueBase implements BusService
     }
 
     @Override
-    public void post(final BusInternalEvent event) throws EventBusException {
+    public void post(final BusPersistentEvent event) throws EventBusException {
         if (isStarted) {
             dao.inTransaction(TransactionIsolationLevel.READ_COMMITTED, new Transaction<Void, PersistentBusSqlDao>() {
                 @Override
@@ -174,7 +174,7 @@ public class DefaultBusService extends PersistentQueueBase implements BusService
     }
 
     @Override
-    public void postFromTransaction(final BusInternalEvent event, final Transmogrifier transmogrifier)
+    public void postFromTransaction(final BusPersistentEvent event, final Transmogrifier transmogrifier)
             throws EventBusException {
         final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
         if (isStarted) {
@@ -184,7 +184,7 @@ public class DefaultBusService extends PersistentQueueBase implements BusService
         }
     }
 
-    private void postFromTransaction(final BusInternalEvent event, final PersistentBusSqlDao transactional) {
+    private void postFromTransaction(final BusPersistentEvent event, final PersistentBusSqlDao transactional) {
         try {
             final String json = objectMapper.writeValueAsString(event);
             final BusEventEntry entry = new BusEventEntry(Hostname.get(), event.getClass().getName(), json, event.getUserToken(), event.getAccountRecordId(), event.getTenantRecordId());

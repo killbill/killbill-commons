@@ -2,11 +2,11 @@ package com.ning.billing;
 
 import java.util.UUID;
 
-import com.ning.billing.bus.BusInternalEvent;
+import com.ning.billing.bus.BusPersistentEvent;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public abstract class DefaultBusInternalEvent implements BusInternalEvent{
+public abstract class DefaultBusInternalEvent implements BusPersistentEvent {
 
 
     private final UUID userToken;
