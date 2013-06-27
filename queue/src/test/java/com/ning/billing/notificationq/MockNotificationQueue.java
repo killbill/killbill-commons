@@ -19,7 +19,9 @@ package com.ning.billing.notificationq;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
 
@@ -28,9 +30,11 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.queue.PersistentQueueBase;
 import com.ning.billing.util.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Objects;
 
 public class MockNotificationQueue implements NotificationQueue {
 
@@ -68,33 +72,36 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
         final String json = objectMapper.writeValueAsString(notificationKey);
+        final Long tenantRecordIdWithNull =  Objects.firstNonNull(tenantRecordId, new Long(0));
         final Notification notification = new DefaultNotification("MockQueue", hostname, notificationKey.getClass().getName(), json, userToken,
-                                                                  UUID.randomUUID(), futureNotificationTime, null, 0L);
+                                                                  UUID.randomUUID(), futureNotificationTime, accountRecordId, tenantRecordIdWithNull);
         synchronized (notifications) {
             notifications.add(notification);
         }
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final long accountRecordId, final long tenantRecordId) throws IOException {
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
         recordFutureNotification(futureNotificationTime, notificationKey, userToken, accountRecordId, tenantRecordId);
     }
 
 
     @Override
-    public List<Notification> getFutureNotificationsForAccount(final long accountRecordId) {
-        return getFutureNotificationsForAccountFromTransaction(accountRecordId, null);
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long accountRecordId) {
+        return getFutureNotificationsForAccountAndTypeFromTransaction(type, accountRecordId, null);
     }
 
     @Override
-    public List<Notification> getFutureNotificationsForAccountFromTransaction(final long accountRecordId, final Transmogrifier transmogrifier) {
-        final List<Notification> result = new ArrayList<Notification>();
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long accountRecordId, final Transmogrifier transmogrifier) {
+        final Map<Notification, T> result = new HashMap<Notification, T>();
         synchronized (notifications) {
             for (final Notification notification : notifications) {
-                if (notification.getAccountRecordId().equals(accountRecordId) && notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
-                    result.add(notification);
+                if (notification.getAccountRecordId().equals(accountRecordId) &&
+                    type.getName().equals(notification.getNotificationKeyClass()) &&
+                    notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
+                    result.put(notification, (T) PersistentQueueBase.deserializeEvent(notification.getNotificationKeyClass(), objectMapper, notification.getNotificationKey()));
                 }
             }
         }

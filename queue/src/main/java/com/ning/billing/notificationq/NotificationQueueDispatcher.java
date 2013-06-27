@@ -170,7 +170,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
         int result = 0;
         for (final Notification cur : notifications) {
             getNbProcessedEvents().incrementAndGet();
-            final NotificationKey key = deserializeEvent(cur.getNotificationKeyClass(), cur.getNotificationKey());
+            final NotificationKey key = deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey());
 
             NotificationQueueHandler handler = getHandlerForActiveQueue(cur.getQueueName());
             if (handler == null) {

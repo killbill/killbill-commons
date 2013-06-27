@@ -21,6 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.inject.Inject;
+
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         }
     }
 
+    @Inject
     public InMemoryPersistentBus() {
 
         final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);

@@ -16,6 +16,8 @@
 
 package com.ning.billing.notificationq;
 
+import javax.inject.Inject;
+
 import org.skife.jdbi.v2.IDBI;
 
 import com.ning.billing.util.clock.Clock;
@@ -25,6 +27,7 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
 
     private final IDBI dbi;
 
+    @Inject
     public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config) {
         super(clock, config, dbi);
         this.dbi = dbi;

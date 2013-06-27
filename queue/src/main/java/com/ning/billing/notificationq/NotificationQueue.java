@@ -18,6 +18,7 @@ package com.ning.billing.notificationq;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
@@ -38,8 +39,8 @@ public interface NotificationQueue extends QueueLifecycle {
     public void recordFutureNotification(final DateTime futureNotificationTime,
                                          final NotificationKey notificationKey,
                                          final UUID userToken,
-                                         final long accountRecordId,
-                                         final long tenantRecordId)
+                                         final Long accountRecordId,
+                                         final Long tenantRecordId)
             throws IOException;
 
     /**
@@ -52,8 +53,8 @@ public interface NotificationQueue extends QueueLifecycle {
                                                         final DateTime futureNotificationTime,
                                                         final NotificationKey notificationKey,
                                                         final UUID userToken,
-                                                        final long accountRecordId,
-                                                        final long tenantRecordId)
+                                                        final Long accountRecordId,
+                                                        final Long tenantRecordId)
             throws IOException;
 
     /**
@@ -62,7 +63,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public List<Notification> getFutureNotificationsForAccount(final long accountRecordId);
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long accountRecordId);
 
     /**
      * Retrieve all future pending notifications for a given account (taken from the context) in a transaction.
@@ -70,8 +71,8 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public List<Notification> getFutureNotificationsForAccountFromTransaction(final long accountRecordId,
-                                                                              final Transmogrifier transmogrifier);
+    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long accountRecordId,
+                                                                                                    final Transmogrifier transmogrifier);
 
     public void removeNotification(final UUID notificationId);
 

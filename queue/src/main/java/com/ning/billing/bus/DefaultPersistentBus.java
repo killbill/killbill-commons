@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import javax.inject.Inject;
+
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
@@ -72,6 +74,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
           */
     }
 
+    @Inject
     public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
@@ -109,7 +112,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
         int result = 0;
         for (final BusEventEntry cur : events) {
             final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeAccountAndTenantRecordId(cur.getBusEventJson(), cur.getAccountRecordId(), cur.getTenantRecordId());
-            final BusPersistentEvent evt = deserializeEvent(cur.getBusEventClass(), jsonWithAccountAndTenantRecorId);
+            final BusPersistentEvent evt = deserializeEvent(cur.getBusEventClass(), objectMapper, jsonWithAccountAndTenantRecorId);
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);

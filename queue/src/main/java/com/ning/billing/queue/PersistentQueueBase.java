@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.weakref.jmx.Managed;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 
 
 public abstract class PersistentQueueBase implements QueueLifecycle {
@@ -40,7 +42,7 @@ public abstract class PersistentQueueBase implements QueueLifecycle {
     private boolean isProcessingEvents;
     private int curActiveThreads;
 
-    protected static final ObjectMapper objectMapper = new ObjectMapper();
+    protected final ObjectMapper objectMapper;
 
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
@@ -56,6 +58,10 @@ public abstract class PersistentQueueBase implements QueueLifecycle {
         this.isProcessingEvents = false;
         this.curActiveThreads = 0;
         this.isProcessingSuspended = new AtomicBoolean(false);
+
+        this.objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JodaModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
 
@@ -187,7 +193,7 @@ public abstract class PersistentQueueBase implements QueueLifecycle {
     }
 
     // TODO PIERRE Better API?
-    public static <T> T deserializeEvent(final String className, final String json) {
+    public static <T> T deserializeEvent(final String className, final ObjectMapper objectMapper, final String json) {
         try {
             final Class<?> claz = Class.forName(className);
             return (T) objectMapper.readValue(json, claz);
