@@ -3,7 +3,7 @@ group PersistentBusSqlDao;
 CHECK_TENANT() ::= "tenant_record_id = :tenantRecordId"
 AND_CHECK_TENANT() ::= "AND <CHECK_TENANT()>"
 
-getNextBusEventEntries() ::= <<
+getNextBusEventEntries(tableName) ::= <<
     select
       record_id
       , class_name
@@ -16,7 +16,7 @@ getNextBusEventEntries() ::= <<
       , processing_state
       , account_record_id
       , tenant_record_id
-    from bus_events
+    from <tableName>
     where
       processing_state != 'PROCESSED'
       and processing_state != 'REMOVED'
@@ -28,8 +28,8 @@ getNextBusEventEntries() ::= <<
 >>
 
 
-claimBusEvent() ::= <<
-    update bus_events
+claimBusEvent(tableName) ::= <<
+    update <tableName>
     set
       processing_owner = :owner
       , processing_available_date = :nextAvailable
@@ -42,8 +42,8 @@ claimBusEvent() ::= <<
     ;
 >>
 
-clearBusEvent() ::= <<
-    update bus_events
+clearBusEvent(tableName) ::= <<
+    update <tableName>
     set
       processing_state = 'PROCESSED'
     where
@@ -51,8 +51,8 @@ clearBusEvent() ::= <<
     ;
 >>
 
-removeBusEventsById() ::= <<
-    update bus_events
+removeBusEventsById(tableName) ::= <<
+    update <tableName>
     set
       processing_state = 'REMOVED'
     where
@@ -61,8 +61,8 @@ removeBusEventsById() ::= <<
 >>
 
 
-insertBusEvent() ::= <<
-    insert into bus_events (
+insertBusEvent(tableName) ::= <<
+    insert into <tableName> (
       class_name
     , event_json
     , user_token

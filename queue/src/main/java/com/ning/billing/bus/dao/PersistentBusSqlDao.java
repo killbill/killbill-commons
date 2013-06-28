@@ -29,6 +29,7 @@ import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.Binder;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
+import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.customizers.Mapper;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
@@ -47,23 +48,28 @@ public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>,
     @Mapper(PersistentBusSqlMapper.class)
     public List<BusEventEntry> getNextBusEventEntries(@Bind("max") int max,
                                                       @Bind("owner") String owner,
-                                                      @Bind("now") Date now);
+                                                      @Bind("now") Date now,
+                                                      @Define("tableName") final String actualHistoryTableName);
 
     @SqlUpdate
     public int claimBusEvent(@Bind("owner") String owner,
                              @Bind("nextAvailable") Date nextAvailable,
                              @Bind("recordId") Long id,
-                             @Bind("now") Date now);
+                             @Bind("now") Date now,
+                             @Define("tableName") final String actualHistoryTableName);
 
     @SqlUpdate
     public void clearBusEvent(@Bind("recordId") Long id,
-                              @Bind("owner") String owner);
+                              @Bind("owner") String owner,
+                              @Define("tableName") final String actualHistoryTableName);
 
     @SqlUpdate
-    public void removeBusEventsById(@Bind("recordId") Long id);
+    public void removeBusEventsById(@Bind("recordId") Long id,
+                                    @Define("tableName") final String actualHistoryTableName);
 
     @SqlUpdate
-    public void insertBusEvent(@Bind(binder = PersistentBusSqlBinder.class) BusEventEntry evt);
+    public void insertBusEvent(@Bind(binder = PersistentBusSqlBinder.class) BusEventEntry evt,
+                               @Define("tableName") final String actualHistoryTableName);
 
     @SqlUpdate
     public void insertClaimedHistory(@Bind("ownerId") String owner,

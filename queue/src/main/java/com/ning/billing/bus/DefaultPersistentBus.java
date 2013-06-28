@@ -53,6 +53,8 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
 
     private volatile boolean isStarted;
 
+    private final String tableName;
+
     private static final class EventBusDelegate extends EventBus {
 
         public EventBusDelegate(final String busName) {
@@ -75,7 +77,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
     }
 
     @Inject
-    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
+    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config, final @BusTableName String busTableName) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -87,6 +89,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
         this.dao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
+        this.tableName = busTableName;
         this.isStarted = false;
     }
 
@@ -116,7 +119,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);
-            dao.clearBusEvent(cur.getId(), Hostname.get());
+            dao.clearBusEvent(cur.getId(), Hostname.get(), tableName);
         }
         return result;
     }
@@ -130,10 +133,10 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
         final Date now = clock.getUTCNow().toDate();
         final Date nextAvailable = clock.getUTCNow().plus(DELTA_IN_PROCESSING_TIME_MS).toDate();
 
-        final List<BusEventEntry> entries = dao.getNextBusEventEntries(config.getPrefetchAmount(), Hostname.get(), now);
+        final List<BusEventEntry> entries = dao.getNextBusEventEntries(config.getPrefetchAmount(), Hostname.get(), now, tableName);
         final List<BusEventEntry> claimedEntries = new LinkedList<BusEventEntry>();
         for (final BusEventEntry entry : entries) {
-            final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getId(), now) == 1);
+            final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getId(), now, tableName) == 1);
             if (claimed) {
                 dao.insertClaimedHistory(Hostname.get(), now, entry.getId(), entry.getAccountRecordId(), entry.getTenantRecordId());
                 claimedEntries.add(entry);
@@ -191,7 +194,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
         try {
             final String json = objectMapper.writeValueAsString(event);
             final BusEventEntry entry = new BusEventEntry(Hostname.get(), event.getClass().getName(), json, event.getUserToken(), event.getAccountRecordId(), event.getTenantRecordId());
-            transactional.insertBusEvent(entry);
+            transactional.insertBusEvent(entry, tableName);
         } catch (Exception e) {
             log.error("Failed to post BusEvent " + event, e);
         }
