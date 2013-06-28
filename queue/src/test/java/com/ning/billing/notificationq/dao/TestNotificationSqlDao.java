@@ -53,13 +53,13 @@ public class TestNotificationSqlDao extends TestSetup {
 
     @Test(groups = "slow")
     public void testBasic() throws InterruptedException {
-        final long accountRecordId = 1242L;
+        final long searchKey1 = 1242L;
         final String ownerId = UUID.randomUUID().toString();
 
         final String notificationKey = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
         final Notification notif = new DefaultNotification("testBasic", hostname, notificationKey.getClass().getName(), notificationKey, UUID.randomUUID(), UUID.randomUUID(), effDt,
-                                                           accountRecordId, TENANT_RECORD_ID);
+                                                           searchKey1, TENANT_RECORD_ID);
         dao.insertNotification(notif);
 
         Thread.sleep(1000);
@@ -78,7 +78,7 @@ public class TestNotificationSqlDao extends TestSetup {
         final DateTime nextAvailable = now.plusMinutes(5);
         final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getRecordId(), now.toDate());
         assertEquals(res, 1);
-        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), accountRecordId, TENANT_RECORD_ID);
+        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), searchKey1, TENANT_RECORD_ID);
 
         notification = fetchNotification(notification.getRecordId());
         assertEquals(notification.getNotificationKey(), notificationKey);
@@ -114,8 +114,8 @@ public class TestNotificationSqlDao extends TestSetup {
                                           ", processing_owner" +
                                           ", processing_available_date" +
                                           ", processing_state" +
-                                          ", account_record_id" +
-                                          ", tenant_record_id" +
+                                          ", search_key1" +
+                                          ", search_key2" +
                                           "    from notifications " +
                                           " where " +
                                           " record_id = '" + recordId + "';")

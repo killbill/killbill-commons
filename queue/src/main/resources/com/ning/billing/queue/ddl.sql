@@ -14,14 +14,14 @@ CREATE TABLE notifications (
     processing_owner char(50) DEFAULT NULL,
     processing_available_date datetime DEFAULT NULL,
     processing_state varchar(14) DEFAULT 'AVAILABLE',
-    account_record_id int(11) unsigned default null,
-    tenant_record_id int(11) unsigned default null,
+    search_key1 int(11) unsigned default null,
+    search_key2 int(11) unsigned default null,
     PRIMARY KEY(record_id)
 );
 CREATE INDEX  `idx_comp_where` ON notifications (`effective_date`, `processing_state`,`processing_owner`,`processing_available_date`);
 CREATE INDEX  `idx_update` ON notifications (`processing_state`,`processing_owner`,`processing_available_date`);
 CREATE INDEX  `idx_get_ready` ON notifications (`effective_date`,`created_date`);
-CREATE INDEX notifications_tenant_account_record_id ON notifications(tenant_record_id, account_record_id);
+CREATE INDEX notifications_tenant_account_record_id ON notifications(search_key2, search_key1);
 
 DROP TABLE IF EXISTS claimed_notifications;
 CREATE TABLE claimed_notifications (
@@ -29,11 +29,11 @@ CREATE TABLE claimed_notifications (
     owner_id varchar(64) NOT NULL,
     claimed_date datetime NOT NULL,
     notification_record_id int(11) unsigned NOT NULL,
-    account_record_id int(11) unsigned default null,
-    tenant_record_id int(11) unsigned default null,
+    search_key1 int(11) unsigned default null,
+    search_key2 int(11) unsigned default null,
     PRIMARY KEY(record_id)
 );
-CREATE INDEX claimed_notifications_tenant_account_record_id ON claimed_notifications(tenant_record_id, account_record_id);
+CREATE INDEX claimed_notifications_tenant_account_record_id ON claimed_notifications(search_key2, search_key1);
 
 
 DROP TABLE IF EXISTS bus_events;
@@ -47,12 +47,12 @@ CREATE TABLE bus_events (
     processing_owner char(50) DEFAULT NULL,
     processing_available_date datetime DEFAULT NULL,
     processing_state varchar(14) DEFAULT 'AVAILABLE',
-    account_record_id int(11) unsigned default null,
-    tenant_record_id int(11) unsigned default null,
+    search_key1 int(11) unsigned default null,
+    search_key2 int(11) unsigned default null,
     PRIMARY KEY(record_id)
 );
 CREATE INDEX  `idx_bus_where` ON bus_events (`processing_state`,`processing_owner`,`processing_available_date`);
-CREATE INDEX bus_events_tenant_account_record_id ON bus_events(tenant_record_id, account_record_id);
+CREATE INDEX bus_events_tenant_account_record_id ON bus_events(search_key2, search_key1);
 
 DROP TABLE IF EXISTS claimed_bus_events;
 CREATE TABLE claimed_bus_events (
@@ -60,8 +60,8 @@ CREATE TABLE claimed_bus_events (
     owner_id varchar(64) NOT NULL,
     claimed_date datetime NOT NULL,
     bus_event_id char(36) NOT NULL,
-    account_record_id int(11) unsigned default null,
-    tenant_record_id int(11) unsigned default null,
+    search_key1 int(11) unsigned default null,
+    search_key2 int(11) unsigned default null,
     PRIMARY KEY(record_id)
 );
-CREATE INDEX claimed_bus_events_tenant_account_record_id ON claimed_bus_events(tenant_record_id, account_record_id);
+CREATE INDEX claimed_bus_events_tenant_account_record_id ON claimed_bus_events(search_key2, search_key1);

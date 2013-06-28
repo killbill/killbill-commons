@@ -61,16 +61,16 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
-        recordFutureNotificationInternal(futureNotificationTime, notificationKey, dao, userToken, accountRecordId, tenantRecordId);
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+        recordFutureNotificationInternal(futureNotificationTime, notificationKey, dao, userToken, searchKey1, searchKey2);
 
     }
 
     @Override
     public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey,
-                                                        final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
+                                                        final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        recordFutureNotificationInternal(futureNotificationTime, notificationKey, transactionalNotificationDao, userToken, accountRecordId, tenantRecordId);
+        recordFutureNotificationInternal(futureNotificationTime, notificationKey, transactionalNotificationDao, userToken, searchKey1, searchKey2);
     }
 
 
@@ -78,30 +78,30 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private void recordFutureNotificationInternal(final DateTime futureNotificationTime,
                                                   final NotificationKey notificationKey,
                                                   final NotificationSqlDao thisDao,
-                                                  final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
+                                                  final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(notificationKey);
         final UUID futureUserToken = UUID.randomUUID();
-        final Long tenantRecordIdWithNull =  Objects.firstNonNull(tenantRecordId, new Long(0));
+        final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
         final Notification notification = new DefaultNotification(getFullQName(), Hostname.get(), notificationKey.getClass().getName(), json,
-                                                                  userToken, futureUserToken, futureNotificationTime, accountRecordId, tenantRecordIdWithNull);
+                                                                  userToken, futureUserToken, futureNotificationTime, searchKey1, searchKey2WithNull);
         thisDao.insertNotification(notification);
     }
 
     @Override
-    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long accountRecordId) {
-        return getFutureNotificationsForAccountInternal(type, dao, accountRecordId);
+    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
+        return getFutureNotificationsForAccountInternal(type, dao, searchKey1);
     }
 
     @Override
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long accountRecordId, final Transmogrifier transmogrifier) {
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        return getFutureNotificationsForAccountInternal(type, transactionalNotificationDao, accountRecordId);
+        return getFutureNotificationsForAccountInternal(type, transactionalNotificationDao, searchKey1);
     }
 
 
-    private <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long accountRecordId) {
+    private <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long searchKey1) {
 
-        List<Notification> notifications =  transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), accountRecordId);
+        List<Notification> notifications =  transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), searchKey1);
 
         Map<Notification, T> result = new HashMap<Notification, T>(notifications.size());
         for (Notification cur : notifications) {

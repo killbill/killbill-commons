@@ -39,8 +39,8 @@ public interface NotificationQueue extends QueueLifecycle {
     public void recordFutureNotification(final DateTime futureNotificationTime,
                                          final NotificationKey notificationKey,
                                          final UUID userToken,
-                                         final Long accountRecordId,
-                                         final Long tenantRecordId)
+                                         final Long searchKey1,
+                                         final Long searchKey2)
             throws IOException;
 
     /**
@@ -53,8 +53,8 @@ public interface NotificationQueue extends QueueLifecycle {
                                                         final DateTime futureNotificationTime,
                                                         final NotificationKey notificationKey,
                                                         final UUID userToken,
-                                                        final Long accountRecordId,
-                                                        final Long tenantRecordId)
+                                                        final Long searchKey1,
+                                                        final Long searchKey2)
             throws IOException;
 
     /**
@@ -63,7 +63,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long accountRecordId);
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1);
 
     /**
      * Retrieve all future pending notifications for a given account (taken from the context) in a transaction.
@@ -71,7 +71,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long accountRecordId,
+    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1,
                                                                                                     final Transmogrifier transmogrifier);
 
     public void removeNotification(final Long recordId);

@@ -33,12 +33,12 @@ public class BusEventEntry implements PersistentQueueEntryLifecycle {
     private final String busEventClass;
     private final String busEventJson;
     private final UUID userToken;
-    private final Long accountRecordId;
-    private final Long tenantRecordId;
+    private final Long searchKey1;
+    private final Long searchKey2;
 
     public BusEventEntry(final long id, final String createdOwner, final String owner, final DateTime nextAvailable,
                          final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson,
-                         final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+                         final UUID userToken, final Long searchKey1, final Long searchKey2) {
         this.id = id;
         this.createdOwner = createdOwner;
         this.owner = owner;
@@ -47,13 +47,13 @@ public class BusEventEntry implements PersistentQueueEntryLifecycle {
         this.busEventClass = busEventClass;
         this.busEventJson = busEventJson;
         this.userToken = userToken;
-        this.accountRecordId = accountRecordId;
-        this.tenantRecordId = tenantRecordId;
+        this.searchKey1 = searchKey1;
+        this.searchKey2 = searchKey2;
     }
 
     public BusEventEntry(final String createdOwner, final String busEventClass, final String busEventJson,
-                         final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
-        this(0, createdOwner, null, null, null, busEventClass, busEventJson, userToken, accountRecordId, tenantRecordId);
+                         final UUID userToken, final Long searchKey1, final Long searchKey2) {
+        this(0, createdOwner, null, null, null, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
     }
 
     public long getId() {
@@ -113,12 +113,12 @@ public class BusEventEntry implements PersistentQueueEntryLifecycle {
     }
 
     @Override
-    public Long getAccountRecordId() {
-        return accountRecordId;
+    public Long getSearchKey1() {
+        return searchKey1;
     }
 
     @Override
-    public Long getTenantRecordId() {
-        return tenantRecordId;
+    public Long getSearchKey2() {
+        return searchKey2;
     }
 }

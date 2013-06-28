@@ -76,12 +76,12 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
         List<Notification> readyNotifications = queue.getReadyNotifications();
         for (final Notification cur : readyNotifications) {
             final NotificationKey key = deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey());
-            queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getAccountRecordId(), cur.getTenantRecordId());
+            queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
             final DefaultNotification processedNotification = new DefaultNotification(-1L, Hostname.get(), Hostname.get(),
                                                                                       "MockQueue", getClock().getUTCNow().plus(CLAIM_TIME_MS),
                                                                                       PersistentQueueEntryLifecycleState.PROCESSED, cur.getNotificationKeyClass(),
                                                                                       cur.getNotificationKey(), cur.getUserToken(), cur.getFutureUserToken(), cur.getEffectiveDate(),
-                                                                                      cur.getAccountRecordId(), cur.getTenantRecordId());
+                                                                                      cur.getSearchKey1(), cur.getSearchKey2());
             oldNotifications.add(cur);
             processedNotifications.add(processedNotification);
             result++;

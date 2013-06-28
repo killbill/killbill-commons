@@ -57,7 +57,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
     @Mapper(NotificationSqlMapper.class)
     public List<Notification> getFutureNotificationsForAccount(@Bind("now") Date now,
                                                                @Bind("queueName") String queueName,
-                                                               @Bind("accountRecordId") long accountRecordId);
+                                                               @Bind("searchKey1") long searchKey1);
 
     @SqlUpdate
     public void removeNotification(@Bind("record") Long id);
@@ -79,8 +79,8 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
     public void insertClaimedHistory(@Bind("ownerId") String ownerId,
                                      @Bind("claimedDate") Date claimedDate,
                                      @Bind("notificationRecordId") Long notificationRecordId,
-                                     @Bind("accountRecordId") long accountRecordId,
-                                     @Bind("tenantRecordId") long tenantRecordId);
+                                     @Bind("searchKey1") long searchKey1,
+                                     @Bind("searchKey2") long searchKey2);
 
     public static class NotificationSqlDaoBinder extends BinderBase implements Binder<Bind, Notification> {
 
@@ -97,8 +97,8 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             stmt.bind("processingOwner", evt.getOwner());
             stmt.bind("processingState", PersistentQueueEntryLifecycleState.AVAILABLE.toString());
             stmt.bind("userToken", getUUIDString(evt.getUserToken()));
-            stmt.bind("accountRecordId", evt.getAccountRecordId());
-            stmt.bind("tenantRecordId", evt.getTenantRecordId());
+            stmt.bind("searchKey1", evt.getSearchKey1());
+            stmt.bind("searchKey2", evt.getSearchKey2());
         }
     }
 
@@ -119,12 +119,12 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             final DateTime nextAvailableDate = getDateTime(r, "processing_available_date");
             final String processingOwner = r.getString("processing_owner");
             final PersistentQueueEntryLifecycleState processingState = PersistentQueueEntryLifecycleState.valueOf(r.getString("processing_state"));
-            final Long accountRecordId = r.getLong("account_record_id");
-            final Long tenantRecordId = r.getLong("tenant_record_id");
+            final Long searchKey1 = r.getLong("search_key1");
+            final Long searchKey2 = r.getLong("search_key2");
 
             return new DefaultNotification(recordId, createdOwner, processingOwner, queueName, nextAvailableDate,
                                            processingState, className, notificationKey, userToken, futureUserToken, effectiveDate,
-                                           accountRecordId, tenantRecordId);
+                                           searchKey1, searchKey2);
         }
     }
 }

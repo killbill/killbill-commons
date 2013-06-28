@@ -22,7 +22,7 @@ public interface BusPersistentEvent {
 
     public UUID getUserToken();
 
-    public Long getTenantRecordId();
+    public Long getSearchKey2();
 
-    public Long getAccountRecordId();
+    public Long getSearchKey1();
 }

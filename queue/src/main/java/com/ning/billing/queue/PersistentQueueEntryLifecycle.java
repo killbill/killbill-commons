@@ -29,9 +29,9 @@ public interface PersistentQueueEntryLifecycle {
         REMOVED
     }
 
-    public Long getTenantRecordId();
+    public Long getSearchKey2();
 
-    public Long getAccountRecordId();
+    public Long getSearchKey1();
 
     public String getOwner();
 

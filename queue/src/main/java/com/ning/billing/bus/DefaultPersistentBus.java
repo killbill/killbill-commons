@@ -124,7 +124,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         int result = 0;
         for (final BusEventEntry cur : events) {
-            final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeAccountAndTenantRecordId(cur.getBusEventJson(), cur.getAccountRecordId(), cur.getTenantRecordId());
+            final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeSearchKeys(cur.getBusEventJson(), cur.getSearchKey1(), cur.getSearchKey2());
             final BusPersistentEvent evt = deserializeEvent(cur.getBusEventClass(), objectMapper, jsonWithAccountAndTenantRecorId);
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
@@ -158,7 +158,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         for (final BusEventEntry entry : entries) {
             final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getId(), now, tableName) == 1);
             if (claimed) {
-                dao.insertClaimedHistory(Hostname.get(), now, entry.getId(), entry.getAccountRecordId(), entry.getTenantRecordId());
+                dao.insertClaimedHistory(Hostname.get(), now, entry.getId(), entry.getSearchKey1(), entry.getSearchKey2());
                 claimedEntries.add(entry);
             }
         }
@@ -213,20 +213,23 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private void postFromTransaction(final BusPersistentEvent event, final PersistentBusSqlDao transactional) {
         try {
             final String json = objectMapper.writeValueAsString(event);
-            final BusEventEntry entry = new BusEventEntry(Hostname.get(), event.getClass().getName(), json, event.getUserToken(), event.getAccountRecordId(), event.getTenantRecordId());
+            final BusEventEntry entry = new BusEventEntry(Hostname.get(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
             transactional.insertBusEvent(entry, tableName);
         } catch (Exception e) {
             log.error("Failed to post BusEvent " + event, e);
         }
     }
 
-    private String tweakJsonToIncludeAccountAndTenantRecordId(final String input, final Long accountRecordId, final Long tenantRecordId) {
+    // TODO Fix searchKey -> accountRecordId,...
+    private String tweakJsonToIncludeSearchKeys(final String input, final Long searchKey1, final Long searchKey2) {
         final int lastIndexPriorFinalBracket = input.lastIndexOf("}");
         final StringBuilder tmp = new StringBuilder(input.substring(0, lastIndexPriorFinalBracket));
-        tmp.append(",\"accountRecordId\":");
-        tmp.append(accountRecordId);
-        tmp.append(",\"tenantRecordId\":");
-        tmp.append(tenantRecordId);
+        //tmp.append(",\"accountRecordId\":");
+        tmp.append(",\"searchKey1\":");
+        tmp.append(searchKey1);
+        //tmp.append(",\"tenantRecordId\":");
+        tmp.append(",\"searchKey2\":");
+        tmp.append(searchKey2);
         tmp.append("}");
         return tmp.toString();
     }

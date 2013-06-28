@@ -75,8 +75,8 @@ public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>,
     public void insertClaimedHistory(@Bind("ownerId") String owner,
                                      @Bind("claimedDate") Date claimedDate,
                                      @Bind("busEventId") long id,
-                                     @Bind("accountRecordId") long accountRecordId,
-                                     @Bind("tenantRecordId") long tenantRecordId);
+                                     @Bind("searchKey1") long searchKey1,
+                                     @Bind("searchKey2") long searchKey2);
 
     public static class PersistentBusSqlBinder extends BinderBase implements Binder<Bind, BusEventEntry> {
 
@@ -90,8 +90,8 @@ public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>,
             stmt.bind("processingAvailableDate", getDate(evt.getNextAvailableDate()));
             stmt.bind("processingOwner", evt.getOwner());
             stmt.bind("processingState", PersistentQueueEntryLifecycleState.AVAILABLE.toString());
-            stmt.bind("accountRecordId", evt.getAccountRecordId());
-            stmt.bind("tenantRecordId", evt.getTenantRecordId());
+            stmt.bind("searchKey1", evt.getSearchKey1());
+            stmt.bind("searchKey2", evt.getSearchKey2());
         }
     }
 
@@ -109,11 +109,11 @@ public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>,
             final DateTime nextAvailableDate = getDateTime(r, "processing_available_date");
             final String processingOwner = r.getString("processing_owner");
             final PersistentQueueEntryLifecycleState processingState = PersistentQueueEntryLifecycleState.valueOf(r.getString("processing_state"));
-            final Long accountRecordId = r.getLong("account_record_id");
-            final Long tenantRecordId = r.getLong("tenant_record_id");
+            final Long searchKey1 = r.getLong("search_key1");
+            final Long searchKey2 = r.getLong("search_key2");
 
             return new BusEventEntry(recordId, createdOwner, processingOwner, nextAvailableDate, processingState, className,
-                                     eventJson, userToken, accountRecordId, tenantRecordId);
+                                     eventJson, userToken, searchKey1, searchKey2);
         }
     }
 }

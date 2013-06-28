@@ -34,13 +34,13 @@ public class DefaultNotification implements Notification {
     private final UUID userToken;
     private final UUID futureUserToken;
     private final DateTime effectiveDate;
-    private final Long accountRecordId;
-    private final Long tenantRecordId;
+    private final Long searchKey1;
+    private final Long searchKey2;
 
     public DefaultNotification(final Long recordId, final String createdOwner, final String owner, final String queueName,
                                final DateTime nextAvailableDate, final PersistentQueueEntryLifecycleState lifecycleState,
                                final String notificationKeyClass, final String notificationKey, final UUID userToken, final UUID futureUserToken,
-                               final DateTime effectiveDate, final Long accountRecordId, final Long tenantRecordId) {
+                               final DateTime effectiveDate, final Long searchKey1, final Long searchKey2) {
         this.recordId = recordId;
         this.owner = owner;
         this.createdOwner = createdOwner;
@@ -52,15 +52,15 @@ public class DefaultNotification implements Notification {
         this.userToken = userToken;
         this.futureUserToken = futureUserToken;
         this.effectiveDate = effectiveDate;
-        this.accountRecordId = accountRecordId;
-        this.tenantRecordId = tenantRecordId;
+        this.searchKey1 = searchKey1;
+        this.searchKey2 = searchKey2;
     }
 
     public DefaultNotification(final String queueName, final String createdOwner, final String notificationKeyClass,
                                final String notificationKey, final UUID userToken, final UUID futureUserToken, final DateTime effectiveDate,
-                               final Long accountRecordId, final Long tenantRecordId) {
+                               final Long searchKey1, final Long searchKey2) {
         this(-1L, createdOwner, null, queueName, null, PersistentQueueEntryLifecycleState.AVAILABLE,
-             notificationKeyClass, notificationKey, userToken, futureUserToken, effectiveDate, accountRecordId, tenantRecordId);
+             notificationKeyClass, notificationKey, userToken, futureUserToken, effectiveDate, searchKey1, searchKey2);
     }
 
 
@@ -139,13 +139,13 @@ public class DefaultNotification implements Notification {
     }
 
     @Override
-    public Long getAccountRecordId() {
-        return accountRecordId;
+    public Long getSearchKey1() {
+        return searchKey1;
     }
 
     @Override
-    public Long getTenantRecordId() {
-        return tenantRecordId;
+    public Long getSearchKey2() {
+        return searchKey2;
     }
 
     @Override
@@ -165,7 +165,7 @@ public class DefaultNotification implements Notification {
         if (recordId != that.recordId) {
             return false;
         }
-        if (accountRecordId != null ? !accountRecordId.equals(that.accountRecordId) : that.accountRecordId != null) {
+        if (searchKey1 != null ? !searchKey1.equals(that.searchKey1) : that.searchKey1 != null) {
             return false;
         }
         if (createdOwner != null ? !createdOwner.equals(that.createdOwner) : that.createdOwner != null) {
@@ -195,7 +195,7 @@ public class DefaultNotification implements Notification {
         if (queueName != null ? !queueName.equals(that.queueName) : that.queueName != null) {
             return false;
         }
-        if (tenantRecordId != null ? !tenantRecordId.equals(that.tenantRecordId) : that.tenantRecordId != null) {
+        if (searchKey2 != null ? !searchKey2.equals(that.searchKey2) : that.searchKey2 != null) {
             return false;
         }
         if (userToken != null ? !userToken.equals(that.userToken) : that.userToken != null) {
@@ -219,8 +219,8 @@ public class DefaultNotification implements Notification {
         result = 31 * result + (userToken != null ? userToken.hashCode() : 0);
         result = 31 * result + (futureUserToken != null ? futureUserToken.hashCode() : 0);
         result = 31 * result + (effectiveDate != null ? effectiveDate.hashCode() : 0);
-        result = 31 * result + (accountRecordId != null ? accountRecordId.hashCode() : 0);
-        result = 31 * result + (tenantRecordId != null ? tenantRecordId.hashCode() : 0);
+        result = 31 * result + (searchKey1 != null ? searchKey1.hashCode() : 0);
+        result = 31 * result + (searchKey2 != null ? searchKey2.hashCode() : 0);
         return result;
     }
 
@@ -239,8 +239,8 @@ public class DefaultNotification implements Notification {
         sb.append(", userToken=").append(userToken);
         sb.append(", futureUserToken=").append(futureUserToken);
         sb.append(", effectiveDate=").append(effectiveDate);
-        sb.append(", accountRecordId=").append(accountRecordId);
-        sb.append(", tenantRecordId=").append(tenantRecordId);
+        sb.append(", searchKey1=").append(searchKey1);
+        sb.append(", searchKey2=").append(searchKey2);
         sb.append('}');
         return sb.toString();
     }

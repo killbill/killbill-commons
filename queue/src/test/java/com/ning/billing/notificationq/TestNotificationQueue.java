@@ -117,7 +117,7 @@ public class TestNotificationQueue extends TestSetup {
                                                                              "foo",
                                                                              new NotificationQueueHandler() {
                                                                                  @Override
-                                                                                 public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+                                                                                 public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                                                                                      synchronized (expectedNotifications) {
                                                                                          log.info("Handler received key: " + notificationKey);
 
@@ -176,7 +176,7 @@ public class TestNotificationQueue extends TestSetup {
                                                                              "many",
                                                                              new NotificationQueueHandler() {
                                                                                  @Override
-                                                                                 public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+                                                                                 public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                                                                                      synchronized (expectedNotifications) {
                                                                                          log.info("Handler received key: " + notificationKey.toString());
 
@@ -263,7 +263,7 @@ public class TestNotificationQueue extends TestSetup {
 
         final NotificationQueue queueFred = queueService.createNotificationQueue("UtilTest", "Fred", new NotificationQueueHandler() {
             @Override
-            public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+            public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                 log.info("Fred received key: " + notificationKey);
                 expectedNotificationsFred.put(notificationKey, Boolean.TRUE);
                 eventsReceived++;
@@ -272,7 +272,7 @@ public class TestNotificationQueue extends TestSetup {
 
         final NotificationQueue queueBarney = queueService.createNotificationQueue("UtilTest", "Barney", new NotificationQueueHandler() {
             @Override
-            public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+            public void handleReadyNotification(final NotificationKey notificationKey, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                 log.info("Barney received key: " + notificationKey);
                 expectedNotificationsBarney.put(notificationKey, Boolean.TRUE);
                 eventsReceived++;

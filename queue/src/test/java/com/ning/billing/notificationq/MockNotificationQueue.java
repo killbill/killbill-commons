@@ -72,33 +72,33 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(notificationKey);
-        final Long tenantRecordIdWithNull =  Objects.firstNonNull(tenantRecordId, new Long(0));
+        final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
         final Notification notification = new DefaultNotification("MockQueue", hostname, notificationKey.getClass().getName(), json, userToken,
-                                                                  UUID.randomUUID(), futureNotificationTime, accountRecordId, tenantRecordIdWithNull);
+                                                                  UUID.randomUUID(), futureNotificationTime, searchKey1, searchKey2WithNull);
         synchronized (notifications) {
             notifications.add(notification);
         }
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long accountRecordId, final Long tenantRecordId) throws IOException {
-        recordFutureNotification(futureNotificationTime, notificationKey, userToken, accountRecordId, tenantRecordId);
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+        recordFutureNotification(futureNotificationTime, notificationKey, userToken, searchKey1, searchKey2);
     }
 
 
     @Override
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long accountRecordId) {
-        return getFutureNotificationsForAccountAndTypeFromTransaction(type, accountRecordId, null);
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
+        return getFutureNotificationsForAccountAndTypeFromTransaction(type, searchKey1, null);
     }
 
     @Override
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long accountRecordId, final Transmogrifier transmogrifier) {
+    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final Map<Notification, T> result = new HashMap<Notification, T>();
         synchronized (notifications) {
             for (final Notification notification : notifications) {
-                if (notification.getAccountRecordId().equals(accountRecordId) &&
+                if (notification.getSearchKey1().equals(searchKey1) &&
                     type.getName().equals(notification.getNotificationKeyClass()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
                     result.put(notification, (T) DefaultQueueLifecycle.deserializeEvent(notification.getNotificationKeyClass(), objectMapper, notification.getNotificationKey()));

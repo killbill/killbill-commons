@@ -10,13 +10,13 @@ public abstract class DefaultBusPersistentEvent implements BusPersistentEvent {
 
 
     private final UUID userToken;
-    private final Long tenantRecordId;
-    private final Long accountRecordId;
+    private final Long searchKey2;
+    private final Long searchKey1;
 
-    public DefaultBusPersistentEvent(final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+    public DefaultBusPersistentEvent(final UUID userToken, final Long searchKey1, final Long searchKey2) {
         this.userToken = userToken;
-        this.tenantRecordId = tenantRecordId;
-        this.accountRecordId = accountRecordId;
+        this.searchKey2 = searchKey2;
+        this.searchKey1 = searchKey1;
     }
 
     @Override
@@ -26,13 +26,13 @@ public abstract class DefaultBusPersistentEvent implements BusPersistentEvent {
 
     @JsonIgnore
     @Override
-    public Long getTenantRecordId() {
-        return tenantRecordId;
+    public Long getSearchKey2() {
+        return searchKey2;
     }
 
     @JsonIgnore
     @Override
-    public Long getAccountRecordId() {
-        return accountRecordId;
+    public Long getSearchKey1() {
+        return searchKey1;
     }
 }

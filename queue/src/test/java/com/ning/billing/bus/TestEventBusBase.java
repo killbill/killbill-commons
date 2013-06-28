@@ -46,9 +46,9 @@ public class TestEventBusBase {
                        @JsonProperty("value") final Long value,
                        @JsonProperty("token") final UUID token,
                        @JsonProperty("type") final String type,
-                       @JsonProperty("accountRecordId") final Long accountRecordId,
-                       @JsonProperty("tenantRecordId") final Long tenantRecordId) {
-            super(token, accountRecordId, tenantRecordId);
+                       @JsonProperty("searchKey1") final Long searchKey1,
+                       @JsonProperty("searchKey2") final Long searchKey2) {
+            super(token, searchKey1, searchKey2);
             this.name = name;
             this.value = value;
             this.type = type;
@@ -74,9 +74,9 @@ public class TestEventBusBase {
                                     @JsonProperty("value") final Long value,
                                     @JsonProperty("token") final UUID token,
                                     @JsonProperty("type") final String type,
-                                    @JsonProperty("accountRecordId") final Long accountRecordId,
-                                    @JsonProperty("tenantRecordId") final Long tenantRecordId) {
-            super(name, value, token, type, accountRecordId, tenantRecordId);
+                                    @JsonProperty("searchKey1") final Long searchKey1,
+                                    @JsonProperty("searchKey2") final Long searchKey2) {
+            super(name, value, token, type, searchKey1, searchKey2);
         }
     }
 
@@ -91,9 +91,9 @@ public class TestEventBusBase {
                             @JsonProperty("value") final Double value,
                             @JsonProperty("token") final UUID token,
                             @JsonProperty("type") final String type,
-                            @JsonProperty("accountRecordId") final Long accountRecordId,
-                            @JsonProperty("tenantRecordId") final Long tenantRecordId) {
-            super(token, accountRecordId, tenantRecordId);
+                            @JsonProperty("searchKey1") final Long searchKey1,
+                            @JsonProperty("searchKey2") final Long searchKey2) {
+            super(token, searchKey1, searchKey2);
             this.name = name;
             this.value = value;
             this.type = type;

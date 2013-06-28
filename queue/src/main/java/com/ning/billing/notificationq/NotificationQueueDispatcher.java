@@ -205,7 +205,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
         }
         final DateTime beforeProcessing =  clock.getUTCNow();
-        handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getAccountRecordId(), notification.getTenantRecordId());
+        handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getSearchKey1(), notification.getSearchKey2());
         final DateTime afterProcessing =  clock.getUTCNow();
         perQueueHistogramProcessingTime.update(afterProcessing.getMillis() - beforeProcessing.getMillis());
         processedNotificationsSinceStart.inc();
@@ -239,7 +239,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
             if (claimed) {
                 claimedNotifications.add(cur);
-                dao.insertClaimedHistory(Hostname.get(), now, cur.getRecordId(), cur.getAccountRecordId(), cur.getTenantRecordId());
+                dao.insertClaimedHistory(Hostname.get(), now, cur.getRecordId(), cur.getSearchKey1(), cur.getSearchKey2());
             }
         }
 
