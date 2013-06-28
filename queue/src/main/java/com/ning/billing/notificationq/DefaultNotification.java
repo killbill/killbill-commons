@@ -23,8 +23,7 @@ import org.joda.time.DateTime;
 
 public class DefaultNotification implements Notification {
 
-    private final long ordering;
-    private final UUID id;
+    private final Long recordId;
     private final String owner;
     private final String createdOwner;
     private final String queueName;
@@ -38,12 +37,11 @@ public class DefaultNotification implements Notification {
     private final Long accountRecordId;
     private final Long tenantRecordId;
 
-    public DefaultNotification(final long ordering, final UUID id, final String createdOwner, final String owner, final String queueName,
+    public DefaultNotification(final Long recordId, final String createdOwner, final String owner, final String queueName,
                                final DateTime nextAvailableDate, final PersistentQueueEntryLifecycleState lifecycleState,
                                final String notificationKeyClass, final String notificationKey, final UUID userToken, final UUID futureUserToken,
                                final DateTime effectiveDate, final Long accountRecordId, final Long tenantRecordId) {
-        this.ordering = ordering;
-        this.id = id;
+        this.recordId = recordId;
         this.owner = owner;
         this.createdOwner = createdOwner;
         this.queueName = queueName;
@@ -61,18 +59,14 @@ public class DefaultNotification implements Notification {
     public DefaultNotification(final String queueName, final String createdOwner, final String notificationKeyClass,
                                final String notificationKey, final UUID userToken, final UUID futureUserToken, final DateTime effectiveDate,
                                final Long accountRecordId, final Long tenantRecordId) {
-        this(-1L, UUID.randomUUID(), createdOwner, null, queueName, null, PersistentQueueEntryLifecycleState.AVAILABLE,
+        this(-1L, createdOwner, null, queueName, null, PersistentQueueEntryLifecycleState.AVAILABLE,
              notificationKeyClass, notificationKey, userToken, futureUserToken, effectiveDate, accountRecordId, tenantRecordId);
     }
 
-    @Override
-    public UUID getId() {
-        return id;
-    }
 
     @Override
-    public Long getOrdering() {
-        return ordering;
+    public Long getRecordId() {
+        return recordId;
     }
 
     @Override
@@ -168,7 +162,7 @@ public class DefaultNotification implements Notification {
 
         final DefaultNotification that = (DefaultNotification) o;
 
-        if (ordering != that.ordering) {
+        if (recordId != that.recordId) {
             return false;
         }
         if (accountRecordId != null ? !accountRecordId.equals(that.accountRecordId) : that.accountRecordId != null) {
@@ -214,7 +208,7 @@ public class DefaultNotification implements Notification {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (ordering ^ (ordering >>> 32));
+        result = 31 * result + (int) (recordId ^ (recordId >>> 32));
         result = 31 * result + (owner != null ? owner.hashCode() : 0);
         result = 31 * result + (createdOwner != null ? createdOwner.hashCode() : 0);
         result = 31 * result + (queueName != null ? queueName.hashCode() : 0);
@@ -234,7 +228,7 @@ public class DefaultNotification implements Notification {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("DefaultNotification");
-        sb.append("{ordering=").append(ordering);
+        sb.append("{recordId=").append(recordId);
         sb.append(", owner='").append(owner).append('\'');
         sb.append(", createdOwner='").append(createdOwner).append('\'');
         sb.append(", queueName='").append(queueName).append('\'');

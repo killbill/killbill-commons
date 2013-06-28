@@ -30,7 +30,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
-import com.ning.billing.queue.PersistentQueueBase;
+import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -101,7 +101,7 @@ public class MockNotificationQueue implements NotificationQueue {
                 if (notification.getAccountRecordId().equals(accountRecordId) &&
                     type.getName().equals(notification.getNotificationKeyClass()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
-                    result.put(notification, (T) PersistentQueueBase.deserializeEvent(notification.getNotificationKeyClass(), objectMapper, notification.getNotificationKey()));
+                    result.put(notification, (T) DefaultQueueLifecycle.deserializeEvent(notification.getNotificationKeyClass(), objectMapper, notification.getNotificationKey()));
                 }
             }
         }
@@ -111,15 +111,15 @@ public class MockNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void removeNotification(final UUID notificationId) {
-        removeNotificationFromTransaction(null, notificationId);
+    public void removeNotification(final Long recordId) {
+        removeNotificationFromTransaction(null, recordId);
     }
 
     @Override
-    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final UUID notificationId) {
+    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
         synchronized (notifications) {
             for (final Notification cur : notifications) {
-                if (cur.getId().equals(notificationId)) {
+                if (cur.getRecordId().equals(recordId)) {
                     notifications.remove(cur);
                     break;
                 }

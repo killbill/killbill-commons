@@ -24,9 +24,7 @@ import com.ning.billing.queue.PersistentQueueEntryLifecycle;
 
 public interface Notification extends PersistentQueueEntryLifecycle {
 
-    public UUID getId();
-
-    public Long getOrdering();
+    public Long getRecordId();
 
     public String getNotificationKeyClass();
 

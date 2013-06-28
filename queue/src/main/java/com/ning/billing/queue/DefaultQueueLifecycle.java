@@ -29,9 +29,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 
 
-public abstract class PersistentQueueBase implements QueueLifecycle {
+public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
-    private static final Logger log = LoggerFactory.getLogger(PersistentQueueBase.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultQueueLifecycle.class);
 
     private static final long waitTimeoutMs = 15L * 1000L; // 15 seconds
 
@@ -50,7 +50,7 @@ public abstract class PersistentQueueBase implements QueueLifecycle {
     private final AtomicBoolean isProcessingSuspended;
 
 
-    public PersistentQueueBase(final String svcQName, final Executor executor, final int nbThreads, final PersistentQueueConfig config) {
+    public DefaultQueueLifecycle(final String svcQName, final Executor executor, final int nbThreads, final PersistentQueueConfig config) {
         this.executor = executor;
         this.nbThreads = nbThreads;
         this.svcQName = svcQName;
@@ -74,7 +74,7 @@ public abstract class PersistentQueueBase implements QueueLifecycle {
         isProcessingEvents = true;
         curActiveThreads = 0;
 
-        final PersistentQueueBase thePersistentQ = this;
+        final DefaultQueueLifecycle thePersistentQ = this;
         final CountDownLatch doneInitialization = new CountDownLatch(nbThreads);
 
         log.info(String.format("%s: Starting with %d threads",
@@ -192,7 +192,6 @@ public abstract class PersistentQueueBase implements QueueLifecycle {
         return isProcessingSuspended.get();
     }
 
-    // TODO PIERRE Better API?
     public static <T> T deserializeEvent(final String className, final ObjectMapper objectMapper, final String json) {
         try {
             final Class<?> claz = Class.forName(className);

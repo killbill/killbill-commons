@@ -76,20 +76,20 @@ public class TestNotificationSqlDao extends TestSetup {
         assertEquals(notification.getNextAvailableDate(), null);
 
         final DateTime nextAvailable = now.plusMinutes(5);
-        final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getId().toString(), now.toDate());
+        final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getRecordId(), now.toDate());
         assertEquals(res, 1);
-        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getId().toString(), accountRecordId, TENANT_RECORD_ID);
+        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), accountRecordId, TENANT_RECORD_ID);
 
-        notification = fetchNotification(notification.getId().toString());
+        notification = fetchNotification(notification.getRecordId());
         assertEquals(notification.getNotificationKey(), notificationKey);
         validateDate(notification.getEffectiveDate(), effDt);
         assertEquals(notification.getOwner(), ownerId);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
         validateDate(notification.getNextAvailableDate(), nextAvailable);
 
-        dao.clearNotification(notification.getId().toString(), ownerId);
+        dao.clearNotification(notification.getRecordId(), ownerId);
 
-        notification = fetchNotification(notification.getId().toString());
+        notification = fetchNotification(notification.getRecordId());
         assertEquals(notification.getNotificationKey(), notificationKey);
         validateDate(notification.getEffectiveDate(), effDt);
         //assertEquals(notification.getOwner(), null);
@@ -97,13 +97,12 @@ public class TestNotificationSqlDao extends TestSetup {
         validateDate(notification.getNextAvailableDate(), nextAvailable);
     }
 
-    private Notification fetchNotification(final String notificationId) {
+    private Notification fetchNotification(final Long recordId) {
         return getDBI().withHandle(new HandleCallback<Notification>() {
             @Override
             public Notification withHandle(final Handle handle) throws Exception {
                 return handle.createQuery("   select" +
                                           " record_id " +
-                                          ", id" +
                                           ", class_name" +
                                           ", notification_key" +
                                           ", user_token" +
@@ -119,7 +118,7 @@ public class TestNotificationSqlDao extends TestSetup {
                                           ", tenant_record_id" +
                                           "    from notifications " +
                                           " where " +
-                                          " id = '" + notificationId + "';")
+                                          " record_id = '" + recordId + "';")
                              .map(new NotificationSqlMapper())
                              .first();
             }

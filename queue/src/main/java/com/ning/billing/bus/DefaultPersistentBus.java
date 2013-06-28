@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,8 +19,11 @@ package com.ning.billing.bus;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 
@@ -35,16 +38,18 @@ import org.slf4j.LoggerFactory;
 import com.ning.billing.Hostname;
 import com.ning.billing.bus.dao.BusEventEntry;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
-import com.ning.billing.queue.PersistentQueueBase;
+import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
 
 import com.google.common.eventbus.EventBus;
 
-public class DefaultPersistentBus extends PersistentQueueBase implements PersistentBus {
+public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
     private static final long DELTA_IN_PROCESSING_TIME_MS = 1000L * 60L * 5L; // 5 minutes
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
+
+    private final static int QUEUE_CAPACITY = 3000;
 
     private final PersistentBusSqlDao dao;
 
@@ -54,6 +59,9 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
     private volatile boolean isStarted;
 
     private final String tableName;
+
+    private final Queue inflightEvents;
+    private final AtomicBoolean isOverflowedToDisk;
 
     private static final class EventBusDelegate extends EventBus {
 
@@ -77,7 +85,7 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
     }
 
     @Inject
-    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config, final @BusTableName String busTableName) {
+    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config, final String busTableName) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -90,6 +98,8 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
         this.clock = clock;
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.tableName = busTableName;
+        this.inflightEvents = new LinkedBlockingQueue(QUEUE_CAPACITY);
+        this.isOverflowedToDisk = new AtomicBoolean(false);
         this.isStarted = false;
     }
 
@@ -124,12 +134,22 @@ public class DefaultPersistentBus extends PersistentQueueBase implements Persist
         return result;
     }
 
+
     @Override
     public boolean isStarted() {
         return isStarted;
     }
 
     private List<BusEventEntry> getNextBusEvent() {
+        return getNextBusEventFromDB();
+    }
+
+    private List<BusEventEntry> getNextBusEventFromInFlightQ() {
+        return null;
+
+    }
+
+    private List<BusEventEntry> getNextBusEventFromDB() {
         final Date now = clock.getUTCNow().toDate();
         final Date nextAvailable = clock.getUTCNow().plus(DELTA_IN_PROCESSING_TIME_MS).toDate();
 

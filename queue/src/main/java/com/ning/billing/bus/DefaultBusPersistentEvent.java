@@ -1,4 +1,4 @@
-package com.ning.billing;
+package com.ning.billing.bus;
 
 import java.util.UUID;
 
@@ -6,14 +6,14 @@ import com.ning.billing.bus.BusPersistentEvent;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public abstract class DefaultBusInternalEvent implements BusPersistentEvent {
+public abstract class DefaultBusPersistentEvent implements BusPersistentEvent {
 
 
     private final UUID userToken;
     private final Long tenantRecordId;
     private final Long accountRecordId;
 
-    public DefaultBusInternalEvent(final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
+    public DefaultBusPersistentEvent(final UUID userToken, final Long accountRecordId, final Long tenantRecordId) {
         this.userToken = userToken;
         this.tenantRecordId = tenantRecordId;
         this.accountRecordId = accountRecordId;

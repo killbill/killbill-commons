@@ -74,10 +74,10 @@ public interface NotificationQueue extends QueueLifecycle {
     public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long accountRecordId,
                                                                                                     final Transmogrifier transmogrifier);
 
-    public void removeNotification(final UUID notificationId);
+    public void removeNotification(final Long recordId);
 
     public void removeNotificationFromTransaction(final Transmogrifier transmogrifier,
-                                                  final UUID notificationId);
+                                                  final Long recordId);
 
     /**
      * @return the name of that queue

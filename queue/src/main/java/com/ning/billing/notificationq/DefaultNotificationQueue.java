@@ -17,7 +17,6 @@
 package com.ning.billing.notificationq;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
-import com.ning.billing.queue.PersistentQueueBase;
+import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -107,7 +106,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         Map<Notification, T> result = new HashMap<Notification, T>(notifications.size());
         for (Notification cur : notifications) {
             if (type.getName().equals(cur.getNotificationKeyClass())) {
-                result.put(cur, (T) PersistentQueueBase.deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey()));
+                result.put(cur, (T) DefaultQueueLifecycle.deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey()));
             }
         }
         return result;
@@ -115,14 +114,14 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void removeNotification(final UUID notificationId) {
-        dao.removeNotification(notificationId.toString());
+    public void removeNotification(final Long recordId) {
+        dao.removeNotification(recordId);
     }
 
     @Override
-    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final UUID notificationId) {
+    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        transactionalNotificationDao.removeNotification(notificationId.toString());
+        transactionalNotificationDao.removeNotification(recordId);
     }
 
 

@@ -60,16 +60,16 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
                                                                @Bind("accountRecordId") long accountRecordId);
 
     @SqlUpdate
-    public void removeNotification(@Bind("id") String id);
+    public void removeNotification(@Bind("record") Long id);
 
     @SqlUpdate
     public int claimNotification(@Bind("owner") String owner,
                                  @Bind("nextAvailable") Date nextAvailable,
-                                 @Bind("id") String id,
+                                 @Bind("recordId") Long recordId,
                                  @Bind("now") Date now);
 
     @SqlUpdate
-    public void clearNotification(@Bind("id") String id,
+    public void clearNotification(@Bind("recordId") Long recordId,
                                   @Bind("owner") String owner);
 
     @SqlUpdate
@@ -78,7 +78,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
     @SqlUpdate
     public void insertClaimedHistory(@Bind("ownerId") String ownerId,
                                      @Bind("claimedDate") Date claimedDate,
-                                     @Bind("notificationId") String notificationId,
+                                     @Bind("notificationRecordId") Long notificationRecordId,
                                      @Bind("accountRecordId") long accountRecordId,
                                      @Bind("tenantRecordId") long tenantRecordId);
 
@@ -86,7 +86,6 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
 
         @Override
         public void bind(@SuppressWarnings("rawtypes") final SQLStatement stmt, final Bind bind, final Notification evt) {
-            stmt.bind("id", evt.getId().toString());
             stmt.bind("createdDate", getDate(new DateTime()));
             stmt.bind("creatingOwner", evt.getCreatedOwner());
             stmt.bind("className", evt.getNotificationKeyClass());
@@ -109,8 +108,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
         public Notification map(final int index, final ResultSet r, final StatementContext ctx)
                 throws SQLException {
 
-            final Long ordering = r.getLong("record_id");
-            final UUID id = getUUID(r, "id");
+            final Long recordId = r.getLong("record_id");
             final String createdOwner = r.getString("creating_owner");
             final String className = r.getString("class_name");
             final String notificationKey = r.getString("notification_key");
@@ -124,7 +122,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             final Long accountRecordId = r.getLong("account_record_id");
             final Long tenantRecordId = r.getLong("tenant_record_id");
 
-            return new DefaultNotification(ordering, id, createdOwner, processingOwner, queueName, nextAvailableDate,
+            return new DefaultNotification(recordId, createdOwner, processingOwner, queueName, nextAvailableDate,
                                            processingState, className, notificationKey, userToken, futureUserToken, effectiveDate,
                                            accountRecordId, tenantRecordId);
         }

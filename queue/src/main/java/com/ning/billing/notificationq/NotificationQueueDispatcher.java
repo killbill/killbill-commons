@@ -34,17 +34,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
 import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
-import com.ning.billing.queue.PersistentQueueBase;
 
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 import com.yammer.metrics.core.Gauge;
 import com.yammer.metrics.core.Histogram;
 
-public class NotificationQueueDispatcher extends PersistentQueueBase {
+public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     protected static final Logger log = LoggerFactory.getLogger(NotificationQueueDispatcher.class);
 
@@ -180,7 +180,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
             handleNotificationWithMetrics(handler, cur, key);
             result++;
             clearNotification(cur);
-            logDebug("done handling notification %s, key = %s for time %s", cur.getId(), cur.getNotificationKey(), cur.getEffectiveDate());
+            logDebug("done handling notification %s, key = %s for time %s", cur.getRecordId().toString(), cur.getNotificationKey(), cur.getEffectiveDate());
         }
         return result;
     }
@@ -212,7 +212,7 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
     }
 
     private void clearNotification(final Notification cleared) {
-        dao.clearNotification(cleared.getId().toString(), Hostname.get());
+        dao.clearNotification(cleared.getRecordId(), Hostname.get());
     }
 
     private List<Notification> getReadyNotifications() {
@@ -231,15 +231,15 @@ public class NotificationQueueDispatcher extends PersistentQueueBase {
             }
 
             logDebug("about to claim notification %s,  key = %s for time %s",
-                     cur.getId(), cur.getNotificationKey(), cur.getEffectiveDate());
+                     cur.getRecordId(), cur.getNotificationKey(), cur.getEffectiveDate());
 
-            final boolean claimed = (dao.claimNotification(Hostname.get(), nextAvailable, cur.getId().toString(), now) == 1);
+            final boolean claimed = (dao.claimNotification(Hostname.get(), nextAvailable, cur.getRecordId(), now) == 1);
             logDebug("claimed notification %s, key = %s for time %s result = %s",
-                     cur.getId(), cur.getNotificationKey(), cur.getEffectiveDate(), claimed);
+                     cur.getRecordId(), cur.getNotificationKey(), cur.getEffectiveDate(), claimed);
 
             if (claimed) {
                 claimedNotifications.add(cur);
-                dao.insertClaimedHistory(Hostname.get(), now, cur.getId().toString(), cur.getAccountRecordId(), cur.getTenantRecordId());
+                dao.insertClaimedHistory(Hostname.get(), now, cur.getRecordId(), cur.getAccountRecordId(), cur.getTenantRecordId());
             }
         }
 

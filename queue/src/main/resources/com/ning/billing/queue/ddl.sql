@@ -3,7 +3,6 @@
 DROP TABLE IF EXISTS notifications;
 CREATE TABLE notifications (
     record_id int(11) unsigned NOT NULL AUTO_INCREMENT,
-    id char(36) NOT NULL,
     created_date datetime NOT NULL,
     class_name varchar(256) NOT NULL,
     notification_key varchar(2048) NOT NULL,
@@ -19,10 +18,9 @@ CREATE TABLE notifications (
     tenant_record_id int(11) unsigned default null,
     PRIMARY KEY(record_id)
 );
-CREATE UNIQUE INDEX notifications_id ON notifications(id);
 CREATE INDEX  `idx_comp_where` ON notifications (`effective_date`, `processing_state`,`processing_owner`,`processing_available_date`);
 CREATE INDEX  `idx_update` ON notifications (`processing_state`,`processing_owner`,`processing_available_date`);
-CREATE INDEX  `idx_get_ready` ON notifications (`effective_date`,`created_date`,`id`);
+CREATE INDEX  `idx_get_ready` ON notifications (`effective_date`,`created_date`);
 CREATE INDEX notifications_tenant_account_record_id ON notifications(tenant_record_id, account_record_id);
 
 DROP TABLE IF EXISTS claimed_notifications;
@@ -30,7 +28,7 @@ CREATE TABLE claimed_notifications (
     record_id int(11) unsigned NOT NULL AUTO_INCREMENT,
     owner_id varchar(64) NOT NULL,
     claimed_date datetime NOT NULL,
-    notification_id char(36) NOT NULL,
+    notification_record_id int(11) unsigned NOT NULL,
     account_record_id int(11) unsigned default null,
     tenant_record_id int(11) unsigned default null,
     PRIMARY KEY(record_id)
