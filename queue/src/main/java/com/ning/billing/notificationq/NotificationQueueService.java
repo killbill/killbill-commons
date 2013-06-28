@@ -30,12 +30,12 @@ public interface NotificationQueueService extends QueueLifecycle {
         /**
          * Called for each notification ready
          *
-         * @param notificationKey the notification key associated to that notification entry
+         * @param eventJson the notification key associated to that notification entry
          * @param userToken user token associated with that notification entry
          * @param searchKey1 account record id associated with that notification entry
          * @param searchKey2  tenant record id associated with that notification entry
          */
-        public void handleReadyNotification(NotificationKey notificationKey, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
+        public void handleReadyNotification(NotificationKey eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
     }
 
     public static final class NotificationQueueAlreadyExists extends Exception {

@@ -61,28 +61,28 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        recordFutureNotificationInternal(futureNotificationTime, notificationKey, dao, userToken, searchKey1, searchKey2);
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+        recordFutureNotificationInternal(futureNotificationTime, eventJson, dao, userToken, searchKey1, searchKey2);
 
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey,
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey eventJson,
                                                         final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        recordFutureNotificationInternal(futureNotificationTime, notificationKey, transactionalNotificationDao, userToken, searchKey1, searchKey2);
+        recordFutureNotificationInternal(futureNotificationTime, eventJson, transactionalNotificationDao, userToken, searchKey1, searchKey2);
     }
 
 
 
     private void recordFutureNotificationInternal(final DateTime futureNotificationTime,
-                                                  final NotificationKey notificationKey,
+                                                  final NotificationKey eventJson,
                                                   final NotificationSqlDao thisDao,
                                                   final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final String json = objectMapper.writeValueAsString(notificationKey);
+        final String json = objectMapper.writeValueAsString(eventJson);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
-        final Notification notification = new DefaultNotification(getFullQName(), Hostname.get(), notificationKey.getClass().getName(), json,
+        final Notification notification = new DefaultNotification(getFullQName(), Hostname.get(), eventJson.getClass().getName(), json,
                                                                   userToken, futureUserToken, futureNotificationTime, searchKey1, searchKey2WithNull);
         thisDao.insertNotification(notification);
     }

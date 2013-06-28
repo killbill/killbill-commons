@@ -56,9 +56,9 @@ public class TestNotificationSqlDao extends TestSetup {
         final long searchKey1 = 1242L;
         final String ownerId = UUID.randomUUID().toString();
 
-        final String notificationKey = UUID.randomUUID().toString();
+        final String eventJson = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
-        final Notification notif = new DefaultNotification("testBasic", hostname, notificationKey.getClass().getName(), notificationKey, UUID.randomUUID(), UUID.randomUUID(), effDt,
+        final Notification notif = new DefaultNotification("testBasic", hostname, eventJson.getClass().getName(), eventJson, UUID.randomUUID(), UUID.randomUUID(), effDt,
                                                            searchKey1, TENANT_RECORD_ID);
         dao.insertNotification(notif);
 
@@ -69,7 +69,7 @@ public class TestNotificationSqlDao extends TestSetup {
         assertEquals(notifications.size(), 1);
 
         Notification notification = notifications.get(0);
-        assertEquals(notification.getNotificationKey(), notificationKey);
+        assertEquals(notification.getNotificationKey(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         assertEquals(notification.getOwner(), null);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
@@ -81,7 +81,7 @@ public class TestNotificationSqlDao extends TestSetup {
         dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), searchKey1, TENANT_RECORD_ID);
 
         notification = fetchNotification(notification.getRecordId());
-        assertEquals(notification.getNotificationKey(), notificationKey);
+        assertEquals(notification.getNotificationKey(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         assertEquals(notification.getOwner(), ownerId);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
@@ -90,7 +90,7 @@ public class TestNotificationSqlDao extends TestSetup {
         dao.clearNotification(notification.getRecordId(), ownerId);
 
         notification = fetchNotification(notification.getRecordId());
-        assertEquals(notification.getNotificationKey(), notificationKey);
+        assertEquals(notification.getNotificationKey(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         //assertEquals(notification.getOwner(), null);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
@@ -104,7 +104,7 @@ public class TestNotificationSqlDao extends TestSetup {
                 return handle.createQuery("   select" +
                                           " record_id " +
                                           ", class_name" +
-                                          ", notification_key" +
+                                          ", event_json" +
                                           ", user_token" +
                                           ", future_user_token" +
                                           ", created_date" +

@@ -7,7 +7,7 @@ getReadyNotifications() ::= <<
     select
       record_id
       , class_name
-      , notification_key
+      , event_json
       , user_token
       , future_user_token
       , created_date
@@ -47,7 +47,7 @@ getFutureNotificationsForAccount() ::= <<
 select
     record_id
   , class_name
-  , notification_key
+  , event_json
   , user_token
   , future_user_token
   , created_date
@@ -105,14 +105,14 @@ removeNotificationsByKey() ::= <<
     set
       processing_state = 'REMOVED'
     where
-      notification_key = :notificationKey
+      event_json = :eventJson
     ;
 >>
 
 insertNotification() ::= <<
     insert into notifications (
       class_name
-      , notification_key
+      , event_json
       , user_token
       , future_user_token
       , created_date
@@ -126,7 +126,7 @@ insertNotification() ::= <<
       , search_key2
     ) values (
         :className
-      , :notificationKey
+      , :eventJson
       , :userToken
       , :futureUserToken
       , :createdDate

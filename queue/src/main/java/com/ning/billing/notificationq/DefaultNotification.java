@@ -29,8 +29,8 @@ public class DefaultNotification implements Notification {
     private final String queueName;
     private final DateTime nextAvailableDate;
     private final PersistentQueueEntryLifecycleState lifecycleState;
-    private final String notificationKeyClass;
-    private final String notificationKey;
+    private final String eventJsonClass;
+    private final String eventJson;
     private final UUID userToken;
     private final UUID futureUserToken;
     private final DateTime effectiveDate;
@@ -39,7 +39,7 @@ public class DefaultNotification implements Notification {
 
     public DefaultNotification(final Long recordId, final String createdOwner, final String owner, final String queueName,
                                final DateTime nextAvailableDate, final PersistentQueueEntryLifecycleState lifecycleState,
-                               final String notificationKeyClass, final String notificationKey, final UUID userToken, final UUID futureUserToken,
+                               final String eventJsonClass, final String eventJson, final UUID userToken, final UUID futureUserToken,
                                final DateTime effectiveDate, final Long searchKey1, final Long searchKey2) {
         this.recordId = recordId;
         this.owner = owner;
@@ -47,8 +47,8 @@ public class DefaultNotification implements Notification {
         this.queueName = queueName;
         this.nextAvailableDate = nextAvailableDate;
         this.lifecycleState = lifecycleState;
-        this.notificationKeyClass = notificationKeyClass;
-        this.notificationKey = notificationKey;
+        this.eventJsonClass = eventJsonClass;
+        this.eventJson = eventJson;
         this.userToken = userToken;
         this.futureUserToken = futureUserToken;
         this.effectiveDate = effectiveDate;
@@ -56,11 +56,11 @@ public class DefaultNotification implements Notification {
         this.searchKey2 = searchKey2;
     }
 
-    public DefaultNotification(final String queueName, final String createdOwner, final String notificationKeyClass,
-                               final String notificationKey, final UUID userToken, final UUID futureUserToken, final DateTime effectiveDate,
+    public DefaultNotification(final String queueName, final String createdOwner, final String eventJsonClass,
+                               final String eventJson, final UUID userToken, final UUID futureUserToken, final DateTime effectiveDate,
                                final Long searchKey1, final Long searchKey2) {
         this(-1L, createdOwner, null, queueName, null, PersistentQueueEntryLifecycleState.AVAILABLE,
-             notificationKeyClass, notificationKey, userToken, futureUserToken, effectiveDate, searchKey1, searchKey2);
+             eventJsonClass, eventJson, userToken, futureUserToken, effectiveDate, searchKey1, searchKey2);
     }
 
 
@@ -105,12 +105,12 @@ public class DefaultNotification implements Notification {
 
     @Override
     public String getNotificationKeyClass() {
-        return notificationKeyClass;
+        return eventJsonClass;
     }
 
     @Override
     public String getNotificationKey() {
-        return notificationKey;
+        return eventJson;
     }
 
     @Override
@@ -183,10 +183,10 @@ public class DefaultNotification implements Notification {
         if (nextAvailableDate != null ? !nextAvailableDate.equals(that.nextAvailableDate) : that.nextAvailableDate != null) {
             return false;
         }
-        if (notificationKey != null ? !notificationKey.equals(that.notificationKey) : that.notificationKey != null) {
+        if (eventJson != null ? !eventJson.equals(that.eventJson) : that.eventJson != null) {
             return false;
         }
-        if (notificationKeyClass != null ? !notificationKeyClass.equals(that.notificationKeyClass) : that.notificationKeyClass != null) {
+        if (eventJsonClass != null ? !eventJsonClass.equals(that.eventJsonClass) : that.eventJsonClass != null) {
             return false;
         }
         if (owner != null ? !owner.equals(that.owner) : that.owner != null) {
@@ -214,8 +214,8 @@ public class DefaultNotification implements Notification {
         result = 31 * result + (queueName != null ? queueName.hashCode() : 0);
         result = 31 * result + (nextAvailableDate != null ? nextAvailableDate.hashCode() : 0);
         result = 31 * result + (lifecycleState != null ? lifecycleState.hashCode() : 0);
-        result = 31 * result + (notificationKeyClass != null ? notificationKeyClass.hashCode() : 0);
-        result = 31 * result + (notificationKey != null ? notificationKey.hashCode() : 0);
+        result = 31 * result + (eventJsonClass != null ? eventJsonClass.hashCode() : 0);
+        result = 31 * result + (eventJson != null ? eventJson.hashCode() : 0);
         result = 31 * result + (userToken != null ? userToken.hashCode() : 0);
         result = 31 * result + (futureUserToken != null ? futureUserToken.hashCode() : 0);
         result = 31 * result + (effectiveDate != null ? effectiveDate.hashCode() : 0);
@@ -234,8 +234,8 @@ public class DefaultNotification implements Notification {
         sb.append(", queueName='").append(queueName).append('\'');
         sb.append(", nextAvailableDate=").append(nextAvailableDate);
         sb.append(", lifecycleState=").append(lifecycleState);
-        sb.append(", notificationKeyClass='").append(notificationKeyClass).append('\'');
-        sb.append(", notificationKey='").append(notificationKey).append('\'');
+        sb.append(", eventJsonClass='").append(eventJsonClass).append('\'');
+        sb.append(", eventJson='").append(eventJson).append('\'');
         sb.append(", userToken=").append(userToken);
         sb.append(", futureUserToken=").append(futureUserToken);
         sb.append(", effectiveDate=").append(effectiveDate);

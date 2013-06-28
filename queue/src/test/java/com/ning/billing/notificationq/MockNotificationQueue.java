@@ -72,10 +72,10 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final String json = objectMapper.writeValueAsString(notificationKey);
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+        final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
-        final Notification notification = new DefaultNotification("MockQueue", hostname, notificationKey.getClass().getName(), json, userToken,
+        final Notification notification = new DefaultNotification("MockQueue", hostname, eventJson.getClass().getName(), json, userToken,
                                                                   UUID.randomUUID(), futureNotificationTime, searchKey1, searchKey2WithNull);
         synchronized (notifications) {
             notifications.add(notification);
@@ -83,8 +83,8 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey notificationKey, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        recordFutureNotification(futureNotificationTime, notificationKey, userToken, searchKey1, searchKey2);
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+        recordFutureNotification(futureNotificationTime, eventJson, userToken, searchKey1, searchKey2);
     }
 
 

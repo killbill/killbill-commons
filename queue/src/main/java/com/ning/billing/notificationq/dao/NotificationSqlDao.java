@@ -90,7 +90,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             stmt.bind("creatingOwner", evt.getCreatedOwner());
             stmt.bind("className", evt.getNotificationKeyClass());
             stmt.bind("futureUserToken", getUUIDString(evt.getFutureUserToken()));
-            stmt.bind("notificationKey", evt.getNotificationKey());
+            stmt.bind("eventJson", evt.getNotificationKey());
             stmt.bind("effectiveDate", getDate(evt.getEffectiveDate()));
             stmt.bind("queueName", evt.getQueueName());
             stmt.bind("processingAvailableDate", getDate(evt.getNextAvailableDate()));
@@ -111,7 +111,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             final Long recordId = r.getLong("record_id");
             final String createdOwner = r.getString("creating_owner");
             final String className = r.getString("class_name");
-            final String notificationKey = r.getString("notification_key");
+            final String eventJson = r.getString("event_json");
             final UUID userToken = getUUID(r, "user_token");
             final UUID futureUserToken = getUUID(r, "future_user_token");
             final String queueName = r.getString("queue_name");
@@ -123,7 +123,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             final Long searchKey2 = r.getLong("search_key2");
 
             return new DefaultNotification(recordId, createdOwner, processingOwner, queueName, nextAvailableDate,
-                                           processingState, className, notificationKey, userToken, futureUserToken, effectiveDate,
+                                           processingState, className, eventJson, userToken, futureUserToken, effectiveDate,
                                            searchKey1, searchKey2);
         }
     }

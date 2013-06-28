@@ -34,10 +34,10 @@ public interface NotificationQueue extends QueueLifecycle {
      * Record the need to be called back when the notification is ready
      *
      * @param futureNotificationTime the time at which the notification is ready
-     * @param notificationKey        the key for that notification
+     * @param eventJson        the key for that notification
      */
     public void recordFutureNotification(final DateTime futureNotificationTime,
-                                         final NotificationKey notificationKey,
+                                         final NotificationKey eventJson,
                                          final UUID userToken,
                                          final Long searchKey1,
                                          final Long searchKey2)
@@ -47,11 +47,11 @@ public interface NotificationQueue extends QueueLifecycle {
      * Record from within a transaction the need to be called back when the notification is ready
      *
      * @param futureNotificationTime the time at which the notification is ready
-     * @param notificationKey        the key for that notification
+     * @param eventJson        the key for that notification
      */
     public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier,
                                                         final DateTime futureNotificationTime,
-                                                        final NotificationKey notificationKey,
+                                                        final NotificationKey eventJson,
                                                         final UUID userToken,
                                                         final Long searchKey1,
                                                         final Long searchKey2)
