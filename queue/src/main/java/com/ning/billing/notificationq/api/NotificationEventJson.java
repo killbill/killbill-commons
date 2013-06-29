@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2010-2011 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -14,15 +14,13 @@
  * under the License.
  */
 
-package com.ning.billing.bus;
+package com.ning.billing.notificationq.api;
 
-import java.util.UUID;
+import com.ning.billing.bus.api.BusEventJson;
 
-public interface BusPersistentEvent {
+/**
+ * The notification key associated with a given notification
+ */
+public interface NotificationEventJson extends BusEventJson {
 
-    public UUID getUserToken();
-
-    public Long getSearchKey2();
-
-    public Long getSearchKey1();
 }

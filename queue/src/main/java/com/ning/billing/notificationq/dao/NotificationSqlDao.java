@@ -37,16 +37,14 @@ import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.ning.billing.commons.jdbi.binder.BinderBase;
 import com.ning.billing.commons.jdbi.mapper.MapperBase;
-import com.ning.billing.notificationq.DefaultNotification;
-import com.ning.billing.notificationq.Notification;
-import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
 
 @UseStringTemplate3StatementLocator()
 public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, CloseMe {
 
     @SqlQuery
     @Mapper(NotificationSqlMapper.class)
-    public List<Notification> getReadyNotifications(@Bind("now") Date now,
+    public List<NotificationEventEntry> getReadyNotifications(@Bind("now") Date now,
                                                     @Bind("owner") String owner,
                                                     @Bind("max") int max);
 
@@ -55,7 +53,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
 
     @SqlQuery
     @Mapper(NotificationSqlMapper.class)
-    public List<Notification> getFutureNotificationsForAccount(@Bind("now") Date now,
+    public List<NotificationEventEntry> getFutureNotificationsForAccount(@Bind("now") Date now,
                                                                @Bind("queueName") String queueName,
                                                                @Bind("searchKey1") long searchKey1);
 
@@ -73,7 +71,7 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
                                   @Bind("owner") String owner);
 
     @SqlUpdate
-    public void insertNotification(@Bind(binder = NotificationSqlDaoBinder.class) Notification evt);
+    public void insertNotification(@Bind(binder = NotificationSqlDaoBinder.class) NotificationEventEntry evt);
 
     @SqlUpdate
     public void insertClaimedHistory(@Bind("ownerId") String ownerId,
@@ -82,15 +80,15 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
                                      @Bind("searchKey1") long searchKey1,
                                      @Bind("searchKey2") long searchKey2);
 
-    public static class NotificationSqlDaoBinder extends BinderBase implements Binder<Bind, Notification> {
+    public static class NotificationSqlDaoBinder extends BinderBase implements Binder<Bind, NotificationEventEntry> {
 
         @Override
-        public void bind(@SuppressWarnings("rawtypes") final SQLStatement stmt, final Bind bind, final Notification evt) {
+        public void bind(@SuppressWarnings("rawtypes") final SQLStatement stmt, final Bind bind, final NotificationEventEntry evt) {
             stmt.bind("createdDate", getDate(new DateTime()));
             stmt.bind("creatingOwner", evt.getCreatedOwner());
-            stmt.bind("className", evt.getNotificationKeyClass());
+            stmt.bind("className", evt.getEventClass());
             stmt.bind("futureUserToken", getUUIDString(evt.getFutureUserToken()));
-            stmt.bind("eventJson", evt.getNotificationKey());
+            stmt.bind("eventJson", evt.getEventJson());
             stmt.bind("effectiveDate", getDate(evt.getEffectiveDate()));
             stmt.bind("queueName", evt.getQueueName());
             stmt.bind("processingAvailableDate", getDate(evt.getNextAvailableDate()));
@@ -102,10 +100,10 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
         }
     }
 
-    public static class NotificationSqlMapper extends MapperBase implements ResultSetMapper<Notification> {
+    public static class NotificationSqlMapper extends MapperBase implements ResultSetMapper<NotificationEventEntry> {
 
         @Override
-        public Notification map(final int index, final ResultSet r, final StatementContext ctx)
+        public NotificationEventEntry map(final int index, final ResultSet r, final StatementContext ctx)
                 throws SQLException {
 
             final Long recordId = r.getLong("record_id");
@@ -113,18 +111,15 @@ public interface NotificationSqlDao extends Transactional<NotificationSqlDao>, C
             final String className = r.getString("class_name");
             final String eventJson = r.getString("event_json");
             final UUID userToken = getUUID(r, "user_token");
-            final UUID futureUserToken = getUUID(r, "future_user_token");
-            final String queueName = r.getString("queue_name");
-            final DateTime effectiveDate = getDateTime(r, "effective_date");
             final DateTime nextAvailableDate = getDateTime(r, "processing_available_date");
             final String processingOwner = r.getString("processing_owner");
             final PersistentQueueEntryLifecycleState processingState = PersistentQueueEntryLifecycleState.valueOf(r.getString("processing_state"));
             final Long searchKey1 = r.getLong("search_key1");
             final Long searchKey2 = r.getLong("search_key2");
-
-            return new DefaultNotification(recordId, createdOwner, processingOwner, queueName, nextAvailableDate,
-                                           processingState, className, eventJson, userToken, futureUserToken, effectiveDate,
-                                           searchKey1, searchKey2);
+            final UUID futureUserToken = getUUID(r, "future_user_token");
+            final String queueName = r.getString("queue_name");
+            final DateTime effectiveDate = getDateTime(r, "effective_date");
+            return new NotificationEventEntry(recordId, createdOwner, processingOwner, nextAvailableDate, processingState, className, eventJson, userToken, searchKey1, searchKey2, futureUserToken, effectiveDate, queueName);
         }
     }
 }

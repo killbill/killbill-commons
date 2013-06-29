@@ -36,6 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.bus.api.BusEventJson;
+import com.ning.billing.bus.api.PersistentBus;
+import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.bus.dao.BusEventEntry;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
 import com.ning.billing.queue.DefaultQueueLifecycle;
@@ -124,12 +127,12 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         int result = 0;
         for (final BusEventEntry cur : events) {
-            final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeSearchKeys(cur.getBusEventJson(), cur.getSearchKey1(), cur.getSearchKey2());
-            final BusPersistentEvent evt = deserializeEvent(cur.getBusEventClass(), objectMapper, jsonWithAccountAndTenantRecorId);
+            final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeSearchKeys(cur.getEventJson(), cur.getSearchKey1(), cur.getSearchKey2());
+            final BusEventJson evt = deserializeEvent(cur.getEventClass(), objectMapper, jsonWithAccountAndTenantRecorId);
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);
-            dao.clearBusEvent(cur.getId(), Hostname.get(), tableName);
+            dao.clearBusEvent(cur.getRecordId(), Hostname.get(), tableName);
         }
         return result;
     }
@@ -156,9 +159,9 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         final List<BusEventEntry> entries = dao.getNextBusEventEntries(config.getPrefetchAmount(), Hostname.get(), now, tableName);
         final List<BusEventEntry> claimedEntries = new LinkedList<BusEventEntry>();
         for (final BusEventEntry entry : entries) {
-            final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getId(), now, tableName) == 1);
+            final boolean claimed = (dao.claimBusEvent(Hostname.get(), nextAvailable, entry.getRecordId(), now, tableName) == 1);
             if (claimed) {
-                dao.insertClaimedHistory(Hostname.get(), now, entry.getId(), entry.getSearchKey1(), entry.getSearchKey2());
+                dao.insertClaimedHistory(Hostname.get(), now, entry.getRecordId(), entry.getSearchKey1(), entry.getSearchKey2());
                 claimedEntries.add(entry);
             }
         }
@@ -184,7 +187,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void post(final BusPersistentEvent event) throws EventBusException {
+    public void post(final BusEventJson event) throws EventBusException {
         if (isStarted) {
             dao.inTransaction(TransactionIsolationLevel.READ_COMMITTED, new Transaction<Void, PersistentBusSqlDao>() {
                 @Override
@@ -200,7 +203,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void postFromTransaction(final BusPersistentEvent event, final Transmogrifier transmogrifier)
+    public void postFromTransaction(final BusEventJson event, final Transmogrifier transmogrifier)
             throws EventBusException {
         final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
         if (isStarted) {
@@ -210,7 +213,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }
     }
 
-    private void postFromTransaction(final BusPersistentEvent event, final PersistentBusSqlDao transactional) {
+    private void postFromTransaction(final BusEventJson event, final PersistentBusSqlDao transactional) {
         try {
             final String json = objectMapper.writeValueAsString(event);
             final BusEventEntry entry = new BusEventEntry(Hostname.get(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());

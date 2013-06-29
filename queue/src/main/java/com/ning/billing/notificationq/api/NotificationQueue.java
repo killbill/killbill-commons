@@ -14,18 +14,18 @@
  * under the License.
  */
 
-package com.ning.billing.notificationq;
+package com.ning.billing.notificationq.api;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
-import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
-import com.ning.billing.queue.QueueLifecycle;
+import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.dao.NotificationEventEntry;
+import com.ning.billing.queue.api.QueueLifecycle;
 
 
 public interface NotificationQueue extends QueueLifecycle {
@@ -37,7 +37,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param eventJson        the key for that notification
      */
     public void recordFutureNotification(final DateTime futureNotificationTime,
-                                         final NotificationKey eventJson,
+                                         final NotificationEventJson eventJson,
                                          final UUID userToken,
                                          final Long searchKey1,
                                          final Long searchKey2)
@@ -51,7 +51,7 @@ public interface NotificationQueue extends QueueLifecycle {
      */
     public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier,
                                                         final DateTime futureNotificationTime,
-                                                        final NotificationKey eventJson,
+                                                        final NotificationEventJson eventJson,
                                                         final UUID userToken,
                                                         final Long searchKey1,
                                                         final Long searchKey2)
@@ -63,7 +63,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1);
+    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1);
 
     /**
      * Retrieve all future pending notifications for a given account (taken from the context) in a transaction.
@@ -71,7 +71,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1,
+    public  <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1,
                                                                                                     final Transmogrifier transmogrifier);
 
     public void removeNotification(final Long recordId);

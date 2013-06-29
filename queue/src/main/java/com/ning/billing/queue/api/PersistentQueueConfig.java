@@ -1,4 +1,4 @@
-package com.ning.billing.queue;
+package com.ning.billing.queue.api;
 
 public interface PersistentQueueConfig {
 

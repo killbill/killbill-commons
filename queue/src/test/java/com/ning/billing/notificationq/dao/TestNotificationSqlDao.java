@@ -21,18 +21,16 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.ning.billing.Hostname;
 import com.ning.billing.TestSetup;
-import com.ning.billing.notificationq.DefaultNotification;
-import com.ning.billing.notificationq.Notification;
 import com.ning.billing.notificationq.dao.NotificationSqlDao.NotificationSqlMapper;
-import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -41,7 +39,7 @@ public class TestNotificationSqlDao extends TestSetup {
 
     private static final String hostname = "Yop";
 
-    private static final long TENANT_RECORD_ID = 37;
+    private static final long SEARCH_KEY_2 = 37;
 
     private NotificationSqlDao dao;
 
@@ -58,18 +56,21 @@ public class TestNotificationSqlDao extends TestSetup {
 
         final String eventJson = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
-        final Notification notif = new DefaultNotification("testBasic", hostname, eventJson.getClass().getName(), eventJson, UUID.randomUUID(), UUID.randomUUID(), effDt,
-                                                           searchKey1, TENANT_RECORD_ID);
+
+        final NotificationEventEntry notif = new NotificationEventEntry(Hostname.get(), eventJson.getClass().getName(),
+                                                                        eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                                                                                        UUID.randomUUID(), effDt, "testBasic");
+
         dao.insertNotification(notif);
 
         Thread.sleep(1000);
         final DateTime now = new DateTime();
-        final List<Notification> notifications = dao.getReadyNotifications(now.toDate(), hostname, 3);
+        final List<NotificationEventEntry> notifications = dao.getReadyNotifications(now.toDate(), hostname, 3);
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);
 
-        Notification notification = notifications.get(0);
-        assertEquals(notification.getNotificationKey(), eventJson);
+        NotificationEventEntry notification = notifications.get(0);
+        assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         assertEquals(notification.getOwner(), null);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
@@ -78,10 +79,10 @@ public class TestNotificationSqlDao extends TestSetup {
         final DateTime nextAvailable = now.plusMinutes(5);
         final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getRecordId(), now.toDate());
         assertEquals(res, 1);
-        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), searchKey1, TENANT_RECORD_ID);
+        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), searchKey1, SEARCH_KEY_2);
 
         notification = fetchNotification(notification.getRecordId());
-        assertEquals(notification.getNotificationKey(), eventJson);
+        assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         assertEquals(notification.getOwner(), ownerId);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
@@ -90,17 +91,17 @@ public class TestNotificationSqlDao extends TestSetup {
         dao.clearNotification(notification.getRecordId(), ownerId);
 
         notification = fetchNotification(notification.getRecordId());
-        assertEquals(notification.getNotificationKey(), eventJson);
+        assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         //assertEquals(notification.getOwner(), null);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
         validateDate(notification.getNextAvailableDate(), nextAvailable);
     }
 
-    private Notification fetchNotification(final Long recordId) {
-        return getDBI().withHandle(new HandleCallback<Notification>() {
+    private NotificationEventEntry fetchNotification(final Long recordId) {
+        return getDBI().withHandle(new HandleCallback<NotificationEventEntry>() {
             @Override
-            public Notification withHandle(final Handle handle) throws Exception {
+            public NotificationEventEntry withHandle(final Handle handle) throws Exception {
                 return handle.createQuery("   select" +
                                           " record_id " +
                                           ", class_name" +

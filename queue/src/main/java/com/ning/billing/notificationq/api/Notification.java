@@ -14,11 +14,19 @@
  * under the License.
  */
 
-package com.ning.billing.notificationq;
+package com.ning.billing.notificationq.api;
 
-/**
- * The notification key associated with a given notification
- */
-public interface NotificationKey {
+import java.util.UUID;
 
+import org.joda.time.DateTime;
+
+import com.ning.billing.bus.api.BusEvent;
+
+public interface Notification extends BusEvent {
+
+    public DateTime getEffectiveDate();
+
+    public String getQueueName();
+
+    public UUID getfutureUserToken();
 }

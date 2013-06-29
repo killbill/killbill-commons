@@ -38,7 +38,7 @@ import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.ning.billing.commons.jdbi.binder.BinderBase;
 import com.ning.billing.commons.jdbi.mapper.MapperBase;
-import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
 
 @ExternalizedSqlViaStringTemplate3()
 public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>, CloseMe {
@@ -82,8 +82,8 @@ public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>,
 
         @Override
         public void bind(@SuppressWarnings("rawtypes") final SQLStatement stmt, final Bind bind, final BusEventEntry evt) {
-            stmt.bind("className", evt.getBusEventClass());
-            stmt.bind("eventJson", evt.getBusEventJson());
+            stmt.bind("className", evt.getEventClass());
+            stmt.bind("eventJson", evt.getEventJson());
             stmt.bind("userToken", getUUIDString(evt.getUserToken()));
             stmt.bind("createdDate", getDate(new DateTime()));
             stmt.bind("creatingOwner", evt.getCreatedOwner());

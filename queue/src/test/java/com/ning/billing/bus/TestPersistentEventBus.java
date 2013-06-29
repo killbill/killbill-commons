@@ -22,6 +22,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.ning.billing.TestSetup;
+import com.ning.billing.bus.api.PersistentBus;
 
 public class TestPersistentEventBus extends TestSetup {
 

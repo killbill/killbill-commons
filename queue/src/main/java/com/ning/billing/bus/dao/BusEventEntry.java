@@ -20,32 +20,32 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
-import com.ning.billing.queue.PersistentQueueEntryLifecycle;
+import com.ning.billing.queue.api.EventEntry;
 
 
-public class BusEventEntry implements PersistentQueueEntryLifecycle {
+public class BusEventEntry implements EventEntry {
 
-    private final long id;
+    private final Long recordId;
     private final String owner;
     private final String createdOwner;
     private final DateTime nextAvailable;
     private final PersistentQueueEntryLifecycleState processingState;
-    private final String busEventClass;
-    private final String busEventJson;
+    private final String eventClass;
+    private final String eventJson;
     private final UUID userToken;
     private final Long searchKey1;
     private final Long searchKey2;
 
-    public BusEventEntry(final long id, final String createdOwner, final String owner, final DateTime nextAvailable,
+    public BusEventEntry(final Long recordId, final String createdOwner, final String owner, final DateTime nextAvailable,
                          final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson,
                          final UUID userToken, final Long searchKey1, final Long searchKey2) {
-        this.id = id;
+        this.recordId = recordId;
         this.createdOwner = createdOwner;
         this.owner = owner;
         this.nextAvailable = nextAvailable;
         this.processingState = processingState;
-        this.busEventClass = busEventClass;
-        this.busEventJson = busEventJson;
+        this.eventClass = busEventClass;
+        this.eventJson = busEventJson;
         this.userToken = userToken;
         this.searchKey1 = searchKey1;
         this.searchKey2 = searchKey2;
@@ -53,19 +53,22 @@ public class BusEventEntry implements PersistentQueueEntryLifecycle {
 
     public BusEventEntry(final String createdOwner, final String busEventClass, final String busEventJson,
                          final UUID userToken, final Long searchKey1, final Long searchKey2) {
-        this(0, createdOwner, null, null, null, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
+        this(-1L, createdOwner, null, null, null, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
     }
 
-    public long getId() {
-        return id;
+    @Override
+    public Long getRecordId() {
+        return recordId;
     }
 
-    public String getBusEventClass() {
-        return busEventClass;
+    @Override
+    public String getEventClass() {
+        return eventClass;
     }
 
-    public String getBusEventJson() {
-        return busEventJson;
+    @Override
+    public String getEventJson() {
+        return eventJson;
     }
 
     @Override

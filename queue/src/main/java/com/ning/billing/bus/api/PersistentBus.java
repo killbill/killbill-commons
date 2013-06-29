@@ -14,9 +14,11 @@
  * under the License.
  */
 
-package com.ning.billing.bus;
+package com.ning.billing.bus.api;
 
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
+
+import com.ning.billing.bus.api.BusEventJson;
 
 public interface PersistentBus {
 
@@ -78,7 +80,7 @@ public interface PersistentBus {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void post(BusPersistentEvent event) throws EventBusException;
+    public void post(BusEventJson event) throws EventBusException;
 
     /**
      * Post an event from within a transaction.
@@ -87,7 +89,7 @@ public interface PersistentBus {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusPersistentEvent event, final Transmogrifier transmogrifier) throws EventBusException;
+    public void postFromTransaction(BusEventJson event, final Transmogrifier transmogrifier) throws EventBusException;
 
 
 }

@@ -12,10 +12,9 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
-import com.ning.billing.bus.PersistentBusConfig;
+import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.commons.embeddeddb.mysql.MySQLEmbeddedDB;
-import com.ning.billing.notificationq.NotificationQueueConfig;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.util.clock.ClockMock;
 
 import com.google.common.base.Charsets;

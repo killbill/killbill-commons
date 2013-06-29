@@ -24,13 +24,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.api.NotificationEventJson;
+import com.ning.billing.notificationq.api.NotificationQueue;
+import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.queue.DefaultQueueLifecycle;
+import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
 import com.ning.billing.util.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,12 +46,14 @@ public class MockNotificationQueue implements NotificationQueue {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String hostname;
-    private final TreeSet<Notification> notifications;
+    private final TreeSet<NotificationEventEntry> notifications;
     private final Clock clock;
     private final String svcName;
     private final String queueName;
     private final NotificationQueueHandler handler;
     private final MockNotificationQueueService queueService;
+
+    private AtomicLong recordIds;
 
     private volatile boolean isStarted;
 
@@ -59,11 +66,13 @@ public class MockNotificationQueue implements NotificationQueue {
         this.hostname = Hostname.get();
         this.queueService = mockNotificationQueueService;
 
-        notifications = new TreeSet<Notification>(new Comparator<Notification>() {
+        this.recordIds = new AtomicLong();
+
+        notifications = new TreeSet<NotificationEventEntry>(new Comparator<NotificationEventEntry>() {
             @Override
-            public int compare(final Notification o1, final Notification o2) {
+            public int compare(final NotificationEventEntry o1, final NotificationEventEntry o2) {
                 if (o1.getEffectiveDate().equals(o2.getEffectiveDate())) {
-                    return o1.getNotificationKey().compareTo(o2.getNotificationKey());
+                    return o1.getRecordId().compareTo(o2.getRecordId());
                 } else {
                     return o1.getEffectiveDate().compareTo(o2.getEffectiveDate());
                 }
@@ -72,36 +81,38 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
-        final Notification notification = new DefaultNotification("MockQueue", hostname, eventJson.getClass().getName(), json, userToken,
-                                                                  UUID.randomUUID(), futureNotificationTime, searchKey1, searchKey2WithNull);
+        final NotificationEventEntry notification = new NotificationEventEntry(recordIds.incrementAndGet(), "MockQueue", hostname, null, PersistentQueueEntryLifecycleState.AVAILABLE,
+                                                                               eventJson.getClass().getName(), json, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
+                                                                               futureNotificationTime, "MockQueue");
+
         synchronized (notifications) {
             notifications.add(notification);
         }
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         recordFutureNotification(futureNotificationTime, eventJson, userToken, searchKey1, searchKey2);
     }
 
 
     @Override
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
+    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
         return getFutureNotificationsForAccountAndTypeFromTransaction(type, searchKey1, null);
     }
 
     @Override
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
-        final Map<Notification, T> result = new HashMap<Notification, T>();
+    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+        final Map<NotificationEventEntry, T> result = new HashMap<NotificationEventEntry, T>();
         synchronized (notifications) {
-            for (final Notification notification : notifications) {
+            for (final NotificationEventEntry notification : notifications) {
                 if (notification.getSearchKey1().equals(searchKey1) &&
-                    type.getName().equals(notification.getNotificationKeyClass()) &&
+                    type.getName().equals(notification.getEventClass()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
-                    result.put(notification, (T) DefaultQueueLifecycle.deserializeEvent(notification.getNotificationKeyClass(), objectMapper, notification.getNotificationKey()));
+                    result.put(notification, (T) DefaultQueueLifecycle.deserializeEvent(notification.getEventClass(), objectMapper, notification.getEventJson()));
                 }
             }
         }
@@ -118,7 +129,7 @@ public class MockNotificationQueue implements NotificationQueue {
     @Override
     public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
         synchronized (notifications) {
-            for (final Notification cur : notifications) {
+            for (final NotificationEventEntry cur : notifications) {
                 if (cur.getRecordId().equals(recordId)) {
                     notifications.remove(cur);
                     break;
@@ -169,10 +180,10 @@ public class MockNotificationQueue implements NotificationQueue {
         return isStarted;
     }
 
-    public List<Notification> getReadyNotifications() {
-        final List<Notification> readyNotifications = new ArrayList<Notification>();
+    public List<NotificationEventEntry> getReadyNotifications() {
+        final List<NotificationEventEntry> readyNotifications = new ArrayList<NotificationEventEntry>();
         synchronized (notifications) {
-            for (final Notification cur : notifications) {
+            for (final NotificationEventEntry cur : notifications) {
                 if (cur.isAvailableForProcessing(clock.getUTCNow())) {
                     readyNotifications.add(cur);
                 }
@@ -181,7 +192,7 @@ public class MockNotificationQueue implements NotificationQueue {
         return readyNotifications;
     }
 
-    public void markProcessedNotifications(final List<Notification> toBeremoved, final List<Notification> toBeAdded) {
+    public void markProcessedNotifications(final List<NotificationEventEntry> toBeremoved, final List<NotificationEventEntry> toBeAdded) {
         synchronized (notifications) {
             notifications.removeAll(toBeremoved);
             notifications.addAll(toBeAdded);

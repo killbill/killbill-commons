@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2010-2011 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
@@ -13,26 +13,18 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+package com.ning.billing.queue.api;
 
-package com.ning.billing.notificationq;
+public interface QueueLifecycle {
+    /**
+     * Starts the queue
+     */
+    public void startQueue();
 
-public class NotificationError extends Error {
+    /**
+     * Stop the queue
+     */
+    public void stopQueue();
 
-    private static final long serialVersionUID = 131398536;
-
-    public NotificationError() {
-        super();
-    }
-
-    public NotificationError(final String msg, final Throwable arg1) {
-        super(msg, arg1);
-    }
-
-    public NotificationError(final String msg) {
-        super(msg);
-    }
-
-    public NotificationError(final Throwable msg) {
-        super(msg);
-    }
+    public boolean isStarted();
 }

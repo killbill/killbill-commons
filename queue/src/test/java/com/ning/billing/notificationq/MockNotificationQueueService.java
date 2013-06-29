@@ -24,7 +24,11 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.queue.PersistentQueueEntryLifecycle.PersistentQueueEntryLifecycleState;
+import com.ning.billing.notificationq.api.NotificationEventJson;
+import com.ning.billing.notificationq.api.NotificationQueue;
+import com.ning.billing.notificationq.api.NotificationQueueConfig;
+import com.ning.billing.notificationq.dao.NotificationEventEntry;
+import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
 import com.ning.billing.util.clock.Clock;
 
 
@@ -70,18 +74,20 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
 
         int result = 0;
-        final List<Notification> processedNotifications = new ArrayList<Notification>();
-        final List<Notification> oldNotifications = new ArrayList<Notification>();
+        final List<NotificationEventEntry> processedNotifications = new ArrayList<NotificationEventEntry>();
+        final List<NotificationEventEntry> oldNotifications = new ArrayList<NotificationEventEntry>();
 
-        List<Notification> readyNotifications = queue.getReadyNotifications();
-        for (final Notification cur : readyNotifications) {
-            final NotificationKey key = deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey());
+        List<NotificationEventEntry> readyNotifications = queue.getReadyNotifications();
+        for (final NotificationEventEntry cur : readyNotifications) {
+            final NotificationEventJson key = deserializeEvent(cur.getEventClass(), objectMapper, cur.getEventJson());
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
-            final DefaultNotification processedNotification = new DefaultNotification(-1L, Hostname.get(), Hostname.get(),
-                                                                                      "MockQueue", getClock().getUTCNow().plus(CLAIM_TIME_MS),
-                                                                                      PersistentQueueEntryLifecycleState.PROCESSED, cur.getNotificationKeyClass(),
-                                                                                      cur.getNotificationKey(), cur.getUserToken(), cur.getFutureUserToken(), cur.getEffectiveDate(),
-                                                                                      cur.getSearchKey1(), cur.getSearchKey2());
+
+
+            final NotificationEventEntry processedNotification = new NotificationEventEntry(cur.getRecordId(), Hostname.get(), Hostname.get(),
+                                                                                      getClock().getUTCNow().plus(CLAIM_TIME_MS),
+                                                                                      PersistentQueueEntryLifecycleState.PROCESSED, cur.getEventClass(),
+                                                                                      cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
+                                                                                      cur.getFutureUserToken(), cur.getEffectiveDate(), "MockQueue");
             oldNotifications.add(cur);
             processedNotifications.add(processedNotification);
             result++;

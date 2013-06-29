@@ -34,9 +34,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.notificationq.api.NotificationEventJson;
+import com.ning.billing.notificationq.api.NotificationQueue;
+import com.ning.billing.notificationq.api.NotificationQueueConfig;
+import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
-import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
 
 import com.yammer.metrics.Metrics;
@@ -152,7 +156,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         logDebug("ENTER doProcessEvents");
         // Finding and claiming notifications is not done per tenant (yet?)
-        final List<Notification> notifications = getReadyNotifications();
+        final List<NotificationEventEntry> notifications = getReadyNotifications();
         if (notifications.size() == 0) {
             logDebug("EXIT doProcessEvents");
             return 0;
@@ -168,9 +172,9 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         logDebug("START processing %d events at time %s", notifications.size(), getClock().getUTCNow().toDate());
 
         int result = 0;
-        for (final Notification cur : notifications) {
+        for (final NotificationEventEntry cur : notifications) {
             getNbProcessedEvents().incrementAndGet();
-            final NotificationKey key = deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey());
+            final NotificationEventJson key = deserializeEvent(cur.getEventClass(), objectMapper, cur.getEventJson());
 
             NotificationQueueHandler handler = getHandlerForActiveQueue(cur.getQueueName());
             if (handler == null) {
@@ -180,12 +184,12 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             handleNotificationWithMetrics(handler, cur, key);
             result++;
             clearNotification(cur);
-            logDebug("done handling notification %s, key = %s for time %s", cur.getRecordId().toString(), cur.getNotificationKey(), cur.getEffectiveDate());
+            logDebug("done handling notification %s, key = %s for time %s", cur.getRecordId(), cur.getEventJson(), cur.getEffectiveDate());
         }
         return result;
     }
 
-    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final Notification notification, final NotificationKey key) {
+    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventEntry notification, final NotificationEventJson key) {
 
         // Create specific metric name because:
         // - ':' is not allowed for metric name
@@ -211,18 +215,18 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         processedNotificationsSinceStart.inc();
     }
 
-    private void clearNotification(final Notification cleared) {
+    private void clearNotification(final NotificationEventEntry cleared) {
         dao.clearNotification(cleared.getRecordId(), Hostname.get());
     }
 
-    private List<Notification> getReadyNotifications() {
+    private List<NotificationEventEntry> getReadyNotifications() {
         final Date now = getClock().getUTCNow().toDate();
         final Date nextAvailable = getClock().getUTCNow().plus(CLAIM_TIME_MS).toDate();
 
-        final List<Notification> input = dao.getReadyNotifications(now, Hostname.get(), config.getPrefetchAmount());
+        final List<NotificationEventEntry> input = dao.getReadyNotifications(now, Hostname.get(), config.getPrefetchAmount());
 
-        final List<Notification> claimedNotifications = new ArrayList<Notification>();
-        for (final Notification cur : input) {
+        final List<NotificationEventEntry> claimedNotifications = new ArrayList<NotificationEventEntry>();
+        for (final NotificationEventEntry cur : input) {
 
             // Skip non active queues...
             final NotificationQueue queue = queues.get(cur.getQueueName());
@@ -231,11 +235,11 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             }
 
             logDebug("about to claim notification %s,  key = %s for time %s",
-                     cur.getRecordId(), cur.getNotificationKey(), cur.getEffectiveDate());
+                     cur.getRecordId(), cur.getEventClass(), cur.getEffectiveDate());
 
             final boolean claimed = (dao.claimNotification(Hostname.get(), nextAvailable, cur.getRecordId(), now) == 1);
             logDebug("claimed notification %s, key = %s for time %s result = %s",
-                     cur.getRecordId(), cur.getNotificationKey(), cur.getEffectiveDate(), claimed);
+                     cur.getRecordId(), cur.getEventJson(), cur.getEffectiveDate(), claimed);
 
             if (claimed) {
                 claimedNotifications.add(cur);
@@ -243,7 +247,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             }
         }
 
-        for (final Notification cur : claimedNotifications) {
+        for (final NotificationEventEntry cur : claimedNotifications) {
             if (cur.getOwner() != null && !cur.getOwner().equals(Hostname.get())) {
                 log.warn("NotificationQueue stealing notification {} from {}", new Object[]{ cur, cur.getOwner()});
             }

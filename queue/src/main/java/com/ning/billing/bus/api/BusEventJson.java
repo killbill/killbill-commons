@@ -1,5 +1,5 @@
-/* 
- * Copyright 2010-2011 Ning, Inc.
+/*
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -13,18 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.billing.queue;
 
-public interface QueueLifecycle {
-    /**
-     * Starts the queue
-     */
-    public void startQueue();
+package com.ning.billing.bus.api;
 
-    /**
-     * Stop the queue
-     */
-    public void stopQueue();
+import java.util.UUID;
 
-    public boolean isStarted();
+public interface BusEventJson {
+    public UUID getUserToken();
+
+    public Long getSearchKey1();
+
+    public Long getSearchKey2();
 }

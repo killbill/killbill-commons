@@ -27,7 +27,11 @@ import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.notificationq.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.api.NotificationQueueService;
+import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.api.NotificationEventJson;
+import com.ning.billing.notificationq.api.NotificationQueue;
+import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
@@ -61,13 +65,13 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationKey eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         recordFutureNotificationInternal(futureNotificationTime, eventJson, dao, userToken, searchKey1, searchKey2);
 
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationKey eventJson,
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventJson eventJson,
                                                         final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
         recordFutureNotificationInternal(futureNotificationTime, eventJson, transactionalNotificationDao, userToken, searchKey1, searchKey2);
@@ -76,37 +80,36 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     private void recordFutureNotificationInternal(final DateTime futureNotificationTime,
-                                                  final NotificationKey eventJson,
+                                                  final NotificationEventJson event,
                                                   final NotificationSqlDao thisDao,
                                                   final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final String json = objectMapper.writeValueAsString(eventJson);
+        final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
-        final Notification notification = new DefaultNotification(getFullQName(), Hostname.get(), eventJson.getClass().getName(), json,
-                                                                  userToken, futureUserToken, futureNotificationTime, searchKey1, searchKey2WithNull);
+        final NotificationEventEntry notification = new NotificationEventEntry(Hostname.get(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
         thisDao.insertNotification(notification);
     }
 
     @Override
-    public  <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
+    public  <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
         return getFutureNotificationsForAccountInternal(type, dao, searchKey1);
     }
 
     @Override
-    public <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
         return getFutureNotificationsForAccountInternal(type, transactionalNotificationDao, searchKey1);
     }
 
 
-    private <T extends NotificationKey> Map<Notification, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long searchKey1) {
+    private <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long searchKey1) {
 
-        List<Notification> notifications =  transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), searchKey1);
+        List<NotificationEventEntry> notifications =  transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), searchKey1);
 
-        Map<Notification, T> result = new HashMap<Notification, T>(notifications.size());
-        for (Notification cur : notifications) {
-            if (type.getName().equals(cur.getNotificationKeyClass())) {
-                result.put(cur, (T) DefaultQueueLifecycle.deserializeEvent(cur.getNotificationKeyClass(), objectMapper, cur.getNotificationKey()));
+        Map<NotificationEventEntry, T> result = new HashMap<NotificationEventEntry, T>(notifications.size());
+        for (NotificationEventEntry cur : notifications) {
+            if (type.getName().equals(cur.getEventClass())) {
+                result.put(cur, (T) DefaultQueueLifecycle.deserializeEvent(cur.getEventClass(), objectMapper, cur.getEventJson()));
             }
         }
         return result;

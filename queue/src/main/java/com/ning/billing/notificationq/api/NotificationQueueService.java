@@ -14,13 +14,13 @@
  * under the License.
  */
 
-package com.ning.billing.notificationq;
+package com.ning.billing.notificationq.api;
 
 import java.util.UUID;
 
 import org.joda.time.DateTime;
 
-import com.ning.billing.queue.QueueLifecycle;
+import com.ning.billing.queue.api.QueueLifecycle;
 
 
 public interface NotificationQueueService extends QueueLifecycle {
@@ -35,7 +35,7 @@ public interface NotificationQueueService extends QueueLifecycle {
          * @param searchKey1 account record id associated with that notification entry
          * @param searchKey2  tenant record id associated with that notification entry
          */
-        public void handleReadyNotification(NotificationKey eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
+        public void handleReadyNotification(NotificationEventJson eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
     }
 
     public static final class NotificationQueueAlreadyExists extends Exception {
