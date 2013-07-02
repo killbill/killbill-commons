@@ -190,7 +190,6 @@ public class TestEventBusBase {
             for (int i = 0; i < nbEvents; i++) {
                 eventBus.post(new MyEvent("my-event", (long) i, UUID.randomUUID(), "MY_EVENT_TYPE", 1L, 1L));
             }
-
             final boolean completed = handler.waitForCompletion(10000);
             Assert.assertEquals(completed, true);
         } catch (Exception e) {

@@ -29,11 +29,12 @@ import org.testng.annotations.Test;
 
 import com.ning.billing.Hostname;
 import com.ning.billing.TestSetup;
-import com.ning.billing.notificationq.dao.NotificationSqlDao.NotificationSqlMapper;
+import com.ning.billing.notificationq.DefaultNotificationQueue;
 import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 public class TestNotificationSqlDao extends TestSetup {
 
@@ -57,73 +58,52 @@ public class TestNotificationSqlDao extends TestSetup {
         final String eventJson = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
 
-        final NotificationEventEntry notif = new NotificationEventEntry(Hostname.get(), eventJson.getClass().getName(),
+        final NotificationEventEntry notif = new NotificationEventEntry(Hostname.get(), clock.getUTCNow(), eventJson.getClass().getName(),
                                                                         eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
-                                                                                        UUID.randomUUID(), effDt, "testBasic");
+                                                                        UUID.randomUUID(), effDt, "testBasic");
 
-        dao.insertNotification(notif);
+        dao.insertEntry(notif, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
 
         Thread.sleep(1000);
         final DateTime now = new DateTime();
-        final List<NotificationEventEntry> notifications = dao.getReadyNotifications(now.toDate(), hostname, 3);
+        final List<NotificationEventEntry> notifications = dao.getReadyEntries(now.toDate(), hostname, 3, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);
 
         NotificationEventEntry notification = notifications.get(0);
         assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
-        assertEquals(notification.getOwner(), null);
+        assertEquals(notification.getProcessingOwner(), null);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
         assertEquals(notification.getNextAvailableDate(), null);
 
-        final DateTime nextAvailable = now.plusMinutes(5);
-        final int res = dao.claimNotification(ownerId, nextAvailable.toDate(), notification.getRecordId(), now.toDate());
-        assertEquals(res, 1);
-        dao.insertClaimedHistory(ownerId, now.toDate(), notification.getRecordId(), searchKey1, SEARCH_KEY_2);
 
-        notification = fetchNotification(notification.getRecordId());
+        final DateTime nextAvailable = now.plusMinutes(5);
+        final int res = dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(),  DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
+        assertEquals(res, 1);
+        dao.claimEntry(notification.getRecordId(), now.toDate(),  ownerId, nextAvailable.toDate(), DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
+
+        notification = dao.getByRecordId(notification.getRecordId(), DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
         assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
-        assertEquals(notification.getOwner(), ownerId);
+        assertEquals(notification.getProcessingOwner(), ownerId);
         assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
         validateDate(notification.getNextAvailableDate(), nextAvailable);
 
-        dao.clearNotification(notification.getRecordId(), ownerId);
+        final DateTime processedTime = clock.getUTCNow();
+        NotificationEventEntry notificationHistory = new NotificationEventEntry(notification, Hostname.get(), processedTime, PersistentQueueEntryLifecycleState.PROCESSED);
+        dao.insertEntry(notificationHistory, DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME);
 
-        notification = fetchNotification(notification.getRecordId());
-        assertEquals(notification.getEventJson(), eventJson);
-        validateDate(notification.getEffectiveDate(), effDt);
-        //assertEquals(notification.getOwner(), null);
-        assertEquals(notification.getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
-        validateDate(notification.getNextAvailableDate(), nextAvailable);
-    }
+        notificationHistory = dao.getByRecordId(notification.getRecordId(), DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME);
+        assertEquals(notificationHistory.getEventJson(), eventJson);
+        validateDate(notificationHistory.getEffectiveDate(), effDt);
+        assertEquals(notificationHistory.getProcessingOwner(), Hostname.get());
+        assertEquals(notificationHistory.getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
+        validateDate(notificationHistory.getNextAvailableDate(), processedTime);
 
-    private NotificationEventEntry fetchNotification(final Long recordId) {
-        return getDBI().withHandle(new HandleCallback<NotificationEventEntry>() {
-            @Override
-            public NotificationEventEntry withHandle(final Handle handle) throws Exception {
-                return handle.createQuery("   select" +
-                                          " record_id " +
-                                          ", class_name" +
-                                          ", event_json" +
-                                          ", user_token" +
-                                          ", future_user_token" +
-                                          ", created_date" +
-                                          ", creating_owner" +
-                                          ", effective_date" +
-                                          ", queue_name" +
-                                          ", processing_owner" +
-                                          ", processing_available_date" +
-                                          ", processing_state" +
-                                          ", search_key1" +
-                                          ", search_key2" +
-                                          "    from notifications " +
-                                          " where " +
-                                          " record_id = '" + recordId + "';")
-                             .map(new NotificationSqlMapper())
-                             .first();
-            }
-        });
+        dao.removeEntry(notification.getRecordId(), DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
+        notification = dao.getByRecordId(notification.getRecordId(), DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
+        assertNull(notification);
     }
 
     private void validateDate(DateTime input, DateTime expected) {

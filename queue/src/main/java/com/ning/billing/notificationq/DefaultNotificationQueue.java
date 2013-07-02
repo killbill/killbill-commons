@@ -33,6 +33,7 @@ import com.ning.billing.notificationq.api.NotificationEventJson;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
+import com.ning.billing.queue.DBBackedQueue;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.util.clock.Clock;
 
@@ -41,7 +42,10 @@ import com.google.common.base.Objects;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
-    private final NotificationSqlDao dao;
+    public static final String NOTIFICATION_QUEUE_TABLE_NAME = "notifications";
+    public static final String NOTIFICATION_QUEUE_HISTORY_TABLE_NAME = "notifications_history";
+
+    private final DBBackedQueue<NotificationEventEntry> dao;
     private final String svcName;
     private final String queueName;
     private final NotificationQueueHandler handler;
@@ -52,12 +56,12 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private volatile boolean isStarted;
 
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
-                                    final IDBI dbi, final NotificationQueueService notificationQueueService,
+                                    final DBBackedQueue<NotificationEventEntry> dao, final NotificationQueueService notificationQueueService,
                                     final Clock clock) {
         this.svcName = svcName;
         this.queueName = queueName;
         this.handler = handler;
-        this.dao = dbi.onDemand(NotificationSqlDao.class);
+        this.dao = dao;
         this.notificationQueueService = notificationQueueService;
         this.objectMapper = new ObjectMapper();
         this.clock = clock;
@@ -65,34 +69,32 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        recordFutureNotificationInternal(futureNotificationTime, eventJson, dao, userToken, searchKey1, searchKey2);
-
-    }
-
-    @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventJson eventJson,
-                                                        final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        recordFutureNotificationInternal(futureNotificationTime, eventJson, transactionalNotificationDao, userToken, searchKey1, searchKey2);
-    }
-
-
-
-    private void recordFutureNotificationInternal(final DateTime futureNotificationTime,
-                                                  final NotificationEventJson event,
-                                                  final NotificationSqlDao thisDao,
-                                                  final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
-        final NotificationEventEntry notification = new NotificationEventEntry(Hostname.get(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
-        thisDao.insertNotification(notification);
+        final NotificationEventEntry notification = new NotificationEventEntry(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
+        dao.insertEntry(notification);
+    }
+
+    @Override
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventJson event,
+                                                        final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
+
+        final String eventJson = objectMapper.writeValueAsString(event);
+        final UUID futureUserToken = UUID.randomUUID();
+        final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
+        final NotificationEventEntry notification = new NotificationEventEntry(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
+        dao.insertEntryFromTransaction(transactionalNotificationDao, notification);
+
     }
 
     @Override
     public  <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
-        return getFutureNotificationsForAccountInternal(type, dao, searchKey1);
+        // TODO STEPH
+        //return getFutureNotificationsForAccountInternal(type, dao, searchKey1);
+        return null;
     }
 
     @Override
@@ -104,12 +106,13 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     private <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long searchKey1) {
 
-        List<NotificationEventEntry> notifications =  transactionalDao.getFutureNotificationsForAccount(clock.getUTCNow().toDate(), getFullQName(), searchKey1);
+        // TODO STEPH
+        List<NotificationEventEntry> notifications =  null; //transactionalDao.getReadyEntries(clock.getUTCNow().toDate(), getFullQName(), searchKey1, NOTIFICATION_QUEUE_TABLE_NAME);
 
         Map<NotificationEventEntry, T> result = new HashMap<NotificationEventEntry, T>(notifications.size());
         for (NotificationEventEntry cur : notifications) {
-            if (type.getName().equals(cur.getEventClass())) {
-                result.put(cur, (T) DefaultQueueLifecycle.deserializeEvent(cur.getEventClass(), objectMapper, cur.getEventJson()));
+            if (type.getName().equals(cur.getClassName())) {
+                result.put(cur, (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson()));
             }
         }
         return result;
@@ -118,13 +121,14 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     @Override
     public void removeNotification(final Long recordId) {
-        dao.removeNotification(recordId);
+        // STEPH
+        //dao.removeEntry(recordId, NOTIFICATION_QUEUE_TABLE_NAME);
     }
 
     @Override
     public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        transactionalNotificationDao.removeNotification(recordId);
+        transactionalNotificationDao.removeEntry(recordId, NOTIFICATION_QUEUE_TABLE_NAME);
     }
 
 

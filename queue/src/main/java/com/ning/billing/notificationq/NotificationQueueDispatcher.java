@@ -18,7 +18,6 @@ package com.ning.billing.notificationq;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,6 @@ import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
-
 
 import org.joda.time.DateTime;
 import org.skife.jdbi.v2.IDBI;
@@ -37,11 +35,13 @@ import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.api.NotificationEventJson;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
-import com.ning.billing.notificationq.dao.NotificationEventEntry;
-import com.ning.billing.queue.DefaultQueueLifecycle;
-import com.ning.billing.util.clock.Clock;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
+import com.ning.billing.queue.DBBackedQueue;
+import com.ning.billing.queue.DefaultQueueLifecycle;
+import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
+import com.ning.billing.util.clock.Clock;
 
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
@@ -58,10 +58,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     private final NotificationQueueConfig config;
     private final AtomicLong nbProcessedEvents;
-    private final NotificationSqlDao dao;
 
     protected final Clock clock;
     protected final Map<String, NotificationQueue> queues;
+    protected final DBBackedQueue<NotificationEventEntry> dao;
 
 
     //
@@ -90,21 +90,27 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         this.clock = clock;
         this.config = config;
-        this.dao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
         this.nbProcessedEvents = new AtomicLong();
+        final NotificationSqlDao sqlDao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
+        this.dao = new DBBackedQueue<NotificationEventEntry>(clock, sqlDao, config, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME,
+                                                             DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME,
+                                                             "notif-" + DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME, false);
+
 
         this.queues = new TreeMap<String, NotificationQueue>();
 
         this.pendingNotifications = Metrics.newGauge(NotificationQueueDispatcher.class, "pending-notifications", new Gauge<Integer>() {
             @Override
             public Integer value() {
-                return dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
+                // TODO STEPH
+                return 0; // STEPH dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
             }
         });
 
         this.processedNotificationsSinceStart = Metrics.newCounter(NotificationQueueDispatcher.class, "processed-notifications-since-start");
         this.perQueueProcessingTime = new HashMap<String, Histogram>();
     }
+
     @Override
     public void stopQueue() {
         if (config.isProcessingOff() || !isStarted()) {
@@ -165,7 +171,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         if (limit > 0) {
             while (notifications.size() > limit) {
-                notifications.remove(notifications.size() -1 );
+                notifications.remove(notifications.size() - 1);
             }
         }
 
@@ -174,7 +180,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         int result = 0;
         for (final NotificationEventEntry cur : notifications) {
             getNbProcessedEvents().incrementAndGet();
-            final NotificationEventJson key = deserializeEvent(cur.getEventClass(), objectMapper, cur.getEventJson());
+            final NotificationEventJson key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
 
             NotificationQueueHandler handler = getHandlerForActiveQueue(cur.getQueueName());
             if (handler == null) {
@@ -195,36 +201,35 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         // - ':' is not allowed for metric name
         // - name would be too long (e.g entitlement-service:subscription-events-process-time -> ent-subscription-events-process-time)
         //
-        final String [] parts = notification.getQueueName().split(":");
+        final String[] parts = notification.getQueueName().split(":");
         final String metricName = new StringBuilder(parts[0].substring(0, 3))
                 .append("-")
                 .append(parts[1])
                 .append("-process-time").toString();
 
         final Histogram perQueueHistogramProcessingTime;
-        synchronized(perQueueProcessingTime) {
+        synchronized (perQueueProcessingTime) {
             if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
                 perQueueProcessingTime.put(notification.getQueueName(), Metrics.newHistogram(NotificationQueueDispatcher.class, metricName));
             }
             perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
         }
-        final DateTime beforeProcessing =  clock.getUTCNow();
+        final DateTime beforeProcessing = clock.getUTCNow();
         handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getSearchKey1(), notification.getSearchKey2());
-        final DateTime afterProcessing =  clock.getUTCNow();
+        final DateTime afterProcessing = clock.getUTCNow();
         perQueueHistogramProcessingTime.update(afterProcessing.getMillis() - beforeProcessing.getMillis());
         processedNotificationsSinceStart.inc();
     }
 
     private void clearNotification(final NotificationEventEntry cleared) {
-        dao.clearNotification(cleared.getRecordId(), Hostname.get());
+
+        NotificationEventEntry processedEntry = new NotificationEventEntry(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+        dao.markEntryAsProcessed(processedEntry);
     }
 
     private List<NotificationEventEntry> getReadyNotifications() {
-        final Date now = getClock().getUTCNow().toDate();
-        final Date nextAvailable = getClock().getUTCNow().plus(CLAIM_TIME_MS).toDate();
 
-        final List<NotificationEventEntry> input = dao.getReadyNotifications(now, Hostname.get(), config.getPrefetchAmount());
-
+        final List<NotificationEventEntry> input = dao.getReadyEntries();
         final List<NotificationEventEntry> claimedNotifications = new ArrayList<NotificationEventEntry>();
         for (final NotificationEventEntry cur : input) {
 
@@ -233,26 +238,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             if (queue == null || !queue.isStarted()) {
                 continue;
             }
-
-            logDebug("about to claim notification %s,  key = %s for time %s",
-                     cur.getRecordId(), cur.getEventClass(), cur.getEffectiveDate());
-
-            final boolean claimed = (dao.claimNotification(Hostname.get(), nextAvailable, cur.getRecordId(), now) == 1);
-            logDebug("claimed notification %s, key = %s for time %s result = %s",
-                     cur.getRecordId(), cur.getEventJson(), cur.getEffectiveDate(), claimed);
-
-            if (claimed) {
-                claimedNotifications.add(cur);
-                dao.insertClaimedHistory(Hostname.get(), now, cur.getRecordId(), cur.getSearchKey1(), cur.getSearchKey2());
-            }
+            claimedNotifications.add(cur);
         }
-
-        for (final NotificationEventEntry cur : claimedNotifications) {
-            if (cur.getOwner() != null && !cur.getOwner().equals(Hostname.get())) {
-                log.warn("NotificationQueue stealing notification {} from {}", new Object[]{ cur, cur.getOwner()});
-            }
-        }
-
         return claimedNotifications;
     }
 

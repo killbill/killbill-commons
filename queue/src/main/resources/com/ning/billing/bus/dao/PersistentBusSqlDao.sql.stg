@@ -3,7 +3,54 @@ group PersistentBusSqlDao;
 CHECK_TENANT() ::= "search_key2 = :searchKey2"
 AND_CHECK_TENANT() ::= "AND <CHECK_TENANT()>"
 
-getNextBusEventEntries(tableName) ::= <<
+
+
+getLastInsertId() ::= <<
+    select LAST_INSERT_ID();
+>>
+
+getByRecordId(tableName) ::= <<
+    select
+      record_id
+      , class_name
+      , event_json
+      , user_token
+      , created_date
+      , creating_owner
+      , processing_owner
+      , processing_available_date
+      , processing_state
+      , search_key1
+      , search_key2
+    from <tableName>
+    where
+    record_id = :recordId
+    ;
+>>
+
+
+getReadyEntriesFromIds(tableName, record_ids) ::= <<
+    select
+      record_id
+      , class_name
+      , event_json
+      , user_token
+      , created_date
+      , creating_owner
+      , processing_owner
+      , processing_available_date
+      , processing_state
+      , search_key1
+      , search_key2
+    from <tableName>
+    where
+    record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
+    order by
+      record_id asc
+    ;
+>>
+
+getReadyEntries(tableName) ::= <<
     select
       record_id
       , class_name
@@ -28,7 +75,7 @@ getNextBusEventEntries(tableName) ::= <<
 >>
 
 
-claimBusEvent(tableName) ::= <<
+claimEntry(tableName) ::= <<
     update <tableName>
     set
       processing_owner = :owner
@@ -42,26 +89,15 @@ claimBusEvent(tableName) ::= <<
     ;
 >>
 
-clearBusEvent(tableName) ::= <<
-    update <tableName>
-    set
-      processing_state = 'PROCESSED'
-    where
-      record_id = :recordId
-    ;
->>
-
-removeBusEventsById(tableName) ::= <<
-    update <tableName>
-    set
-      processing_state = 'REMOVED'
+removeEntry(tableName) ::= <<
+    delete from <tableName>
     where
       record_id = :recordId
     ;
 >>
 
 
-insertBusEvent(tableName) ::= <<
+insertEntry(tableName) ::= <<
     insert into <tableName> (
       class_name
     , event_json
@@ -85,20 +121,4 @@ insertBusEvent(tableName) ::= <<
     , :searchKey1
     , :searchKey2
     );
->>
-
-insertClaimedHistory() ::= <<
-    insert into claimed_bus_events (
-          owner_id
-        , claimed_date
-        , bus_event_id
-        , search_key1
-        , search_key2
-      ) values (
-          :ownerId
-        , :claimedDate
-        , :busEventId
-        , :searchKey1
-        , :searchKey2
-      );
 >>

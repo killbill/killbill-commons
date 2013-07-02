@@ -16,104 +16,10 @@
 
 package com.ning.billing.bus.dao;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import org.joda.time.DateTime;
-import org.skife.jdbi.v2.SQLStatement;
-import org.skife.jdbi.v2.StatementContext;
-import org.skife.jdbi.v2.sqlobject.Bind;
-import org.skife.jdbi.v2.sqlobject.Binder;
-import org.skife.jdbi.v2.sqlobject.SqlQuery;
-import org.skife.jdbi.v2.sqlobject.SqlUpdate;
-import org.skife.jdbi.v2.sqlobject.customizers.Define;
-import org.skife.jdbi.v2.sqlobject.customizers.Mapper;
-import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
-import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 import org.skife.jdbi.v2.sqlobject.stringtemplate.ExternalizedSqlViaStringTemplate3;
-import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
-import com.ning.billing.commons.jdbi.binder.BinderBase;
-import com.ning.billing.commons.jdbi.mapper.MapperBase;
-import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.dao.QueueSqlDao;
 
 @ExternalizedSqlViaStringTemplate3()
-public interface PersistentBusSqlDao extends Transactional<PersistentBusSqlDao>, CloseMe {
-
-
-    @SqlQuery
-    @Mapper(PersistentBusSqlMapper.class)
-    public List<BusEventEntry> getNextBusEventEntries(@Bind("max") int max,
-                                                      @Bind("owner") String owner,
-                                                      @Bind("now") Date now,
-                                                      @Define("tableName") final String actualHistoryTableName);
-
-    @SqlUpdate
-    public int claimBusEvent(@Bind("owner") String owner,
-                             @Bind("nextAvailable") Date nextAvailable,
-                             @Bind("recordId") Long id,
-                             @Bind("now") Date now,
-                             @Define("tableName") final String actualHistoryTableName);
-
-    @SqlUpdate
-    public void clearBusEvent(@Bind("recordId") Long id,
-                              @Bind("owner") String owner,
-                              @Define("tableName") final String actualHistoryTableName);
-
-    @SqlUpdate
-    public void removeBusEventsById(@Bind("recordId") Long id,
-                                    @Define("tableName") final String actualHistoryTableName);
-
-    @SqlUpdate
-    public void insertBusEvent(@Bind(binder = PersistentBusSqlBinder.class) BusEventEntry evt,
-                               @Define("tableName") final String actualHistoryTableName);
-
-    @SqlUpdate
-    public void insertClaimedHistory(@Bind("ownerId") String owner,
-                                     @Bind("claimedDate") Date claimedDate,
-                                     @Bind("busEventId") long id,
-                                     @Bind("searchKey1") long searchKey1,
-                                     @Bind("searchKey2") long searchKey2);
-
-    public static class PersistentBusSqlBinder extends BinderBase implements Binder<Bind, BusEventEntry> {
-
-        @Override
-        public void bind(@SuppressWarnings("rawtypes") final SQLStatement stmt, final Bind bind, final BusEventEntry evt) {
-            stmt.bind("className", evt.getEventClass());
-            stmt.bind("eventJson", evt.getEventJson());
-            stmt.bind("userToken", getUUIDString(evt.getUserToken()));
-            stmt.bind("createdDate", getDate(new DateTime()));
-            stmt.bind("creatingOwner", evt.getCreatedOwner());
-            stmt.bind("processingAvailableDate", getDate(evt.getNextAvailableDate()));
-            stmt.bind("processingOwner", evt.getOwner());
-            stmt.bind("processingState", PersistentQueueEntryLifecycleState.AVAILABLE.toString());
-            stmt.bind("searchKey1", evt.getSearchKey1());
-            stmt.bind("searchKey2", evt.getSearchKey2());
-        }
-    }
-
-    public static class PersistentBusSqlMapper extends MapperBase implements ResultSetMapper<BusEventEntry> {
-
-        @Override
-        public BusEventEntry map(final int index, final ResultSet r, final StatementContext ctx)
-                throws SQLException {
-
-            final Long recordId = r.getLong("record_id");
-            final String className = r.getString("class_name");
-            final String createdOwner = r.getString("creating_owner");
-            final String eventJson = r.getString("event_json");
-            final UUID userToken = getUUID(r, "user_token");
-            final DateTime nextAvailableDate = getDateTime(r, "processing_available_date");
-            final String processingOwner = r.getString("processing_owner");
-            final PersistentQueueEntryLifecycleState processingState = PersistentQueueEntryLifecycleState.valueOf(r.getString("processing_state"));
-            final Long searchKey1 = r.getLong("search_key1");
-            final Long searchKey2 = r.getLong("search_key2");
-
-            return new BusEventEntry(recordId, createdOwner, processingOwner, nextAvailableDate, processingState, className,
-                                     eventJson, userToken, searchKey1, searchKey2);
-        }
-    }
+public interface PersistentBusSqlDao extends QueueSqlDao<BusEventEntry> {
 }

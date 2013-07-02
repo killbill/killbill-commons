@@ -25,35 +25,51 @@ import com.ning.billing.queue.api.EventEntry;
 
 public class BusEventEntry implements EventEntry {
 
-    private final Long recordId;
-    private final String owner;
-    private final String createdOwner;
-    private final DateTime nextAvailable;
-    private final PersistentQueueEntryLifecycleState processingState;
-    private final String eventClass;
-    private final String eventJson;
-    private final UUID userToken;
-    private final Long searchKey1;
-    private final Long searchKey2;
+    private Long recordId;
+    private String className;
+    private String eventJson;
+    private UUID userToken;
+    private DateTime createdDate; //XX
+    private String creatingOwner;
+    private String processingOwner;
+    private DateTime processingAvailableDate;
+    private PersistentQueueEntryLifecycleState processingState;
+    private Long searchKey1;
+    private Long searchKey2;
 
-    public BusEventEntry(final Long recordId, final String createdOwner, final String owner, final DateTime nextAvailable,
+    public BusEventEntry() { /* DAO mapper */};
+
+    public BusEventEntry(final Long recordId, final String createdOwner, final String owner, final DateTime createdDate, final DateTime nextAvailable,
                          final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson,
                          final UUID userToken, final Long searchKey1, final Long searchKey2) {
         this.recordId = recordId;
-        this.createdOwner = createdOwner;
-        this.owner = owner;
-        this.nextAvailable = nextAvailable;
+        this.creatingOwner = createdOwner;
+        this.processingOwner = owner;
+        this.createdDate = createdDate;
+        this.processingAvailableDate = nextAvailable;
         this.processingState = processingState;
-        this.eventClass = busEventClass;
+        this.className = busEventClass;
         this.eventJson = busEventJson;
         this.userToken = userToken;
         this.searchKey1 = searchKey1;
         this.searchKey2 = searchKey2;
     }
 
-    public BusEventEntry(final String createdOwner, final String busEventClass, final String busEventJson,
+    public BusEventEntry(final String createdOwner, final DateTime createdDate, final String busEventClass, final String busEventJson,
                          final UUID userToken, final Long searchKey1, final Long searchKey2) {
-        this(-1L, createdOwner, null, null, null, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
+        this(-1L, createdOwner, null, createdDate, null, PersistentQueueEntryLifecycleState.AVAILABLE, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
+    }
+
+    public BusEventEntry(final BusEventEntry in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state) {
+        this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), in.getUserToken(), in.getSearchKey1(), in.getSearchKey2());
+    }
+
+    public DateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public DateTime getProcessingAvailableDate() {
+        return processingAvailableDate;
     }
 
     @Override
@@ -62,8 +78,8 @@ public class BusEventEntry implements EventEntry {
     }
 
     @Override
-    public String getEventClass() {
-        return eventClass;
+    public String getClassName() {
+        return className;
     }
 
     @Override
@@ -77,18 +93,18 @@ public class BusEventEntry implements EventEntry {
     }
 
     @Override
-    public String getOwner() {
-        return owner;
+    public String getProcessingOwner() {
+        return processingOwner;
     }
 
     @Override
-    public String getCreatedOwner() {
-        return createdOwner;
+    public String getCreatingOwner() {
+        return creatingOwner;
     }
 
     @Override
     public DateTime getNextAvailableDate() {
-        return nextAvailable;
+        return processingAvailableDate;
     }
 
     @Override
@@ -103,7 +119,7 @@ public class BusEventEntry implements EventEntry {
                 break;
             case IN_PROCESSING:
                 // Somebody already got the event, not available yet
-                if (nextAvailable.isAfter(now)) {
+                if (processingAvailableDate.isAfter(now)) {
                     return false;
                 }
                 break;

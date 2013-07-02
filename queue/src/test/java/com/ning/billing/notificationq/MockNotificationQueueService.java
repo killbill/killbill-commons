@@ -79,15 +79,15 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
         List<NotificationEventEntry> readyNotifications = queue.getReadyNotifications();
         for (final NotificationEventEntry cur : readyNotifications) {
-            final NotificationEventJson key = deserializeEvent(cur.getEventClass(), objectMapper, cur.getEventJson());
+            final NotificationEventJson key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
 
 
-            final NotificationEventEntry processedNotification = new NotificationEventEntry(cur.getRecordId(), Hostname.get(), Hostname.get(),
-                                                                                      getClock().getUTCNow().plus(CLAIM_TIME_MS),
-                                                                                      PersistentQueueEntryLifecycleState.PROCESSED, cur.getEventClass(),
-                                                                                      cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
-                                                                                      cur.getFutureUserToken(), cur.getEffectiveDate(), "MockQueue");
+            final NotificationEventEntry processedNotification = new NotificationEventEntry(cur.getRecordId(), Hostname.get(), Hostname.get(), clock.getUTCNow(),
+                                                                                            getClock().getUTCNow().plus(CLAIM_TIME_MS),
+                                                                                            PersistentQueueEntryLifecycleState.PROCESSED, cur.getClassName(),
+                                                                                            cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
+                                                                                            cur.getFutureUserToken(), cur.getEffectiveDate(), "MockQueue");
             oldNotifications.add(cur);
             processedNotifications.add(processedNotification);
             result++;

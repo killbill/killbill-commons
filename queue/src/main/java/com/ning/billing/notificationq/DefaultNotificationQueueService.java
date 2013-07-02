@@ -27,18 +27,15 @@ import com.ning.billing.util.clock.Clock;
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
 
-    private final IDBI dbi;
-
     @Inject
     public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config) {
         super(clock, config, dbi);
-        this.dbi = dbi;
     }
 
     @Override
     protected NotificationQueue createNotificationQueueInternal(final String svcName,
                                                                 final String queueName,
                                                                 final NotificationQueueHandler handler) {
-        return new DefaultNotificationQueue(svcName, queueName, handler, dbi, this, clock);
+        return new DefaultNotificationQueue(svcName, queueName, handler, dao, this, clock);
     }
 }

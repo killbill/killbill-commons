@@ -8,15 +8,15 @@ public interface EventEntry {
 
     Long getRecordId();
 
-    String getEventClass();
+    String getClassName();
 
     String getEventJson();
 
     UUID getUserToken();
 
-    String getOwner();
+    String getProcessingOwner();
 
-    String getCreatedOwner();
+    String getCreatingOwner();
 
     DateTime getNextAvailableDate();
 

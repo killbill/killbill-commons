@@ -34,18 +34,18 @@ public class TestPersistentEventBus extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), "bus_events");
+        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), "bus_events", "bus_events_history");
         testEventBusBase = new TestEventBusBase(busService);
     }
 
     @Override
-    @BeforeMethod(groups = "fast")
+    @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         busService.start();
     }
 
-    @AfterMethod(groups = "fast")
+    @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
         busService.stop();
         super.afterMethod();

@@ -19,6 +19,7 @@ package com.ning.billing.notificationq.api;
 import org.skife.config.Config;
 import org.skife.config.Default;
 import org.skife.config.Description;
+import org.skife.config.TimeSpan;
 
 import com.ning.billing.queue.api.PersistentQueueConfig;
 
@@ -28,7 +29,13 @@ public interface NotificationQueueConfig extends PersistentQueueConfig {
     @Config("killbill.billing.notificationq.prefetch")
     @Default("7")
     @Description("Number of notifications to fetch from the database at once")
-    public int getPrefetchAmount();
+    public int getMaxEntriesClaimed();
+
+    @Config("killbill.billing.persistent.notificationq.claim.time")
+    @Default("5m")
+    @Description("Claim time")
+    @Override
+    public abstract TimeSpan getClaimedTime();
 
     @Override
     @Config("killbill.billing.notificationq.sleep")

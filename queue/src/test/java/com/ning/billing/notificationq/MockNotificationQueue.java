@@ -84,7 +84,7 @@ public class MockNotificationQueue implements NotificationQueue {
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
-        final NotificationEventEntry notification = new NotificationEventEntry(recordIds.incrementAndGet(), "MockQueue", hostname, null, PersistentQueueEntryLifecycleState.AVAILABLE,
+        final NotificationEventEntry notification = new NotificationEventEntry(recordIds.incrementAndGet(), "MockQueue", hostname, clock.getUTCNow(),  null, PersistentQueueEntryLifecycleState.AVAILABLE,
                                                                                eventJson.getClass().getName(), json, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
                                                                                futureNotificationTime, "MockQueue");
 
@@ -110,9 +110,9 @@ public class MockNotificationQueue implements NotificationQueue {
         synchronized (notifications) {
             for (final NotificationEventEntry notification : notifications) {
                 if (notification.getSearchKey1().equals(searchKey1) &&
-                    type.getName().equals(notification.getEventClass()) &&
+                    type.getName().equals(notification.getClassName()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
-                    result.put(notification, (T) DefaultQueueLifecycle.deserializeEvent(notification.getEventClass(), objectMapper, notification.getEventJson()));
+                    result.put(notification, (T) DefaultQueueLifecycle.deserializeEvent(notification.getClassName(), objectMapper, notification.getEventJson()));
                 }
             }
         }
