@@ -13,17 +13,14 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
 import com.ning.billing.bus.api.PersistentBusConfig;
-import com.ning.billing.bus.dao.BusEventEntry;
 import com.ning.billing.commons.embeddeddb.mysql.MySQLEmbeddedDB;
 import com.ning.billing.commons.jdbi.argument.DateTimeArgumentFactory;
 import com.ning.billing.commons.jdbi.argument.DateTimeZoneArgumentFactory;
 import com.ning.billing.commons.jdbi.argument.EnumArgumentFactory;
 import com.ning.billing.commons.jdbi.argument.LocalDateArgumentFactory;
 import com.ning.billing.commons.jdbi.argument.UUIDArgumentFactory;
-import com.ning.billing.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import com.ning.billing.commons.jdbi.mapper.UUIDMapper;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
-import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.util.clock.ClockMock;
 
 import com.google.common.base.Charsets;

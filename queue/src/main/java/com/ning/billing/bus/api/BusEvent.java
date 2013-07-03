@@ -4,6 +4,11 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
+/**
+ * The BusEvent return to the user. It encapsulates the de-serialized version of the json event on disk.
+ *
+ * @param <T> The type of event serialized on disk
+ */
 public class BusEvent<T extends BusEventBase> {
 
     private final Long recordId;

@@ -19,8 +19,12 @@ package com.ning.billing.notificationq.api;
 import com.ning.billing.bus.api.BusEventBase;
 
 /**
- * The notification key associated with a given notification
+ * The interface that needs to be implemented for any notification event
+ *
+ * <p> The user specific class implementing this interface must also be serializable in json using jackson annotations.
+ * The generated JSON must also fit in the varchar as defined by the schema
  */
+
 public interface NotificationEventBase extends BusEventBase {
 
 }

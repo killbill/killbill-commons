@@ -18,7 +18,14 @@ package com.ning.billing.bus.api;
 
 import java.util.UUID;
 
+/**
+ * The interface that needs to be implemented for any bus event
+ * <p/>
+ * <p> The user specific class implementing this interface must also be serializable in json using jackson annotations.
+ * The generated JSON must also fit in the varchar as defined by the schema
+ */
 public interface BusEventBase {
+
     public UUID getUserToken();
 
     public Long getSearchKey1();

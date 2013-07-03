@@ -1,10 +1,12 @@
-package com.ning.billing.queue.api;
+package com.ning.billing.queue.dao;
 
 import java.util.UUID;
 
 import org.joda.time.DateTime;
 
-public interface EventEntry {
+import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
+
+public interface EventEntryModelDao {
 
     Long getRecordId();
 
@@ -28,10 +30,4 @@ public interface EventEntry {
 
     Long getSearchKey2();
 
-    enum PersistentQueueEntryLifecycleState {
-        AVAILABLE,
-        IN_PROCESSING,
-        PROCESSED,
-        REMOVED
-    }
 }

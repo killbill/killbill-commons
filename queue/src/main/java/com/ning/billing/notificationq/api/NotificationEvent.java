@@ -6,6 +6,11 @@ import org.joda.time.DateTime;
 
 import com.ning.billing.bus.api.BusEvent;
 
+/**
+ * The NotificationEvent return to the user. It encapsulates the de-serialized version of the json event on disk.
+ *
+ * @param <T> The type of event serialized on disk
+ */
 public class NotificationEvent<T extends NotificationEventBase> extends BusEvent<T> {
 
     private final UUID futureUserToken;

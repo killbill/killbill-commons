@@ -20,10 +20,11 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
-import com.ning.billing.queue.api.EventEntry;
+import com.ning.billing.queue.dao.EventEntryModelDao;
+import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 
 
-public class BusEventEntry implements EventEntry {
+public class BusEventModelDao implements EventEntryModelDao {
 
     private Long recordId;
     private String className;
@@ -37,11 +38,11 @@ public class BusEventEntry implements EventEntry {
     private Long searchKey1;
     private Long searchKey2;
 
-    public BusEventEntry() { /* DAO mapper */};
+    public BusEventModelDao() { /* DAO mapper */};
 
-    public BusEventEntry(final Long recordId, final String createdOwner, final String owner, final DateTime createdDate, final DateTime nextAvailable,
-                         final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson,
-                         final UUID userToken, final Long searchKey1, final Long searchKey2) {
+    public BusEventModelDao(final Long recordId, final String createdOwner, final String owner, final DateTime createdDate, final DateTime nextAvailable,
+                            final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson,
+                            final UUID userToken, final Long searchKey1, final Long searchKey2) {
         this.recordId = recordId;
         this.creatingOwner = createdOwner;
         this.processingOwner = owner;
@@ -55,12 +56,12 @@ public class BusEventEntry implements EventEntry {
         this.searchKey2 = searchKey2;
     }
 
-    public BusEventEntry(final String createdOwner, final DateTime createdDate, final String busEventClass, final String busEventJson,
-                         final UUID userToken, final Long searchKey1, final Long searchKey2) {
+    public BusEventModelDao(final String createdOwner, final DateTime createdDate, final String busEventClass, final String busEventJson,
+                            final UUID userToken, final Long searchKey1, final Long searchKey2) {
         this(-1L, createdOwner, null, createdDate, null, PersistentQueueEntryLifecycleState.AVAILABLE, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
     }
 
-    public BusEventEntry(final BusEventEntry in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state) {
+    public BusEventModelDao(final BusEventModelDao in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state) {
         this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), in.getUserToken(), in.getSearchKey1(), in.getSearchKey2());
     }
 

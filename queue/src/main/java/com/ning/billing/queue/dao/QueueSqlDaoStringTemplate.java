@@ -19,7 +19,6 @@ import org.skife.jdbi.v2.sqlobject.stringtemplate.UseStringTemplate3StatementLoc
 import org.skife.jdbi.v2.tweak.StatementLocator;
 
 import com.ning.billing.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
-import com.ning.billing.queue.api.EventEntry;
 
 
 @SqlStatementCustomizingAnnotation(QueueSqlDaoStringTemplate.QueueSqlDaoStringTemplateFactory.class)
@@ -63,7 +62,7 @@ public @interface QueueSqlDaoStringTemplate {
                                     for (int j = 0; j < type.getActualTypeArguments().length; j++) {
                                         final Type modelType = type.getActualTypeArguments()[j];
                                         final Class modelClazz = (Class) modelType;
-                                        if (EventEntry.class.isAssignableFrom(modelClazz)) {
+                                        if (EventEntryModelDao.class.isAssignableFrom(modelClazz)) {
                                             query.registerMapper(new LowerToCamelBeanMapperFactory(modelClazz));
                                         }
                                     }

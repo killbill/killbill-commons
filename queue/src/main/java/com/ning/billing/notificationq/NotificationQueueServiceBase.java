@@ -94,7 +94,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
         return sb.toString();
     }
 
-
+/*
     //
     // Test ONLY
     //
@@ -114,6 +114,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
         }
         return result;
     }
+    */
 
     protected abstract NotificationQueue createNotificationQueueInternal(String svcName,
                                                                          String queueName, NotificationQueueHandler handler);

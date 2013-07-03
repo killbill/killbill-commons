@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.queue.api.EventEntry;
+import com.ning.billing.queue.dao.EventEntryModelDao;
 import com.ning.billing.queue.api.PersistentQueueConfig;
 import com.ning.billing.queue.dao.QueueSqlDao;
 import com.ning.billing.util.clock.Clock;
@@ -24,7 +24,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.sun.istack.internal.Nullable;
 
-public class DBBackedQueue<T extends EventEntry> {
+public class DBBackedQueue<T extends EventEntryModelDao> {
 
     // TODO STEPH config
     private final static int QUEUE_CAPACITY = 3000;

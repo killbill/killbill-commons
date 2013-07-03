@@ -36,11 +36,11 @@ import com.ning.billing.notificationq.api.NotificationEventBase;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import com.ning.billing.notificationq.dao.NotificationEventEntry;
+import com.ning.billing.notificationq.dao.NotificationEventModelDao;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
 import com.ning.billing.queue.DBBackedQueue;
 import com.ning.billing.queue.DefaultQueueLifecycle;
-import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.util.clock.Clock;
 
 import com.yammer.metrics.Metrics;
@@ -61,7 +61,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     protected final Clock clock;
     protected final Map<String, NotificationQueue> queues;
-    protected final DBBackedQueue<NotificationEventEntry> dao;
+    protected final DBBackedQueue<NotificationEventModelDao> dao;
 
 
     //
@@ -92,7 +92,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
         final NotificationSqlDao sqlDao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
-        this.dao = new DBBackedQueue<NotificationEventEntry>(clock, sqlDao, config, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME,
+        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME,
                                                              DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME,
                                                              "notif-" + DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME, false);
 
@@ -162,7 +162,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         logDebug("ENTER doProcessEvents");
         // Finding and claiming notifications is not done per tenant (yet?)
-        final List<NotificationEventEntry> notifications = getReadyNotifications();
+        final List<NotificationEventModelDao> notifications = getReadyNotifications();
         if (notifications.size() == 0) {
             logDebug("EXIT doProcessEvents");
             return 0;
@@ -178,7 +178,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         logDebug("START processing %d events at time %s", notifications.size(), getClock().getUTCNow().toDate());
 
         int result = 0;
-        for (final NotificationEventEntry cur : notifications) {
+        for (final NotificationEventModelDao cur : notifications) {
             getNbProcessedEvents().incrementAndGet();
             final NotificationEventBase key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
 
@@ -195,7 +195,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         return result;
     }
 
-    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventEntry notification, final NotificationEventBase key) {
+    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventModelDao notification, final NotificationEventBase key) {
 
         // Create specific metric name because:
         // - ':' is not allowed for metric name
@@ -221,16 +221,16 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         processedNotificationsSinceStart.inc();
     }
 
-    private void clearNotification(final NotificationEventEntry cleared) {
-        NotificationEventEntry processedEntry = new NotificationEventEntry(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+    private void clearNotification(final NotificationEventModelDao cleared) {
+        NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
         dao.moveEntryToHistory(processedEntry);
     }
 
-    private List<NotificationEventEntry> getReadyNotifications() {
+    private List<NotificationEventModelDao> getReadyNotifications() {
 
-        final List<NotificationEventEntry> input = dao.getReadyEntries();
-        final List<NotificationEventEntry> claimedNotifications = new ArrayList<NotificationEventEntry>();
-        for (final NotificationEventEntry cur : input) {
+        final List<NotificationEventModelDao> input = dao.getReadyEntries();
+        final List<NotificationEventModelDao> claimedNotifications = new ArrayList<NotificationEventModelDao>();
+        for (final NotificationEventModelDao cur : input) {
 
             // Skip non active queues...
             final NotificationQueue queue = queues.get(cur.getQueueName());

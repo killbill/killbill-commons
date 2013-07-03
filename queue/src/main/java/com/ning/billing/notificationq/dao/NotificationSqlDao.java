@@ -27,10 +27,10 @@ import com.ning.billing.queue.dao.QueueSqlDao;
 import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
 
 @QueueSqlDaoStringTemplate
-public interface NotificationSqlDao extends QueueSqlDao<NotificationEventEntry> {
+public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDao> {
 
     @SqlQuery
-    public List<NotificationEventEntry> getReadyQueueEntriesForSearchKey(@Bind("now") Date now,
+    public List<NotificationEventModelDao> getReadyQueueEntriesForSearchKey(@Bind("now") Date now,
                                                                          @Bind("queueName") String queueName,
                                                                          @Bind("searchKey") final Long keyValue,
                                                                          @Define("tableName") final String tableName,

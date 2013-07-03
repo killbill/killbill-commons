@@ -22,7 +22,9 @@ import org.joda.time.DateTime;
 
 import com.ning.billing.queue.api.QueueLifecycle;
 
-
+/**
+ * A service to create and delete NotificationQueue
+ */
 public interface NotificationQueueService extends QueueLifecycle {
 
     public interface NotificationQueueHandler {
@@ -30,10 +32,10 @@ public interface NotificationQueueService extends QueueLifecycle {
         /**
          * Called for each notification ready
          *
-         * @param eventJson the notification key associated to that notification entry
-         * @param userToken user token associated with that notification entry
-         * @param searchKey1 account record id associated with that notification entry
-         * @param searchKey2  tenant record id associated with that notification entry
+         * @param eventJson  the notification key associated to that notification entry
+         * @param userToken  user token associated with that notification entry
+         * @param searchKey1 the searchKey1 associated with that notification entry
+         * @param searchKey2 the searchKey2 associated with that notification entry
          */
         public void handleReadyNotification(NotificationEventBase eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
     }
@@ -58,12 +60,12 @@ public interface NotificationQueueService extends QueueLifecycle {
 
     /**
      * Creates a new NotificationQueue for a given associated with the given service and queueName
+     *
      * @param svcName   the name of the service using that queue
      * @param queueName a name for that queue (unique per service)
      * @param handler   the handler required for notifying the caller of state change
-     * @return a new NotificationQueue
-     * @throws NotificationQueueAlreadyExists
-     *          is the queue associated with that service and name already exits
+     * @return          a new NotificationQueue
+     * @throws NotificationQueueAlreadyExists is the queue associated with that service and name already exits
      */
     public NotificationQueue createNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler)
             throws NotificationQueueAlreadyExists;
@@ -71,9 +73,9 @@ public interface NotificationQueueService extends QueueLifecycle {
     /**
      * Retrieves an already created NotificationQueue by service and name if it exists
      *
-     * @param svcName
-     * @param queueName
-     * @return
+     * @param svcName   the name of the service using that queue
+     * @param queueName a name for that queue (unique per service)
+     * @return          a new NotificationQueue
      * @throws NoSuchNotificationQueue if queue does not exist
      */
     public NotificationQueue getNotificationQueue(final String svcName, final String queueName)
@@ -82,16 +84,12 @@ public interface NotificationQueueService extends QueueLifecycle {
     /**
      * Delete notificationQueue
      *
-     * @param svcName
-     * @param queueName
-     * @return
+     * @param svcName   the name of the service using that queue
+     * @param queueName a name for that queue (unique per service)
+     * @return          a new NotificationQueue
      * @throws NoSuchNotificationQueue if queue does not exist
      */
     public void deleteNotificationQueue(final String svcName, final String queueName)
             throws NoSuchNotificationQueue;
 
-    /**
-     * @return the number of processed notifications
-     */
-    public int triggerManualQueueProcessing(final Boolean keepRunning);
 }

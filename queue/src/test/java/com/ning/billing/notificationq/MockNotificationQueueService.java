@@ -27,8 +27,8 @@ import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.api.NotificationEventBase;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
-import com.ning.billing.notificationq.dao.NotificationEventEntry;
-import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
+import com.ning.billing.notificationq.dao.NotificationEventModelDao;
+import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.util.clock.Clock;
 
 
@@ -74,16 +74,16 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
 
         int result = 0;
-        final List<NotificationEventEntry> processedNotifications = new ArrayList<NotificationEventEntry>();
-        final List<NotificationEventEntry> oldNotifications = new ArrayList<NotificationEventEntry>();
+        final List<NotificationEventModelDao> processedNotifications = new ArrayList<NotificationEventModelDao>();
+        final List<NotificationEventModelDao> oldNotifications = new ArrayList<NotificationEventModelDao>();
 
-        List<NotificationEventEntry> readyNotifications = queue.getReadyNotifications();
-        for (final NotificationEventEntry cur : readyNotifications) {
+        List<NotificationEventModelDao> readyNotifications = queue.getReadyNotifications();
+        for (final NotificationEventModelDao cur : readyNotifications) {
             final NotificationEventBase key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
 
 
-            final NotificationEventEntry processedNotification = new NotificationEventEntry(cur.getRecordId(), Hostname.get(), Hostname.get(), clock.getUTCNow(),
+            final NotificationEventModelDao processedNotification = new NotificationEventModelDao(cur.getRecordId(), Hostname.get(), Hostname.get(), clock.getUTCNow(),
                                                                                             getClock().getUTCNow().plus(CLAIM_TIME_MS),
                                                                                             PersistentQueueEntryLifecycleState.PROCESSED, cur.getClassName(),
                                                                                             cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),

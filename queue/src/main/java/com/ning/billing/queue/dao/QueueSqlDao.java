@@ -11,10 +11,8 @@ import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 
-import com.ning.billing.queue.api.EventEntry;
-
 @QueueSqlDaoStringTemplate
-public interface QueueSqlDao<T extends EventEntry> extends Transactional<QueueSqlDao<T>>, CloseMe {
+public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
 
     @SqlQuery
     public Long getLastInsertId();

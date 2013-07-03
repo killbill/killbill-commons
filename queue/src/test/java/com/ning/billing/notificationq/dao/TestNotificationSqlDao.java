@@ -21,8 +21,6 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -30,7 +28,7 @@ import org.testng.annotations.Test;
 import com.ning.billing.Hostname;
 import com.ning.billing.TestSetup;
 import com.ning.billing.notificationq.DefaultNotificationQueue;
-import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -58,7 +56,7 @@ public class TestNotificationSqlDao extends TestSetup {
         final String eventJson = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
 
-        final NotificationEventEntry notif = new NotificationEventEntry(Hostname.get(), clock.getUTCNow(), eventJson.getClass().getName(),
+        final NotificationEventModelDao notif = new NotificationEventModelDao(Hostname.get(), clock.getUTCNow(), eventJson.getClass().getName(),
                                                                         eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
                                                                         UUID.randomUUID(), effDt, "testBasic");
 
@@ -66,11 +64,11 @@ public class TestNotificationSqlDao extends TestSetup {
 
         Thread.sleep(1000);
         final DateTime now = new DateTime();
-        final List<NotificationEventEntry> notifications = dao.getReadyEntries(now.toDate(), hostname, 3, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
+        final List<NotificationEventModelDao> notifications = dao.getReadyEntries(now.toDate(), hostname, 3, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);
 
-        NotificationEventEntry notification = notifications.get(0);
+        NotificationEventModelDao notification = notifications.get(0);
         assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
         assertEquals(notification.getProcessingOwner(), null);
@@ -91,7 +89,7 @@ public class TestNotificationSqlDao extends TestSetup {
         validateDate(notification.getNextAvailableDate(), nextAvailable);
 
         final DateTime processedTime = clock.getUTCNow();
-        NotificationEventEntry notificationHistory = new NotificationEventEntry(notification, Hostname.get(), processedTime, PersistentQueueEntryLifecycleState.PROCESSED);
+        NotificationEventModelDao notificationHistory = new NotificationEventModelDao(notification, Hostname.get(), processedTime, PersistentQueueEntryLifecycleState.PROCESSED);
         dao.insertEntry(notificationHistory, DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME);
 
         notificationHistory = dao.getByRecordId(notification.getRecordId(), DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME);

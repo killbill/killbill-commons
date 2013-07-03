@@ -20,5 +20,5 @@ import com.ning.billing.queue.dao.QueueSqlDao;
 import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
 
 @QueueSqlDaoStringTemplate
-public interface PersistentBusSqlDao extends QueueSqlDao<BusEventEntry> {
+public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
 }

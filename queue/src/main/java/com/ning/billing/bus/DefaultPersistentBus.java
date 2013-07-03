@@ -31,11 +31,11 @@ import com.ning.billing.Hostname;
 import com.ning.billing.bus.api.BusEventBase;
 import com.ning.billing.bus.api.PersistentBus;
 import com.ning.billing.bus.api.PersistentBusConfig;
-import com.ning.billing.bus.dao.BusEventEntry;
+import com.ning.billing.bus.dao.BusEventModelDao;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
 import com.ning.billing.queue.DBBackedQueue;
 import com.ning.billing.queue.DefaultQueueLifecycle;
-import com.ning.billing.queue.api.EventEntry.PersistentQueueEntryLifecycleState;
+import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.util.clock.Clock;
 
 import com.google.common.eventbus.EventBus;
@@ -44,7 +44,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
     private final EventBusDelegate eventBusDelegate;
-    private final DBBackedQueue<BusEventEntry> dao;
+    private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
 
     private volatile boolean isStarted;
@@ -82,7 +82,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
-        this.dao = new DBBackedQueue<BusEventEntry>(clock, sqlDao, config, busTableName, busHistoryTableName,  "bus-" + busTableName, true);
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, busTableName, busHistoryTableName,  "bus-" + busTableName, true);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = false;
     }
@@ -102,19 +102,19 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public int doProcessEvents() {
-        final List<BusEventEntry> events = dao.getReadyEntries();
+        final List<BusEventModelDao> events = dao.getReadyEntries();
         if (events.size() == 0) {
             return 0;
         }
 
         int result = 0;
-        for (final BusEventEntry cur : events) {
+        for (final BusEventModelDao cur : events) {
             final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeSearchKeys(cur.getEventJson(), cur.getSearchKey1(), cur.getSearchKey2());
             final BusEventBase evt = deserializeEvent(cur.getClassName(), objectMapper, jsonWithAccountAndTenantRecorId);
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);
-            BusEventEntry processedEntry = new BusEventEntry(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
             dao.moveEntryToHistory(processedEntry);
         }
         return result;
@@ -149,7 +149,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         try {
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventEntry entry = new BusEventEntry(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
 
             } else {
@@ -167,7 +167,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventEntry entry = new BusEventEntry(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntryFromTransaction(transactional, entry);
             } else {
                 log.warn("Attempting to post event " + event + " in a non initialized bus");
