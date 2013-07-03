@@ -1,0 +1,220 @@
+group BaseSqlDao;
+
+/** TO BE OVERWRITTEN IN CHILD TEMPLATE **/
+
+
+readyOrderByClause() ::= <<
+>>
+
+extraFieldsWithComma() ::= <<
+>>
+
+
+extraValuesWithComma() ::= <<
+>>
+
+/** FIELDS **/
+
+baseFieldsNoRecordId() ::= <<
+      class_name
+      , event_json
+      , user_token
+      , created_date
+>>
+
+baseFields() ::= <<
+     record_id
+      , <baseFieldsNoRecordId()>
+>>
+
+lifeCycleFieldsWithComma() ::= <<
+      , creating_owner
+      , processing_owner
+      , processing_available_date
+      , processing_state
+>>
+
+searchFieldsWithComma() ::= <<
+      , search_key1
+      , search_key2
+>>
+
+
+allTableFieldsNoRecordId() ::= <<
+      <baseFieldsNoRecordId()>
+      <lifeCycleFieldsWithComma()>
+      <searchFieldsWithComma()>
+      <extraFieldsWithComma()>
+>>
+
+allTableFields() ::= <<
+      <baseFields()>
+      <lifeCycleFieldsWithComma()>
+      <searchFieldsWithComma()>
+      <extraFieldsWithComma()>
+>>
+
+/** VALUES **/
+
+baseValuesNoRecordId() ::= <<
+      :className
+      , :eventJson
+      , :userToken
+      , :createdDate
+>>
+
+baseValues() ::= <<
+     :recordId
+     , <baseValuesNoRecordId()>
+>>
+
+lifeCycleValuesWithComma() ::= <<
+      , :creatingOwner
+      , :processingOwner
+      , :processingAvailableDate
+      , :processingState
+>>
+
+searchValuesWithComma() ::= <<
+      , :searchKey1
+      , :searchKey2
+>>
+
+allTableValuesNoRecordId() ::= <<
+      <baseValuesNoRecordId()>
+      <lifeCycleValuesWithComma()>
+      <searchValuesWithComma()>
+      <extraValuesWithComma()>
+>>
+
+allTableValues() ::= <<
+      <baseValues()>
+      <lifeCycleValuesWithComma()>
+      <searchValuesWithComma()>
+      <extraValuesWithComma()>
+>>
+
+
+getLastInsertId() ::= <<
+    select LAST_INSERT_ID();
+>>
+
+getByRecordId(tableName) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+    record_id = :recordId
+    ;
+>>
+
+
+/** QUERIES **/
+
+getReadyEntriesFromIds(tableName, record_ids) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+      record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
+    order by
+      <readyOrderByClause()>
+    ;
+>>
+
+getReadyEntries(tableName) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+      processing_state != 'PROCESSED'
+      and processing_state != 'REMOVED'
+      and (processing_owner IS NULL OR processing_available_date \<= :now)
+    order by
+      <readyOrderByClause()>
+    limit :max
+    ;
+>>
+
+
+claimEntry(tableName) ::= <<
+    update <tableName>
+    set
+      processing_owner = :owner
+      , processing_available_date = :nextAvailable
+      , processing_state = 'IN_PROCESSING'
+    where
+      record_id = :recordId
+      and processing_state != 'PROCESSED'
+      and processing_state != 'REMOVED'
+      and (processing_owner IS NULL OR processing_available_date \<= :now)
+    ;
+>>
+
+removeEntry(tableName) ::= <<
+    delete from <tableName>
+    where
+      record_id = :recordId
+    ;
+>>
+
+
+insertEntry(tableName) ::= <<
+    insert into <tableName> (
+       <allTableFieldsNoRecordId()>
+    ) values (
+       <allTableValuesNoRecordId()>
+    );
+>>
+
+
+/**
+
+removeNotificationsByKey() ::= <<
+    update notifications
+    set
+      processing_state = 'REMOVED'
+    where
+      event_json = :eventJson
+    ;
+>>
+
+
+getPendingCountNotifications() ::= <<
+    select
+      count(*)
+    from notifications
+    where
+      effective_date \<= :now
+      and processing_state = 'AVAILABLE'
+    ;
+>>
+
+getFutureNotificationsForAccount() ::= <<
+select
+    record_id
+  , class_name
+  , event_json
+  , user_token
+  , future_user_token
+  , created_date
+  , creating_owner
+  , effective_date
+  , queue_name
+  , processing_owner
+  , processing_available_date
+  , processing_state
+  , search_key1
+  , search_key2
+from notifications
+where queue_name = :queueName
+and processing_state = 'AVAILABLE'
+and search_key1 = :searchKey1
+and effective_date >= :now
+order by effective_date, record_id
+;
+>>
+
+**/
+
+

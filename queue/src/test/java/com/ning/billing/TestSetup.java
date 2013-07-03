@@ -64,8 +64,6 @@ public class TestSetup {
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
         dbi.registerArgumentFactory(new EnumArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
-        dbi.registerMapper(new LowerToCamelBeanMapperFactory(BusEventEntry.class));
-        dbi.registerMapper(new LowerToCamelBeanMapperFactory(NotificationEventEntry.class));
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
         persistentBusConfig = new ConfigurationObjectFactory(configSource).build(PersistentBusConfig.class);

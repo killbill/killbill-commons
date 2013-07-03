@@ -1,124 +1,12 @@
-group PersistentBusSqlDao;
-          
-CHECK_TENANT() ::= "search_key2 = :searchKey2"
-AND_CHECK_TENANT() ::= "AND <CHECK_TENANT()>"
+group PersistentBusSqlDao: BaseSqlDao;
 
-
-
-getLastInsertId() ::= <<
-    select LAST_INSERT_ID();
->>
-
-getByRecordId(tableName) ::= <<
-    select
-      record_id
-      , class_name
-      , event_json
-      , user_token
-      , created_date
-      , creating_owner
-      , processing_owner
-      , processing_available_date
-      , processing_state
-      , search_key1
-      , search_key2
-    from <tableName>
-    where
-    record_id = :recordId
-    ;
+extraFieldsWithComma() ::= <<
 >>
 
 
-getReadyEntriesFromIds(tableName, record_ids) ::= <<
-    select
-      record_id
-      , class_name
-      , event_json
-      , user_token
-      , created_date
-      , creating_owner
-      , processing_owner
-      , processing_available_date
-      , processing_state
-      , search_key1
-      , search_key2
-    from <tableName>
-    where
-    record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
-    order by
-      record_id asc
-    ;
+extraValuesWithComma() ::= <<
 >>
 
-getReadyEntries(tableName) ::= <<
-    select
-      record_id
-      , class_name
-      , event_json
-      , user_token
-      , created_date
-      , creating_owner
-      , processing_owner
-      , processing_available_date
-      , processing_state
-      , search_key1
-      , search_key2
-    from <tableName>
-    where
-      processing_state != 'PROCESSED'
-      and processing_state != 'REMOVED'
-      and (processing_owner IS NULL OR processing_available_date \<= :now)
-    order by
-      record_id asc
-    limit :max
-    ;
->>
-
-
-claimEntry(tableName) ::= <<
-    update <tableName>
-    set
-      processing_owner = :owner
-      , processing_available_date = :nextAvailable
-      , processing_state = 'IN_PROCESSING'
-    where
-      record_id = :recordId
-      and processing_state != 'PROCESSED'
-      and processing_state != 'REMOVED'
-      and (processing_owner IS NULL OR processing_available_date \<= :now)
-    ;
->>
-
-removeEntry(tableName) ::= <<
-    delete from <tableName>
-    where
-      record_id = :recordId
-    ;
->>
-
-
-insertEntry(tableName) ::= <<
-    insert into <tableName> (
-      class_name
-    , event_json
-    , user_token
-    , created_date
-    , creating_owner
-    , processing_owner
-    , processing_available_date
-    , processing_state
-    , search_key1
-    , search_key2
-    ) values (
-      :className
-    , :eventJson
-    , :userToken
-    , :createdDate
-    , :creatingOwner
-    , :processingOwner
-    , :processingAvailableDate
-    , :processingState
-    , :searchKey1
-    , :searchKey2
-    );
+readyOrderByClause() ::= <<
+    record_id asc
 >>

@@ -13,6 +13,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 
 import com.ning.billing.queue.api.EventEntry;
 
+@QueueSqlDaoStringTemplate
 public interface QueueSqlDao<T extends EventEntry> extends Transactional<QueueSqlDao<T>>, CloseMe {
 
     @SqlQuery

@@ -16,10 +16,9 @@
 
 package com.ning.billing.notificationq.dao;
 
-import org.skife.jdbi.v2.sqlobject.stringtemplate.UseStringTemplate3StatementLocator;
-
 import com.ning.billing.queue.dao.QueueSqlDao;
+import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
 
-@UseStringTemplate3StatementLocator()
+@QueueSqlDaoStringTemplate
 public interface NotificationSqlDao extends QueueSqlDao<NotificationEventEntry> {
 }

@@ -16,10 +16,9 @@
 
 package com.ning.billing.bus.dao;
 
-import org.skife.jdbi.v2.sqlobject.stringtemplate.ExternalizedSqlViaStringTemplate3;
-
 import com.ning.billing.queue.dao.QueueSqlDao;
+import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
 
-@ExternalizedSqlViaStringTemplate3()
+@QueueSqlDaoStringTemplate
 public interface PersistentBusSqlDao extends QueueSqlDao<BusEventEntry> {
 }
