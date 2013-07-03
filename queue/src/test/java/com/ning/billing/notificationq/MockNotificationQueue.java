@@ -30,8 +30,8 @@ import org.joda.time.DateTime;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import com.ning.billing.notificationq.api.NotificationEventJson;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.queue.DefaultQueueLifecycle;
@@ -81,7 +81,7 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
         final NotificationEventEntry notification = new NotificationEventEntry(recordIds.incrementAndGet(), "MockQueue", hostname, clock.getUTCNow(),  null, PersistentQueueEntryLifecycleState.AVAILABLE,
@@ -94,18 +94,18 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventJson eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         recordFutureNotification(futureNotificationTime, eventJson, userToken, searchKey1, searchKey2);
     }
 
 
     @Override
-    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
+    public <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
         return getFutureNotificationsForAccountAndTypeFromTransaction(type, searchKey1, null);
     }
 
     @Override
-    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final Map<NotificationEventEntry, T> result = new HashMap<NotificationEventEntry, T>();
         synchronized (notifications) {
             for (final NotificationEventEntry notification : notifications) {

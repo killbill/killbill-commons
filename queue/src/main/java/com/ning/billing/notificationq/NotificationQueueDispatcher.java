@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.notificationq.api.NotificationEventJson;
+import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
@@ -180,7 +180,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         int result = 0;
         for (final NotificationEventEntry cur : notifications) {
             getNbProcessedEvents().incrementAndGet();
-            final NotificationEventJson key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
+            final NotificationEvent key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
 
             NotificationQueueHandler handler = getHandlerForActiveQueue(cur.getQueueName());
             if (handler == null) {
@@ -195,7 +195,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         return result;
     }
 
-    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventEntry notification, final NotificationEventJson key) {
+    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventEntry notification, final NotificationEvent key) {
 
         // Create specific metric name because:
         // - ':' is not allowed for metric name

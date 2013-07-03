@@ -37,7 +37,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param eventJson        the key for that notification
      */
     public void recordFutureNotification(final DateTime futureNotificationTime,
-                                         final NotificationEventJson eventJson,
+                                         final NotificationEvent eventJson,
                                          final UUID userToken,
                                          final Long searchKey1,
                                          final Long searchKey2)
@@ -51,7 +51,7 @@ public interface NotificationQueue extends QueueLifecycle {
      */
     public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier,
                                                         final DateTime futureNotificationTime,
-                                                        final NotificationEventJson eventJson,
+                                                        final NotificationEvent eventJson,
                                                         final UUID userToken,
                                                         final Long searchKey1,
                                                         final Long searchKey2)
@@ -63,7 +63,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1);
+    public <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1);
 
     /**
      * Retrieve all future pending notifications for a given account (taken from the context) in a transaction.
@@ -71,7 +71,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @return future notifications matching that key
      */
-    public  <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1,
+    public  <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1,
                                                                                                     final Transmogrifier transmogrifier);
 
     public void removeNotification(final Long recordId);

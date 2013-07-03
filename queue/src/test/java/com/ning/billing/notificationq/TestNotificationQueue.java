@@ -34,9 +34,9 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.ning.billing.TestSetup;
+import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationQueueService;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import com.ning.billing.notificationq.api.NotificationEventJson;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.dao.DummySqlTest;
 import com.ning.billing.util.clock.ClockMock;
@@ -63,7 +63,7 @@ public class TestNotificationQueue extends TestSetup {
 
     private int eventsReceived;
 
-    private static final class TestNotificationKey implements NotificationEventJson, Comparable<TestNotificationKey> {
+    private static final class TestNotificationKey implements NotificationEvent, Comparable<TestNotificationKey> {
 
         private final String value;
 
@@ -130,13 +130,13 @@ public class TestNotificationQueue extends TestSetup {
     @Test(groups = "slow")
     public void testSimpleNotification() throws Exception {
 
-        final Map<NotificationEventJson, Boolean> expectedNotifications = new TreeMap<NotificationEventJson, Boolean>();
+        final Map<NotificationEvent, Boolean> expectedNotifications = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queue = queueService.createNotificationQueue("test-svc",
                                                                              "foo",
                                                                              new NotificationQueueHandler() {
                                                                                  @Override
-                                                                                 public void handleReadyNotification(final NotificationEventJson eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+                                                                                 public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                                                                                      synchronized (expectedNotifications) {
                                                                                          log.info("Handler received key: " + eventJson);
 
@@ -152,7 +152,7 @@ public class TestNotificationQueue extends TestSetup {
         final DummyObject obj = new DummyObject("foo", key);
         final DateTime now = new DateTime();
         final DateTime readyTime = now.plusMillis(2000);
-        final NotificationEventJson eventJson = new TestNotificationKey(key.toString());
+        final NotificationEvent eventJson = new TestNotificationKey(key.toString());
 
         expectedNotifications.put(eventJson, Boolean.FALSE);
 
@@ -189,13 +189,13 @@ public class TestNotificationQueue extends TestSetup {
 
     @Test(groups = "slow")
     public void testManyNotifications() throws Exception {
-        final Map<NotificationEventJson, Boolean> expectedNotifications = new TreeMap<NotificationEventJson, Boolean>();
+        final Map<NotificationEvent, Boolean> expectedNotifications = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queue = queueService.createNotificationQueue("test-svc",
                                                                              "many",
                                                                              new NotificationQueueHandler() {
                                                                                  @Override
-                                                                                 public void handleReadyNotification(final NotificationEventJson eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+                                                                                 public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                                                                                      synchronized (expectedNotifications) {
                                                                                          log.info("Handler received key: " + eventJson.toString());
 
@@ -216,7 +216,7 @@ public class TestNotificationQueue extends TestSetup {
             final DummyObject obj = new DummyObject("foo", key);
             final int currentIteration = i;
 
-            final NotificationEventJson eventJson = new TestNotificationKey(new Integer(i).toString());
+            final NotificationEvent eventJson = new TestNotificationKey(new Integer(i).toString());
             expectedNotifications.put(eventJson, Boolean.FALSE);
 
 
@@ -277,12 +277,12 @@ public class TestNotificationQueue extends TestSetup {
      */
     @Test(groups = "slow")
     public void testMultipleHandlerNotification() throws Exception {
-        final Map<NotificationEventJson, Boolean> expectedNotificationsFred = new TreeMap<NotificationEventJson, Boolean>();
-        final Map<NotificationEventJson, Boolean> expectedNotificationsBarney = new TreeMap<NotificationEventJson, Boolean>();
+        final Map<NotificationEvent, Boolean> expectedNotificationsFred = new TreeMap<NotificationEvent, Boolean>();
+        final Map<NotificationEvent, Boolean> expectedNotificationsBarney = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queueFred = queueService.createNotificationQueue("UtilTest", "Fred", new NotificationQueueHandler() {
             @Override
-            public void handleReadyNotification(final NotificationEventJson eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+            public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                 log.info("Fred received key: " + eventJson);
                 expectedNotificationsFred.put(eventJson, Boolean.TRUE);
                 eventsReceived++;
@@ -291,7 +291,7 @@ public class TestNotificationQueue extends TestSetup {
 
         final NotificationQueue queueBarney = queueService.createNotificationQueue("UtilTest", "Barney", new NotificationQueueHandler() {
             @Override
-            public void handleReadyNotification(final NotificationEventJson eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+            public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
                 log.info("Barney received key: " + eventJson);
                 expectedNotificationsBarney.put(eventJson, Boolean.TRUE);
                 eventsReceived++;
@@ -304,9 +304,9 @@ public class TestNotificationQueue extends TestSetup {
         final DummyObject obj = new DummyObject("foo", key);
         final DateTime now = new DateTime();
         final DateTime readyTime = now.plusMillis(2000);
-        final NotificationEventJson eventJsonFred = new TestNotificationKey("Fred");
+        final NotificationEvent eventJsonFred = new TestNotificationKey("Fred");
 
-        final NotificationEventJson eventJsonBarney = new TestNotificationKey("Barney");
+        final NotificationEvent eventJsonBarney = new TestNotificationKey("Barney");
 
         expectedNotificationsFred.put(eventJsonFred, Boolean.FALSE);
         expectedNotificationsFred.put(eventJsonBarney, Boolean.FALSE);

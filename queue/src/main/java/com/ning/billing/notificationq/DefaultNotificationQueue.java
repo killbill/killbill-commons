@@ -23,13 +23,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
-import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationQueueService;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import com.ning.billing.notificationq.api.NotificationEventJson;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.dao.NotificationEventEntry;
 import com.ning.billing.notificationq.dao.NotificationSqlDao;
@@ -69,7 +68,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventJson event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
@@ -78,7 +77,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventJson event,
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEvent event,
                                                         final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
 
@@ -91,20 +90,20 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public  <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
+    public  <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndType(final Class<T> type, final Long searchKey1) {
         // TODO STEPH
         //return getFutureNotificationsForAccountInternal(type, dao, searchKey1);
         return null;
     }
 
     @Override
-    public <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountAndTypeFromTransaction(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
         return getFutureNotificationsForAccountInternal(type, transactionalNotificationDao, searchKey1);
     }
 
 
-    private <T extends NotificationEventJson> Map<NotificationEventEntry, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long searchKey1) {
+    private <T extends NotificationEvent> Map<NotificationEventEntry, T> getFutureNotificationsForAccountInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final long searchKey1) {
 
         // TODO STEPH
         List<NotificationEventEntry> notifications =  null; //transactionalDao.getReadyEntries(clock.getUTCNow().toDate(), getFullQName(), searchKey1, NOTIFICATION_QUEUE_TABLE_NAME);

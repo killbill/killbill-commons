@@ -18,12 +18,12 @@ package com.ning.billing.notificationq;
 
 import java.util.UUID;
 
-import com.ning.billing.notificationq.api.NotificationEventJson;
+import com.ning.billing.notificationq.api.NotificationEvent;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class DefaultUUIDNotificationKey implements NotificationEventJson {
+public class DefaultUUIDNotificationKey implements NotificationEvent {
 
     private final UUID uuidKey;
 

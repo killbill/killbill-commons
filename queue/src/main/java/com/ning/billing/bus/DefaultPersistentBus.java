@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.bus.api.BusEventJson;
+import com.ning.billing.bus.api.BusEvent;
 import com.ning.billing.bus.api.PersistentBus;
 import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.bus.dao.BusEventEntry;
@@ -110,7 +110,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         int result = 0;
         for (final BusEventEntry cur : events) {
             final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeSearchKeys(cur.getEventJson(), cur.getSearchKey1(), cur.getSearchKey2());
-            final BusEventJson evt = deserializeEvent(cur.getClassName(), objectMapper, jsonWithAccountAndTenantRecorId);
+            final BusEvent evt = deserializeEvent(cur.getClassName(), objectMapper, jsonWithAccountAndTenantRecorId);
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
             eventBusDelegate.post(evt);
@@ -145,7 +145,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void post(final BusEventJson event) throws EventBusException {
+    public void post(final BusEvent event) throws EventBusException {
         try {
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
@@ -161,7 +161,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void postFromTransaction(final BusEventJson event, final Transmogrifier transmogrifier)
+    public void postFromTransaction(final BusEvent event, final Transmogrifier transmogrifier)
             throws EventBusException {
         try {
             final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);

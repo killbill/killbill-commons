@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
-import com.ning.billing.bus.api.BusEventJson;
+import com.ning.billing.bus.api.BusEvent;
 import com.ning.billing.bus.api.PersistentBus;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -39,7 +39,7 @@ public class TestEventBusBase {
         this.eventBus = eventBus;
     }
 
-    public static class MyEvent extends DefaultBusPersistentEvent implements BusEventJson {
+    public static class MyEvent extends DefaultBusPersistentEvent implements BusEvent {
         private final String name;
         private final Long value;
         private final String type;
@@ -83,7 +83,7 @@ public class TestEventBusBase {
         }
     }
 
-    public static final class MyOtherEvent extends DefaultBusPersistentEvent implements BusEventJson {
+    public static final class MyOtherEvent extends DefaultBusPersistentEvent implements BusEvent {
 
         private final String name;
         private final Double value;
