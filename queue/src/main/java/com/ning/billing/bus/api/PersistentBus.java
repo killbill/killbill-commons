@@ -78,7 +78,7 @@ public interface PersistentBus {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void post(BusEvent event) throws EventBusException;
+    public void post(BusEventBase event) throws EventBusException;
 
     /**
      * Post an event from within a transaction.
@@ -87,7 +87,7 @@ public interface PersistentBus {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusEvent event, final Transmogrifier transmogrifier) throws EventBusException;
+    public void postFromTransaction(BusEventBase event, final Transmogrifier transmogrifier) throws EventBusException;
 
 
 }

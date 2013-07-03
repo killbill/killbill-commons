@@ -60,7 +60,7 @@ public class DBBackedQueue<T extends EventEntry> {
         this.historyTableName = historyTableName;
         this.inflightEvents = new LinkedBlockingQueue<Long>(QUEUE_CAPACITY);
         this.isQueueOpenForWrite = new AtomicBoolean(false);
-        this.isQueueOpenForRead  = new AtomicBoolean(false);
+        this.isQueueOpenForRead = new AtomicBoolean(false);
         this.clock = clock;
         this.useInflightQueue = useInflightQueue;
         DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
@@ -72,7 +72,7 @@ public class DBBackedQueue<T extends EventEntry> {
         if (entries.size() == 0) {
             isQueueOpenForWrite.set(true);
             isQueueOpenForRead.set(true);
-        } else if  (entries.size() < PREFETCH_ENTRIES) {
+        } else if (entries.size() < PREFETCH_ENTRIES) {
             isQueueOpenForWrite.set(true);
             isQueueOpenForRead.set(false);
         } else {
@@ -114,7 +114,7 @@ public class DBBackedQueue<T extends EventEntry> {
 
         // If we are not configure to use inflightQ then run expensive query
         if (!useInflightQueue) {
-            final List<T>  prefetchedEntries = fetchReadyEntries(config.getMaxEntriesClaimed());
+            final List<T> prefetchedEntries = fetchReadyEntries(config.getMaxEntriesClaimed());
             if (prefetchedEntries.size() > 0) {
                 candidates = claimEntries(prefetchedEntries);
             }
@@ -122,7 +122,7 @@ public class DBBackedQueue<T extends EventEntry> {
         }
 
         if (isQueueOpenForRead.get()) {
-            candidates =  fetchReadyEntriesFromIds();
+            candidates = fetchReadyEntriesFromIds();
 
             // There are entries in the Q, we just return those
             if (candidates.size() > 0) {
@@ -138,7 +138,7 @@ public class DBBackedQueue<T extends EventEntry> {
         }
 
         if (!isQueueOpenForRead.get()) {
-            List<T>  prefetchedEntries = fetchReadyEntries(PREFETCH_ENTRIES);
+            List<T> prefetchedEntries = fetchReadyEntries(PREFETCH_ENTRIES);
             // There is a small number so we re-enable adding entries in the Q
             if (prefetchedEntries.size() < PREFETCH_ENTRIES) {
                 log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
@@ -146,18 +146,18 @@ public class DBBackedQueue<T extends EventEntry> {
             }
 
             // Only keep as many candidates as we are allowed to
-            final int candidateSize = prefetchedEntries.size() >  config.getMaxEntriesClaimed() ? config.getMaxEntriesClaimed() : prefetchedEntries.size();
+            final int candidateSize = prefetchedEntries.size() > config.getMaxEntriesClaimed() ? config.getMaxEntriesClaimed() : prefetchedEntries.size();
             candidates = prefetchedEntries.subList(0, candidateSize);
 
             // We should re-allow reading from Q if we start to see entries coming back that are in the Q.
             final Long inflightHead = inflightEvents.peek();
             if (inflightHead != null &&
-                    Collections2.transform(candidates, new Function<T, Long>() {
-                        @Override
-                        public Long apply(@Nullable final T input) {
-                            return input.getRecordId();
-                        }
-                    }).contains(inflightHead)) {
+                Collections2.transform(candidates, new Function<T, Long>() {
+                    @Override
+                    public Long apply(@Nullable final T input) {
+                        return input.getRecordId();
+                    }
+                }).contains(inflightHead)) {
                 log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
                 isQueueOpenForRead.set(true);
             }
@@ -167,17 +167,20 @@ public class DBBackedQueue<T extends EventEntry> {
     }
 
 
-    public void markEntryAsProcessed(final T entry) {
+    public void moveEntryToHistory(final T entry) {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                transactional.insertEntry(entry, historyTableName);
-                transactional.removeEntry(entry.getRecordId(), tableName);
+               moveEntryToHistoryFromTransaction(transactional, entry);
                 return null;
             }
         });
     }
 
+    public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
+        transactional.insertEntry(entry, historyTableName);
+        transactional.removeEntry(entry.getRecordId(), tableName);
+    }
 
     private List<T> fetchReadyEntriesFromIds() {
         final int size = config.getMaxEntriesClaimed() < inflightEvents.size() ? config.getMaxEntriesClaimed() : inflightEvents.size();
@@ -213,5 +216,7 @@ public class DBBackedQueue<T extends EventEntry> {
         return claimed;
     }
 
-
+    public QueueSqlDao<T> getSqlDao() {
+        return sqlDao;
+    }
 }

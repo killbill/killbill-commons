@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.notificationq.api.NotificationEvent;
+import com.ning.billing.notificationq.api.NotificationEventBase;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
@@ -180,7 +180,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         int result = 0;
         for (final NotificationEventEntry cur : notifications) {
             getNbProcessedEvents().incrementAndGet();
-            final NotificationEvent key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
+            final NotificationEventBase key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
 
             NotificationQueueHandler handler = getHandlerForActiveQueue(cur.getQueueName());
             if (handler == null) {
@@ -195,7 +195,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         return result;
     }
 
-    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventEntry notification, final NotificationEvent key) {
+    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventEntry notification, final NotificationEventBase key) {
 
         // Create specific metric name because:
         // - ':' is not allowed for metric name
@@ -222,9 +222,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     }
 
     private void clearNotification(final NotificationEventEntry cleared) {
-
         NotificationEventEntry processedEntry = new NotificationEventEntry(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-        dao.markEntryAsProcessed(processedEntry);
+        dao.moveEntryToHistory(processedEntry);
     }
 
     private List<NotificationEventEntry> getReadyNotifications() {

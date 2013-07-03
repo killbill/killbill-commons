@@ -18,3 +18,17 @@ readyOrderByClause() ::= <<
       , created_date asc
       , record_id
 >>
+
+/** Notifications specific queries **/
+getReadyQueueEntriesForSearchKey(tableName, searchKey) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where queue_name = :queueName
+    and processing_state = 'AVAILABLE'
+    and <searchKey> = :searchKey
+    and effective_date >= :now
+    order
+    <readyOrderByClause()>
+;
+>>

@@ -27,7 +27,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.billing.bus.api.BusEvent;
+import com.ning.billing.bus.api.BusEventBase;
 import com.ning.billing.bus.api.PersistentBus;
 
 import com.google.common.eventbus.AsyncEventBus;
@@ -93,13 +93,13 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public void post(final BusEvent event) throws EventBusException {
+    public void post(final BusEventBase event) throws EventBusException {
         checkInitialized("post");
         delegate.post(event);
     }
 
     @Override
-    public void postFromTransaction(final BusEvent event, final Transmogrifier transmogrifier) throws EventBusException {
+    public void postFromTransaction(final BusEventBase event, final Transmogrifier transmogrifier) throws EventBusException {
         checkInitialized("postFromTransaction");
         delegate.post(event);
     }

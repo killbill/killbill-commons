@@ -137,6 +137,7 @@ getReadyEntries(tableName) ::= <<
 >>
 
 
+
 claimEntry(tableName) ::= <<
     update <tableName>
     set
@@ -190,30 +191,6 @@ getPendingCountNotifications() ::= <<
     ;
 >>
 
-getFutureNotificationsForAccount() ::= <<
-select
-    record_id
-  , class_name
-  , event_json
-  , user_token
-  , future_user_token
-  , created_date
-  , creating_owner
-  , effective_date
-  , queue_name
-  , processing_owner
-  , processing_available_date
-  , processing_state
-  , search_key1
-  , search_key2
-from notifications
-where queue_name = :queueName
-and processing_state = 'AVAILABLE'
-and search_key1 = :searchKey1
-and effective_date >= :now
-order by effective_date, record_id
-;
->>
 
 **/
 

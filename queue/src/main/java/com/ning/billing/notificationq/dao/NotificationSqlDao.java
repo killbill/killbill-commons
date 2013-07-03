@@ -16,9 +16,24 @@
 
 package com.ning.billing.notificationq.dao;
 
+import java.util.Date;
+import java.util.List;
+
+import org.skife.jdbi.v2.sqlobject.Bind;
+import org.skife.jdbi.v2.sqlobject.SqlQuery;
+import org.skife.jdbi.v2.sqlobject.customizers.Define;
+
 import com.ning.billing.queue.dao.QueueSqlDao;
 import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
 
 @QueueSqlDaoStringTemplate
 public interface NotificationSqlDao extends QueueSqlDao<NotificationEventEntry> {
+
+    @SqlQuery
+    public List<NotificationEventEntry> getReadyQueueEntriesForSearchKey(@Bind("now") Date now,
+                                                                         @Bind("queueName") String queueName,
+                                                                         @Bind("searchKey") final Long keyValue,
+                                                                         @Define("tableName") final String tableName,
+                                                                         @Define("searchKey") final String searchKey);
+
 }
