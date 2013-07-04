@@ -71,7 +71,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         this.config = config;
         this.tableName = tableName;
         this.historyTableName = historyTableName;
-        this.inflightEvents = new LinkedBlockingQueue<Long>(config.getQueueCapacity());
+        this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getQueueCapacity()) : null;
         this.isQueueOpenForWrite = new AtomicBoolean(false);
         this.isQueueOpenForRead = new AtomicBoolean(false);
         this.clock = clock;

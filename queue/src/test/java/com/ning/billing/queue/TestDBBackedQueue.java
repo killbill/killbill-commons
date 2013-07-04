@@ -496,7 +496,7 @@ public class TestDBBackedQueue extends TestSetup {
                 List<BusEventModelDao> entries = queue.getReadyEntries();
                 if (entries.size() == 0) {
                     try {
-                        log.info("Reader " + readerId + " sleeping for  10 ms got " + consumed.get());
+                        //log.info("Reader " + readerId + " sleeping for  10 ms got " + consumed.get());
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
                     }
@@ -545,7 +545,7 @@ public class TestDBBackedQueue extends TestSetup {
         private void maybeSleep() {
             while (!queue.isQueueOpenForWrite()) {
                 try {
-                    log.info("Writer " + writerId + "sleeping for until queue becomes open for write");
+                    //log.info("Writer " + writerId + "sleeping for until queue becomes open for write");
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                 }

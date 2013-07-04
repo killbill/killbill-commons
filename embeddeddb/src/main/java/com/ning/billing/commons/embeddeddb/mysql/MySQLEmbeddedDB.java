@@ -162,7 +162,11 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     private void stopMysql() throws IOException {
         if (mysqldResource != null) {
-            mysqldResource.shutdown();
+            try {
+                mysqldResource.shutdown();
+            } catch (NullPointerException npe) {
+                logger.warn("Failed to shutdown mysql properly ", npe);
+            }
             try {
                 deleteRecursive(dataDir);
                 deleteRecursive(dbDir);
