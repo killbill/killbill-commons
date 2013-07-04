@@ -13,4 +13,8 @@ public interface PersistentQueueConfig {
     public boolean isProcessingOff();
 
     public int getNbThreads();
+
+    public int getQueueCapacity();
+
+    public int getPrefetchEntries();
 }

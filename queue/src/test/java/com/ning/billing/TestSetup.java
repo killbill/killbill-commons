@@ -34,9 +34,9 @@ public class TestSetup {
 
     private MySQLEmbeddedDB embeddedDB;
     private DBI dbi;
-    private PersistentBusConfig persistentBusConfig;
-    private NotificationQueueConfig notificationQueueConfig;
 
+    protected PersistentBusConfig persistentBusConfig;
+    protected NotificationQueueConfig notificationQueueConfig;
     protected ClockMock clock;
 
     @BeforeClass(groups = "slow")

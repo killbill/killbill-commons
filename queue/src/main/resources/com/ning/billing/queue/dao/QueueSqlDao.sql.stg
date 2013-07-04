@@ -111,7 +111,7 @@ getByRecordId(tableName) ::= <<
 
 /** QUERIES **/
 
-getReadyEntriesFromIds(tableName, record_ids) ::= <<
+getEntriesFromIds(tableName, record_ids) ::= <<
     select
       <allTableFields()>
     from <tableName>

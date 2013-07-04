@@ -23,8 +23,8 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                            @Define("tableName") final String tableName);
 
     @SqlQuery
-    public List<T> getReadyEntriesFromIds(@RecordIdCollectionBinder final List<Long> recordIds,
-                                          @Define("tableName") final String tableName);
+    public List<T> getEntriesFromIds(@RecordIdCollectionBinder final List<Long> recordIds,
+                                     @Define("tableName") final String tableName);
 
     @SqlQuery
     public List<T> getReadyEntries(@Bind("now") Date now,

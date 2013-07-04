@@ -24,12 +24,12 @@ import org.skife.config.TimeSpan;
 import com.ning.billing.queue.api.PersistentQueueConfig;
 
 
-public interface NotificationQueueConfig extends PersistentQueueConfig {
+public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
-    @Config("killbill.billing.notificationq.prefetch")
+    @Config("killbill.billing.notificationq.claimed")
     @Default("7")
-    @Description("Number of notifications to fetch from the database at once")
-    public int getMaxEntriesClaimed();
+    @Description("Number of notifications to fetch at once")
+    public abstract int getMaxEntriesClaimed();
 
     @Config("killbill.billing.persistent.notificationq.claim.time")
     @Default("5m")
@@ -41,16 +41,27 @@ public interface NotificationQueueConfig extends PersistentQueueConfig {
     @Config("killbill.billing.notificationq.sleep")
     @Default("3000")
     @Description("Time in milliseconds to sleep between runs")
-    public long getSleepTimeMs();
+    public abstract long getSleepTimeMs();
 
     @Override
     @Config("killbill.billing.notificationq.notification.off")
     @Default("false")
     @Description("Whether to turn off the notification queue")
-    public boolean isProcessingOff();
+    public abstract boolean isProcessingOff();
 
     @Config("killbill.billing.notificationq.notification.nbThreads")
     @Default("1")
     @Description("Number of threads to use")
-    public int getNbThreads();
+    public abstract int getNbThreads();
+
+    @Config("killbill.billing.notificationq.queue.capacity")
+    @Default("0")
+    @Description("Number of threads to use")
+    public abstract int getQueueCapacity();
+
+    @Config("killbill.billing.notificationq.prefetch")
+    @Default("7")
+    @Description("Number of notifications to read from the database at once")
+    public abstract int getPrefetchEntries();
+
 }

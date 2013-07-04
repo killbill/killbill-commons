@@ -36,4 +36,15 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Default("3")
     @Description("Number of threads to use")
     public abstract int getNbThreads();
+
+    @Config("killbill.billing.persistent.bus.queue.capacity")
+    @Default("3000")
+    @Description("Number of threads to use")
+    public abstract int getQueueCapacity();
+
+    @Config("killbill.billing.persistent.bus.queue.prefetch")
+    @Default("7")
+    @Description("Number of notifications to read from the database at once")
+    public abstract int getPrefetchEntries();
+
 }
