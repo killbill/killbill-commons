@@ -2,11 +2,7 @@ package com.ning.billing.bus;
 
 import java.util.UUID;
 
-import com.ning.billing.bus.api.BusEventBase;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-public abstract class DefaultBusPersistentEvent implements BusEventBase {
+public abstract class DefaultBusPersistentEvent {
 
 
     private final UUID userToken;
@@ -18,7 +14,7 @@ public abstract class DefaultBusPersistentEvent implements BusEventBase {
         this.searchKey2 = searchKey2;
         this.searchKey1 = searchKey1;
     }
-
+/*
     @Override
     public UUID getUserToken() {
         return userToken;
@@ -35,4 +31,5 @@ public abstract class DefaultBusPersistentEvent implements BusEventBase {
     public Long getSearchKey1() {
         return searchKey1;
     }
+    */
 }

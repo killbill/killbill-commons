@@ -42,6 +42,7 @@ import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.google.common.base.CaseFormat;
 
+
 // Identical to org.skife.jdbi.v2.BeanMapper but maps created_date to createdDate
 public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
 

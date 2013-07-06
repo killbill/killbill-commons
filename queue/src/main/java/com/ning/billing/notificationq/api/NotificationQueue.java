@@ -52,7 +52,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @throws IOException           if the serialization of the event fails
      */
     public void recordFutureNotification(final DateTime futureNotificationTime,
-                                         final NotificationEventBase eventJson,
+                                         final NotificationEvent eventJson,
                                          final UUID userToken,
                                          final Long searchKey1,
                                          final Long searchKey2)
@@ -70,7 +70,7 @@ public interface NotificationQueue extends QueueLifecycle {
      */
     public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier,
                                                         final DateTime futureNotificationTime,
-                                                        final NotificationEventBase eventJson,
+                                                        final NotificationEvent eventJson,
                                                         final UUID userToken,
                                                         final Long searchKey1,
                                                         final Long searchKey2)
@@ -84,9 +84,9 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param type       the class associated with the event
      * @param searchKey1 the value for key1
      * @param <T>        the type of event
-     * @return           a list of NotificationEvent objects matching the search
+     * @return           a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationForSearchKey1(final Class<T> type, final Long searchKey1);
+    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey1(final Class<T> type, final Long searchKey1);
 
 
     /**
@@ -95,11 +95,11 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @param type               the class associated with the event
      * @param searchKey1         the value for key1
-     * @param transactionalDao   the transaction that should be used to make that search
+     * @param transmogrifier     the transaction that should be used to make that search
      * @param <T>                the type of event
-     * @return                   a list of NotificationEvent objects matching the search
+     * @return                   a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationFromTransactionForSearchKey1(final Class<T> type, final Long searchKey1, final NotificationSqlDao transactionalDao);
+    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey1(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier);
 
     /**
      *
@@ -108,9 +108,9 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param type       the class associated with the event
      * @param searchKey2 the value for key2
      * @param <T>        the type of event
-     * @return           a list of NotificationEvent objects matching the search
+     * @return           a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationForSearchKey2(final Class<T> type, final Long searchKey2);
+    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Class<T> type, final Long searchKey2);
 
 
     /**
@@ -118,11 +118,11 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @param type               the class associated with the event
      * @param searchKey2         the value for key2
-     * @param transactionalDao   the transaction that should be used to make that search
+     * @param transmogrifier   the transaction that should be used to make that search
      * @param <T>                the type of event
-     * @return                   a list of NotificationEvent objects matching the search
+     * @return                   a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationFromTransactionForSearchKey2(final Class<T> type, final Long searchKey2, final NotificationSqlDao transactionalDao);
+    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Class<T> type, final Long searchKey2, final Transmogrifier transmogrifier);
 
 
     /**

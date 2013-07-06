@@ -16,7 +16,6 @@ import org.testng.annotations.Test;
 import com.ning.billing.Hostname;
 import com.ning.billing.TestSetup;
 import com.ning.billing.bus.DefaultBusPersistentEvent;
-import com.ning.billing.bus.api.BusEventBase;
 import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.bus.dao.BusEventModelDao;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
@@ -599,7 +598,7 @@ public class TestDBBackedQueue extends TestSetup {
     }
 
 
-    public static class MyEvent extends DefaultBusPersistentEvent implements BusEventBase {
+    public static class MyEvent extends DefaultBusPersistentEvent {
 
         private final String name;
         private final Long value;

@@ -16,6 +16,8 @@
 
 package com.ning.billing.bus.api;
 
+import java.util.UUID;
+
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 public interface PersistentBus {
@@ -78,7 +80,7 @@ public interface PersistentBus {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void post(BusEventBase event) throws EventBusException;
+    public void post(BusEvent event, UUID userToken, Long searchKey1, Long searchKey2) throws EventBusException;
 
     /**
      * Post an event from within a transaction.
@@ -87,7 +89,7 @@ public interface PersistentBus {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusEventBase event, final Transmogrifier transmogrifier) throws EventBusException;
+    public void postFromTransaction(BusEvent event, UUID userToken, Long searchKey1, Long searchKey2, final Transmogrifier transmogrifier) throws EventBusException;
 
 
 }

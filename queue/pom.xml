@@ -60,6 +60,12 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Just need killbill-api for the BusEvent interface -->
+        <dependency>
+            <groupId>com.ning.billing</groupId>
+            <artifactId>killbill-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.ning.billing.commons</groupId>
             <artifactId>killbill-embeddeddb</artifactId>

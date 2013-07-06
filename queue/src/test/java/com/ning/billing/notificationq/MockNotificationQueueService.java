@@ -24,7 +24,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.notificationq.api.NotificationEventBase;
+import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.dao.NotificationEventModelDao;
@@ -79,7 +79,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
         List<NotificationEventModelDao> readyNotifications = queue.getReadyNotifications();
         for (final NotificationEventModelDao cur : readyNotifications) {
-            final NotificationEventBase key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
+            final NotificationEvent key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
 
 

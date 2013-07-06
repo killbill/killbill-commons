@@ -18,12 +18,13 @@ package com.ning.billing.notificationq;
 
 import java.util.UUID;
 
-import com.ning.billing.notificationq.api.NotificationEventBase;
+import com.ning.billing.notificationq.api.NotificationEvent;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class DefaultUUIDNotificationKey implements NotificationEventBase {
+public class DefaultUUIDNotificationKey implements NotificationEvent {
 
     private final UUID uuidKey;
 
@@ -66,19 +67,23 @@ public class DefaultUUIDNotificationKey implements NotificationEventBase {
         return true;
     }
 
-    // TODO tweakJson here too
+    /*
+    @JsonIgnore
     @Override
     public UUID getUserToken() {
         return null;
     }
 
+    @JsonIgnore
     @Override
     public Long getSearchKey1() {
         return null;
     }
 
+    @JsonIgnore
     @Override
     public Long getSearchKey2() {
         return null;
     }
+    */
 }

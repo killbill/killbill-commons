@@ -29,7 +29,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.api.NotificationEvent;
-import com.ning.billing.notificationq.api.NotificationEventBase;
+import com.ning.billing.notificationq.api.NotificationEventWithMetadata;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationEventModelDao;
@@ -81,7 +81,7 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEventBase eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, new Long(0));
         final NotificationEventModelDao notification = new NotificationEventModelDao(recordIds.incrementAndGet(), "MockQueue", hostname, clock.getUTCNow(), null, PersistentQueueEntryLifecycleState.AVAILABLE,
@@ -94,40 +94,40 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEventBase eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         recordFutureNotification(futureNotificationTime, eventJson, userToken, searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationForSearchKey1(final Class<T> type, final Long searchKey1) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey1(final Class<T> type, final Long searchKey1) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationFromTransactionForSearchKey1(final Class<T> type, final Long searchKey1, final NotificationSqlDao transactionalDao) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey1(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationForSearchKey2(final Class<T> type, final Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Class<T> type, final Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationFromTransactionForSearchKey2(final Class<T> type, final Long searchKey2, final NotificationSqlDao transactionalDao) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Class<T> type, final Long searchKey2, final Transmogrifier transmogrifier) {
         return null;
     }
 
 
-    private <T extends NotificationEventBase> List<NotificationEvent<T>> getFutureNotificationsInternal(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
-        final List<NotificationEvent<T>> result = new ArrayList<NotificationEvent<T>>();
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+        final List<NotificationEventWithMetadata<T>> result = new ArrayList<NotificationEventWithMetadata<T>>();
         synchronized (notifications) {
             for (final NotificationEventModelDao notification : notifications) {
                 if (notification.getSearchKey1().equals(searchKey1) &&
                     type.getName().equals(notification.getClassName()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
                     final T event = (T) DefaultQueueLifecycle.deserializeEvent(notification.getClassName(), objectMapper, notification.getEventJson());
-                    final NotificationEvent<T> foo = new NotificationEvent<T>(notification.getRecordId(), notification.getUserToken(), notification.getCreatedDate(), notification.getSearchKey1(), notification.getSearchKey2(), event);
+                    final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(notification.getRecordId(), notification.getUserToken(), notification.getCreatedDate(), notification.getSearchKey1(), notification.getSearchKey2(), event);
                     result.add(foo);
                 }
             }

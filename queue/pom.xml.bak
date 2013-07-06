@@ -25,6 +25,12 @@
     <artifactId>killbill-queue</artifactId>
     <name>Kill Bill Persistent Queues (bus/notificationQ)</name>
     <dependencies>
+        <!-- Just need killbill-api for the BusEvent interface -->
+        <dependency>
+            <groupId>com.ning.billing</groupId>
+            <artifactId>killbill-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
@@ -44,6 +50,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${guice.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
@@ -80,12 +92,6 @@
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

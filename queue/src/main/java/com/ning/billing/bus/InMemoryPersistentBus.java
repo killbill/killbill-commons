@@ -16,6 +16,7 @@
 
 package com.ning.billing.bus;
 
+import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -27,13 +28,12 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.billing.bus.api.BusEventBase;
+import com.ning.billing.bus.api.BusEvent;
 import com.ning.billing.bus.api.PersistentBus;
 
 import com.google.common.eventbus.AsyncEventBus;
 
 public class InMemoryPersistentBus implements PersistentBus {
-
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryPersistentBus.class);
 
@@ -93,13 +93,13 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public void post(final BusEventBase event) throws EventBusException {
+    public void post(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws EventBusException {
         checkInitialized("post");
         delegate.post(event);
     }
 
     @Override
-    public void postFromTransaction(final BusEventBase event, final Transmogrifier transmogrifier) throws EventBusException {
+    public void postFromTransaction(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier) throws EventBusException {
         checkInitialized("postFromTransaction");
         delegate.post(event);
     }

@@ -17,6 +17,7 @@
 package com.ning.billing.bus;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -28,7 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.bus.api.BusEventBase;
+import com.ning.billing.bus.api.BusEvent;
+import com.ning.billing.bus.api.BusEventWithMetadata;
 import com.ning.billing.bus.api.PersistentBus;
 import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.bus.dao.BusEventModelDao;
@@ -82,7 +84,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, busTableName, busHistoryTableName,  "bus-" + busTableName, true);
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, busTableName, busHistoryTableName, "bus-" + busTableName, true);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = false;
     }
@@ -109,11 +111,15 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         int result = 0;
         for (final BusEventModelDao cur : events) {
-            final String jsonWithAccountAndTenantRecorId = tweakJsonToIncludeSearchKeys(cur.getEventJson(), cur.getSearchKey1(), cur.getSearchKey2());
-            final BusEventBase evt = deserializeEvent(cur.getClassName(), objectMapper, jsonWithAccountAndTenantRecorId);
+            final BusEvent evt = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             result++;
             // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
-            eventBusDelegate.post(evt);
+            final BusEventWithMetadata<BusEvent> eventBusEventWithMetadata = new BusEventWithMetadata<BusEvent>(cur.getRecordId(),
+                                                                                                                cur.getUserToken(),
+                                                                                                                cur.getCreatedDate(),
+                                                                                                                cur.getSearchKey1(),
+                                                                                                                cur.getSearchKey2(), evt);
+            eventBusDelegate.post(eventBusEventWithMetadata);
             BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
             dao.moveEntryToHistory(processedEntry);
         }
@@ -145,50 +151,35 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void post(final BusEventBase event) throws EventBusException {
+    public void post(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws EventBusException {
         try {
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, userToken, searchKey1, searchKey2);
                 dao.insertEntry(entry);
 
             } else {
                 log.warn("Attempting to post event " + event + " in a non initialized bus");
             }
         } catch (Exception e) {
-            log.error("Failed to post BusEventBase " + event, e);
+            log.error("Failed to post BusEvent " + event, e);
         }
     }
 
     @Override
-    public void postFromTransaction(final BusEventBase event, final Transmogrifier transmogrifier)
+    public void postFromTransaction(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier)
             throws EventBusException {
         try {
             final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, userToken, searchKey1, searchKey2);
                 dao.insertEntryFromTransaction(transactional, entry);
             } else {
                 log.warn("Attempting to post event " + event + " in a non initialized bus");
             }
         } catch (Exception e) {
-            log.error("Failed to post BusEventBase " + event, e);
+            log.error("Failed to post BusEvent " + event, e);
         }
-    }
-
-
-    // TODO Fix searchKey -> accountRecordId,...
-    private String tweakJsonToIncludeSearchKeys(final String input, final Long searchKey1, final Long searchKey2) {
-        final int lastIndexPriorFinalBracket = input.lastIndexOf("}");
-        final StringBuilder tmp = new StringBuilder(input.substring(0, lastIndexPriorFinalBracket));
-        //tmp.append(",\"accountRecordId\":");
-        tmp.append(",\"searchKey1\":");
-        tmp.append(searchKey1);
-        //tmp.append(",\"tenantRecordId\":");
-        tmp.append(",\"searchKey2\":");
-        tmp.append(searchKey2);
-        tmp.append("}");
-        return tmp.toString();
     }
 }
