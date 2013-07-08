@@ -17,7 +17,6 @@
 package com.ning.billing.bus;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
 import com.ning.billing.bus.api.BusEvent;
-import com.ning.billing.bus.api.BusEventWithMetadata;
 import com.ning.billing.bus.api.PersistentBus;
 import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.bus.dao.BusEventModelDao;
@@ -113,13 +111,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         for (final BusEventModelDao cur : events) {
             final BusEvent evt = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             result++;
-            // STEPH exception handling is done by GUAVA-- logged a bug Issue-780
-            final BusEventWithMetadata<BusEvent> eventBusEventWithMetadata = new BusEventWithMetadata<BusEvent>(cur.getRecordId(),
-                                                                                                                cur.getUserToken(),
-                                                                                                                cur.getCreatedDate(),
-                                                                                                                cur.getSearchKey1(),
-                                                                                                                cur.getSearchKey2(), evt);
-            eventBusDelegate.post(eventBusEventWithMetadata);
+            eventBusDelegate.post(evt);
             BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
             dao.moveEntryToHistory(processedEntry);
         }
@@ -151,11 +143,12 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void post(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws EventBusException {
+    public void post(final BusEvent event) throws EventBusException {
         try {
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, userToken, searchKey1, searchKey2);
+                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
+                                                                    event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
 
             } else {
@@ -167,13 +160,14 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void postFromTransaction(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier)
+    public void postFromTransaction(final BusEvent event, final Transmogrifier transmogrifier)
             throws EventBusException {
         try {
             final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
             if (isStarted) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json, userToken, searchKey1, searchKey2);
+                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
+                                                                    event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntryFromTransaction(transactional, entry);
             } else {
                 log.warn("Attempting to post event " + event + " in a non initialized bus");

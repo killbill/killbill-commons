@@ -4,12 +4,14 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
+import com.ning.billing.queue.api.QueueEvent;
+
 /**
  * The BusEventWithMetadata return to the user. It encapsulates the de-serialized version of the json event on disk.
  *
  * @param <T> The type of event serialized on disk
  */
-public class BusEventWithMetadata<T extends BusEvent> {
+public class BusEventWithMetadata<T extends QueueEvent> {
 
     private final Long recordId;
     private final UUID userToken;

@@ -16,7 +16,6 @@
 
 package com.ning.billing.bus;
 
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -93,13 +92,13 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public void post(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws EventBusException {
+    public void post(final BusEvent event) throws EventBusException {
         checkInitialized("post");
         delegate.post(event);
     }
 
     @Override
-    public void postFromTransaction(final BusEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier) throws EventBusException {
+    public void postFromTransaction(final BusEvent event, final Transmogrifier transmogrifier) throws EventBusException {
         checkInitialized("postFromTransaction");
         delegate.post(event);
     }

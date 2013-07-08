@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 import com.ning.billing.bus.api.BusEvent;
-import com.ning.billing.bus.api.BusEventWithMetadata;
 import com.ning.billing.bus.api.PersistentBus;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -45,14 +44,23 @@ public class TestEventBusBase {
         private final String name;
         private final Long value;
         private final String type;
+        private final Long searchKey1;
+        private final Long searchKey2;
+        private final UUID userToken;
 
         @JsonCreator
         public MyEvent(@JsonProperty("name") final String name,
                        @JsonProperty("value") final Long value,
-                       @JsonProperty("type") final String type) {
+                       @JsonProperty("type") final String type,
+                       @JsonProperty("searchKey1") final Long searchKey1,
+                       @JsonProperty("searchKey2") final Long searchKey2,
+                       @JsonProperty("userToken") final UUID userToken) {
             this.name = name;
             this.value = value;
             this.type = type;
+            this.searchKey2 = searchKey2;
+            this.searchKey1 = searchKey1;
+            this.userToken = userToken;
         }
 
         public String getName() {
@@ -66,6 +74,21 @@ public class TestEventBusBase {
         public String getType() {
             return type;
         }
+
+        @Override
+        public Long getSearchKey1() {
+            return searchKey1;
+        }
+
+        @Override
+        public Long getSearchKey2() {
+            return searchKey2;
+        }
+
+        @Override
+        public UUID getUserToken() {
+            return userToken;
+        }
     }
 
     public static final class MyEventWithException extends MyEvent {
@@ -74,7 +97,7 @@ public class TestEventBusBase {
         public MyEventWithException(@JsonProperty("name") final String name,
                                     @JsonProperty("value") final Long value,
                                     @JsonProperty("type") final String type) {
-            super(name, value, type);
+            super(name, value, type, 1L, 2L, UUID.randomUUID());
         }
     }
 
@@ -83,14 +106,23 @@ public class TestEventBusBase {
         private final String name;
         private final Double value;
         private final String type;
+        private final Long searchKey1;
+        private final Long searchKey2;
+        private final UUID userToken;
 
         @JsonCreator
         public MyOtherEvent(@JsonProperty("name") final String name,
                             @JsonProperty("value") final Double value,
-                            @JsonProperty("type") final String type) {
+                            @JsonProperty("type") final String type,
+                            @JsonProperty("searchKey1") final Long searchKey1,
+                            @JsonProperty("searchKey2") final Long searchKey2,
+                            @JsonProperty("userToken") final UUID userToken) {
             this.name = name;
             this.value = value;
             this.type = type;
+            this.searchKey2 = searchKey2;
+            this.searchKey1 = searchKey1;
+            this.userToken = userToken;
         }
 
 
@@ -104,6 +136,21 @@ public class TestEventBusBase {
 
         public String getType() {
             return type;
+        }
+
+        @Override
+        public Long getSearchKey1() {
+            return searchKey1;
+        }
+
+        @Override
+        public Long getSearchKey2() {
+            return searchKey2;
+        }
+
+        @Override
+        public UUID getUserToken() {
+            return userToken;
         }
     }
 
@@ -132,13 +179,13 @@ public class TestEventBusBase {
         }
 
         @Subscribe
-        public synchronized void processMyEvent(final BusEventWithMetadata<MyEvent> event) {
+        public synchronized void processMyEvent(final MyEvent event) {
             gotEvents++;
             //log.debug("Got event {} {}", event.name, event.value);
         }
 
         @Subscribe
-        public synchronized void processMyEventWithException(final BusEventWithMetadata<MyEventWithException> event) {
+        public synchronized void processMyEventWithException(final MyEventWithException event) {
             throw new MyEventHandlerException("FAIL");
         }
 
@@ -165,7 +212,7 @@ public class TestEventBusBase {
             final MyEventHandler handler = new MyEventHandler(1);
             eventBus.register(handler);
 
-            eventBus.post(new MyEventWithException("my-event", 1L, "MY_EVENT_TYPE"), UUID.randomUUID(), 1L, 1L);
+            eventBus.post(new MyEventWithException("my-event", 1L, "MY_EVENT_TYPE"));
 
             Thread.sleep(50000);
         } catch (Exception ignored) {
@@ -179,7 +226,7 @@ public class TestEventBusBase {
             eventBus.register(handler);
 
             for (int i = 0; i < nbEvents; i++) {
-                eventBus.post(new MyEvent("my-event", (long) i, "MY_EVENT_TYPE"), UUID.randomUUID(), 1L, 1L);
+                eventBus.post(new MyEvent("my-event", (long) i, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
             }
             final boolean completed = handler.waitForCompletion(10000);
             Assert.assertEquals(completed, true);
@@ -194,9 +241,9 @@ public class TestEventBusBase {
             eventBus.register(handler);
 
             for (int i = 0; i < 5; i++) {
-                eventBus.post(new MyOtherEvent("my-other-event", (double) i, "MY_EVENT_TYPE"), UUID.randomUUID(), 1L, 1L);
+                eventBus.post(new MyOtherEvent("my-other-event", (double) i, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
             }
-            eventBus.post(new MyEvent("my-event", 11l, "MY_EVENT_TYPE"), UUID.randomUUID(), 1L, 1L);
+            eventBus.post(new MyEvent("my-event", 11l, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
 
             final boolean completed = handler.waitForCompletion(10000);
             Assert.assertEquals(completed, true);

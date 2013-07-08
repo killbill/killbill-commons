@@ -66,24 +66,4 @@ public class DefaultUUIDNotificationKey implements NotificationEvent {
         }
         return true;
     }
-
-    /*
-    @JsonIgnore
-    @Override
-    public UUID getUserToken() {
-        return null;
-    }
-
-    @JsonIgnore
-    @Override
-    public Long getSearchKey1() {
-        return null;
-    }
-
-    @JsonIgnore
-    @Override
-    public Long getSearchKey2() {
-        return null;
-    }
-    */
 }

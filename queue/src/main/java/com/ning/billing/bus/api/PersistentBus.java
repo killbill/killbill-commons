@@ -77,19 +77,21 @@ public interface PersistentBus {
     /**
      * Post an event asynchronously
      *
+     *
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void post(BusEvent event, UUID userToken, Long searchKey1, Long searchKey2) throws EventBusException;
+    public void post(BusEvent event) throws EventBusException;
 
     /**
      * Post an event from within a transaction.
      * Guarantees that the event is persisted on disk from within the same transaction
      *
+     *
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusEvent event, UUID userToken, Long searchKey1, Long searchKey2, final Transmogrifier transmogrifier) throws EventBusException;
+    public void postFromTransaction(BusEvent event, final Transmogrifier transmogrifier) throws EventBusException;
 
 
 }

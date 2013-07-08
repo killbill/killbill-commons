@@ -17,6 +17,7 @@
 package com.ning.billing.notificationq.api;
 
 import com.ning.billing.bus.api.BusEvent;
+import com.ning.billing.queue.api.QueueEvent;
 
 /**
  * The interface that needs to be implemented for any notification event
@@ -25,5 +26,5 @@ import com.ning.billing.bus.api.BusEvent;
  * The generated JSON must also fit in the varchar as defined by the schema
  */
 
-public interface NotificationEvent extends BusEvent {
+public interface NotificationEvent extends QueueEvent {
 }
