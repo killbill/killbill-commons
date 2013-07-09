@@ -13,20 +13,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
-import com.ning.billing.notificationq.NotificationQueueDispatcher;
 import com.ning.billing.queue.api.PersistentQueueConfig;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.queue.dao.EventEntryModelDao;
 import com.ning.billing.queue.dao.QueueSqlDao;
 import com.ning.billing.util.clock.Clock;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.sun.istack.internal.Nullable;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.Gauge;
 
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
@@ -41,6 +40,13 @@ import com.yammer.metrics.core.Gauge;
 public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private static final Logger log = LoggerFactory.getLogger(DBBackedQueue.class);
+
+    //
+    // Exponential backup retry logic, where we retyr up to 10 times for a maxium of about 10 sec ((521 + 256 + 128 + ... ) * 10)
+    //
+    private final static long INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS = 10;
+    private final static int INFLIGHT_ENTRIES_POLL_MAX_RETRY = 10;
+
 
     private final String DB_QUEUE_LOG_ID;
 
@@ -96,7 +102,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             isQueueOpenForWrite.set(false);
             isQueueOpenForRead.set(false);
         }
-
+        inflightEvents.clear();
         totalInflightProcessed.clear();
         totalProcessed.clear();
         totalInflightWritten.clear();
@@ -122,7 +128,12 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         totalWritten.inc();
         if (useInflightQueue && isQueueOpenForWrite.get()) {
             Long lastInsertId = transactional.getLastInsertId();
+
             boolean success = inflightEvents.offer(lastInsertId);
+
+            log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
+                     (success ? "into inflightQ" : "into disk"));
+
             // Q overflowed
             if (!success) {
                 final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
@@ -234,12 +245,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         }
 
+        log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + size + ", ids = " + Joiner.on(", ").join(recordIds));
         // Before we return we filter on AVAILABLE entries for precaution; the case could potentially happen
         // at the time when we switch from !isQueueOpenForRead -> isQueueOpenForRead with two thread in parallel.
         //
         List<T> result = ImmutableList.<T>of();
         if (recordIds.size() > 0) {
-            final List<T> entriesFromIds = sqlDao.getEntriesFromIds(recordIds, tableName);
+            final List<T> entriesFromIds = getEntriesFromIds(recordIds);
             result = ImmutableList.<T>copyOf(Collections2.filter(entriesFromIds, new Predicate<T>() {
                 @Override
                 public boolean apply(@Nullable final T input) {
@@ -249,6 +261,58 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         }
         return result;
     }
+
+
+    //
+    //  When there are some entries in the inflightQ, 3 cases may have occured:
+    //  1. The thread that posted the entry already committed his transaction and in which case the entry
+    //     should be found on disk
+    //  2. The thread that posted the entry rolled back and therefore that entry will never make it on disk, it should
+    //     be ignored.
+    //  3. The thread that posted the entry did not complete its transaction and so we don't know whether or not the entry
+    //     will make it on disk.
+    //
+    //  The code below looks for all entries by retrying the lookup on disk, and if eventually returns the one that have been found.
+    //  Note that:
+    //  - It is is OK for that thread to sleep and retry as this is its nature -- it sleeps and polls
+    //  - If for some reason the entry is not found but the transaction eventually commits, we will end up in a situation
+    //    where we have entries AVALAIBLE on disk; those would be cleared as we restart the service. If this ends up being an issue
+    //    we could had some additional logics to catch them.
+    //
+    private List<T> getEntriesFromIds(final List<Long> recordIds) {
+
+        int originalSize = recordIds.size();
+        List<T> result = new ArrayList<T>(recordIds.size());
+        int nbTries = 0;
+
+        do {
+            final List<T> tmp = sqlDao.getEntriesFromIds(recordIds, tableName);
+            if (tmp.size() > 0) {
+                for (T cur : tmp) {
+                    recordIds.remove(cur.getRecordId());
+                }
+                result.addAll(tmp);
+            }
+
+            if (result.size() < originalSize) {
+                try {
+                    long sleepTime = INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS * (int) Math.pow(2, nbTries);
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException e) {
+                    log.warn(DB_QUEUE_LOG_ID + "Thread " + Thread.currentThread() + " got interrupted");
+                    Thread.currentThread().interrupt();
+                    return result;
+                }
+            }
+            nbTries++;
+
+        } while (result.size() < originalSize && nbTries < INFLIGHT_ENTRIES_POLL_MAX_RETRY);
+        if (recordIds.size() > 0) {
+            log.warn(DB_QUEUE_LOG_ID + " Missing inflight entries from disk, recordIds = [" + Joiner.on(",").join(recordIds) + " ]");
+        }
+        return result;
+    }
+
 
     private List<T> fetchReadyEntries(int size) {
         final Date now = clock.getUTCNow().toDate();
@@ -269,6 +333,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private boolean claimEntry(T entry) {
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
         final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, tableName) == 1);
+
+        if (claimed) {
+            log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
+        }
+
         return claimed;
     }
 

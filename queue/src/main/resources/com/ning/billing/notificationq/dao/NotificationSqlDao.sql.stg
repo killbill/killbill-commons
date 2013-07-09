@@ -13,6 +13,13 @@ extraValuesWithComma() ::= <<
       , :queueName
 >>
 
+readyWhereClause() ::= <<
+    effective_date \<= :now
+    and processing_state != 'PROCESSED'
+    and processing_state != 'REMOVED'
+    and (processing_owner IS NULL OR processing_available_date \<= :now)
+>>
+
 readyOrderByClause() ::= <<
         effective_date asc
       , created_date asc
@@ -24,11 +31,12 @@ getReadyQueueEntriesForSearchKey(tableName, searchKey) ::= <<
     select
       <allTableFields()>
     from <tableName>
-    where queue_name = :queueName
-    and processing_state = 'AVAILABLE'
-    and <searchKey> = :searchKey
-    and effective_date >= :now
-    order
-    <readyOrderByClause()>
+    where
+      queue_name = :queueName
+      and processing_state = 'AVAILABLE'
+      and <searchKey> = :searchKey
+      and effective_date >= :now
+    order by
+      <readyOrderByClause()>
 ;
 >>

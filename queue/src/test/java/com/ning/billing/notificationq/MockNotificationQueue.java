@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.api.NotificationEvent;
@@ -127,7 +129,8 @@ public class MockNotificationQueue implements NotificationQueue {
                     type.getName().equals(notification.getClassName()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
                     final T event = (T) DefaultQueueLifecycle.deserializeEvent(notification.getClassName(), objectMapper, notification.getEventJson());
-                    final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(notification.getRecordId(), notification.getUserToken(), notification.getCreatedDate(), notification.getSearchKey1(), notification.getSearchKey2(), event);
+                    final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(notification.getRecordId(), notification.getUserToken(), notification.getCreatedDate(), notification.getSearchKey1(), notification.getSearchKey2(), event,
+                                                                                                      notification.getFutureUserToken(), notification.getEffectiveDate(), notification.getQueueName());
                     result.add(foo);
                 }
             }
@@ -191,11 +194,16 @@ public class MockNotificationQueue implements NotificationQueue {
         return isStarted;
     }
 
+    private Logger log = LoggerFactory.getLogger("MockNotificationQueue");
+
     public List<NotificationEventModelDao> getReadyNotifications() {
         final List<NotificationEventModelDao> readyNotifications = new ArrayList<NotificationEventModelDao>();
         synchronized (notifications) {
             for (final NotificationEventModelDao cur : notifications) {
-                if (cur.isAvailableForProcessing(clock.getUTCNow())) {
+                if ( cur.getEffectiveDate().isBefore(clock.getUTCNow()) && cur.isAvailableForProcessing(clock.getUTCNow())) {
+
+                    log.info("MockNotificationQ getReadyNotifications found notification: NOW = " + clock.getUTCNow() + " recordId = " + cur.getRecordId() +
+                            ", state = " + cur.getProcessingState() + ", effectiveDate = " + cur.getEffectiveDate());
                     readyNotifications.add(cur);
                 }
             }

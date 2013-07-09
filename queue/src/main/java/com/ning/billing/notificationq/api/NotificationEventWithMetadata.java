@@ -17,11 +17,12 @@ public class NotificationEventWithMetadata<T extends NotificationEvent> extends 
     private final DateTime effectiveDate;
     private final String queueName;
 
-    public NotificationEventWithMetadata(final Long recordId, final UUID userToken, final DateTime createdDate, final Long searchKey1, final Long searchKey2, final T event) {
+    public NotificationEventWithMetadata(final Long recordId, final UUID userToken, final DateTime createdDate, final Long searchKey1, final Long searchKey2, final T event,
+                                         final UUID futureUserToken, final DateTime effectiveDate, final String queueName) {
         super(recordId, userToken, createdDate, searchKey1, searchKey2, event);
-        futureUserToken = null;
-        effectiveDate = null;
-        queueName = null;
+        this.futureUserToken = futureUserToken;
+        this.effectiveDate = effectiveDate;
+        this.queueName = queueName;
     }
 
     public UUID getFutureUserToken() {
