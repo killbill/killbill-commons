@@ -41,7 +41,7 @@ import com.ning.billing.notificationq.dao.NotificationSqlDao;
 import com.ning.billing.queue.DBBackedQueue;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.clock.Clock;
 
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;

@@ -39,7 +39,7 @@ import com.ning.billing.notificationq.api.NotificationQueueService;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.dao.DummySqlTest;
-import com.ning.billing.util.clock.ClockMock;
+import com.ning.billing.clock.ClockMock;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

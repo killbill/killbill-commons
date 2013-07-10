@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package com.ning.billing.util.clock;
+package com.ning.billing.clock;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;

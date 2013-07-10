@@ -22,7 +22,7 @@ import org.skife.jdbi.v2.IDBI;
 
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.clock.Clock;
 
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {

@@ -35,10 +35,9 @@ import com.ning.billing.notificationq.api.NotificationEventWithMetadata;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.dao.NotificationEventModelDao;
-import com.ning.billing.notificationq.dao.NotificationSqlDao;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.clock.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;

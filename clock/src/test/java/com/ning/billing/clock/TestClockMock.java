@@ -14,10 +14,11 @@
  * under the License.
  */
 
-package com.ning.billing.util.clock;
+package com.ning.billing.clock;
 
 import java.util.concurrent.Callable;
 
+import com.ning.billing.clock.ClockMock;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;

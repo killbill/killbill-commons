@@ -36,7 +36,7 @@
         </license>
     </licenses>
     <modules>
-        <module>util</module>
+        <module>clock</module>
         <module>concurrent</module>
         <module>embeddeddb</module>
         <module>jdbi</module>
@@ -65,20 +65,20 @@
             </dependency>
             <dependency>
                 <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-jdbi</artifactId>
+                <artifactId>killbill-clock</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-util</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-util</artifactId>
+                <artifactId>killbill-clock</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.ning.billing.commons</groupId>
+                <artifactId>killbill-jdbi</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>

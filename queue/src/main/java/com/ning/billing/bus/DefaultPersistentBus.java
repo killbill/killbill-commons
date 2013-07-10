@@ -37,7 +37,7 @@ import com.ning.billing.bus.dao.PersistentBusSqlDao;
 import com.ning.billing.queue.DBBackedQueue;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.clock.Clock;
 
 import com.google.common.eventbus.EventBus;
 

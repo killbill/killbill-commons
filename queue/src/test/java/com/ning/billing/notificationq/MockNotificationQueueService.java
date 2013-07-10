@@ -29,7 +29,7 @@ import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.dao.NotificationEventModelDao;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.clock.Clock;
 
 
 public class MockNotificationQueueService extends NotificationQueueServiceBase {

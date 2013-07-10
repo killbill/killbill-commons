@@ -17,7 +17,7 @@ import com.ning.billing.queue.api.PersistentQueueConfig;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.queue.dao.EventEntryModelDao;
 import com.ning.billing.queue.dao.QueueSqlDao;
-import com.ning.billing.util.clock.Clock;
+import com.ning.billing.clock.Clock;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;

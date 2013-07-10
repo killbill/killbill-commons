@@ -22,8 +22,8 @@
         <version>0.1.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>killbill-util</artifactId>
-    <name>Util classes and interfaces for killbill and killbill-commons</name>
+    <artifactId>killbill-clock</artifactId>
+    <name>Kill Bill Clock classes and interfaces for killbill and killbill-commons</name>
     <dependencies>
         <dependency>
             <groupId>com.jayway.awaitility</groupId>
