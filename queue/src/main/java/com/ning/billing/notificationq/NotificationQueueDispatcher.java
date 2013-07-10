@@ -161,7 +161,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected int doProcessEventsWithLimit(int limit) {
 
         logDebug("ENTER doProcessEvents");
-        // Finding and claiming notifications is not done per tenant (yet?)
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
         if (notifications.size() == 0) {
             logDebug("EXIT doProcessEvents");

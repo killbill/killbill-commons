@@ -102,7 +102,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             isQueueOpenForWrite.set(false);
             isQueueOpenForRead.set(false);
         }
-        inflightEvents.clear();
+        if (useInflightQueue) {
+            inflightEvents.clear();
+        }
         totalInflightProcessed.clear();
         totalProcessed.clear();
         totalInflightWritten.clear();
@@ -131,8 +133,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             boolean success = inflightEvents.offer(lastInsertId);
 
-            log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
-                     (success ? "into inflightQ" : "into disk"));
+            if (log.isDebugEnabled()) {
+                log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
+                     (success ? " into inflightQ" : " into disk") +
+                     " [" + entry.getEventJson() + "]" );
+            }
 
             // Q overflowed
             if (!success) {
@@ -245,12 +250,16 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         }
 
-        log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + size + ", ids = " + Joiner.on(", ").join(recordIds));
         // Before we return we filter on AVAILABLE entries for precaution; the case could potentially happen
         // at the time when we switch from !isQueueOpenForRead -> isQueueOpenForRead with two thread in parallel.
         //
         List<T> result = ImmutableList.<T>of();
         if (recordIds.size() > 0) {
+
+            if (log.isDebugEnabled()) {
+                log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + size + ", ids = " + Joiner.on(", ").join(recordIds));
+            }
+
             final List<T> entriesFromIds = getEntriesFromIds(recordIds);
             result = ImmutableList.<T>copyOf(Collections2.filter(entriesFromIds, new Predicate<T>() {
                 @Override
@@ -298,6 +307,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 try {
                     long sleepTime = INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS * (int) Math.pow(2, nbTries);
                     Thread.sleep(sleepTime);
+                    log.info(DB_QUEUE_LOG_ID + "Sleeping " + sleepTime + " for IDS = " + Joiner.on(",").join(recordIds));
                 } catch (InterruptedException e) {
                     log.warn(DB_QUEUE_LOG_ID + "Thread " + Thread.currentThread() + " got interrupted");
                     Thread.currentThread().interrupt();
@@ -335,7 +345,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, tableName) == 1);
 
         if (claimed) {
-            log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
+            log.info(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
         }
 
         return claimed;

@@ -19,6 +19,7 @@ package com.ning.billing.bus;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 
@@ -47,7 +48,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
 
-    private volatile boolean isStarted;
+    private AtomicBoolean isStarted;
 
     private static final class EventBusDelegate extends EventBus {
 
@@ -84,20 +85,22 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         this.clock = clock;
         this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, busTableName, busHistoryTableName, "bus-" + busTableName, true);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
-        this.isStarted = false;
+        this.isStarted = new AtomicBoolean(false);
     }
 
     @Override
     public void start() {
-        dao.initialize();
-        startQueue();
-        isStarted = true;
+        if (isStarted.compareAndSet(false, true)) {
+            dao.initialize();
+            startQueue();
+        }
     }
 
     @Override
     public void stop() {
-        stopQueue();
-        isStarted = false;
+        if (isStarted.compareAndSet(true, false)) {
+            stopQueue();
+        }
     }
 
     @Override
@@ -121,12 +124,12 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public boolean isStarted() {
-        return isStarted;
+        return isStarted.get();
     }
 
     @Override
     public void register(final Object handlerInstance) throws EventBusException {
-        if (isStarted) {
+        if (isStarted.get()) {
             eventBusDelegate.register(handlerInstance);
         } else {
             log.warn("Attempting to register handler " + handlerInstance + " in a non initialized bus");
@@ -135,7 +138,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public void unregister(final Object handlerInstance) throws EventBusException {
-        if (isStarted) {
+        if (isStarted.get()) {
             eventBusDelegate.unregister(handlerInstance);
         } else {
             log.warn("Attempting to unregister handler " + handlerInstance + " in a non initialized bus");
@@ -145,7 +148,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Override
     public void post(final BusEvent event) throws EventBusException {
         try {
-            if (isStarted) {
+            if (isStarted.get()) {
                 final String json = objectMapper.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
                                                                     event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
@@ -164,7 +167,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             throws EventBusException {
         try {
             final PersistentBusSqlDao transactional = transmogrifier.become(PersistentBusSqlDao.class);
-            if (isStarted) {
+            if (isStarted.get()) {
                 final String json = objectMapper.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
                                                                     event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());

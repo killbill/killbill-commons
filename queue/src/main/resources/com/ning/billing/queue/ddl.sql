@@ -21,7 +21,7 @@ CREATE TABLE notifications (
 CREATE INDEX  `idx_comp_where` ON notifications (`effective_date`, `processing_state`,`processing_owner`,`processing_available_date`);
 CREATE INDEX  `idx_update` ON notifications (`processing_state`,`processing_owner`,`processing_available_date`);
 CREATE INDEX  `idx_get_ready` ON notifications (`effective_date`,`created_date`);
-CREATE INDEX notifications_tenant_account_record_id ON notifications(search_key2, search_key1);
+CREATE INDEX notifications_search_keys ON notifications(search_key2, search_key1);
 
 DROP TABLE IF EXISTS notifications_history;
 CREATE TABLE notifications_history (
@@ -58,7 +58,7 @@ CREATE TABLE bus_events (
     PRIMARY KEY(record_id)
 );
 CREATE INDEX  `idx_bus_where` ON bus_events (`processing_state`,`processing_owner`,`processing_available_date`);
-CREATE INDEX bus_events_tenant_account_record_id ON bus_events(search_key2, search_key1);
+CREATE INDEX bus_events_search_keys ON bus_events(search_key2, search_key1);
 
 DROP TABLE IF EXISTS bus_events_history;
 CREATE TABLE bus_events_history (

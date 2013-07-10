@@ -42,7 +42,6 @@ import com.ning.billing.notificationq.dao.DummySqlTest;
 import com.ning.billing.util.clock.ClockMock;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -56,8 +55,8 @@ public class TestNotificationQueue extends TestSetup {
     private final Logger log = LoggerFactory.getLogger(TestNotificationQueue.class);
 
     private final static UUID TOKEN_ID = UUID.randomUUID();
-    private final static long ACCOUNT_RECORD_ID = 65;
-    private final static long TENANT_RECORD_ID = 34;
+    private final static long SEARCH_KEY_1 = 65;
+    private final static long SEARCH_KEY_2 = 34;
 
     private NotificationQueueService queueService;
 
@@ -143,7 +142,7 @@ public class TestNotificationQueue extends TestSetup {
         dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
             @Override
             public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
-                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson, TOKEN_ID, ACCOUNT_RECORD_ID, TENANT_RECORD_ID);
+                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
                 log.info("Posted key: " + eventJson);
                 return null;
             }
@@ -208,7 +207,7 @@ public class TestNotificationQueue extends TestSetup {
                 @Override
                 public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
                     queue.recordFutureNotificationFromTransaction(transactional, now.plus((currentIteration + 1) * nextReadyTimeIncrementMs),
-                                                                  eventJson, TOKEN_ID, ACCOUNT_RECORD_ID, TENANT_RECORD_ID);
+                                                                  eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
                     return null;
                 }
             });
@@ -298,9 +297,9 @@ public class TestNotificationQueue extends TestSetup {
         dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
             @Override
             public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
-                queueFred.recordFutureNotificationFromTransaction(transactional, readyTime, eventJsonFred, TOKEN_ID, ACCOUNT_RECORD_ID, TENANT_RECORD_ID);
+                queueFred.recordFutureNotificationFromTransaction(transactional, readyTime, eventJsonFred, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
                 log.info("posted key: " + eventJsonFred.toString());
-                queueBarney.recordFutureNotificationFromTransaction(transactional, readyTime, eventJsonBarney, TOKEN_ID, ACCOUNT_RECORD_ID, TENANT_RECORD_ID);
+                queueBarney.recordFutureNotificationFromTransaction(transactional, readyTime, eventJsonBarney, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
                 log.info("posted key: " + eventJsonBarney.toString());
                 return null;
             }
