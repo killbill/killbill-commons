@@ -344,8 +344,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
         final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, tableName) == 1);
 
-        if (claimed) {
-            log.info(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
+        if (claimed && log.isDebugEnabled()) {
+            log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
         }
 
         return claimed;

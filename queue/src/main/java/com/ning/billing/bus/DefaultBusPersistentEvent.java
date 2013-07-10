@@ -14,22 +14,4 @@ public abstract class DefaultBusPersistentEvent {
         this.searchKey2 = searchKey2;
         this.searchKey1 = searchKey1;
     }
-/*
-    @Override
-    public UUID getUserToken() {
-        return userToken;
-    }
-
-    @JsonIgnore
-    @Override
-    public Long getSearchKey2() {
-        return searchKey2;
-    }
-
-    @JsonIgnore
-    @Override
-    public Long getSearchKey1() {
-        return searchKey1;
-    }
-    */
 }
