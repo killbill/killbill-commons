@@ -23,7 +23,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
-import com.sun.istack.internal.Nullable;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 
@@ -263,7 +262,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             final List<T> entriesFromIds = getEntriesFromIds(recordIds);
             result = ImmutableList.<T>copyOf(Collections2.filter(entriesFromIds, new Predicate<T>() {
                 @Override
-                public boolean apply(@Nullable final T input) {
+                public boolean apply(final T input) {
                     return (input.getProcessingState() == PersistentQueueEntryLifecycleState.AVAILABLE);
                 }
             }));
@@ -334,7 +333,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private List<T> claimEntries(List<T> candidates) {
         return ImmutableList.<T>copyOf(Collections2.filter(candidates, new Predicate<T>() {
             @Override
-            public boolean apply(@Nullable final T input) {
+            public boolean apply(final T input) {
                 return claimEntry(input);
             }
         }));
