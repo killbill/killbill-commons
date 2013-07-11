@@ -20,7 +20,7 @@
     <parent>
         <artifactId>killbill-commons</artifactId>
         <groupId>com.ning.billing.commons</groupId>
-        <version>0.1.6-SNAPSHOT</version>
+        <version>0.1.7-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-clock</artifactId>
@@ -34,7 +34,6 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
