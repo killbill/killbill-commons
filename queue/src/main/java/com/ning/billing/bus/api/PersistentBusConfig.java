@@ -25,7 +25,7 @@ import com.ning.billing.queue.api.PersistentQueueConfig;
 
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
-    @Config("killbill.billing.persistent.bus.prefetch")
+    @Config("killbill.billing.persistent.bus.claimed")
     @Default("5")
     @Description("Number of bus events to fetch from the database at once")
     public abstract int getMaxEntriesClaimed();
