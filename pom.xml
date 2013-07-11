@@ -23,7 +23,7 @@
     </parent>
     <groupId>com.ning.billing.commons</groupId>
     <artifactId>killbill-commons</artifactId>
-    <version>0.1.6</version>
+    <version>0.1.7-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>
@@ -390,7 +390,7 @@
                             </goals>
                             <configuration>
                                 <licenseFamilies>
-                                    <licenseFamily implementation="org.apache.rat.license.Apache20LicenseFamily"></licenseFamily>
+                                    <licenseFamily implementation="org.apache.rat.license.Apache20LicenseFamily" />
                                     <!-- Hack, rat 0.9 will have org.apache.rat.analysis.license.MITLicense -->
                                     <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
                                         <familyName>The MIT License</familyName>
