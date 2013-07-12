@@ -20,6 +20,8 @@ import org.skife.config.TimeSpan;
 
 public interface PersistentQueueConfig {
 
+    public boolean isUsingInflightQueue();
+
     public int getMaxEntriesClaimed();
 
     public TimeSpan getClaimedTime();

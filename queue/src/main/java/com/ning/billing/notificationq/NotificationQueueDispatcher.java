@@ -94,7 +94,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         final NotificationSqlDao sqlDao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
         this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME,
                                                              DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME,
-                                                             "notif-" + DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME, false);
+                                                             "notif-" + DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
 
 
         this.queues = new TreeMap<String, NotificationQueue>();

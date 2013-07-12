@@ -83,7 +83,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, busTableName, busHistoryTableName, "bus-" + busTableName, true);
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, busTableName, busHistoryTableName, "bus-" + busTableName);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
     }

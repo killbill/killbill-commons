@@ -53,6 +53,12 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Description("Number of threads to use")
     public abstract int getNbThreads();
 
+    @Override
+    @Config("killbill.billing.persistent.bus.useInflightQ")
+    @Default("false")
+    @Description("Whether to use the inflight queue")
+    public abstract boolean isUsingInflightQueue();
+
     @Config("killbill.billing.persistent.bus.queue.capacity")
     @Default("3000")
     @Description("Number of threads to use")

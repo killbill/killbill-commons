@@ -85,9 +85,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                          final PersistentQueueConfig config,
                          final String tableName,
                          final String historyTableName,
-                         final String dbBackedQId,
-                         final boolean useInflightQueue) {
-        this.useInflightQueue = useInflightQueue;
+                         final String dbBackedQId) {
+        this.useInflightQueue = config.isUsingInflightQueue();
         this.sqlDao = sqlDao;
         this.config = config;
         this.tableName = tableName;
