@@ -46,14 +46,9 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.jayway.awaitility</groupId>
@@ -97,7 +92,6 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -146,5 +140,5 @@
             <artifactId>jmxutils</artifactId>
         </dependency>
     </dependencies>
-    <build />
+    <build></build>
 </project>

@@ -26,7 +26,6 @@ public class Hostname {
             final InetAddress addr = InetAddress.getLocalHost();
             return addr.getHostName();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
             return "hostname-unknown";
         }
     }

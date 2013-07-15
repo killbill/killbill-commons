@@ -20,7 +20,9 @@ import java.util.UUID;
 
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
-public interface PersistentBus {
+import com.ning.billing.queue.api.QueueLifecycle;
+
+public interface PersistentBus extends QueueLifecycle {
 
 
     public static final String EVENT_BUS_GROUP_NAME = "bus-grp";

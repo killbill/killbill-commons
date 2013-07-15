@@ -39,6 +39,19 @@ public class InMemoryPersistentBus implements PersistentBus {
     private final EventBusDelegate delegate;
     private final AtomicBoolean isInitialized;
 
+    @Override
+    public void startQueue() {
+    }
+
+    @Override
+    public void stopQueue() {
+    }
+
+    @Override
+    public boolean isStarted() {
+        return true;
+    }
+
     public class EventBusDelegate extends AsyncEventBus {
 
         private final Executor executor;
