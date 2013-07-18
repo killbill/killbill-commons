@@ -19,7 +19,7 @@
     <parent>
         <artifactId>killbill-commons</artifactId>
         <groupId>com.ning.billing.commons</groupId>
-        <version>0.1.8-SNAPSHOT</version>
+        <version>0.1.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-concurrent</artifactId>
