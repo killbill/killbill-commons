@@ -140,5 +140,4 @@
             <artifactId>jmxutils</artifactId>
         </dependency>
     </dependencies>
-    <build />
 </project>
