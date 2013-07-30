@@ -87,6 +87,11 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         }
         startMysql();
 
+        refreshTableNames();
+    }
+
+    @Override
+    public void refreshTableNames() throws IOException {
         final String query = String.format("select table_name from information_schema.tables where table_schema = '%s' and table_type = 'BASE TABLE';", databaseName);
         try {
             executeQuery(query, new ResultSetJob() {

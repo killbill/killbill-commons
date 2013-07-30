@@ -82,6 +82,11 @@ public class H2EmbeddedDB extends EmbeddedDB {
             throw new IOException(e);
         }
 
+        refreshTableNames();
+    }
+
+    @Override
+    public void refreshTableNames() throws IOException {
         final String query = String.format("select table_name from information_schema.tables where table_catalog = '%s' and table_type = 'TABLE';", databaseName);
         try {
             executeQuery(query, new ResultSetJob() {

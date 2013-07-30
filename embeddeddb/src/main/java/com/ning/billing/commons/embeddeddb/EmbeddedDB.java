@@ -60,6 +60,8 @@ public abstract class EmbeddedDB {
 
     public abstract void start() throws IOException;
 
+    public abstract void refreshTableNames() throws IOException;
+
     public abstract DataSource getDataSource() throws IOException;
 
     public abstract void stop() throws IOException;
