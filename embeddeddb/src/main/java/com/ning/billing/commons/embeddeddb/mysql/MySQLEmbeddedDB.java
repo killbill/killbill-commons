@@ -38,13 +38,14 @@ import com.mysql.management.MysqldResourceI;
 
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
+    protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    private MysqlDataSource dataSource;
+    protected MysqlDataSource dataSource;
+    protected int port;
+
     private File dbDir;
     private File dataDir;
     private MysqldResource mysqldResource;
-    private int port;
 
     public MySQLEmbeddedDB() {
         // Avoid dashes - MySQL doesn't like them
@@ -178,6 +179,8 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             } catch (FileNotFoundException e) {
                 throw new IOException(e);
             }
+
+            started.set(false);
             logger.info("MySQL stopped: " + getCmdLineConnectionString());
         }
     }
