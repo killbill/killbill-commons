@@ -56,9 +56,9 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     private static final String NOTIFICATION_THREAD_NAME = "Notification-queue-dispatch";
 
-    private final NotificationQueueConfig config;
     private final AtomicLong nbProcessedEvents;
 
+    protected final NotificationQueueConfig config;
     protected final Clock clock;
     protected final Map<String, NotificationQueue> queues;
     protected final DBBackedQueue<NotificationEventModelDao> dao;
@@ -92,10 +92,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
         final NotificationSqlDao sqlDao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
-        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME,
-                                                             DefaultNotificationQueue.NOTIFICATION_QUEUE_HISTORY_TABLE_NAME,
-                                                             "notif-" + DefaultNotificationQueue.NOTIFICATION_QUEUE_TABLE_NAME);
-
+        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName());
 
         this.queues = new TreeMap<String, NotificationQueue>();
 

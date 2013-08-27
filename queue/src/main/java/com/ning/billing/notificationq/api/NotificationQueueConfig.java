@@ -70,4 +70,13 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Description("Number of notifications to read from the database at once")
     public abstract int getPrefetchEntries();
 
+    @Config("killbill.billing.notificationq.tableName")
+    @Default("notifications")
+    @Description("Notifications table name")
+    public abstract String getTableName();
+
+    @Config("killbill.billing.notificationq.historyTableName")
+    @Default("notifications_history")
+    @Description("Notifications history table name")
+    public abstract String getHistoryTableName();
 }

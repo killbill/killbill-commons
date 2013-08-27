@@ -71,8 +71,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final Clock clock;
     private final Queue<Long> inflightEvents;
     private final PersistentQueueConfig config;
-    private final String tableName;
-    private final String historyTableName;
     private final boolean useInflightQueue;
 
     private final Counter totalInflightProcessed;
@@ -83,14 +81,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     public DBBackedQueue(final Clock clock,
                          final QueueSqlDao<T> sqlDao,
                          final PersistentQueueConfig config,
-                         final String tableName,
-                         final String historyTableName,
                          final String dbBackedQId) {
         this.useInflightQueue = config.isUsingInflightQueue();
         this.sqlDao = sqlDao;
         this.config = config;
-        this.tableName = tableName;
-        this.historyTableName = historyTableName;
         this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getQueueCapacity()) : null;
         this.isQueueOpenForWrite = new AtomicBoolean(false);
         this.isQueueOpenForRead = new AtomicBoolean(false);
@@ -140,7 +134,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
 
-        transactional.insertEntry(entry, tableName);
+        transactional.insertEntry(entry, config.getTableName());
         totalWritten.inc();
         if (useInflightQueue && isQueueOpenForWrite.get()) {
             Long lastInsertId = transactional.getLastInsertId();
@@ -248,8 +242,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
-        transactional.insertEntry(entry, historyTableName);
-        transactional.removeEntry(entry.getRecordId(), tableName);
+        transactional.insertEntry(entry, config.getHistoryTableName());
+        transactional.removeEntry(entry.getRecordId(), config.getTableName());
     }
 
     private List<T> fetchReadyEntriesFromIds() {
@@ -309,7 +303,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         int nbTries = 0;
 
         do {
-            final List<T> tmp = sqlDao.getEntriesFromIds(recordIds, tableName);
+            final List<T> tmp = sqlDao.getEntriesFromIds(recordIds, config.getTableName());
             if (tmp.size() > 0) {
                 for (T cur : tmp) {
                     recordIds.remove(cur.getRecordId());
@@ -340,7 +334,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private List<T> fetchReadyEntries(int size) {
         final Date now = clock.getUTCNow().toDate();
-        final List<T> entries = sqlDao.getReadyEntries(now, Hostname.get(), size, tableName);
+        final List<T> entries = sqlDao.getReadyEntries(now, Hostname.get(), size, config.getTableName());
         return entries;
     }
 
@@ -356,7 +350,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private boolean claimEntry(T entry) {
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
-        final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, tableName) == 1);
+        final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName()) == 1);
 
         if (claimed && log.isDebugEnabled()) {
             log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());

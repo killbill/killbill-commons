@@ -1,3 +1,6 @@
+0.2.2
+    queue: make bus and notification queue table names configurable
+
 0.2.1
     embeddeddb: add MySQLStandaloneDB
 

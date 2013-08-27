@@ -73,7 +73,7 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "slow")
     public void testOnlyInflightQ() {
         final PersistentBusConfig config = createConfig(1, 10, 0);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus_events", "bus_events_history", "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -139,7 +139,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus_events", "bus_events_history", "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -216,7 +216,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus_events", "bus_events_history", "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -328,7 +328,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus_events", "bus_events_history", "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -399,7 +399,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testWithOneReaderOneWriter() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus_events", "bus_events_history", "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
         queue.initialize();
 
 
@@ -443,7 +443,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testMultipleWritersMultipleReaders() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus_events", "bus_events_history", "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
         queue.initialize();
 
 
@@ -614,6 +614,16 @@ public class TestDBBackedQueue extends TestSetup {
             @Override
             public int getPrefetchEntries() {
                 return prefetchEntries;
+            }
+
+            @Override
+            public String getTableName() {
+                return "bus_events";
+            }
+
+            @Override
+            public String getHistoryTableName() {
+                return "bus_events_history";
             }
         };
     }

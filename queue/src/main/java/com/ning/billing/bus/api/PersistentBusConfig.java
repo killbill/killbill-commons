@@ -69,4 +69,13 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Description("Number of notifications to read from the database at once")
     public abstract int getPrefetchEntries();
 
+    @Config("killbill.billing.persistent.bus.tableName")
+    @Default("bus_events")
+    @Description("Bus events table name")
+    public abstract String getTableName();
+
+    @Config("killbill.billing.persistent.bus.historyTableName")
+    @Default("bus_events_history")
+    @Description("Bus events history table name")
+    public abstract String getHistoryTableName();
 }

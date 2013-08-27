@@ -35,4 +35,8 @@ public interface PersistentQueueConfig {
     public int getQueueCapacity();
 
     public int getPrefetchEntries();
+
+    public String getTableName();
+
+    public String getHistoryTableName();
 }

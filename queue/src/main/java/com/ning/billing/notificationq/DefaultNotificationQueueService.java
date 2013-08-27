@@ -36,6 +36,6 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
     protected NotificationQueue createNotificationQueueInternal(final String svcName,
                                                                 final String queueName,
                                                                 final NotificationQueueHandler handler) {
-        return new DefaultNotificationQueue(svcName, queueName, handler, dao, this, clock);
+        return new DefaultNotificationQueue(svcName, queueName, handler, dao, this, clock, config);
     }
 }

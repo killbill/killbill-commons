@@ -27,6 +27,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import com.ning.billing.Hostname;
 import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationEventWithMetadata;
+import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.api.NotificationQueueService;
 import com.ning.billing.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import com.ning.billing.notificationq.api.NotificationQueue;
@@ -42,9 +43,6 @@ import com.google.common.base.Objects;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
-    public static final String NOTIFICATION_QUEUE_TABLE_NAME = "notifications";
-    public static final String NOTIFICATION_QUEUE_HISTORY_TABLE_NAME = "notifications_history";
-
     private final DBBackedQueue<NotificationEventModelDao> dao;
     private final String svcName;
     private final String queueName;
@@ -52,12 +50,13 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private final NotificationQueueService notificationQueueService;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final NotificationQueueConfig config;
 
     private volatile boolean isStarted;
 
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
                                     final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
-                                    final Clock clock) {
+                                    final Clock clock, final NotificationQueueConfig config) {
         this.svcName = svcName;
         this.queueName = queueName;
         this.handler = handler;
@@ -65,6 +64,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         this.notificationQueueService = notificationQueueService;
         this.objectMapper = new ObjectMapper();
         this.clock = clock;
+        this.config = config;
     }
 
 
@@ -117,7 +117,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final String searchKey, final Long searchKeyValue) {
 
         final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
-        final List<NotificationEventModelDao> entries = transactionalDao.getReadyQueueEntriesForSearchKey(clock.getUTCNow().toDate(), getFullQName(), searchKeyValue, NOTIFICATION_QUEUE_TABLE_NAME, searchKey);
+        final List<NotificationEventModelDao> entries = transactionalDao.getReadyQueueEntriesForSearchKey(clock.getUTCNow().toDate(), getFullQName(), searchKeyValue, config.getTableName(), searchKey);
         for (NotificationEventModelDao cur : entries) {
             final T event = (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
@@ -130,7 +130,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     @Override
     public void removeNotification(final Long recordId) {
-        final NotificationEventModelDao existing = dao.getSqlDao().getByRecordId(recordId, NOTIFICATION_QUEUE_TABLE_NAME);
+        final NotificationEventModelDao existing = dao.getSqlDao().getByRecordId(recordId, config.getTableName());
         final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
         dao.moveEntryToHistory(removedEntry);
 
@@ -139,7 +139,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     @Override
     public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
         final NotificationSqlDao transactional = transmogrifier.become(NotificationSqlDao.class);
-        final NotificationEventModelDao existing = transactional.getByRecordId(recordId, NOTIFICATION_QUEUE_TABLE_NAME);
+        final NotificationEventModelDao existing = transactional.getByRecordId(recordId, config.getTableName());
         final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
         dao.moveEntryToHistoryFromTransaction(transactional, removedEntry);
     }
