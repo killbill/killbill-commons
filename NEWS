@@ -1,5 +1,6 @@
 0.2.2
     queue: make bus and notification queue table names configurable
+    queue: remove date constraints in notification queue search APIs
 
 0.2.1
     embeddeddb: add MySQLStandaloneDB

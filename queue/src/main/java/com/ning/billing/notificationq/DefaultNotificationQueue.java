@@ -117,7 +117,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final String searchKey, final Long searchKeyValue) {
 
         final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
-        final List<NotificationEventModelDao> entries = transactionalDao.getReadyQueueEntriesForSearchKey(clock.getUTCNow().toDate(), getFullQName(), searchKeyValue, config.getTableName(), searchKey);
+        final List<NotificationEventModelDao> entries = transactionalDao.getReadyQueueEntriesForSearchKey(getFullQName(), searchKeyValue, config.getTableName(), searchKey);
         for (NotificationEventModelDao cur : entries) {
             final T event = (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,

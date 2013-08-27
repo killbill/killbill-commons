@@ -35,7 +35,6 @@ getReadyQueueEntriesForSearchKey(tableName, searchKey) ::= <<
       queue_name = :queueName
       and processing_state = 'AVAILABLE'
       and <searchKey> = :searchKey
-      and effective_date >= :now
     order by
       <readyOrderByClause()>
 ;
