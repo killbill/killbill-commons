@@ -1,7 +1,9 @@
 0.2.2
-    queue: make bus and notification queue table names configurable
-    queue: remove date constraints in notification queue search APIs
-    queue: update Metrics to 3.0.1
+    Queue
+      - Make bus and notification queue table names configurable
+      - Remove date constraints in notification queue search APIs
+      - Update Metrics to 3.0.1
+      - Namespace notification queue options
     Update to killbill-oss-parent 0.4.2
 
 0.2.1

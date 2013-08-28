@@ -26,56 +26,56 @@ import com.ning.billing.queue.api.PersistentQueueConfig;
 
 public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
-    @Config("killbill.billing.notificationq.claimed")
+    @Config("killbill.billing.notificationq.${instanceName}.claimed")
     @Default("7")
     @Description("Number of notifications to fetch at once")
     public abstract int getMaxEntriesClaimed();
 
-    @Config("killbill.billing.persistent.notificationq.claim.time")
+    @Config("killbill.billing.notificationq.${instanceName}.claim.time")
     @Default("5m")
     @Description("Claim time")
     @Override
     public abstract TimeSpan getClaimedTime();
 
     @Override
-    @Config("killbill.billing.notificationq.sleep")
+    @Config("killbill.billing.notificationq.${instanceName}.sleep")
     @Default("3000")
     @Description("Time in milliseconds to sleep between runs")
     public abstract long getSleepTimeMs();
 
     @Override
-    @Config("killbill.billing.notificationq.notification.off")
+    @Config("killbill.billing.notificationq.${instanceName}.notification.off")
     @Default("false")
     @Description("Whether to turn off the notification queue")
     public abstract boolean isProcessingOff();
 
-    @Config("killbill.billing.notificationq.notification.nbThreads")
+    @Config("killbill.billing.notificationq.${instanceName}.notification.nbThreads")
     @Default("1")
     @Description("Number of threads to use")
     public abstract int getNbThreads();
 
     @Override
-    @Config("killbill.billing.notificationq.useInflightQ")
+    @Config("killbill.billing.notificationq.${instanceName}.useInflightQ")
     @Default("false")
     @Description("Whether to use the inflight queue")
     public abstract boolean isUsingInflightQueue();
 
-    @Config("killbill.billing.notificationq.queue.capacity")
+    @Config("killbill.billing.notificationq.${instanceName}.queue.capacity")
     @Default("0")
     @Description("Number of threads to use")
     public abstract int getQueueCapacity();
 
-    @Config("killbill.billing.notificationq.prefetch")
+    @Config("killbill.billing.notificationq.${instanceName}.prefetch")
     @Default("7")
     @Description("Number of notifications to read from the database at once")
     public abstract int getPrefetchEntries();
 
-    @Config("killbill.billing.notificationq.tableName")
+    @Config("killbill.billing.notificationq.${instanceName}.tableName")
     @Default("notifications")
     @Description("Notifications table name")
     public abstract String getTableName();
 
-    @Config("killbill.billing.notificationq.historyTableName")
+    @Config("killbill.billing.notificationq.${instanceName}.historyTableName")
     @Default("notifications_history")
     @Description("Notifications history table name")
     public abstract String getHistoryTableName();

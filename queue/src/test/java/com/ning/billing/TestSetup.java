@@ -40,6 +40,7 @@ import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.clock.ClockMock;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.io.InputSupplier;
 import com.google.common.io.Resources;
@@ -81,7 +82,8 @@ public class TestSetup {
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
         persistentBusConfig = new ConfigurationObjectFactory(configSource).build(PersistentBusConfig.class);
 
-        notificationQueueConfig = new ConfigurationObjectFactory(configSource).build(NotificationQueueConfig.class);
+        notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
+                                                                                                     ImmutableMap.<String, String>of("instanceName", "main"));
     }
 
     @BeforeMethod(groups = "slow")
