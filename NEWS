@@ -1,6 +1,8 @@
 0.2.2
     queue: make bus and notification queue table names configurable
     queue: remove date constraints in notification queue search APIs
+    queue: update Metrics to 3.0.1
+    Update to killbill-oss-parent 0.4.2
 
 0.2.1
     embeddeddb: add MySQLStandaloneDB

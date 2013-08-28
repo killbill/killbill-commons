@@ -43,10 +43,10 @@ import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.clock.Clock;
 
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.Gauge;
-import com.yammer.metrics.core.Histogram;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
@@ -96,15 +96,16 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         this.queues = new TreeMap<String, NotificationQueue>();
 
-        this.pendingNotifications = Metrics.newGauge(NotificationQueueDispatcher.class, "pending-notifications", new Gauge<Integer>() {
-            @Override
-            public Integer value() {
-                // TODO STEPH
-                return 0; // STEPH dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
-            }
-        });
+        this.pendingNotifications = DBBackedQueue.metrics.register(MetricRegistry.name(NotificationQueueDispatcher.class, "pending-notifications"),
+                                                                   new Gauge<Integer>() {
+                                                                       @Override
+                                                                       public Integer getValue() {
+                                                                           // TODO STEPH
+                                                                           return 0; // STEPH dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
+                                                                       }
+                                                                   });
 
-        this.processedNotificationsSinceStart = Metrics.newCounter(NotificationQueueDispatcher.class, "processed-notifications-since-start");
+        this.processedNotificationsSinceStart = DBBackedQueue.metrics.counter(MetricRegistry.name(NotificationQueueDispatcher.class, "processed-notifications-since-start"));
         this.perQueueProcessingTime = new HashMap<String, Histogram>();
     }
 
@@ -206,7 +207,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         final Histogram perQueueHistogramProcessingTime;
         synchronized (perQueueProcessingTime) {
             if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
-                perQueueProcessingTime.put(notification.getQueueName(), Metrics.newHistogram(NotificationQueueDispatcher.class, metricName));
+                perQueueProcessingTime.put(notification.getQueueName(), DBBackedQueue.metrics.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
             }
             perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
         }

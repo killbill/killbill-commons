@@ -35,12 +35,12 @@ import com.ning.billing.queue.dao.EventEntryModelDao;
 import com.ning.billing.queue.dao.QueueSqlDao;
 import com.ning.billing.clock.Clock;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Counter;
 
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
@@ -62,6 +62,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final static long INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS = 10;
     private final static int INFLIGHT_ENTRIES_POLL_MAX_RETRY = 10;
 
+    public static final MetricRegistry metrics = new MetricRegistry();
 
     private final String DB_QUEUE_LOG_ID;
 
@@ -89,10 +90,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         this.isQueueOpenForWrite = new AtomicBoolean(false);
         this.isQueueOpenForRead = new AtomicBoolean(false);
         this.clock = clock;
-        this.totalInflightProcessed = Metrics.newCounter(DBBackedQueue.class, dbBackedQId + "-totalInflightProcessed");
-        this.totalProcessed = Metrics.newCounter(DBBackedQueue.class, dbBackedQId + "-totalProcessed");
-        this.totalInflightWritten = Metrics.newCounter(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten");
-        this.totalWritten = Metrics.newCounter(DBBackedQueue.class, dbBackedQId + "-totalWritten");
+        this.totalInflightProcessed = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightProcessed"));
+        this.totalProcessed = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalProcessed"));
+        this.totalInflightWritten = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten"));
+        this.totalWritten = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalWritten"));
 
         DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }
@@ -113,10 +114,12 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         if (useInflightQueue) {
             inflightEvents.clear();
         }
-        totalInflightProcessed.clear();
-        totalProcessed.clear();
-        totalInflightWritten.clear();
-        totalWritten.clear();
+
+        // Lame, no more clear API
+        totalInflightProcessed.dec(totalInflightProcessed.getCount());
+        totalProcessed.dec(totalProcessed.getCount());
+        totalInflightWritten.dec(totalInflightWritten.getCount());
+        totalWritten.dec(totalWritten.getCount());
 
         log.info(DB_QUEUE_LOG_ID + "Initialized with isQueueOpenForWrite = " + isQueueOpenForWrite.get() + ", isQueueOpenForRead" + isQueueOpenForRead.get());
     }
@@ -372,18 +375,18 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     public long getTotalInflightProcessed() {
-        return totalInflightProcessed.count();
+        return totalInflightProcessed.getCount();
     }
 
     public long getTotalProcessed() {
-        return totalProcessed.count();
+        return totalProcessed.getCount();
     }
 
     public long getTotalInflightWritten() {
-        return totalInflightWritten.count();
+        return totalInflightWritten.getCount();
     }
 
     public long getTotalWritten() {
-        return totalWritten.count();
+        return totalWritten.getCount();
     }
 }

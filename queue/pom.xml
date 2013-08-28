@@ -26,6 +26,10 @@
     <name>Kill Bill Persistent Queues (bus/notificationQ)</name>
     <dependencies>
         <dependency>
+            <groupId>com.codahale.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
@@ -79,10 +83,6 @@
         <dependency>
             <groupId>com.ning.billing.commons</groupId>
             <artifactId>killbill-jdbi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.yammer.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.inject</groupId>
