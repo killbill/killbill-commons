@@ -1,3 +1,7 @@
+0.2.3
+    Queue
+      - Remove MetricsRegistry static instance
+
 0.2.2
     Queue
       - Make bus and notification queue table names configurable

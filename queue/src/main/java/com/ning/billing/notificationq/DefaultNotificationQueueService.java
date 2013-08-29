@@ -20,16 +20,18 @@ import javax.inject.Inject;
 
 import org.skife.jdbi.v2.IDBI;
 
+import com.ning.billing.clock.Clock;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
-import com.ning.billing.clock.Clock;
+
+import com.codahale.metrics.MetricRegistry;
 
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
 
     @Inject
-    public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config) {
-        super(clock, config, dbi);
+    public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config, final MetricRegistry metricRegistry) {
+        super(clock, config, dbi, metricRegistry);
     }
 
     @Override

@@ -24,28 +24,28 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.clock.Clock;
 import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.dao.NotificationEventModelDao;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
-import com.ning.billing.clock.Clock;
+
+import com.codahale.metrics.MetricRegistry;
 
 
 public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
     @Inject
-    public MockNotificationQueueService(final Clock clock, final NotificationQueueConfig config) {
-        super(clock, config, null);
+    public MockNotificationQueueService(final Clock clock, final NotificationQueueConfig config, final MetricRegistry metricRegistry) {
+        super(clock, config, null, metricRegistry);
     }
-
 
     @Override
     protected NotificationQueue createNotificationQueueInternal(final String svcName, final String queueName,
                                                                 final NotificationQueueHandler handler) {
         return new MockNotificationQueue(clock, svcName, queueName, handler, this);
     }
-
 
     @Override
     public int doProcessEvents() {
@@ -84,10 +84,10 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
 
             final NotificationEventModelDao processedNotification = new NotificationEventModelDao(cur.getRecordId(), Hostname.get(), Hostname.get(), clock.getUTCNow(),
-                                                                                            getClock().getUTCNow().plus(CLAIM_TIME_MS),
-                                                                                            PersistentQueueEntryLifecycleState.PROCESSED, cur.getClassName(),
-                                                                                            cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
-                                                                                            cur.getFutureUserToken(), cur.getEffectiveDate(), "MockQueue");
+                                                                                                  getClock().getUTCNow().plus(CLAIM_TIME_MS),
+                                                                                                  PersistentQueueEntryLifecycleState.PROCESSED, cur.getClassName(),
+                                                                                                  cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
+                                                                                                  cur.getFutureUserToken(), cur.getEffectiveDate(), "MockQueue");
             oldNotifications.add(cur);
             processedNotifications.add(processedNotification);
             result++;

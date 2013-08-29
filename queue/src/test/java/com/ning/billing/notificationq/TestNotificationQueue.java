@@ -93,7 +93,7 @@ public class TestNotificationQueue extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        queueService = new DefaultNotificationQueueService(getDBI(), clock, getNotificationQueueConfig());
+        queueService = new DefaultNotificationQueueService(getDBI(), clock, getNotificationQueueConfig(), metricRegistry);
     }
 
     @Override

@@ -26,7 +26,6 @@ import com.ning.billing.bus.api.PersistentBus;
 
 public class TestPersistentEventBus extends TestSetup {
 
-
     private TestEventBusBase testEventBusBase;
     private PersistentBus busService;
 
@@ -34,7 +33,7 @@ public class TestPersistentEventBus extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig());
+        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry);
         testEventBusBase = new TestEventBusBase(busService);
     }
 

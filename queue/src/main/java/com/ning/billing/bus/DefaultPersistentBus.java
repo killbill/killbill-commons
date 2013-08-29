@@ -39,6 +39,7 @@ import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 import com.ning.billing.clock.Clock;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.eventbus.EventBus;
 
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
@@ -72,7 +73,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Inject
-    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config) {
+    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -83,7 +84,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus-" + config.getTableName());
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus-" + config.getTableName(), metricRegistry);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
     }

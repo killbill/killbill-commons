@@ -18,17 +18,18 @@ package com.ning.billing.notificationq;
 
 import org.skife.jdbi.v2.IDBI;
 
+import com.ning.billing.clock.Clock;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.api.NotificationQueueService;
-import com.ning.billing.clock.Clock;
+
+import com.codahale.metrics.MetricRegistry;
 
 
 public abstract class NotificationQueueServiceBase extends NotificationQueueDispatcher implements NotificationQueueService {
 
-
-    public NotificationQueueServiceBase(final Clock clock, final NotificationQueueConfig config, final IDBI dbi) {
-        super(clock, config, dbi);
+    public NotificationQueueServiceBase(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
+        super(clock, config, dbi, metricRegistry);
     }
 
     @Override

@@ -62,7 +62,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected final Clock clock;
     protected final Map<String, NotificationQueue> queues;
     protected final DBBackedQueue<NotificationEventModelDao> dao;
-
+    protected final MetricRegistry metricRegistry;
 
     //
     // Metrics
@@ -72,7 +72,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     private final Map<String, Histogram> perQueueProcessingTime;
 
     // Package visibility on purpose
-    NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi) {
+    NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
         super("NotificationQ", Executors.newFixedThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -92,20 +92,21 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
         final NotificationSqlDao sqlDao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
-        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName());
+        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry);
 
         this.queues = new TreeMap<String, NotificationQueue>();
 
-        this.pendingNotifications = DBBackedQueue.metrics.register(MetricRegistry.name(NotificationQueueDispatcher.class, "pending-notifications"),
-                                                                   new Gauge<Integer>() {
-                                                                       @Override
-                                                                       public Integer getValue() {
-                                                                           // TODO STEPH
-                                                                           return 0; // STEPH dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
-                                                                       }
-                                                                   });
+        this.metricRegistry = metricRegistry;
+        this.pendingNotifications = metricRegistry.register(MetricRegistry.name(NotificationQueueDispatcher.class, "pending-notifications"),
+                                                            new Gauge<Integer>() {
+                                                                @Override
+                                                                public Integer getValue() {
+                                                                    // TODO STEPH
+                                                                    return 0; // STEPH dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
+                                                                }
+                                                            });
 
-        this.processedNotificationsSinceStart = DBBackedQueue.metrics.counter(MetricRegistry.name(NotificationQueueDispatcher.class, "processed-notifications-since-start"));
+        this.processedNotificationsSinceStart = metricRegistry.counter(MetricRegistry.name(NotificationQueueDispatcher.class, "processed-notifications-since-start"));
         this.perQueueProcessingTime = new HashMap<String, Histogram>();
     }
 
@@ -207,7 +208,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         final Histogram perQueueHistogramProcessingTime;
         synchronized (perQueueProcessingTime) {
             if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
-                perQueueProcessingTime.put(notification.getQueueName(), DBBackedQueue.metrics.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
+                perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
             }
             perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
         }

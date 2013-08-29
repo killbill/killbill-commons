@@ -62,8 +62,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final static long INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS = 10;
     private final static int INFLIGHT_ENTRIES_POLL_MAX_RETRY = 10;
 
-    public static final MetricRegistry metrics = new MetricRegistry();
-
     private final String DB_QUEUE_LOG_ID;
 
     private final AtomicBoolean isQueueOpenForWrite;
@@ -82,7 +80,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     public DBBackedQueue(final Clock clock,
                          final QueueSqlDao<T> sqlDao,
                          final PersistentQueueConfig config,
-                         final String dbBackedQId) {
+                         final String dbBackedQId,
+                         final MetricRegistry metricRegistry) {
         this.useInflightQueue = config.isUsingInflightQueue();
         this.sqlDao = sqlDao;
         this.config = config;
@@ -90,10 +89,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         this.isQueueOpenForWrite = new AtomicBoolean(false);
         this.isQueueOpenForRead = new AtomicBoolean(false);
         this.clock = clock;
-        this.totalInflightProcessed = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightProcessed"));
-        this.totalProcessed = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalProcessed"));
-        this.totalInflightWritten = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten"));
-        this.totalWritten = metrics.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalWritten"));
+        this.totalInflightProcessed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightProcessed"));
+        this.totalProcessed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalProcessed"));
+        this.totalInflightWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten"));
+        this.totalWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalWritten"));
 
         DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }

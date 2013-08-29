@@ -39,6 +39,8 @@ import com.ning.billing.commons.jdbi.mapper.UUIDMapper;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.clock.ClockMock;
 
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
@@ -55,6 +57,7 @@ public class TestSetup {
     protected PersistentBusConfig persistentBusConfig;
     protected NotificationQueueConfig notificationQueueConfig;
     protected ClockMock clock;
+    protected MetricRegistry metricRegistry = new MetricRegistry();
 
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
@@ -90,6 +93,7 @@ public class TestSetup {
     public void beforeMethod() throws Exception {
         embeddedDB.cleanupAllTables();
         clock.resetDeltaFromReality();
+        metricRegistry.removeMatching(MetricFilter.ALL);
     }
 
     @AfterClass(groups = "slow")

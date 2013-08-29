@@ -37,6 +37,7 @@ import com.ning.billing.bus.dao.BusEventModelDao;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -73,7 +74,7 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "slow")
     public void testOnlyInflightQ() {
         final PersistentBusConfig config = createConfig(1, 10, 0);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -139,7 +140,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -216,7 +217,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -328,7 +329,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -399,7 +400,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testWithOneReaderOneWriter() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
         queue.initialize();
 
 
@@ -443,7 +444,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testMultipleWritersMultipleReaders() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event");
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
         queue.initialize();
 
 
