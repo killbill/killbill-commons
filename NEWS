@@ -1,6 +1,7 @@
 0.2.3
     Queue
       - Remove MetricsRegistry static instance
+      - Namespace bus options
 
 0.2.2
     Queue

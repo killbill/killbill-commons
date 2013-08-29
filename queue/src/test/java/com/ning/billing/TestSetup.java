@@ -83,8 +83,8 @@ public class TestSetup {
         dbi.registerMapper(new UUIDMapper());
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
-        persistentBusConfig = new ConfigurationObjectFactory(configSource).build(PersistentBusConfig.class);
-
+        persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
+                                                                                                 ImmutableMap.<String, String>of("instanceName", "main"));
         notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
                                                                                                      ImmutableMap.<String, String>of("instanceName", "main"));
     }

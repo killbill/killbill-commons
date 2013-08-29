@@ -25,56 +25,56 @@ import com.ning.billing.queue.api.PersistentQueueConfig;
 
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
-    @Config("killbill.billing.persistent.bus.claimed")
+    @Config("killbill.billing.persistent.bus.${instanceName}.claimed")
     @Default("5")
     @Description("Number of bus events to fetch from the database at once")
     public abstract int getMaxEntriesClaimed();
 
-    @Config("killbill.billing.persistent.bus.claim.time")
+    @Config("killbill.billing.persistent.bus.${instanceName}.claim.time")
     @Default("5m")
     @Description("Claim time")
     @Override
     public abstract TimeSpan getClaimedTime();
 
     @Override
-    @Config("killbill.billing.persistent.bus.sleep")
+    @Config("killbill.billing.persistent.bus.${instanceName}.sleep")
     @Default("3000")
     @Description("Time in milliseconds to sleep between runs")
     public abstract long getSleepTimeMs();
 
     @Override
-    @Config("killbill.billing.persistent.bus.off")
+    @Config("killbill.billing.persistent.bus.${instanceName}.off")
     @Default("false")
     @Description("Whether to turn off the persistent bus")
     public abstract boolean isProcessingOff();
 
-    @Config("killbill.billing.persistent.bus.nbThreads")
+    @Config("killbill.billing.persistent.bus.${instanceName}.nbThreads")
     @Default("3")
     @Description("Number of threads to use")
     public abstract int getNbThreads();
 
     @Override
-    @Config("killbill.billing.persistent.bus.useInflightQ")
+    @Config("killbill.billing.persistent.bus.${instanceName}.useInflightQ")
     @Default("false")
     @Description("Whether to use the inflight queue")
     public abstract boolean isUsingInflightQueue();
 
-    @Config("killbill.billing.persistent.bus.queue.capacity")
+    @Config("killbill.billing.persistent.bus.${instanceName}.queue.capacity")
     @Default("3000")
     @Description("Number of threads to use")
     public abstract int getQueueCapacity();
 
-    @Config("killbill.billing.persistent.bus.queue.prefetch")
+    @Config("killbill.billing.persistent.bus.${instanceName}.queue.prefetch")
     @Default("7")
     @Description("Number of notifications to read from the database at once")
     public abstract int getPrefetchEntries();
 
-    @Config("killbill.billing.persistent.bus.tableName")
+    @Config("killbill.billing.persistent.bus.${instanceName}.tableName")
     @Default("bus_events")
     @Description("Bus events table name")
     public abstract String getTableName();
 
-    @Config("killbill.billing.persistent.bus.historyTableName")
+    @Config("killbill.billing.persistent.bus.${instanceName}.historyTableName")
     @Default("bus_events_history")
     @Description("Bus events history table name")
     public abstract String getHistoryTableName();
