@@ -16,6 +16,7 @@
 
 package com.ning.billing.notificationq.api;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
@@ -91,5 +92,12 @@ public interface NotificationQueueService extends QueueLifecycle {
      */
     public void deleteNotificationQueue(final String svcName, final String queueName)
             throws NoSuchNotificationQueue;
+
+    /**
+     * Retrieve all the notificationq registered
+     *
+     * @return
+     */
+    public List<NotificationQueue> getNotificationQueues();
 
 }

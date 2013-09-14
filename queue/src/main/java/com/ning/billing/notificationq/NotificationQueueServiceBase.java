@@ -16,14 +16,15 @@
 
 package com.ning.billing.notificationq;
 
-import org.skife.jdbi.v2.IDBI;
-
+import com.codahale.metrics.MetricRegistry;
 import com.ning.billing.clock.Clock;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
 import com.ning.billing.notificationq.api.NotificationQueueService;
+import org.skife.jdbi.v2.IDBI;
 
-import com.codahale.metrics.MetricRegistry;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public abstract class NotificationQueueServiceBase extends NotificationQueueDispatcher implements NotificationQueueService {
@@ -46,7 +47,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
             result = queues.get(compositeName);
             if (result != null) {
                 throw new NotificationQueueAlreadyExists(String.format("Queue for svc %s and name %s already exist",
-                                                                       svcName, queueName));
+                        svcName, queueName));
             }
             result = createNotificationQueueInternal(svcName, queueName, handler);
             queues.put(compositeName, result);
@@ -64,7 +65,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
             result = queues.get(compositeName);
             if (result == null) {
                 throw new NoSuchNotificationQueue(String.format("Queue for svc %s and name %s does not exist",
-                                                                svcName, queueName));
+                        svcName, queueName));
             }
         }
         return result;
@@ -77,10 +78,15 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
             final NotificationQueue result = queues.get(compositeName);
             if (result == null) {
                 throw new NoSuchNotificationQueue(String.format("Queue for svc %s and name %s does not exist",
-                                                                svcName, queueName));
+                        svcName, queueName));
             }
             queues.remove(compositeName);
         }
+    }
+
+    @Override
+    public List<NotificationQueue> getNotificationQueues() {
+        return new ArrayList<NotificationQueue>(queues.values());
     }
 
     @Override
@@ -91,28 +97,6 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
         sb.append('}');
         return sb.toString();
     }
-
-/*
-    //
-    // Test ONLY
-    //
-    @Override
-    public int triggerManualQueueProcessing(final Boolean keepRunning) {
-
-        int result = 0;
-
-        List<NotificationQueue> manualQueues = new ArrayList<NotificationQueue>(queues.values());
-        for (final NotificationQueue cur : manualQueues) {
-            int processedNotifications = 0;
-            do {
-                doProcessEventsWithLimit(1);
-                log.info("Got {} results from queue {}", processedNotifications, cur.getFullQName());
-                result += processedNotifications;
-            } while (keepRunning && processedNotifications > 0);
-        }
-        return result;
-    }
-    */
 
     protected abstract NotificationQueue createNotificationQueueInternal(String svcName,
                                                                          String queueName, NotificationQueueHandler handler);

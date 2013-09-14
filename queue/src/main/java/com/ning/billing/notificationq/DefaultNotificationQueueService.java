@@ -16,15 +16,13 @@
 
 package com.ning.billing.notificationq;
 
-import javax.inject.Inject;
-
-import org.skife.jdbi.v2.IDBI;
-
+import com.codahale.metrics.MetricRegistry;
 import com.ning.billing.clock.Clock;
 import com.ning.billing.notificationq.api.NotificationQueue;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
+import org.skife.jdbi.v2.IDBI;
 
-import com.codahale.metrics.MetricRegistry;
+import javax.inject.Inject;
 
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
