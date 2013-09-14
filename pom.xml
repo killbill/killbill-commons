@@ -23,7 +23,7 @@
     </parent>
     <groupId>com.ning.billing.commons</groupId>
     <artifactId>killbill-commons</artifactId>
-    <version>0.2.4</version>
+    <version>0.2.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>
