@@ -16,14 +16,13 @@
 
 package com.ning.billing.notificationq.dao;
 
-import java.util.List;
-
+import com.ning.billing.queue.dao.QueueSqlDao;
+import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 
-import com.ning.billing.queue.dao.QueueSqlDao;
-import com.ning.billing.queue.dao.QueueSqlDaoStringTemplate;
+import java.util.List;
 
 @QueueSqlDaoStringTemplate
 public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDao> {
@@ -33,5 +32,11 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
                                                                             @Bind("searchKey") final Long keyValue,
                                                                             @Define("tableName") final String tableName,
                                                                             @Define("searchKey") final String searchKey);
+
+    @SqlQuery
+    public int getCountReadyEntries(@Bind("searchKey") final Long keyValue,
+                                    @Define("tableName") final String tableName,
+                                    @Define("searchKey") final String searchKey);
+
 
 }

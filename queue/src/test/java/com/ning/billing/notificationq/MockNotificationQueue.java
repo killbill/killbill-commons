@@ -119,6 +119,16 @@ public class MockNotificationQueue implements NotificationQueue {
         return null;
     }
 
+    @Override
+    public int getReadyNotificationEntriesForSearchKey1(Long searchKey1) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getReadyNotificationEntriesForSearchKey2(Long searchKey2) {
+        throw new UnsupportedOperationException();
+    }
+
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final List<NotificationEventWithMetadata<T>> result = new ArrayList<NotificationEventWithMetadata<T>>();

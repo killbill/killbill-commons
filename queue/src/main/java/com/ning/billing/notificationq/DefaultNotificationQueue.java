@@ -113,8 +113,18 @@ public class DefaultNotificationQueue implements NotificationQueue {
         return getFutureNotificationsInternal(type, transactionalNotificationDao, "search_key2", searchKey2);
     }
 
+    @Override
+    public int getReadyNotificationEntriesForSearchKey1(Long searchKey1) {
+        return ((NotificationSqlDao) dao.getSqlDao()).getCountReadyEntries(searchKey1, config.getTableName(), "search_key1");
+    }
 
-    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final NotificationSqlDao transactionalDao, final String searchKey, final Long searchKeyValue) {
+    @Override
+    public int getReadyNotificationEntriesForSearchKey2(Long searchKey2) {
+        return ((NotificationSqlDao) dao.getSqlDao()).getCountReadyEntries(searchKey2, config.getTableName(), "search_key2");
+    }
+
+
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> typeX, final NotificationSqlDao transactionalDao, final String searchKey, final Long searchKeyValue) {
 
         final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
         final List<NotificationEventModelDao> entries = transactionalDao.getReadyQueueEntriesForSearchKey(getFullQName(), searchKeyValue, config.getTableName(), searchKey);

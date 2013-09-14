@@ -126,6 +126,22 @@ public interface NotificationQueue extends QueueLifecycle {
 
 
     /**
+     * Retrieves the number of ready to be processed notifications for search_key1
+     *
+     * @return
+     */
+    public int getReadyNotificationEntriesForSearchKey1(final Long searchKey1);
+
+
+    /**
+     * Retrieves the number of ready to be processed notifications for search_key2
+     *
+     * @return
+     */
+    public int getReadyNotificationEntriesForSearchKey2(final Long searchKey2);
+
+
+    /**
      * Move the notification to history table and mark it as 'removed'
      *
      * @param recordId the recordId

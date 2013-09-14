@@ -39,3 +39,15 @@ getReadyQueueEntriesForSearchKey(tableName, searchKey) ::= <<
       <readyOrderByClause()>
 ;
 >>
+
+
+/** Notifications specific queries **/
+getCountReadyEntries(tableName, searchKey) ::= <<
+    select
+     count(*)
+    from <tableName>
+    where
+      processing_state = 'AVAILABLE'
+      and <searchKey> = :searchKey
+;
+>>
