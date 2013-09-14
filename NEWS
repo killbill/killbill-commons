@@ -1,3 +1,7 @@
+0.2.4
+    Queue
+      - Add interface in NotificationQueueService to retrieve all NotificationQueues
+
 0.2.3
     Queue
       - Remove MetricsRegistry static instance
