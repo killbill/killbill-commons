@@ -48,6 +48,7 @@ getCountReadyEntries(tableName, searchKey) ::= <<
     from <tableName>
     where
       processing_state = 'AVAILABLE'
+      and effective_date \<= :now
       and <searchKey> = :searchKey
 ;
 >>

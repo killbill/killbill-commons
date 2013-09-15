@@ -22,6 +22,7 @@ import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 
+import java.util.Date;
 import java.util.List;
 
 @QueueSqlDaoStringTemplate
@@ -35,6 +36,7 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
 
     @SqlQuery
     public int getCountReadyEntries(@Bind("searchKey") final Long keyValue,
+                                    @Bind("now") Date now,
                                     @Define("tableName") final String tableName,
                                     @Define("searchKey") final String searchKey);
 
