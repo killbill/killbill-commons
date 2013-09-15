@@ -1,3 +1,6 @@
+0.2.6
+    Queue
+      - Bug fix for getCountReadyEntries NotificationQueue APi
 0.2.5
     Queue
       - Add ability to fecth for count of ready notifications (test purpose mostly)
