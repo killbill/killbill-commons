@@ -1,3 +1,7 @@
+0.2.7
+    JDBI
+      - Import Slf4jLogging and RestartTransactionRunner from the skeleton
+
 0.2.6
     Queue
       - Bug fix for getCountReadyEntries NotificationQueue APi
