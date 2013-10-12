@@ -17,7 +17,6 @@
 package com.ning.billing.clock;
 
 
-import com.ning.billing.clock.Clock;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
@@ -43,7 +42,7 @@ public class DefaultClock implements Clock {
 
     @Override
     public LocalDate getToday(final DateTimeZone timeZone) {
-        return new LocalDate(getUTCNow(), DateTimeZone.UTC);
+        return new LocalDate(getUTCNow(), timeZone);
     }
 
     public static DateTime toUTCDateTime(final DateTime input) {
