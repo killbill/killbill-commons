@@ -25,6 +25,7 @@ import org.joda.time.DateTime;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 import com.ning.billing.Hostname;
+import com.ning.billing.QueueObjectMapper;
 import com.ning.billing.notificationq.api.NotificationEvent;
 import com.ning.billing.notificationq.api.NotificationEventWithMetadata;
 import com.ning.billing.notificationq.api.NotificationQueueConfig;
@@ -57,16 +58,21 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
                                     final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
                                     final Clock clock, final NotificationQueueConfig config) {
+        this(svcName, queueName, handler, dao, notificationQueueService, clock, config, QueueObjectMapper.get());
+    }
+
+    public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
+                                    final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
+                                    final Clock clock, final NotificationQueueConfig config, final ObjectMapper objectMapper) {
         this.svcName = svcName;
         this.queueName = queueName;
         this.handler = handler;
         this.dao = dao;
         this.notificationQueueService = notificationQueueService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
         this.clock = clock;
         this.config = config;
     }
-
 
     @Override
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {

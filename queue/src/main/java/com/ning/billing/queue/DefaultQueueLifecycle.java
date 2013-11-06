@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weakref.jmx.Managed;
 
+import com.ning.billing.QueueObjectMapper;
 import com.ning.billing.queue.api.PersistentQueueConfig;
 import com.ning.billing.queue.api.QueueLifecycle;
 
@@ -49,11 +50,14 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
-    // Allow to disable/re-enable notitifcation processing through JMX
+    // Allow to disable/re-enable notification processing through JMX
     private final AtomicBoolean isProcessingSuspended;
 
-
     public DefaultQueueLifecycle(final String svcQName, final Executor executor, final int nbThreads, final PersistentQueueConfig config) {
+        this(svcQName, executor, nbThreads, config, QueueObjectMapper.get());
+    }
+
+    public DefaultQueueLifecycle(final String svcQName, final Executor executor, final int nbThreads, final PersistentQueueConfig config, final ObjectMapper objectMapper) {
         this.executor = executor;
         this.nbThreads = nbThreads;
         this.svcQName = svcQName;
@@ -61,12 +65,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.isProcessingEvents = false;
         this.curActiveThreads = 0;
         this.isProcessingSuspended = new AtomicBoolean(false);
-
-        this.objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JodaModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper = objectMapper;
     }
-
 
     @Override
     public void startQueue() {
