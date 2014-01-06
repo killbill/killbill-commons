@@ -1,6 +1,8 @@
 0.2.10
     Queue
       - Move com.ning.billing.QueueObjectMapper to com.ning.billing.queue.QueueObjectMapper
+    Update to killbill-oss-parent 0.5.12
+
 0.2.9
     Queue
       - Make ObjectMapper configurable
