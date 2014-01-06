@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package com.ning.billing;
+package com.ning.billing.queue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

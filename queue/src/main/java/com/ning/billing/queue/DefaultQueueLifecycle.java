@@ -24,13 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weakref.jmx.Managed;
 
-import com.ning.billing.QueueObjectMapper;
 import com.ning.billing.queue.api.PersistentQueueConfig;
 import com.ning.billing.queue.api.QueueLifecycle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {

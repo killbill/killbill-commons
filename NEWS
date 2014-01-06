@@ -1,3 +1,6 @@
+0.2.10
+    Queue
+      - Move com.ning.billing.QueueObjectMapper to com.ning.billing.queue.QueueObjectMapper
 0.2.9
     Queue
       - Make ObjectMapper configurable
