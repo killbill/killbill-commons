@@ -578,6 +578,11 @@ public class TestDBBackedQueue extends TestSetup {
     private PersistentBusConfig createConfig(final int claimed, final int qCapacity, final int prefetchEntries) {
         return new PersistentBusConfig() {
             @Override
+            public int getMaxFailureRetries() {
+                return 0;
+            }
+
+            @Override
             public int getMaxEntriesClaimed() {
                 return claimed;
             }

@@ -86,7 +86,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
             final NotificationEventModelDao processedNotification = new NotificationEventModelDao(cur.getRecordId(), Hostname.get(), Hostname.get(), clock.getUTCNow(),
                                                                                                   getClock().getUTCNow().plus(CLAIM_TIME_MS),
                                                                                                   PersistentQueueEntryLifecycleState.PROCESSED, cur.getClassName(),
-                                                                                                  cur.getEventJson(), cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
+                                                                                                  cur.getEventJson(), 0L, cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),
                                                                                                   cur.getFutureUserToken(), cur.getEffectiveDate(), "MockQueue");
             oldNotifications.add(cur);
             processedNotifications.add(processedNotification);

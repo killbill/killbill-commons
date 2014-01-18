@@ -36,6 +36,7 @@ lifeCycleFieldsWithComma() ::= <<
       , processing_owner
       , processing_available_date
       , processing_state
+      , error_count
 >>
 
 searchFieldsWithComma() ::= <<
@@ -77,6 +78,7 @@ lifeCycleValuesWithComma() ::= <<
       , :processingOwner
       , :processingAvailableDate
       , :processingState
+      , :errorCount
 >>
 
 searchValuesWithComma() ::= <<
@@ -154,6 +156,18 @@ claimEntry(tableName) ::= <<
     ;
 >>
 
+updateOnError(tableName) ::= <<
+    update <tableName>
+    set
+      processing_owner = NULL
+      , processing_available_date = :now
+      , processing_state = 'AVAILABLE'
+      , error_count = :errorCount
+    where
+      record_id = :recordId
+    ;
+>>
+
 removeEntry(tableName) ::= <<
     delete from <tableName>
     where
@@ -169,31 +183,4 @@ insertEntry(tableName) ::= <<
        <allTableValuesNoRecordId()>
     );
 >>
-
-
-/**
-
-removeNotificationsByKey() ::= <<
-    update notifications
-    set
-      processing_state = 'REMOVED'
-    where
-      event_json = :eventJson
-    ;
->>
-
-
-getPendingCountNotifications() ::= <<
-    select
-      count(*)
-    from notifications
-    where
-      effective_date \<= :now
-      and processing_state = 'AVAILABLE'
-    ;
->>
-
-
-**/
-
 

@@ -91,15 +91,6 @@ public class TestEventBusBase {
         }
     }
 
-    public static final class MyEventWithException extends MyEvent {
-
-        @JsonCreator
-        public MyEventWithException(@JsonProperty("name") final String name,
-                                    @JsonProperty("value") final Long value,
-                                    @JsonProperty("type") final String type) {
-            super(name, value, type, 1L, 2L, UUID.randomUUID());
-        }
-    }
 
     public static final class MyOtherEvent implements BusEvent {
 
@@ -166,12 +157,16 @@ public class TestEventBusBase {
     public static class MyEventHandler {
 
         private final int expectedEvents;
+        private final int nbThrowExceptions;
 
         private volatile int gotEvents;
+        private volatile int gotExceptions;
 
-        public MyEventHandler(final int exp) {
+        public MyEventHandler(final int exp, final int nbThrowExceptions) {
             this.expectedEvents = exp;
+            this.nbThrowExceptions = nbThrowExceptions;
             this.gotEvents = 0;
+            this.gotExceptions = 0;
         }
 
         public synchronized int getEvents() {
@@ -180,14 +175,16 @@ public class TestEventBusBase {
 
         @Subscribe
         public synchronized void processMyEvent(final MyEvent event) {
-            gotEvents++;
+
             //log.debug("Got event {} {}", event.name, event.value);
+
+            if (gotExceptions < nbThrowExceptions) {
+                gotExceptions++;
+                throw new MyEventHandlerException("FAIL");
+            }
+            gotEvents++;
         }
 
-        @Subscribe
-        public synchronized void processMyEventWithException(final MyEventWithException event) {
-            throw new MyEventHandlerException("FAIL");
-        }
 
         public synchronized boolean waitForCompletion(final long timeoutMs) {
 
@@ -207,22 +204,35 @@ public class TestEventBusBase {
         }
     }
 
-    public void testSimpleWithException() {
+    public void testSimpleWithExceptionAndRetrySuccess() {
         try {
-            final MyEventHandler handler = new MyEventHandler(1);
+            final MyEventHandler handler = new MyEventHandler(1, 1);
             eventBus.register(handler);
 
-            eventBus.post(new MyEventWithException("my-event", 1L, "MY_EVENT_TYPE"));
-
-            Thread.sleep(50000);
+            eventBus.post(new MyEvent("my-event", 1L, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
+            final boolean completed = handler.waitForCompletion(5000);
+            Assert.assertEquals(completed, true);
         } catch (Exception ignored) {
         }
     }
 
+    public void testSimpleWithExceptionAndFail() {
+        try {
+            final MyEventHandler handler = new MyEventHandler(1, 4);
+            eventBus.register(handler);
+
+            eventBus.post(new MyEvent("my-event", 1L, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
+            final boolean completed = handler.waitForCompletion(5000);
+            Assert.assertEquals(completed, false);
+        } catch (Exception ignored) {
+        }
+    }
+
+
     public void testSimple() {
         try {
             final int nbEvents = 5;
-            final MyEventHandler handler = new MyEventHandler(nbEvents);
+            final MyEventHandler handler = new MyEventHandler(nbEvents, 0);
             eventBus.register(handler);
 
             for (int i = 0; i < nbEvents; i++) {
@@ -237,7 +247,7 @@ public class TestEventBusBase {
 
     public void testDifferentType() {
         try {
-            final MyEventHandler handler = new MyEventHandler(1);
+            final MyEventHandler handler = new MyEventHandler(1, 0);
             eventBus.register(handler);
 
             for (int i = 0; i < 5; i++) {

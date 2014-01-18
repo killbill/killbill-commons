@@ -20,5 +20,6 @@ public enum PersistentQueueEntryLifecycleState {
     AVAILABLE,
     IN_PROCESSING,
     PROCESSED,
-    REMOVED
+    REMOVED,
+    FAILED
 }

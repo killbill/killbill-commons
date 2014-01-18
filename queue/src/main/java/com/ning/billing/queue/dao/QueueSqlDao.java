@@ -16,9 +16,6 @@
 
 package com.ning.billing.queue.dao;
 
-import java.util.Date;
-import java.util.List;
-
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.BindBean;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -26,6 +23,9 @@ import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
+
+import java.util.Date;
+import java.util.List;
 
 @QueueSqlDaoStringTemplate
 public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
@@ -54,6 +54,13 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                           @Bind("owner") String owner,
                           @Bind("nextAvailable") Date nextAvailable,
                           @Define("tableName") final String tableName);
+
+
+    @SqlUpdate
+    public int updateOnError(@Bind("recordId") Long id,
+                             @Bind("now") Date now,
+                             @Bind("errorCount") Long errorCount,
+                             @Define("tableName") final String tableName);
 
     @SqlUpdate
     public void removeEntry(@Bind("recordId") Long id,

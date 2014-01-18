@@ -233,6 +233,16 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
 
+    public void updateOnError(final T entry) {
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                transactional.updateOnError(entry.getRecordId(), clock.getUTCNow().toDate(), entry.getErrorCount(), config.getTableName());
+                return null;
+            }
+        });
+    }
+
     public void moveEntryToHistory(final T entry) {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override

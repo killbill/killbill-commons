@@ -33,8 +33,8 @@ public class NotificationEventModelDao extends BusEventModelDao {
     public NotificationEventModelDao() { /* Default ctor for jdbi mapper */ }
 
     public NotificationEventModelDao(final long id, final String createdOwner, final String owner, final DateTime createdDate, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState processingState,
-                                     final String eventJsonClass, final String eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2, final UUID futureUserToken, final DateTime effectiveDate, final String queueName) {
-        super(id, createdOwner, owner, createdDate, nextAvailable, processingState, eventJsonClass, eventJson, userToken, searchKey1, searchKey2);
+                                     final String eventJsonClass, final String eventJson, final Long errorCount, final UUID userToken, final Long searchKey1, final Long searchKey2, final UUID futureUserToken, final DateTime effectiveDate, final String queueName) {
+        super(id, createdOwner, owner, createdDate, nextAvailable, processingState, eventJsonClass, eventJson, errorCount, userToken, searchKey1, searchKey2);
         this.futureUserToken = futureUserToken;
         this.effectiveDate = effectiveDate;
         this.queueName = queueName;
@@ -43,14 +43,15 @@ public class NotificationEventModelDao extends BusEventModelDao {
     public NotificationEventModelDao(final String createdOwner, final DateTime createdDate, final String eventJsonClass,
                                      final String eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2, final UUID futureUserToken, final DateTime effectiveDate, final String queueName) {
         this(-1L, createdOwner, null, createdDate, null, PersistentQueueEntryLifecycleState.AVAILABLE,
-             eventJsonClass, eventJson, userToken, searchKey1, searchKey2, futureUserToken, effectiveDate, queueName);
+             eventJsonClass, eventJson, 0L, userToken, searchKey1, searchKey2, futureUserToken, effectiveDate, queueName);
     }
 
     public NotificationEventModelDao(final NotificationEventModelDao in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state) {
-        super(in, owner, nextAvailable, state);
-        this.futureUserToken = in.getFutureUserToken();
-        this.effectiveDate = in.getEffectiveDate();
-        this.queueName = in.getQueueName();
+        this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), in.getErrorCount(), in.getUserToken(), in.getSearchKey1(), in.getSearchKey2(), in.getFutureUserToken(), in.getEffectiveDate(), in.getQueueName());
+    }
+
+    public NotificationEventModelDao(final NotificationEventModelDao in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state, final Long errorCount) {
+        this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), errorCount, in.getUserToken(), in.getSearchKey1(), in.getSearchKey2(), in.getFutureUserToken(), in.getEffectiveDate(), in.getQueueName());
     }
 
     public UUID getFutureUserToken() {

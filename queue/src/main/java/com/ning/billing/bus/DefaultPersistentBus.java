@@ -16,31 +16,29 @@
 
 package com.ning.billing.bus;
 
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.inject.Inject;
-
-import org.skife.jdbi.v2.IDBI;
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.eventbus.EventBusThatThrowsException;
 import com.ning.billing.Hostname;
 import com.ning.billing.bus.api.BusEvent;
 import com.ning.billing.bus.api.PersistentBus;
 import com.ning.billing.bus.api.PersistentBusConfig;
 import com.ning.billing.bus.dao.BusEventModelDao;
 import com.ning.billing.bus.dao.PersistentBusSqlDao;
+import com.ning.billing.clock.Clock;
 import com.ning.billing.queue.DBBackedQueue;
 import com.ning.billing.queue.DefaultQueueLifecycle;
 import com.ning.billing.queue.api.PersistentQueueEntryLifecycleState;
-import com.ning.billing.clock.Clock;
+import org.skife.jdbi.v2.IDBI;
+import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.eventbus.EventBus;
+import javax.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
@@ -51,25 +49,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     private AtomicBoolean isStarted;
 
-    private static final class EventBusDelegate extends EventBus {
+    private static final class EventBusDelegate extends EventBusThatThrowsException {
 
         public EventBusDelegate(final String busName) {
             super(busName);
         }
-
-        // STEPH we can't override the method because EventHandler is package private scope
-        // Logged a bug against guava (Issue 981)
-        /*
-        @Override
-        protected void dispatch(Object event, EventHandler wrapper) {
-            try {
-              wrapper.handleEvent(event);
-            } catch (InvocationTargetException e) {
-              logger.log(Level.SEVERE,
-                  "Could not dispatch event: " + event + " to handler " + wrapper, e);
-            }
-          }
-          */
     }
 
     @Inject
@@ -78,8 +62,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             @Override
             public Thread newThread(final Runnable r) {
                 return new Thread(new ThreadGroup(EVENT_BUS_GROUP_NAME),
-                                  r,
-                                  EVENT_BUS_TH_NAME);
+                        r,
+                        EVENT_BUS_TH_NAME);
             }
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
@@ -115,9 +99,33 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         for (final BusEventModelDao cur : events) {
             final BusEvent evt = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             result++;
-            eventBusDelegate.post(evt);
-            BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-            dao.moveEntryToHistory(processedEntry);
+
+            long errorCount = cur.getErrorCount();
+            Throwable lastException = null;
+            try {
+                eventBusDelegate.postWithException(evt);
+            } catch (com.google.common.eventbus.EventBusException e) {
+
+                if (e.getCause() != null && e.getCause() instanceof InvocationTargetException) {
+                    lastException = e.getCause().getCause();
+                } else {
+                    lastException = e;
+                }
+                errorCount++;
+            } finally {
+                if (lastException == null) {
+                    BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                    dao.moveEntryToHistory(processedEntry);
+                } else if (errorCount <= config.getMaxFailureRetries()) {
+                    log.info("Bus dispatch error, will attempt a retry ", lastException);
+                    BusEventModelDao retriedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
+                    dao.updateOnError(retriedEntry);
+                } else {
+                    log.error("Fatal Bus dispatch error, data corruption...", lastException);
+                    BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
+                    dao.moveEntryToHistory(processedEntry);
+                }
+            }
         }
         return result;
     }
@@ -152,7 +160,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             if (isStarted.get()) {
                 final String json = objectMapper.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
-                                                                    event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                        event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
 
             } else {
@@ -171,7 +179,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             if (isStarted.get()) {
                 final String json = objectMapper.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
-                                                                    event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                        event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntryFromTransaction(transactional, entry);
             } else {
                 log.warn("Attempting to post event " + event + " in a non initialized bus");

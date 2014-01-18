@@ -97,7 +97,7 @@ public class TestSetup {
     }
 
     @AfterClass(groups = "slow")
-    public void afterMethod() throws Exception {
+    public void afterClass() throws Exception {
         embeddedDB.stop();
     }
 

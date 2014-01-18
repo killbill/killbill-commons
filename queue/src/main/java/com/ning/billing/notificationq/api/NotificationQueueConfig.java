@@ -26,6 +26,11 @@ import com.ning.billing.queue.api.PersistentQueueConfig;
 
 public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
+    @Config("killbill.billing.notificationq.${instanceName}.max.failure.retry")
+    @Default("3")
+    @Description("Number retry for a given event when an exception occurs")
+    public abstract int getMaxFailureRetries();
+
     @Config("killbill.billing.notificationq.${instanceName}.claimed")
     @Default("7")
     @Description("Number of notifications to fetch at once")

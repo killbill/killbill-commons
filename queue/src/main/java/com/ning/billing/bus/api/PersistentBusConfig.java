@@ -25,6 +25,11 @@ import com.ning.billing.queue.api.PersistentQueueConfig;
 
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
+    @Config("killbill.billing.persistent.bus.${instanceName}.max.failure.retry")
+    @Default("3")
+    @Description("Number retry for a given event when an exception occurs")
+    public abstract int getMaxFailureRetries();
+
     @Config("killbill.billing.persistent.bus.${instanceName}.claimed")
     @Default("5")
     @Description("Number of bus events to fetch from the database at once")

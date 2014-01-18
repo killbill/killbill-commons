@@ -47,7 +47,6 @@ public class TestPersistentEventBus extends TestSetup {
     @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
         busService.stop();
-        super.afterMethod();
     }
 
 
@@ -56,9 +55,13 @@ public class TestPersistentEventBus extends TestSetup {
         testEventBusBase.testSimple();
     }
 
-    // Until Guava fixes exception handling, r13?
-    @Test(groups = "slow", enabled = false)
-    public void testSimpleWithException() {
-        testEventBusBase.testSimpleWithException();
+    @Test(groups = "slow")
+    public void testSimpleWithExceptionAndRetrySuccess() {
+        testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
+    }
+
+    @Test(groups = "slow")
+    public void testSimpleWithExceptionAndFail() {
+        testEventBusBase.testSimpleWithExceptionAndFail();
     }
 }

@@ -42,6 +42,8 @@ public interface EventEntryModelDao {
 
     boolean isAvailableForProcessing(DateTime now);
 
+    Long getErrorCount();
+
     Long getSearchKey1();
 
     Long getSearchKey2();

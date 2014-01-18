@@ -34,6 +34,7 @@ public class BusEventModelDao implements EventEntryModelDao {
     private String creatingOwner;
     private String processingOwner;
     private DateTime processingAvailableDate;
+    private Long errorCount;
     private PersistentQueueEntryLifecycleState processingState;
     private Long searchKey1;
     private Long searchKey2;
@@ -41,7 +42,7 @@ public class BusEventModelDao implements EventEntryModelDao {
     public BusEventModelDao() { /* DAO mapper */};
 
     public BusEventModelDao(final Long recordId, final String createdOwner, final String owner, final DateTime createdDate, final DateTime nextAvailable,
-                            final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson,
+                            final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson, final Long errorCount,
                             final UUID userToken, final Long searchKey1, final Long searchKey2) {
         this.recordId = recordId;
         this.creatingOwner = createdOwner;
@@ -50,6 +51,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         this.processingAvailableDate = nextAvailable;
         this.processingState = processingState;
         this.className = busEventClass;
+        this.errorCount = errorCount;
         this.eventJson = busEventJson;
         this.userToken = userToken;
         this.searchKey1 = searchKey1;
@@ -58,11 +60,15 @@ public class BusEventModelDao implements EventEntryModelDao {
 
     public BusEventModelDao(final String createdOwner, final DateTime createdDate, final String busEventClass, final String busEventJson,
                             final UUID userToken, final Long searchKey1, final Long searchKey2) {
-        this(-1L, createdOwner, null, createdDate, null, PersistentQueueEntryLifecycleState.AVAILABLE, busEventClass, busEventJson, userToken, searchKey1, searchKey2);
+        this(-1L, createdOwner, null, createdDate, null, PersistentQueueEntryLifecycleState.AVAILABLE, busEventClass, busEventJson, 0L, userToken, searchKey1, searchKey2);
     }
 
     public BusEventModelDao(final BusEventModelDao in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state) {
-        this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), in.getUserToken(), in.getSearchKey1(), in.getSearchKey2());
+        this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), in.getErrorCount(), in.getUserToken(), in.getSearchKey1(), in.getSearchKey2());
+    }
+
+    public BusEventModelDao(final BusEventModelDao in, final String owner, final DateTime nextAvailable, final PersistentQueueEntryLifecycleState state, final Long errorCount) {
+        this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), errorCount, in.getUserToken(), in.getSearchKey1(), in.getSearchKey2());
     }
 
     public DateTime getCreatedDate() {
@@ -113,6 +119,8 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingState;
     }
 
+
+
     @Override
     public boolean isAvailableForProcessing(final DateTime now) {
         switch (processingState) {
@@ -130,6 +138,11 @@ public class BusEventModelDao implements EventEntryModelDao {
                 throw new RuntimeException(String.format("Unknown IEvent processing state %s", processingState));
         }
         return true;
+    }
+
+    @Override
+    public Long getErrorCount() {
+        return errorCount;
     }
 
     @Override

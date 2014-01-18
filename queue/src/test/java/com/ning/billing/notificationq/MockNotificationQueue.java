@@ -86,7 +86,7 @@ public class MockNotificationQueue implements NotificationQueue {
         final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, new Long(0));
         final NotificationEventModelDao notification = new NotificationEventModelDao(recordIds.incrementAndGet(), "MockQueue", hostname, clock.getUTCNow(), null, PersistentQueueEntryLifecycleState.AVAILABLE,
-                                                                               eventJson.getClass().getName(), json, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
+                                                                               eventJson.getClass().getName(), json, 0L, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
                                                                                futureNotificationTime, "MockQueue");
 
         synchronized (notifications) {
