@@ -32,8 +32,4 @@ public class EventBusException extends Exception {
     public EventBusException(Throwable cause) {
         super(cause);
     }
-
-    public EventBusException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }
