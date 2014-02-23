@@ -121,6 +121,8 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                     final String enumString = rs.getString(i);
                     //noinspection unchecked
                     value = enumString == null ? null : Enum.valueOf((Class<Enum>) type, enumString);
+                } else if (type == byte[].class) {
+                    value = rs.getBytes(i);
                 } else {
                     value = rs.getObject(i);
                 }
