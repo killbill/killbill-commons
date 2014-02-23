@@ -117,8 +117,8 @@ public abstract class EmbeddedDB {
     public void cleanupTable(final String table) throws IOException {
         logger.debug("Deleting table: " + table);
         try {
-            executeQuery("truncate table " + table);
-        } catch (SQLException e) {
+            executeUpdate("truncate table " + table);
+        } catch (final SQLException e) {
             throw new IOException(e);
         }
     }
@@ -144,8 +144,19 @@ public abstract class EmbeddedDB {
         }
     }
 
-    protected void executeQuery(final String query) throws SQLException, IOException {
-        executeQuery(query, new ResultSetJob());
+    protected int executeUpdate(final String query) throws SQLException, IOException {
+        final Connection connection = getConnection();
+
+        Statement statement = null;
+        try {
+            statement = connection.createStatement();
+            return statement.executeUpdate(query);
+        } finally {
+            if (statement != null) {
+                statement.close();
+            }
+            connection.close();
+        }
     }
 
     protected void executeQuery(final String query, final ResultSetJob job) throws SQLException, IOException {
