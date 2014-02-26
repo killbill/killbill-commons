@@ -17,17 +17,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>killbill-commons</artifactId>
+        <artifactId>killbill-embeddeddb</artifactId>
         <groupId>com.ning.billing.commons</groupId>
         <version>0.2.12-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>killbill-embeddeddb</artifactId>
-    <packaging>pom</packaging>
-    <name>Kill Bill library of embedded dbs</name>
-    <modules>
-        <module>common</module>
-        <module>h2</module>
-        <module>mysql</module>
-    </modules>
+    <artifactId>killbill-embeddeddb-common</artifactId>
+    <name>Kill Bill library of embedded dbs: common</name>
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>
