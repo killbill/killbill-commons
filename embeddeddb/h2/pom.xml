@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>killbill-embeddeddb</artifactId>
-        <groupId>com.ning.billing.commons</groupId>
+        <groupId>org.kill-bill.commons</groupId>
         <version>0.2.12-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -30,7 +30,7 @@
             <artifactId>h2</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.ning.billing.commons</groupId>
+            <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-embeddeddb-common</artifactId>
         </dependency>
     </dependencies>

@@ -18,10 +18,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
-        <groupId>com.ning.billing</groupId>
+        <groupId>org.kill-bill.billing</groupId>
         <version>0.5.26-SNAPSHOT</version>
     </parent>
-    <groupId>com.ning.billing.commons</groupId>
+    <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
     <version>0.2.12-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -63,38 +63,6 @@
                 <version>1.3.158</version>
             </dependency>
             <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-clock</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-clock</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-concurrent</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-embeddeddb</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-jdbi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ning.billing.commons</groupId>
-                <artifactId>killbill-locker</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>1.2.17</version>
@@ -117,6 +85,38 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-mxj-db-files</artifactId>
                 <version>5.0.12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-clock</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-clock</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-concurrent</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-embeddeddb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-jdbi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-locker</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

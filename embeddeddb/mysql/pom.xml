@@ -18,17 +18,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>killbill-embeddeddb</artifactId>
-        <groupId>com.ning.billing.commons</groupId>
+        <groupId>org.kill-bill.commons</groupId>
         <version>0.2.12-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-mysql</artifactId>
     <name>Kill Bill library of embedded dbs: MySQL</name>
     <dependencies>
-        <dependency>
-            <groupId>com.ning.billing.commons</groupId>
-            <artifactId>killbill-embeddeddb-common</artifactId>
-        </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -40,6 +36,10 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-mxj-db-files</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-embeddeddb-common</artifactId>
         </dependency>
     </dependencies>
 </project>

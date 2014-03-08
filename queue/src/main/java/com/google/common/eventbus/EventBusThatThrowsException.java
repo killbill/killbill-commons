@@ -17,7 +17,7 @@
 package com.google.common.eventbus;
 
 import com.google.common.collect.SetMultimap;
-import com.ning.billing.bus.api.BusEvent;
+import org.killbill.bus.api.BusEvent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
