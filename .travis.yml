@@ -1,5 +1,5 @@
 language: java
-script: mvn clean install -Ptravis
+script: mvn clean install -Ptravis-nodb
 # Remove --quiet to avoid timeouts
 install: mvn install -DskipTests=true
 
