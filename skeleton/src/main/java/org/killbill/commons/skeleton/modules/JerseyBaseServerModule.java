@@ -86,7 +86,7 @@ public class JerseyBaseServerModule extends BaseServerModule {
 
         // Catch-all resources
         if (jaxrsResources.size() != 0) {
-            JERSEY_PARAMS.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources, ";"));
+            JERSEY_PARAMS.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
             serveRegex(jaxrsUriPattern).with(GuiceContainer.class, JERSEY_PARAMS.build());
         }
     }
