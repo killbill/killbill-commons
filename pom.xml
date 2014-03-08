@@ -42,6 +42,7 @@
         <module>jdbi</module>
         <module>locker</module>
         <module>queue</module>
+        <module>skeleton</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
