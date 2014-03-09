@@ -35,6 +35,7 @@ public abstract class EmbeddedDB {
     protected static final Logger logger = LoggerFactory.getLogger(EmbeddedDB.class);
 
     public enum DBEngine {
+        GENERIC,
         MYSQL,
         H2
     }
