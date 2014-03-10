@@ -17,10 +17,13 @@
 package org.killbill.commons.embeddeddb;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
 public class GenericStandaloneDB extends EmbeddedDB {
+
+    protected final AtomicBoolean started = new AtomicBoolean(false);
 
     public GenericStandaloneDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
         super(databaseName, username, password, jdbcConnectionString);
@@ -37,6 +40,8 @@ public class GenericStandaloneDB extends EmbeddedDB {
 
     @Override
     public void start() throws IOException {
+        started.set(true);
+        refreshTableNames();
     }
 
     @Override
@@ -50,5 +55,6 @@ public class GenericStandaloneDB extends EmbeddedDB {
 
     @Override
     public void stop() throws IOException {
+        started.set(false);
     }
 }

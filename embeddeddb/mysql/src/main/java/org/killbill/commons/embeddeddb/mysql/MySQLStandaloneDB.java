@@ -17,11 +17,24 @@
 package org.killbill.commons.embeddeddb.mysql;
 
 import java.io.IOException;
+import java.net.URI;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import org.killbill.commons.embeddeddb.GenericStandaloneDB;
+
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
 /**
  * Delegates to a real MySQL database. This can be used for debugging.
  */
-public class MySQLStandaloneDB extends MySQLEmbeddedDB {
+public class MySQLStandaloneDB extends GenericStandaloneDB {
+
+    protected MysqlDataSource dataSource;
+
+    private final int port;
 
     public MySQLStandaloneDB(final String databaseName) {
         this(databaseName, "root", null);
@@ -33,17 +46,48 @@ public class MySQLStandaloneDB extends MySQLEmbeddedDB {
 
     public MySQLStandaloneDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
         super(databaseName, username, password, jdbcConnectionString);
+        this.port = URI.create(jdbcConnectionString.substring(5)).getPort();
     }
 
     @Override
-    public void start() throws IOException {
-        started.set(true);
-        refreshTableNames();
+    public DBEngine getDBEngine() {
+        return DBEngine.MYSQL;
     }
 
     @Override
-    public void stop() throws IOException {
-        started.set(false);
+    public void initialize() throws IOException {
+        super.initialize();
+
+        dataSource = new MysqlDataSource();
+        dataSource.setDatabaseName(databaseName);
+        dataSource.setUser(username);
+        dataSource.setPassword(password);
+        dataSource.setPort(port);
+        // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-configuration-properties.html
+        dataSource.setURL(jdbcConnectionString);
+    }
+
+    @Override
+    public void refreshTableNames() throws IOException {
+        final String query = String.format("select table_name from information_schema.tables where table_schema = '%s' and table_type = 'BASE TABLE';", databaseName);
+        try {
+            executeQuery(query, new ResultSetJob() {
+                @Override
+                public void work(final ResultSet resultSet) throws SQLException {
+                    allTables.clear();
+                    while (resultSet.next()) {
+                        allTables.add(resultSet.getString(1));
+                    }
+                }
+            });
+        } catch (final SQLException e) {
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public DataSource getDataSource() throws IOException {
+        return dataSource;
     }
 
     @Override
