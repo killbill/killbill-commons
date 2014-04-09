@@ -7,10 +7,10 @@ extraFieldsWithComma() ::= <<
 extraValuesWithComma() ::= <<
 >>
 
-
-readyWhereClause() ::= <<
+readyWhereClause(owner) ::= <<
     processing_state != 'PROCESSED'
     and processing_state != 'REMOVED'
+<if(owner)>and creating_owner = '<owner>'<endif>
     and (processing_owner IS NULL OR processing_available_date \<= :now)
 >>
 

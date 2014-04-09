@@ -56,7 +56,7 @@ public class TestNotificationSqlDao extends TestSetup {
         final String eventJson = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
 
-        final NotificationEventModelDao notif = new NotificationEventModelDao(Hostname.get(), clock.getUTCNow(), eventJson.getClass().getName(),
+        final NotificationEventModelDao notif = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
                                                                         eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
                                                                         UUID.randomUUID(), effDt, "testBasic");
 
@@ -64,7 +64,7 @@ public class TestNotificationSqlDao extends TestSetup {
 
         Thread.sleep(1000);
         final DateTime now = new DateTime();
-        final List<NotificationEventModelDao> notifications = dao.getReadyEntries(now.toDate(), hostname, 3, notificationQueueConfig.getTableName());
+        final List<NotificationEventModelDao> notifications = dao.getReadyEntries(now.toDate(), 3, hostname, notificationQueueConfig.getTableName());
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);
 

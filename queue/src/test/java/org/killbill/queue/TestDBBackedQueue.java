@@ -37,7 +37,6 @@ import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -63,6 +62,9 @@ public class TestDBBackedQueue extends TestSetup {
     @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
+        assertEquals(ready.size(), 0);
+
     }
 
     /**
@@ -73,8 +75,8 @@ public class TestDBBackedQueue extends TestSetup {
      */
     @Test(groups = "slow")
     public void testOnlyInflightQ() {
-        final PersistentBusConfig config = createConfig(1, 10, 0);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
+        final PersistentBusConfig config = createConfig(1, 10, false);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "onlyInflightQ-bus_event", metricRegistry);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -109,7 +111,7 @@ public class TestDBBackedQueue extends TestSetup {
             queue.moveEntryToHistory(historyInput);
         }
 
-        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), OWNER, 1000, "bus_events");
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
         final List<BusEventModelDao> readyHistory = sqlDao.getEntriesFromIds(recordIs, "bus_events_history");
@@ -125,11 +127,67 @@ public class TestDBBackedQueue extends TestSetup {
         assertEquals(queue.getTotalWritten(), 100L);
     }
 
+    @Test(groups = "slow")
+    public void testWithExistingEntriesForDifferentOwners() {
+
+        for (int i = 0; i < 5; i++) {
+            final BusEventModelDao input = createEntry(new Long(i), "otherOwner");
+            sqlDao.insertEntry(input, "bus_events");
+        }
+
+        final PersistentBusConfig config = createConfig(1, 10, true);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry);
+        queue.initialize();
+
+        long expectedRecordId = -1;
+        final List<Long> recordIs = new ArrayList<Long>();
+        for (int i = 0; i < 10; i++) {
+
+            assertTrue(queue.isQueueOpenForRead());
+            assertTrue(queue.isQueueOpenForWrite());
+
+            final BusEventModelDao input = createEntry(new Long(i));
+            queue.insertEntry(input);
+            final List<BusEventModelDao> claimed = queue.getReadyEntries();
+            assertEquals(claimed.size(), 1);
+
+            final BusEventModelDao output = claimed.get(0);
+
+            expectedRecordId = (i == 0) ? output.getRecordId() : (expectedRecordId + 1);
+            assertEquals(output.getRecordId(), new Long(expectedRecordId));
+            assertEquals(output.getClassName(), String.class.getName());
+            assertEquals(output.getEventJson(), "json");
+
+            // Not true, claimed entries are NOT reread from disk and so their status is the same as we inserted them
+            //assertEquals(output.getProcessingOwner(), OWNER);
+            //assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
+            assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
+
+            assertEquals(output.getSearchKey1(), new Long(i));
+            assertEquals(output.getSearchKey2(), new Long(1));
+
+            recordIs.add(output.getRecordId());
+            final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            queue.moveEntryToHistory(historyInput);
+        }
+
+        assertEquals(queue.getTotalInflightProcessed(), 10L);
+        assertEquals(queue.getTotalProcessed(), 10L);
+        assertEquals(queue.getTotalInflightWritten(), 10L);
+        assertEquals(queue.getTotalWritten(), 10L);
+
+        final List<BusEventModelDao> remaining = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
+        assertEquals(remaining.size(), 5);
+        for (BusEventModelDao cur : remaining) {
+            sqlDao.removeEntry(cur.getRecordId(), "bus_events");
+        }
+    }
+
     /**
-     * We start with 5 events on disk, a queue capacity of 100, and we fetch elements 10 by 10
-     * We also read elements one by one.
+     * We start with 5 events on disk, a queue capacity of 100, and we fetch elements 7 by 7
      * <p/>
-     * We will write 100 events, and then consume all the events. The queue should be opened for write but not for read as we start.
+     * <p/>
+     * We check the logic that turns the Q open for read as soon as we have read the existing items on disk.
      */
     @Test(groups = "slow")
     public void testInflightQWithSmallExistingEntriesOnStart() {
@@ -139,8 +197,8 @@ public class TestDBBackedQueue extends TestSetup {
             sqlDao.insertEntry(input, "bus_events");
         }
 
-        final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
+        final PersistentBusConfig config = createConfig(7, 100, false);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithSmallExistingEntriesOnStart-bus_event", metricRegistry);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -154,9 +212,9 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         long expectedRecordId = -1;
-        for (int i = 0; i < 105; i++) {
-
-            if (i <= 5) {
+        // 15 = 105 /7
+        for (int i = 0; i < 15; i++) {
+            if (i == 0) {
                 assertFalse(queue.isQueueOpenForRead());
             } else {
                 assertTrue(queue.isQueueOpenForRead());
@@ -164,27 +222,28 @@ public class TestDBBackedQueue extends TestSetup {
             assertTrue(queue.isQueueOpenForWrite());
 
             List<BusEventModelDao> claimed = queue.getReadyEntries();
-            final BusEventModelDao output = claimed.get(0);
+            for (int j = 0; j < claimed.size(); j++) {
+                final BusEventModelDao output = claimed.get(j);
+                expectedRecordId = (i == 0 && j == 0) ? output.getRecordId() : (expectedRecordId + 1);
+                assertEquals(output.getRecordId(), new Long(expectedRecordId));
+                assertEquals(output.getClassName(), String.class.getName());
+                assertEquals(output.getEventJson(), "json");
 
-            expectedRecordId = (i == 0) ? output.getRecordId() : (expectedRecordId + 1);
-            assertEquals(output.getRecordId(), new Long(expectedRecordId));
-            assertEquals(output.getClassName(), String.class.getName());
-            assertEquals(output.getEventJson(), "json");
+                // Not true, claimed entries are NOT reread from disk and so their status is the same as we inserted them
+                //assertEquals(output.getProcessingOwner(), OWNER);
+                //assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
+                assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
 
-            // Not true, claimed entries are NOT reread from disk and so their status is the same as we inserted them
-            //assertEquals(output.getProcessingOwner(), OWNER);
-            //assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
-            assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
+                assertEquals(output.getSearchKey1(), new Long(i * 7 + j));
+                assertEquals(output.getSearchKey2(), new Long(1));
 
-            assertEquals(output.getSearchKey1(), new Long(i));
-            assertEquals(output.getSearchKey2(), new Long(1));
-
-            recordIs.add(output.getRecordId());
-            final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-            queue.moveEntryToHistory(historyInput);
+                recordIs.add(output.getRecordId());
+                final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                queue.moveEntryToHistory(historyInput);
+            }
         }
 
-        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), OWNER, 1000, "bus_events");
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
         final List<BusEventModelDao> readyHistory = sqlDao.getEntriesFromIds(recordIs, "bus_events_history");
@@ -194,7 +253,7 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingOwner(), OWNER);
         }
 
-        assertEquals(queue.getTotalInflightProcessed(), 99L);
+        assertEquals(queue.getTotalInflightProcessed(), 98L);
         assertEquals(queue.getTotalProcessed(), 105L);
         assertEquals(queue.getTotalInflightWritten(), 100L);
         assertEquals(queue.getTotalWritten(), 100L);
@@ -202,11 +261,10 @@ public class TestDBBackedQueue extends TestSetup {
 
 
     /**
-     * We start with 20 events on disk, a queue capacity of 100, and we fetch elements 10 by 10
-     * We also read elements one by one.
+     * We start with 20 events on disk, a queue capacity of 100, and we fetch elements 20 by 20
      * <p/>
-     * The queue should not be opened for read and write we start. We will write 30 events. Then we will consume the 50 events
-     * but as we reach the 10 threshold, we start writing again as we read; those items should be written in the ingflightQ.
+     * <p/>
+     * We check the logic that will first move the Q open for write and then later open for read.
      */
     @Test(groups = "slow")
     public void testInflightQWithLargeExistingEntriesOnStart() {
@@ -216,8 +274,8 @@ public class TestDBBackedQueue extends TestSetup {
             sqlDao.insertEntry(input, "bus_events");
         }
 
-        final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
+        final PersistentBusConfig config = createConfig(20, 100, false);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithLargeExistingEntriesOnStart-bus_event", metricRegistry);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -225,91 +283,83 @@ public class TestDBBackedQueue extends TestSetup {
 
 
         final List<Long> recordIs = new ArrayList<Long>();
-        for (int i = 20; i < 50; i++) {
+        for (int i = 20; i < 40; i++) {
             final BusEventModelDao input = createEntry(new Long(i));
             queue.insertEntry(input);
         }
 
+
+        // At this point we have 40 entries on disk -- not in the inflight queue
+        // Iteration 0: get 20, remain 21 (we add one each time)
+        // Iteration 1: get 20, remain 1 (we add one each time)
+        // Iteration 2: get 1 => break
+        long nextCreatedEntry = 40;
         long expectedRecordId = -1;
-        for (int i = 0; i < 50; i++) {
-            List<BusEventModelDao> claimed = queue.getReadyEntries();
-            final BusEventModelDao output = claimed.get(0);
+        List<BusEventModelDao> claimed = queue.getReadyEntries();
+        while (true) {
 
+            for (int j = 0; j < claimed.size(); j++) {
+                final BusEventModelDao output = claimed.get(j);
+                expectedRecordId = (expectedRecordId == -1) ? output.getRecordId() : (expectedRecordId + 1);
+                assertEquals(output.getRecordId(), new Long(expectedRecordId));
+                assertEquals(output.getClassName(), String.class.getName());
+                assertEquals(output.getEventJson(), "json");
+                assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
+
+                assertEquals(output.getSearchKey1(), new Long(expectedRecordId - 1));
+                assertEquals(output.getSearchKey2(), new Long(1));
+                recordIs.add(output.getRecordId());
+
+                final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                queue.moveEntryToHistory(historyInput);
+            }
             assertFalse(queue.isQueueOpenForRead());
-
-            // We just read the 10 entry and should have switched back to isQueueOpenForWrite = true
-            // we start re-adding entries as we keep consuming existing entries from getReady logics.
-            if (i > 40) {
-                assertTrue(queue.isQueueOpenForWrite());
-                final BusEventModelDao input = createEntry(new Long(i + 9));
-                queue.insertEntry(input);
-            } else {
-                assertFalse(queue.isQueueOpenForWrite());
+            if (claimed.size() < 20) {
+                break;
             }
 
-            expectedRecordId = (i == 0) ? output.getRecordId() : (expectedRecordId + 1);
-
-            assertEquals(output.getRecordId(), new Long(expectedRecordId));
-            assertEquals(output.getClassName(), String.class.getName());
-            assertEquals(output.getEventJson(), "json");
-
-            // Not true, claimed entries are NOT reread from disk and so their status is the same as we inserted them
-            //assertEquals(output.getProcessingOwner(), OWNER);
-            //assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
-            assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
-
-            assertEquals(output.getSearchKey1(), new Long(i));
-            assertEquals(output.getSearchKey2(), new Long(1));
-
-            recordIs.add(output.getRecordId());
-            final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-            queue.moveEntryToHistory(historyInput);
+            final BusEventModelDao input = createEntry(new Long(nextCreatedEntry++));
+            queue.insertEntry(input);
+            claimed = queue.getReadyEntries();
         }
 
-        for (int i = 50; i < 59; i++) {
+        assertTrue(queue.isQueueOpenForWrite());
+        assertFalse(queue.isQueueOpenForRead());
 
-            if (i == 50) {
-                assertFalse(queue.isQueueOpenForRead());
-            } else {
-                assertTrue(queue.isQueueOpenForRead());
+
+        for (int i = 42; i < 100; i++) {
+            final BusEventModelDao input = createEntry(new Long(nextCreatedEntry++));
+            queue.insertEntry(input);
+        }
+
+        claimed = queue.getReadyEntries();
+        while (true) {
+
+            for (int j = 0; j < claimed.size(); j++) {
+                final BusEventModelDao output = claimed.get(j);
+                expectedRecordId = (expectedRecordId + 1);
+                assertEquals(output.getRecordId(), new Long(expectedRecordId));
+                assertEquals(output.getClassName(), String.class.getName());
+                assertEquals(output.getEventJson(), "json");
+                assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
+
+                assertEquals(output.getSearchKey1(), new Long(expectedRecordId - 1));
+                assertEquals(output.getSearchKey2(), new Long(1));
+                recordIs.add(output.getRecordId());
+
+                final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                queue.moveEntryToHistory(historyInput);
             }
-
-            List<BusEventModelDao> claimed = queue.getReadyEntries();
-            final BusEventModelDao output = claimed.get(0);
-
-            expectedRecordId = (i == 50) ? output.getRecordId() : (expectedRecordId + 1);
-
-            assertEquals(output.getRecordId(), new Long(expectedRecordId));
-            assertEquals(output.getClassName(), String.class.getName());
-            assertEquals(output.getEventJson(), "json");
-
-            // Not true, claimed entries are NOT reread from disk and so their status is the same as we inserted them
-            //assertEquals(output.getProcessingOwner(), OWNER);
-            //assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.IN_PROCESSING);
-            assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
-
-            assertEquals(output.getSearchKey1(), new Long(i));
-            assertEquals(output.getSearchKey2(), new Long(1));
-
-            recordIs.add(output.getRecordId());
-            final BusEventModelDao historyInput = new BusEventModelDao(output, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-            queue.moveEntryToHistory(historyInput);
+            claimed = queue.getReadyEntries();
+            if (claimed.size() == 0) {
+                break;
+            }
         }
 
-        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), OWNER, 1000, "bus_events");
-        assertEquals(ready.size(), 0);
-
-        final List<BusEventModelDao> readyHistory = sqlDao.getEntriesFromIds(recordIs, "bus_events_history");
-        assertEquals(readyHistory.size(), 59);
-        for (int i = 0; i < 59; i++) {
-            assertEquals(readyHistory.get(i).getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
-            assertEquals(readyHistory.get(i).getProcessingOwner(), OWNER);
-        }
-
-        assertEquals(queue.getTotalInflightProcessed(), 8L);
-        assertEquals(queue.getTotalProcessed(), 59L);
-        assertEquals(queue.getTotalInflightWritten(), 9L);
-        assertEquals(queue.getTotalWritten(), 39L);
+        assertEquals(queue.getTotalInflightProcessed(), 38L);
+        assertEquals(queue.getTotalProcessed(), 100L);
+        assertEquals(queue.getTotalInflightWritten(), 58L);
+        assertEquals(queue.getTotalWritten(), 80L);
     }
 
 
@@ -317,7 +367,7 @@ public class TestDBBackedQueue extends TestSetup {
      * We start with 5 events on disk, a queue capacity of 100, and we fetch elements 10 by 10
      * We also read elements one by one.
      * <p/>
-     * The queue should not be opened for read but should be open for write we start. so we can first overflow the  quueue
+     * The queue should not be opened for read but should be open for write we start. so we can first overflow the  queue
      * and then verify that we get all entries in the correct order.
      */
     @Test(groups = "slow")
@@ -328,8 +378,8 @@ public class TestDBBackedQueue extends TestSetup {
             sqlDao.insertEntry(input, "bus_events");
         }
 
-        final PersistentBusConfig config = createConfig(1, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
+        final PersistentBusConfig config = createConfig(1, 100, false);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "smallExistingEntriesOnStartAndOverflowWrite_bus-event", metricRegistry);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -379,7 +429,7 @@ public class TestDBBackedQueue extends TestSetup {
             queue.moveEntryToHistory(historyInput);
         }
 
-        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), OWNER, 1000, "bus_events");
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
         final List<BusEventModelDao> readyHistory = sqlDao.getEntriesFromIds(recordIs, "bus_events_history");
@@ -399,8 +449,8 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "slow")
     public void testWithOneReaderOneWriter() throws InterruptedException {
 
-        final PersistentBusConfig config = createConfig(7, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
+        final PersistentBusConfig config = createConfig(7, 100, false);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "oneReaderOneWriter-bus_event", metricRegistry);
         queue.initialize();
 
 
@@ -425,7 +475,7 @@ public class TestDBBackedQueue extends TestSetup {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
-        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), OWNER, 1000, "bus_events");
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
         log.info("Got inflightProcessed = " + queue.getTotalInflightProcessed() + "/1000, inflightWritten = " + queue.getTotalInflightWritten() + "/1000");
@@ -443,8 +493,8 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "slow")
     public void testMultipleWritersMultipleReaders() throws InterruptedException {
 
-        final PersistentBusConfig config = createConfig(7, 100, 10);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "default-bus_event", metricRegistry);
+        final PersistentBusConfig config = createConfig(7, 100, false);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry);
         queue.initialize();
 
 
@@ -483,7 +533,7 @@ public class TestDBBackedQueue extends TestSetup {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
-        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), OWNER, 1000, "bus_events");
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
         log.info("Got inflightProcessed = " + queue.getTotalInflightProcessed() + "/1000, inflightWritten = " + queue.getTotalInflightWritten() + "/1000");
@@ -570,13 +620,22 @@ public class TestDBBackedQueue extends TestSetup {
     }
 
 
-    private BusEventModelDao createEntry(Long searchKey1) {
+    private BusEventModelDao createEntry(Long searchKey1, String owner) {
         final String json = "json";
-        return new BusEventModelDao(OWNER, clock.getUTCNow(), String.class.getName(), json, UUID.randomUUID(), searchKey1, 1L);
+        return new BusEventModelDao(owner, clock.getUTCNow(), String.class.getName(), json, UUID.randomUUID(), searchKey1, 1L);
     }
 
-    private PersistentBusConfig createConfig(final int claimed, final int qCapacity, final int prefetchEntries) {
+    private BusEventModelDao createEntry(Long searchKey1) {
+        return createEntry(searchKey1, OWNER);
+    }
+
+    private PersistentBusConfig createConfig(final int claimed, final int qCapacity, final boolean isSticky) {
         return new PersistentBusConfig() {
+            @Override
+            public boolean isSticky() {
+                return isSticky;
+            }
+
             @Override
             public int getMaxFailureRetries() {
                 return 0;
@@ -604,7 +663,7 @@ public class TestDBBackedQueue extends TestSetup {
 
             @Override
             public int getNbThreads() {
-                return 1;
+                return 0;
             }
 
             @Override
@@ -615,11 +674,6 @@ public class TestDBBackedQueue extends TestSetup {
             @Override
             public int getQueueCapacity() {
                 return qCapacity;
-            }
-
-            @Override
-            public int getPrefetchEntries() {
-                return prefetchEntries;
             }
 
             @Override

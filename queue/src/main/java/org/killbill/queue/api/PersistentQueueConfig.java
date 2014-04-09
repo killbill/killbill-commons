@@ -20,6 +20,8 @@ import org.skife.config.TimeSpan;
 
 public interface PersistentQueueConfig {
 
+    public boolean isSticky();
+
     public int getMaxFailureRetries();
 
     public boolean isUsingInflightQueue();
@@ -32,13 +34,11 @@ public interface PersistentQueueConfig {
 
     public boolean isProcessingOff();
 
-    public int getNbThreads();
-
     public int getQueueCapacity();
-
-    public int getPrefetchEntries();
 
     public String getTableName();
 
     public String getHistoryTableName();
+
+    public abstract int getNbThreads();
 }

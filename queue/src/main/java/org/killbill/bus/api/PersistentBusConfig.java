@@ -25,20 +25,28 @@ import org.skife.config.TimeSpan;
 
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.sticky")
+    @Default("false")
+    @Description("Whether a node should only pick entries it inserted")
+    public abstract boolean isSticky();
+
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.max.failure.retry")
     @Default("3")
     @Description("Number retry for a given event when an exception occurs")
     public abstract int getMaxFailureRetries();
 
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.claimed")
     @Default("5")
     @Description("Number of bus events to fetch from the database at once")
     public abstract int getMaxEntriesClaimed();
 
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.claim.time")
     @Default("5m")
     @Description("Claim time")
-    @Override
     public abstract TimeSpan getClaimedTime();
 
     @Override
@@ -53,6 +61,7 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Description("Whether to turn off the persistent bus")
     public abstract boolean isProcessingOff();
 
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.nbThreads")
     @Default("3")
     @Description("Number of threads to use")
@@ -64,21 +73,19 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Description("Whether to use the inflight queue")
     public abstract boolean isUsingInflightQueue();
 
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity")
     @Default("3000")
     @Description("Number of threads to use")
     public abstract int getQueueCapacity();
 
-    @Config("org.killbill.persistent.bus.${instanceName}.queue.prefetch")
-    @Default("7")
-    @Description("Number of notifications to read from the database at once")
-    public abstract int getPrefetchEntries();
-
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.tableName")
     @Default("bus_events")
     @Description("Bus events table name")
     public abstract String getTableName();
 
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.historyTableName")
     @Default("bus_events_history")
     @Description("Bus events history table name")

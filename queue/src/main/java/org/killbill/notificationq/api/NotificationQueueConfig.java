@@ -26,20 +26,28 @@ import org.killbill.queue.api.PersistentQueueConfig;
 
 public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.sticky")
+    @Default("false")
+    @Description("Whether a node should only pick entries it inserted")
+    public abstract boolean isSticky();
+
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.max.failure.retry")
     @Default("3")
     @Description("Number retry for a given event when an exception occurs")
     public abstract int getMaxFailureRetries();
 
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.claimed")
     @Default("7")
     @Description("Number of notifications to fetch at once")
     public abstract int getMaxEntriesClaimed();
 
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.claim.time")
     @Default("5m")
     @Description("Claim time")
-    @Override
     public abstract TimeSpan getClaimedTime();
 
     @Override
@@ -54,6 +62,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Description("Whether to turn off the notification queue")
     public abstract boolean isProcessingOff();
 
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.notification.nbThreads")
     @Default("1")
     @Description("Number of threads to use")
@@ -65,21 +74,19 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Description("Whether to use the inflight queue")
     public abstract boolean isUsingInflightQueue();
 
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
     @Default("0")
     @Description("Number of threads to use")
     public abstract int getQueueCapacity();
 
-    @Config("org.killbill.notificationq.${instanceName}.prefetch")
-    @Default("7")
-    @Description("Number of notifications to read from the database at once")
-    public abstract int getPrefetchEntries();
-
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.tableName")
     @Default("notifications")
     @Description("Notifications table name")
     public abstract String getTableName();
 
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.historyTableName")
     @Default("notifications_history")
     @Description("Notifications history table name")

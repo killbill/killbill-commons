@@ -71,7 +71,7 @@ public class TestSetup {
         embeddedDB.start();
 
 
-        final String ddl = toString(Resources.getResource("org.killbill/queue/ddl.sql").openStream());
+        final String ddl = toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
         embeddedDB.executeScript(ddl);
 
         dbi = new DBI(embeddedDB.getDataSource());

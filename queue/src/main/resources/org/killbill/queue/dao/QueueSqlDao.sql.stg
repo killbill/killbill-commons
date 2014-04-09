@@ -3,7 +3,7 @@ group BaseSqlDao;
 /** TO BE OVERWRITTEN IN CHILD TEMPLATE **/
 
 
-readyWhereClause() ::= <<
+readyWhereClause(owner) ::= <<
 >>
 
 
@@ -128,18 +128,17 @@ getEntriesFromIds(tableName, record_ids) ::= <<
     ;
 >>
 
-getReadyEntries(tableName) ::= <<
+getReadyEntries(owner, tableName) ::= <<
     select
       <allTableFields()>
     from <tableName>
     where
-      <readyWhereClause()>
+      <readyWhereClause(owner)>
     order by
       <readyOrderByClause()>
     limit :max
     ;
 >>
-
 
 
 claimEntry(tableName) ::= <<

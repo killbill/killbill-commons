@@ -24,6 +24,7 @@ import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
@@ -44,8 +45,11 @@ public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao
 
     @SqlQuery
     public List<T> getReadyEntries(@Bind("now") Date now,
-                                   @Bind("owner") String owner,
                                    @Bind("max") int max,
+                                   // This is somewhat a hack, should really be a @Bind parameter but we also use it
+                                   // for StringTemplate to modify the query based whether value is null or not.
+                                   //
+                                   @Nullable @Define("owner") String owner,
                                    @Define("tableName") final String tableName);
 
     @SqlUpdate

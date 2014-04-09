@@ -56,21 +56,33 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     private static final Logger log = LoggerFactory.getLogger(DBBackedQueue.class);
 
     //
-    // Exponential backup retry logic, where we retyr up to 10 times for a maxium of about 10 sec ((521 + 256 + 128 + ... ) * 10)
+    // Exponential backup retry logic, where we retry up to 10 times for a maximum of about 10 sec ((512 + 256 + 128 + ... ) * 10)
     //
     private final static long INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS = 10;
     private final static int INFLIGHT_ENTRIES_POLL_MAX_RETRY = 10;
 
+    //
+    // This is somewhat arbitrary, and could made configurable; the correct value
+    // really depends on the size of inflightQ, rate of incoming events, polling interval
+    // number of nodes (if non sticky mode), and finally claimed size.
+    //
+    // The 'expected' use case is to have inflightQ size quite large and be left in a situation
+    // where we always restart we only a few elements available in the queue so we
+    // start right away with the inflightQ open for read/write.
+    //
+    private final static int RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE = 10;
+
     private final String DB_QUEUE_LOG_ID;
 
-    private final AtomicBoolean isQueueOpenForWrite;
-    private final AtomicBoolean isQueueOpenForRead;
     private final org.killbill.queue.dao.QueueSqlDao<T> sqlDao;
     private final Clock clock;
-    private final Queue<Long> inflightEvents;
     private final PersistentQueueConfig config;
-    private final boolean useInflightQueue;
 
+    private final boolean useInflightQueue;
+    private final Queue<Long> inflightEvents;
+    private final AtomicBoolean isQueueOpenForWrite;
+    private final AtomicBoolean isQueueOpenForRead;
+    private final int thresholdToReopenQForWrite;
     private final Counter totalInflightProcessed;
     private final Counter totalProcessed;
     private final Counter totalInflightWritten;
@@ -92,22 +104,20 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         this.totalProcessed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalProcessed"));
         this.totalInflightWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten"));
         this.totalWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalWritten"));
-
+        this.thresholdToReopenQForWrite = config.getQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
         DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }
 
 
     public void initialize() {
-        final List<T> entries = fetchReadyEntries(config.getPrefetchEntries());
+
+        final List<T> entries = fetchReadyEntries(thresholdToReopenQForWrite);
         if (entries.size() == 0) {
-            isQueueOpenForWrite.set(true);
             isQueueOpenForRead.set(true);
-        } else if (entries.size() < config.getPrefetchEntries()) {
             isQueueOpenForWrite.set(true);
-            isQueueOpenForRead.set(false);
         } else {
-            isQueueOpenForWrite.set(false);
             isQueueOpenForRead.set(false);
+            isQueueOpenForWrite.set(entries.size() < thresholdToReopenQForWrite);
         }
         if (useInflightQueue) {
             inflightEvents.clear();
@@ -119,7 +129,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         totalInflightWritten.dec(totalInflightWritten.getCount());
         totalWritten.dec(totalWritten.getCount());
 
-        log.info(DB_QUEUE_LOG_ID + "Initialized with isQueueOpenForWrite = " + isQueueOpenForWrite.get() + ", isQueueOpenForRead" + isQueueOpenForRead.get());
+        log.info(DB_QUEUE_LOG_ID + "Initialized with isQueueOpenForWrite = " + isQueueOpenForWrite.get() + ", isQueueOpenForRead = " + isQueueOpenForRead.get());
     }
 
 
@@ -144,8 +154,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
             if (log.isDebugEnabled()) {
                 log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
-                     (success ? " into inflightQ" : " into disk") +
-                     " [" + entry.getEventJson() + "]" );
+                        (success ? " into inflightQ" : " into disk") +
+                        " [" + entry.getEventJson() + "]");
             }
 
             // Q overflowed
@@ -193,16 +203,20 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         }
 
         if (!isQueueOpenForRead.get()) {
-            List<T> prefetchedEntries = fetchReadyEntries(config.getPrefetchEntries());
+            final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
+            candidates = fetchReadyEntries(fetchedSize);
             // There is a small number so we re-enable adding entries in the Q
-            if (prefetchedEntries.size() < config.getPrefetchEntries()) {
-                log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
-                isQueueOpenForWrite.compareAndSet(false, true);
+            if (candidates.size() < thresholdToReopenQForWrite) {
+                boolean r = isQueueOpenForWrite.compareAndSet(false, true);
+                if (r) {
+                    log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
+                }
+            }
+            if (candidates.size() > config.getMaxEntriesClaimed()) {
+                candidates = candidates.subList(0, config.getMaxEntriesClaimed());
             }
 
             // Only keep as many candidates as we are allowed to
-            final int candidateSize = prefetchedEntries.size() > config.getMaxEntriesClaimed() ? config.getMaxEntriesClaimed() : prefetchedEntries.size();
-            candidates = prefetchedEntries.subList(0, candidateSize);
             totalProcessed.inc(candidates.size());
             //
             // If we see that we catch up with entries in the inflightQ, we need to switch mode and remove entries we are processing
@@ -210,7 +224,6 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             // elements as expected, because entries have already been processed.
             //
             if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
-                log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
                 final boolean q = isQueueOpenForRead.compareAndSet(false, true);
                 if (q) {
                     log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
@@ -345,7 +358,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     private List<T> fetchReadyEntries(int size) {
         final Date now = clock.getUTCNow().toDate();
-        final List<T> entries = sqlDao.getReadyEntries(now, Hostname.get(), size, config.getTableName());
+        final String owner = config.isSticky() ? Hostname.get() : null;
+        final List<T> entries = sqlDao.getReadyEntries(now, size, owner, config.getTableName());
         return entries;
     }
 
