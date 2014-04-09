@@ -264,6 +264,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry.get()) {
                     log.warn(DB_QUEUE_LOG_ID + "ORPHAN ENTRY FOR RECORD_ID " + previousLowestOrphanEntry + " ?");
                 }
+                isRunningOrphanQuery.set(false);
             }
         }
     }
@@ -350,8 +351,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     //  Note that:
     //  - It is is OK for that thread to sleep and retry as this is its nature -- it sleeps and polls
     //  - If for some reason the entry is not found but the transaction eventually commits, we will end up in a situation
-    //    where we have entries AVALAIBLE on disk; those would be cleared as we restart the service. If this ends up being an issue
-    //    we could had some additional logics to catch them.
+    //    where we have entries AVAILABLE on disk; those would be cleared as we restart the service. If this ends up being an issue
+    //    we could had some additional logic to catch them.
     //
     private List<T> getEntriesFromIds(final List<Long> recordIds) {
 
