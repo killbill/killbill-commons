@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
@@ -72,6 +73,13 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     //
     private final static int RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE = 10;
 
+    //
+    // When running with inflightQ, add a polling every 5 minutes to detect if there are
+    // entries on disk that are old -- and therefore have been missed. This is purely for
+    // for peace of mind and verify the system is healthy.
+    //
+    private final static long POLLING_ORPHANS_MSEC = (5L * 60L * 1000L);
+
     private final String DB_QUEUE_LOG_ID;
 
     private final org.killbill.queue.dao.QueueSqlDao<T> sqlDao;
@@ -87,6 +95,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     private final Counter totalProcessed;
     private final Counter totalInflightWritten;
     private final Counter totalWritten;
+
+    private final AtomicLong lastPollingOrphanTime;
+    private final AtomicBoolean isRunningOrphanQuery;
+    private final AtomicLong lowestOrphanEntry;
 
     public DBBackedQueue(final Clock clock,
                          final QueueSqlDao<T> sqlDao,
@@ -105,6 +117,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         this.totalInflightWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten"));
         this.totalWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalWritten"));
         this.thresholdToReopenQForWrite = config.getQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
+        this.lastPollingOrphanTime = new AtomicLong(clock.getUTCNow().getMillis());
+        this.isRunningOrphanQuery = new AtomicBoolean(false);
+        this.lowestOrphanEntry = new AtomicLong(-1L);
         DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }
 
@@ -185,6 +200,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         }
 
         if (isQueueOpenForRead.get()) {
+
+            checkForOrphanEntries();
+
             candidates = fetchReadyEntriesFromIds();
 
             // There are entries in the Q, we just return those
@@ -234,6 +252,21 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         return candidates;
     }
 
+    private void checkForOrphanEntries() {
+        if (clock.getUTCNow().getMillis() > lastPollingOrphanTime.get() + POLLING_ORPHANS_MSEC) {
+
+            if (isRunningOrphanQuery.compareAndSet(false, true)) {
+                final List<T> entriesToClaim = fetchReadyEntries(1);
+                final Long previousLowestOrphanEntry = lowestOrphanEntry.getAndSet((entriesToClaim.size() == 0) ? -1L : entriesToClaim.get(0).getRecordId());
+
+                lastPollingOrphanTime.set(clock.getUTCNow().getMillis());
+
+                if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry.get()) {
+                    log.warn(DB_QUEUE_LOG_ID + "ORPHAN ENTRY FOR RECORD_ID " + previousLowestOrphanEntry + " ?");
+                }
+            }
+        }
+    }
 
     private boolean removeInflightEventsWhenSwitchingToQueueOpenForRead(final List<T> candidates) {
 
