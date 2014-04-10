@@ -1,3 +1,6 @@
+0.2.15
+    Second pass on the inflightQ algorithm for the queue
+
 0.2.14
     Update to killbill-oss-parent 0.5.29
     Remove dependency on deprecated mxj libraries for MySQLStandaloneDB
