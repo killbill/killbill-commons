@@ -24,6 +24,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.codahale.metrics.Gauge;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
@@ -91,10 +92,15 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     private final AtomicBoolean isQueueOpenForWrite;
     private final AtomicBoolean isQueueOpenForRead;
     private final int thresholdToReopenQForWrite;
-    private final Counter totalInflightProcessed;
-    private final Counter totalProcessed;
-    private final Counter totalInflightWritten;
-    private final Counter totalWritten;
+
+    private final Counter totalInflightInsert;
+    private final Counter totalInflightFetched;
+    private final Counter totalInsert;
+    private final Counter totalFetched;
+    private final Counter totalClaimed;
+    private final Counter totalProcessedFirstFailures;
+    private final Counter totalProcessedSuccess;
+    private final Counter totalProcessedAborted;
 
     private final AtomicLong lastPollingOrphanTime;
     private final AtomicBoolean isRunningOrphanQuery;
@@ -112,37 +118,87 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         this.isQueueOpenForWrite = new AtomicBoolean(false);
         this.isQueueOpenForRead = new AtomicBoolean(false);
         this.clock = clock;
-        this.totalInflightProcessed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightProcessed"));
-        this.totalProcessed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalProcessed"));
-        this.totalInflightWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalInflightWritten"));
-        this.totalWritten = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId + "-totalWritten"));
+
+        //
+        // Metrics
+        //
+        // Number of entries written in the inflightQ since last boot time
+        this.totalInflightInsert = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInflightInsert"));
+        // Number of entries fetched from inflightQ since last boot time (only entries that exist and are aavailable on disk are counted)
+        this.totalInflightFetched = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInflightFetched"));
+        // Number of entries written on disk -- if transaction is rolled back, it is still counted.
+        this.totalInsert = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInsert"));
+        // Number of entries written on disk -- if transaction is rolled back, it is still counted.
+        this.totalFetched = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalFetched"));
+        // Number of successfully claimed events
+        this.totalClaimed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalClaimed"));
+        // Number of successfully processed events (move to history table) -- if transaction is rolled back, it is still counted.
+        this.totalProcessedSuccess = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalProcessedSuccess"));
+        // Number of first failures for a specific event
+        this.totalProcessedFirstFailures = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalProcessedFirstFailures"));
+        //  Number of aborted events
+        this.totalProcessedAborted = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalProcessedAborted"));
+        // Export size of inflightQ
+        metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "size"), new Gauge<Integer>() {
+            @Override
+            public Integer getValue() {
+                return useInflightQueue ? inflightEvents.size() : 0;
+            }
+        });
+        metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "isOpenForRead"), new Gauge<Boolean>() {
+            @Override
+            public Boolean getValue() {
+                return isQueueOpenForRead.get();
+            }
+        });
+        metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "isOpenForWrite"), new Gauge<Boolean>() {
+            @Override
+            public Boolean getValue() {
+                return isQueueOpenForWrite.get();
+            }
+        });
+        metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "lowestOrphanEntry"), new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return lowestOrphanEntry.get();
+            }
+        });
+
         this.thresholdToReopenQForWrite = config.getQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
         this.lastPollingOrphanTime = new AtomicLong(clock.getUTCNow().getMillis());
         this.isRunningOrphanQuery = new AtomicBoolean(false);
         this.lowestOrphanEntry = new AtomicLong(-1L);
-        DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
+
+        this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }
 
 
     public void initialize() {
 
-        final List<T> entries = fetchReadyEntries(thresholdToReopenQForWrite);
-        if (entries.size() == 0) {
-            isQueueOpenForRead.set(true);
-            isQueueOpenForWrite.set(true);
-        } else {
-            isQueueOpenForRead.set(false);
-            isQueueOpenForWrite.set(entries.size() < thresholdToReopenQForWrite);
-        }
         if (useInflightQueue) {
             inflightEvents.clear();
+            final List<T> entries = fetchReadyEntries(thresholdToReopenQForWrite);
+            if (entries.size() == 0) {
+                isQueueOpenForRead.set(true);
+                isQueueOpenForWrite.set(true);
+            } else {
+                isQueueOpenForRead.set(false);
+                isQueueOpenForWrite.set(entries.size() < thresholdToReopenQForWrite);
+            }
+        } else {
+            isQueueOpenForRead.set(false);
+            isQueueOpenForWrite.set(false);
         }
 
-        // Lame, no more clear API
-        totalInflightProcessed.dec(totalInflightProcessed.getCount());
-        totalProcessed.dec(totalProcessed.getCount());
-        totalInflightWritten.dec(totalInflightWritten.getCount());
-        totalWritten.dec(totalWritten.getCount());
+        // Reset counters.
+        totalInflightFetched.dec(totalInflightFetched.getCount());
+        totalFetched.dec(totalFetched.getCount());
+        totalInflightInsert.dec(totalInflightInsert.getCount());
+        totalInsert.dec(totalInsert.getCount());
+        totalClaimed.dec(totalClaimed.getCount());
+        totalProcessedSuccess.dec(totalProcessedSuccess.getCount());
+        totalProcessedFirstFailures.dec(totalProcessedFirstFailures.getCount());
+        totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
         log.info(DB_QUEUE_LOG_ID + "Initialized with isQueueOpenForWrite = " + isQueueOpenForWrite.get() + ", isQueueOpenForRead = " + isQueueOpenForRead.get());
     }
@@ -161,27 +217,12 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
 
         transactional.insertEntry(entry, config.getTableName());
-        totalWritten.inc();
-        if (useInflightQueue && isQueueOpenForWrite.get()) {
-            Long lastInsertId = transactional.getLastInsertId();
+        totalInsert.inc();
 
-            boolean success = inflightEvents.offer(lastInsertId);
-
-            if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
-                        (success ? " into inflightQ" : " into disk") +
-                        " [" + entry.getEventJson() + "]");
-            }
-
-            // Q overflowed
-            if (!success) {
-                final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
-                if (q) {
-                    log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + lastInsertId);
-                }
-            } else {
-                totalInflightWritten.inc();
-            }
+        final Long lastInsertId = transactional.getLastInsertId();
+        final boolean isInserted = insertIntoInflightQIfRequired(lastInsertId, entry);
+        if (isInserted) {
+            totalInflightInsert.inc();
         }
     }
 
@@ -193,6 +234,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         // If we are not configured to use inflightQ then run expensive query
         if (!useInflightQueue) {
             final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
+            totalFetched.inc(entriesToClaim.size());
             if (entriesToClaim.size() > 0) {
                 candidates = claimEntries(entriesToClaim);
             }
@@ -204,9 +246,11 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             checkForOrphanEntries();
 
             candidates = fetchReadyEntriesFromIds();
-
             // There are entries in the Q, we just return those
             if (candidates.size() > 0) {
+                totalInflightFetched.inc(candidates.size());
+                totalFetched.inc(candidates.size());
+
                 return claimEntries(candidates);
             }
 
@@ -234,8 +278,6 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 candidates = candidates.subList(0, config.getMaxEntriesClaimed());
             }
 
-            // Only keep as many candidates as we are allowed to
-            totalProcessed.inc(candidates.size());
             //
             // If we see that we catch up with entries in the inflightQ, we need to switch mode and remove entries we are processing
             // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
@@ -247,9 +289,12 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                     log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
                 }
             }
+
+            // Only keep as many candidates as we are allowed to
+            totalFetched.inc(candidates.size());
             return claimEntries(candidates);
         }
-        return candidates;
+        return ImmutableList.<T>of();
     }
 
     private void checkForOrphanEntries() {
@@ -280,13 +325,18 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
 
     public void updateOnError(final T entry) {
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+        // We are not (re)incrementing counters totalInflightInsert and totalInsert for these entries, this is a matter of semantics
+        final Long lastInserted = sqlDao.inTransaction(new Transaction<Long, QueueSqlDao<T>>() {
             @Override
-            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+            public Long inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 transactional.updateOnError(entry.getRecordId(), clock.getUTCNow().toDate(), entry.getErrorCount(), config.getTableName());
-                return null;
+                if (entry.getErrorCount() == 1) {
+                    totalProcessedFirstFailures.inc();
+                }
+                return transactional.getLastInsertId();
             }
         });
+        insertIntoInflightQIfRequired(lastInserted, entry);
     }
 
     public void moveEntryToHistory(final T entry) {
@@ -300,6 +350,17 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     }
 
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
+        switch(entry.getProcessingState()) {
+            case FAILED:
+                totalProcessedAborted.inc();
+                break;
+            case PROCESSED:
+                totalProcessedSuccess.inc();
+                break;
+            default:
+                log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + entry.getProcessingState() + " for record_id = " + entry.getRecordId());
+                break;
+        }
         transactional.insertEntry(entry, config.getHistoryTableName());
         transactional.removeEntry(entry.getRecordId(), config.getTableName());
     }
@@ -310,8 +371,6 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         for (int i = 0; i < size; i++) {
             final Long entryId = inflightEvents.poll();
             if (entryId != null) {
-                totalInflightProcessed.inc();
-                totalProcessed.inc();
                 recordIds.add(entryId);
             }
         }
@@ -337,6 +396,28 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         return result;
     }
 
+    private boolean insertIntoInflightQIfRequired(Long lastInsertId, T entry) {
+        boolean result = false;
+        if (useInflightQueue && isQueueOpenForWrite.get()) {
+
+            result = inflightEvents.offer(lastInsertId);
+
+            if (log.isDebugEnabled()) {
+                log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
+                        (result ? " into inflightQ" : " into disk") +
+                        " [" + entry.getEventJson() + "]");
+            }
+
+            // Q overflowed
+            if (!result) {
+                final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
+                if (q) {
+                    log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + lastInsertId);
+                }
+            }
+        }
+        return result;
+    }
 
     //
     //  When there are some entries in the inflightQ, 3 cases may have occured:
@@ -347,7 +428,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     //  3. The thread that posted the entry did not complete its transaction and so we don't know whether or not the entry
     //     will make it on disk.
     //
-    //  The code below looks for all entries by retrying the lookup on disk, and if eventually returns the one that have been found.
+    //  The code below looks for all entries by retrying the lookup on disk, and it eventually returns the one that have been found.
     //  Note that:
     //  - It is is OK for that thread to sleep and retry as this is its nature -- it sleeps and polls
     //  - If for some reason the entry is not found but the transaction eventually commits, we will end up in a situation
@@ -411,10 +492,12 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
         final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName()) == 1);
 
-        if (claimed && log.isDebugEnabled()) {
-            log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
+        if (claimed) {
+            totalClaimed.inc();
+            if (log.isDebugEnabled()) {
+                log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
+            }
         }
-
         return claimed;
     }
 
@@ -430,19 +513,19 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         return isQueueOpenForRead.get();
     }
 
-    public long getTotalInflightProcessed() {
-        return totalInflightProcessed.getCount();
+    public long getTotalInflightFetched() {
+        return totalInflightFetched.getCount();
     }
 
-    public long getTotalProcessed() {
-        return totalProcessed.getCount();
+    public long getTotalFetched() {
+        return totalFetched.getCount();
     }
 
-    public long getTotalInflightWritten() {
-        return totalInflightWritten.getCount();
+    public long getTotalInflightInsert() {
+        return totalInflightInsert.getCount();
     }
 
-    public long getTotalWritten() {
-        return totalWritten.getCount();
+    public long getTotalInsert() {
+        return totalInsert.getCount();
     }
 }

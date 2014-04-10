@@ -121,10 +121,10 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingOwner(), OWNER);
         }
 
-        assertEquals(queue.getTotalInflightProcessed(), 100L);
-        assertEquals(queue.getTotalProcessed(), 100L);
-        assertEquals(queue.getTotalInflightWritten(), 100L);
-        assertEquals(queue.getTotalWritten(), 100L);
+        assertEquals(queue.getTotalInflightFetched(), 100L);
+        assertEquals(queue.getTotalFetched(), 100L);
+        assertEquals(queue.getTotalInflightInsert(), 100L);
+        assertEquals(queue.getTotalInsert(), 100L);
     }
 
     @Test(groups = "slow")
@@ -171,10 +171,10 @@ public class TestDBBackedQueue extends TestSetup {
             queue.moveEntryToHistory(historyInput);
         }
 
-        assertEquals(queue.getTotalInflightProcessed(), 10L);
-        assertEquals(queue.getTotalProcessed(), 10L);
-        assertEquals(queue.getTotalInflightWritten(), 10L);
-        assertEquals(queue.getTotalWritten(), 10L);
+        assertEquals(queue.getTotalInflightFetched(), 10L);
+        assertEquals(queue.getTotalFetched(), 10L);
+        assertEquals(queue.getTotalInflightInsert(), 10L);
+        assertEquals(queue.getTotalInsert(), 10L);
 
         final List<BusEventModelDao> remaining = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
         assertEquals(remaining.size(), 5);
@@ -253,10 +253,10 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingOwner(), OWNER);
         }
 
-        assertEquals(queue.getTotalInflightProcessed(), 98L);
-        assertEquals(queue.getTotalProcessed(), 105L);
-        assertEquals(queue.getTotalInflightWritten(), 100L);
-        assertEquals(queue.getTotalWritten(), 100L);
+        assertEquals(queue.getTotalInflightFetched(), 98L);
+        assertEquals(queue.getTotalFetched(), 105L);
+        assertEquals(queue.getTotalInflightInsert(), 100L);
+        assertEquals(queue.getTotalInsert(), 100L);
     }
 
 
@@ -356,10 +356,10 @@ public class TestDBBackedQueue extends TestSetup {
             }
         }
 
-        assertEquals(queue.getTotalInflightProcessed(), 38L);
-        assertEquals(queue.getTotalProcessed(), 100L);
-        assertEquals(queue.getTotalInflightWritten(), 58L);
-        assertEquals(queue.getTotalWritten(), 80L);
+        assertEquals(queue.getTotalInflightFetched(), 38L);
+        assertEquals(queue.getTotalFetched(), 100L);
+        assertEquals(queue.getTotalInflightInsert(), 58L);
+        assertEquals(queue.getTotalInsert(), 80L);
     }
 
 
@@ -439,10 +439,10 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingOwner(), OWNER);
         }
 
-        assertEquals(queue.getTotalInflightProcessed(), 99L);
-        assertEquals(queue.getTotalProcessed(), 205L);
-        assertEquals(queue.getTotalInflightWritten(), 100L);
-        assertEquals(queue.getTotalWritten(), 200L);
+        assertEquals(queue.getTotalInflightFetched(), 99L);
+        assertEquals(queue.getTotalFetched(), 205L);
+        assertEquals(queue.getTotalInflightInsert(), 100L);
+        assertEquals(queue.getTotalInsert(), 200L);
     }
 
 
@@ -478,8 +478,8 @@ public class TestDBBackedQueue extends TestSetup {
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
-        log.info("Got inflightProcessed = " + queue.getTotalInflightProcessed() + "/1000, inflightWritten = " + queue.getTotalInflightWritten() + "/1000");
-        assertEquals(queue.getTotalWritten(), 1000L);
+        log.info("Got inflightProcessed = " + queue.getTotalInflightFetched() + "/1000, inflightWritten = " + queue.getTotalInflightInsert() + "/1000");
+        assertEquals(queue.getTotalInsert(), 1000L);
 
         // Verify ordering
         long expected = 999;
@@ -536,8 +536,8 @@ public class TestDBBackedQueue extends TestSetup {
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
-        log.info("Got inflightProcessed = " + queue.getTotalInflightProcessed() + "/1000, inflightWritten = " + queue.getTotalInflightWritten() + "/1000");
-        assertEquals(queue.getTotalWritten(), 2000);
+        log.info("Got inflightProcessed = " + queue.getTotalInflightFetched() + "/1000, inflightWritten = " + queue.getTotalInflightInsert() + "/1000");
+        assertEquals(queue.getTotalInsert(), 2000);
     }
 
     public class ReaderRunnable implements Runnable {
