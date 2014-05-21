@@ -20,7 +20,7 @@ package org.killbill.automaton;
 public interface State extends StateMachineEntry {
 
     public interface EnteringStateCallback {
-        public void enteringState(final State newState);
+        public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final LeavingStateCallback leavingStateCallback);
     }
 
     public interface LeavingStateCallback {
