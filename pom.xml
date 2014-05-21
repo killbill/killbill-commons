@@ -43,6 +43,8 @@
         <module>locker</module>
         <module>queue</module>
         <module>skeleton</module>
+        <module>xmlloader</module>
+        <module>automaton</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
@@ -58,6 +60,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-automaton</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-clock</artifactId>
@@ -113,6 +120,11 @@
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-skeleton</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-xmlloader</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
