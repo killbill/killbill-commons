@@ -52,7 +52,6 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
     @Override
     public void runOperation(final Operation operation, final Operation.OperationCallback operationCallback, final EnteringStateCallback enteringStateCallback, final LeavingStateCallback leavingStateCallback)
             throws MissingEntryException {
-        leavingStateCallback.leavingState(this);
         try {
 
             OperationResult result;
@@ -66,6 +65,8 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
                     final LinkStateMachine linkStateMachine = DefaultLinkStateMachine.findLinkStateMachine(this.getStateMachine(), this, destStateMachine);
                     initialState = linkStateMachine.getFinalState();
                 }
+                leavingStateCallback.leavingState(initialState);
+
                 result = operation.run(operationCallback);
                 transition = DefaultTransition.findTransition(initialState, operation, result);
             } catch (OperationException e) {

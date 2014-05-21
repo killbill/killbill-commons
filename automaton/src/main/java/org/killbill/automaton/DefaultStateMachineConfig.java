@@ -48,6 +48,8 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
 
     @Override
     public ValidationErrors validate(final DefaultStateMachineConfig root, final ValidationErrors errors) {
+        validateCollection(root, errors, stateMachines);
+        validateCollection(root, errors, linkStateMachines);
         return errors;
     }
 

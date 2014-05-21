@@ -200,7 +200,7 @@ public class TestStateMachine {
                     @Override
                     public void leavingState(final State oldState) {
                         logger.info("Leaving state " + oldState.getName());
-                        Assert.assertEquals(oldState.getName(), "AUTH_SUCCESS");
+                        Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
                     }
                 }
         );
