@@ -18,6 +18,8 @@ package org.killbill.automaton;
 
 public interface Operation extends StateMachineEntry {
 
+    public StateMachine getStateMachine();
+
     public OperationResult run(OperationCallback cb) throws OperationException;
 
     public interface OperationCallback {

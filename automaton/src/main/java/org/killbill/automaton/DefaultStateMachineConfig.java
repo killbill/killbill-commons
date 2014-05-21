@@ -16,15 +16,13 @@
 
 package org.killbill.automaton;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.killbill.xmlloader.ValidationErrors;
 
+import javax.xml.bind.annotation.*;
 import java.net.URI;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "stateMachineConfig")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -80,5 +78,22 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
 
     public void setLinkStateMachines(final DefaultLinkStateMachine[] linkStateMachines) {
         this.linkStateMachines = linkStateMachines;
+    }
+
+    public LinkStateMachine findLinkStateMachine(final StateMachine srcStateMachine, final State srcState, final StateMachine dstStateMachine) throws MissingEntryException {
+
+        try {
+            return Iterables.tryFind(ImmutableList.<LinkStateMachine>copyOf(linkStateMachines), new Predicate<LinkStateMachine>() {
+                @Override
+                public boolean apply(final LinkStateMachine input) {
+                    return input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
+                            input.getInitialState().getName().equals(srcState.getName()) &&
+                            input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
+                }
+            }).get();
+        } catch (IllegalStateException e) {
+            throw new MissingEntryException("Missing transition for srcStateMachine " + srcStateMachine.getName() +
+                    ", srcState = " + srcState.getName() + ", dstStateMachine = " + dstStateMachine.getName(), e);
+        }
     }
 }

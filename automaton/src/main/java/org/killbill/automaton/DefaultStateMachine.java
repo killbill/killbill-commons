@@ -65,6 +65,7 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
         }
         for (DefaultOperation cur : operations) {
             cur.initialize(root, uri);
+            cur.setStateMachine(this);
         }
     }
 

@@ -33,9 +33,17 @@ public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateM
     @XmlID
     private String name;
 
+    private DefaultStateMachine stateMachine;
+
     @Override
     public String getName() {
         return name;
+    }
+
+
+    @Override
+    public StateMachine getStateMachine() {
+        return stateMachine;
     }
 
     @Override
@@ -54,5 +62,9 @@ public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateM
 
     public void setName(final String name) {
         this.name = name;
+    }
+
+    public void setStateMachine(DefaultStateMachine stateMachine) {
+        this.stateMachine = stateMachine;
     }
 }

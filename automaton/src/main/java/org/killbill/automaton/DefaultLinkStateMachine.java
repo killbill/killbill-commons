@@ -95,4 +95,8 @@ public class DefaultLinkStateMachine extends StateMachineValidatingConfig<Defaul
         this.finalState = finalState;
     }
 
+
+    public static LinkStateMachine findLinkStateMachine(final StateMachine srcStateMachine, final State srcState, final StateMachine dstStateMachine) throws MissingEntryException {
+        return ((DefaultStateMachine) srcStateMachine).getStateMachineConfig().findLinkStateMachine(srcStateMachine, srcState, dstStateMachine);
+    }
 }

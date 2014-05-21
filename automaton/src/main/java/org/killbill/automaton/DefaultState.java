@@ -58,8 +58,16 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
             final OperationResult result;
             Transition transition;
             try {
+                final StateMachine destStateMachine = operation.getStateMachine();
+                final State initialState;
+                if (this.getStateMachine().getName().equals(destStateMachine.getName())) {
+                    initialState = this;
+                } else {
+                    final LinkStateMachine linkStateMachine = DefaultLinkStateMachine.findLinkStateMachine(this.getStateMachine(), this, destStateMachine);
+                    initialState = linkStateMachine.getFinalState();
+                }
                 result = operation.run(operationCallback);
-                transition = DefaultTransition.findTransition(this, operation, result);
+                transition = DefaultTransition.findTransition(initialState, operation, result);
             } catch (OperationException e) {
                 transition = DefaultTransition.findTransition(this, operation, OperationResult.EXCEPTION);
             }
