@@ -20,6 +20,5 @@ public enum OperationResult {
     PENDING,
     SUCCESS,
     FAILURE,
-    EXCEPTION,
-    TIMEOUT
+    EXCEPTION
 }

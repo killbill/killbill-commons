@@ -107,9 +107,6 @@ public class DefaultStateMachineConfigDOTGenerator {
             case SUCCESS:
                 color = "green";
                 break;
-            case TIMEOUT:
-                color = "yellow";
-                break;
             default:
                 color = "black";
                 break;

@@ -28,6 +28,6 @@ public interface State extends StateMachineEntry {
     }
 
     public void runOperation(final Operation operation, final Operation.OperationCallback operationCallback,  final EnteringStateCallback enteringStateCallback, final LeavingStateCallback leavingStateCallback)
-            throws MissingEntryException;
+            throws MissingEntryException, OperationException;
 
 }

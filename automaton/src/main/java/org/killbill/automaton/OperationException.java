@@ -18,22 +18,22 @@ package org.killbill.automaton;
 
 public class OperationException extends Exception {
 
+    private final OperationResult operationResult;
+
     public OperationException() {
-    }
-
-    public OperationException(final String message) {
-        super(message);
-    }
-
-    public OperationException(final String message, final Throwable cause) {
-        super(message, cause);
+        this(null, OperationResult.EXCEPTION);
     }
 
     public OperationException(final Throwable cause) {
-        super(cause);
+        this(cause, OperationResult.EXCEPTION);
     }
 
-    public OperationException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
+    public OperationException(final Throwable cause, final OperationResult operationResult) {
+        super(cause);
+        this.operationResult = operationResult;
+    }
+
+    public OperationResult getOperationResult() {
+        return operationResult;
     }
 }

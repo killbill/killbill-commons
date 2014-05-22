@@ -16,14 +16,14 @@
 
 package org.killbill.automaton;
 
+import com.google.common.base.Preconditions;
 import org.killbill.xmlloader.ValidationErrors;
-
-import java.net.URI;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
+import java.net.URI;
 
 
 @XmlAccessorType(XmlAccessType.NONE)
@@ -51,30 +51,36 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
 
     @Override
     public void runOperation(final Operation operation, final Operation.OperationCallback operationCallback, final EnteringStateCallback enteringStateCallback, final LeavingStateCallback leavingStateCallback)
-            throws MissingEntryException {
+            throws MissingEntryException, OperationException {
+
+        OperationException rethrowableException = null;
+        OperationResult result;
+        Transition transition = null;
         try {
-
-            OperationResult result;
-            Transition transition;
-            try {
-                final StateMachine destStateMachine = operation.getStateMachine();
-                final State initialState;
-                if (this.getStateMachine().getName().equals(destStateMachine.getName())) {
-                    initialState = this;
-                } else {
-                    final LinkStateMachine linkStateMachine = DefaultLinkStateMachine.findLinkStateMachine(this.getStateMachine(), this, destStateMachine);
-                    initialState = linkStateMachine.getFinalState();
-                }
-                leavingStateCallback.leavingState(initialState);
-
-                result = operation.run(operationCallback);
-                transition = DefaultTransition.findTransition(initialState, operation, result);
-            } catch (OperationException e) {
-                result = OperationResult.EXCEPTION;
-                transition = DefaultTransition.findTransition(this, operation, result);
+            final StateMachine destStateMachine = operation.getStateMachine();
+            final State initialState;
+            if (this.getStateMachine().getName().equals(destStateMachine.getName())) {
+                initialState = this;
+            } else {
+                final LinkStateMachine linkStateMachine = DefaultLinkStateMachine.findLinkStateMachine(this.getStateMachine(), this, destStateMachine);
+                initialState = linkStateMachine.getFinalState();
             }
-            enteringStateCallback.enteringState(transition.getFinalState(), operationCallback, leavingStateCallback);
+            leavingStateCallback.leavingState(initialState);
+
+            result = operation.run(operationCallback);
+            transition = DefaultTransition.findTransition(initialState, operation, result);
+        } catch (OperationException e) {
+            rethrowableException = e;
+            transition = DefaultTransition.findTransition(this, operation, e.getOperationResult());
+        } catch (RuntimeException e) {
+            rethrowableException = new OperationException(e);
+            transition = DefaultTransition.findTransition(this, operation, OperationResult.EXCEPTION);
         } finally {
+            Preconditions.checkState(transition != null);
+            enteringStateCallback.enteringState(transition.getFinalState(), operationCallback, leavingStateCallback);
+            if (rethrowableException != null) {
+                throw rethrowableException;
+            }
         }
     }
 
