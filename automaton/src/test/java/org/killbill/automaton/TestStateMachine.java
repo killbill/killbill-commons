@@ -108,7 +108,7 @@ public class TestStateMachine {
                 },
                 new State.EnteringStateCallback() {
                     @Override
-                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final State.LeavingStateCallback leavingStateCallback) {
+                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
                         logger.info("Entering state " + newState.getName());
                         Assert.assertEquals(newState.getName(), "CAPTURE_SUCCESS");
                     }
@@ -131,7 +131,7 @@ public class TestStateMachine {
                 },
                 new State.EnteringStateCallback() {
                     @Override
-                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final State.LeavingStateCallback leavingStateCallback) {
+                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
                         logger.info("Entering state " + newState.getName());
                         Assert.assertEquals(newState.getName(), "CAPTURE_FAILED");
                     }
@@ -155,7 +155,7 @@ public class TestStateMachine {
                     },
                     new State.EnteringStateCallback() {
                         @Override
-                        public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final State.LeavingStateCallback leavingStateCallback) {
+                        public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
                             logger.info("Entering state " + newState.getName());
                             Assert.assertEquals(newState.getName(), "CAPTURE_ERRORED");
                         }
@@ -194,7 +194,7 @@ public class TestStateMachine {
                 },
                 new State.EnteringStateCallback() {
                     @Override
-                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final State.LeavingStateCallback leavingStateCallback) {
+                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
                         logger.info("Entering state " + newState.getName());
                         Assert.assertEquals(newState.getName(), "CAPTURE_SUCCESS");
                     }
