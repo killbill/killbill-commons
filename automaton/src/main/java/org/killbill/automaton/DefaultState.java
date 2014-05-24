@@ -58,13 +58,15 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
         Transition transition = null;
         try {
             final StateMachine destStateMachine = operation.getStateMachine();
-            final State initialState;
-            if (this.getStateMachine().getName().equals(destStateMachine.getName())) {
-                initialState = this;
-            } else {
+
+            State initialState;
+            try {
                 final LinkStateMachine linkStateMachine = DefaultLinkStateMachine.findLinkStateMachine(this.getStateMachine(), this, destStateMachine);
                 initialState = linkStateMachine.getFinalState();
+            } catch (MissingEntryException e) {
+                initialState = this;
             }
+
             leavingStateCallback.leavingState(initialState);
 
             result = operation.run(operationCallback);
