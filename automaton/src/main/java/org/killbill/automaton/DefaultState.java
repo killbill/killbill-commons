@@ -16,15 +16,18 @@
 
 package org.killbill.automaton;
 
-import com.google.common.base.Preconditions;
-import org.killbill.xmlloader.ValidationErrors;
+import java.net.URI;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
-import java.net.URI;
 
+import org.killbill.xmlloader.ValidationErrors;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements State {
@@ -76,10 +79,11 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
             transition = DefaultTransition.findTransition(this, operation, e.getOperationResult());
         } catch (RuntimeException e) {
             rethrowableException = new OperationException(e);
-            transition = DefaultTransition.findTransition(this, operation, result);
+            // transition = null - we don't want to transition
         } finally {
-            Preconditions.checkState(transition != null);
-            enteringStateCallback.enteringState(transition.getFinalState(), operationCallback, result, leavingStateCallback);
+            if (transition != null) {
+                enteringStateCallback.enteringState(transition.getFinalState(), operationCallback, result, leavingStateCallback);
+            }
             if (rethrowableException != null) {
                 throw rethrowableException;
             }

@@ -17,14 +17,13 @@
 
 package org.killbill.automaton.graph;
 
-import org.killbill.automaton.State;
-import org.killbill.automaton.StateMachine;
-import org.killbill.automaton.Transition;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.killbill.automaton.State;
+import org.killbill.automaton.StateMachine;
+import org.killbill.automaton.Transition;
 
 public class Helpers {
 
