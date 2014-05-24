@@ -54,7 +54,7 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
             throws MissingEntryException, OperationException {
 
         OperationException rethrowableException = null;
-        OperationResult result;
+        OperationResult result = OperationResult.EXCEPTION;
         Transition transition = null;
         try {
             final StateMachine destStateMachine = operation.getStateMachine();
@@ -76,10 +76,10 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
             transition = DefaultTransition.findTransition(this, operation, e.getOperationResult());
         } catch (RuntimeException e) {
             rethrowableException = new OperationException(e);
-            transition = DefaultTransition.findTransition(this, operation, OperationResult.EXCEPTION);
+            transition = DefaultTransition.findTransition(this, operation, result);
         } finally {
             Preconditions.checkState(transition != null);
-            enteringStateCallback.enteringState(transition.getFinalState(), operationCallback, leavingStateCallback);
+            enteringStateCallback.enteringState(transition.getFinalState(), operationCallback, result, leavingStateCallback);
             if (rethrowableException != null) {
                 throw rethrowableException;
             }
