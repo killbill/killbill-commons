@@ -18,6 +18,7 @@ package org.killbill.automaton;
 
 import java.net.URI;
 
+import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -110,6 +111,15 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
     @Override
     public Operation getOperation(final String operationName) throws MissingEntryException {
         return (Operation) getEntry(operations, operationName);
+    }
+
+    public boolean hasTransitionsFromStates(final String initState) {
+        return Iterables.filter(ImmutableList.copyOf(transitions), new Predicate<Transition>() {
+            @Override
+            public boolean apply(Transition input) {
+                return input.getInitialState().getName().equals(initState);
+            }
+        }).iterator().hasNext();
     }
 
     public void setStates(final DefaultState[] states) {

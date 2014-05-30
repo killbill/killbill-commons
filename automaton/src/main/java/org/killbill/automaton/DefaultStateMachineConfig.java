@@ -32,9 +32,9 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
     @XmlElement(name = "stateMachine", required = true)
     private DefaultStateMachine[] stateMachines;
 
-    @XmlElementWrapper(name = "linkStateMachines", required = true)
-    @XmlElement(name = "linkStateMachine", required = true)
-    private DefaultLinkStateMachine[] linkStateMachines;
+    @XmlElementWrapper(name = "linkStateMachines", required = false)
+    @XmlElement(name = "linkStateMachine", required = false)
+    private DefaultLinkStateMachine[] linkStateMachines = new DefaultLinkStateMachine[0];
 
     @Override
     public void initialize(final DefaultStateMachineConfig root, final URI uri) {
