@@ -40,7 +40,7 @@ public class TestReusableStringTemplate3StatementLocator extends JDBITestBase {
 
     @Test(groups = "slow")
     public void testMultipleInvocationsWithoutLiterals() throws IOException {
-        dbi.setStatementLocator(new ReusableStringTemplate3StatementLocator("/org.killbill.commons/jdbi/SomethingNonLiteralSqlDao.sql.stg", true, true));
+        dbi.setStatementLocator(new ReusableStringTemplate3StatementLocator("/org/killbill/commons/jdbi/SomethingNonLiteralSqlDao.sql.stg", true, true));
         final SomethingNonLiteralSqlDao somethingNonLiteralSqlDao = dbi.onDemand(SomethingNonLiteralSqlDao.class);
 
         somethingNonLiteralSqlDao.delete(TABLE_NAME);
