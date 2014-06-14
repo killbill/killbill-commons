@@ -59,10 +59,10 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
         OperationException rethrowableException = null;
         OperationResult result = OperationResult.EXCEPTION;
         Transition transition = null;
+        State initialState = this;
         try {
             final StateMachine destStateMachine = operation.getStateMachine();
 
-            State initialState;
             try {
                 final LinkStateMachine linkStateMachine = DefaultLinkStateMachine.findLinkStateMachine(this.getStateMachine(), this, destStateMachine);
                 initialState = linkStateMachine.getFinalState();
@@ -81,7 +81,8 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
             transition = DefaultTransition.findTransition(initialState, operation, result);
         } catch (OperationException e) {
             rethrowableException = e;
-            transition = DefaultTransition.findTransition(this, operation, e.getOperationResult());
+            // STEPH what happens if we get an exception here...
+            transition = DefaultTransition.findTransition(initialState, operation, e.getOperationResult());
         } catch (RuntimeException e) {
             rethrowableException = new OperationException(e);
             // transition = null - we don't want to transition
