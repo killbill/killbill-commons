@@ -24,7 +24,7 @@ public interface State extends StateMachineEntry {
     }
 
     public interface LeavingStateCallback {
-        public void leavingState(final State oldState);
+        public void leavingState(final State oldState) throws OperationException;
     }
 
     public void runOperation(final Operation operation, final Operation.OperationCallback operationCallback,  final EnteringStateCallback enteringStateCallback, final LeavingStateCallback leavingStateCallback)
