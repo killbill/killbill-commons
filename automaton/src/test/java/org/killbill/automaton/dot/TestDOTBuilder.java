@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class TestDOTBuilder {
 
-    @Test(groups = "fast")
+    @Test(groups = "fast", enabled = false, description = "https://github.com/killbill/killbill-commons/issues/4")
     public void testGenerator() throws Exception {
         final DOTBuilder payment = new DOTBuilder("Payment");
         payment.open(ImmutableMap.of("splines", "false"));
