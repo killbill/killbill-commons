@@ -22,6 +22,7 @@ public interface StateMachineConfig {
 
     public LinkStateMachine[] getLinkStateMachines();
 
+    public StateMachine getStateMachineForState(final String stateName) throws MissingEntryException;
     public StateMachine getStateMachine(final String stateMachineName) throws MissingEntryException;
     public LinkStateMachine getLinkStateMachine(final String linkStateMachineName) throws MissingEntryException;
 }

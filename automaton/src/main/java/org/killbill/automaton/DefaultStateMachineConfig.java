@@ -69,6 +69,18 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
         return linkStateMachines;
     }
 
+    @Override
+    public StateMachine getStateMachineForState(String stateName) throws MissingEntryException {
+        for (DefaultStateMachine cur : stateMachines) {
+            for (State st : cur.getStates()) {
+                if (st.getName().equals(stateName)) {
+                    return cur;
+                }
+            }
+        }
+        throw new MissingEntryException("Cannot find stateMachine associated with state" + stateName);
+    }
+
     public DefaultStateMachine[] getStateMachines() {
         return stateMachines;
     }

@@ -72,7 +72,7 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
 
             // If there is no transition from that state we stop right there.
             if (!((DefaultState) initialState).getStateMachine().hasTransitionsFromStates(initialState.getName())) {
-                throw new MissingEntryException("No transiton exists from state " + initialState.getName());
+                throw new MissingEntryException("No transition exists from state " + initialState.getName());
             }
 
             leavingStateCallback.leavingState(initialState);
