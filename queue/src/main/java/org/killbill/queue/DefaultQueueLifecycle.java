@@ -34,6 +34,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultQueueLifecycle.class);
 
+    public static final String QUEUE_NAME = "Queue";
+
     private static final long waitTimeoutMs = 15L * 1000L; // 15 seconds
 
     private final int nbThreads;

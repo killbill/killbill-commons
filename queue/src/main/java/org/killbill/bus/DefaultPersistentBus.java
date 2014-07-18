@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -57,7 +58,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Inject
-    public DefaultPersistentBus(final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry) {
+    public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {

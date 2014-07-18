@@ -18,11 +18,7 @@
 
 package org.killbill.commons.jdbi.guice;
 
-import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
-import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
-import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
-import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
-import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
+import org.killbill.commons.jdbi.argument.*;
 import org.killbill.commons.jdbi.log.Slf4jLogging;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.skife.jdbi.v2.DBI;
@@ -33,7 +29,6 @@ import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.sql.DataSource;
 
@@ -46,14 +41,8 @@ public class DBIProvider implements Provider<IDBI> {
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
 
-    @Inject
-    public DBIProvider(final DaoConfig config) {
+    public DBIProvider(final DaoConfig config, final DataSource ds) {
         this.config = config;
-        this.ds = new DataSourceProvider(config).get();
-    }
-
-    public DBIProvider(final DataSource ds) {
-        this.config = null;
         this.ds = ds;
     }
 

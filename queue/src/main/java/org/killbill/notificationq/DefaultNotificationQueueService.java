@@ -23,12 +23,13 @@ import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.skife.jdbi.v2.IDBI;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
 
     @Inject
-    public DefaultNotificationQueueService(final IDBI dbi, final Clock clock, final NotificationQueueConfig config, final MetricRegistry metricRegistry) {
+    public DefaultNotificationQueueService(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final NotificationQueueConfig config, final MetricRegistry metricRegistry) {
         super(clock, config, dbi, metricRegistry);
     }
 
