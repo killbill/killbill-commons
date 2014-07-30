@@ -18,15 +18,15 @@
 package org.killbill.commons.profiling;
 
 
-
-
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 public class ProfilingData {
+
+
 
     public enum ProfilingDataOutput {
         RAW,
@@ -34,12 +34,12 @@ public class ProfilingData {
         ALL
     }
 
-    private final Map<String, List<Long>> rawData;
+    private final List<ProfilingDataItem> rawData;
     private final ProfilingDataOutput outputType;
 
     public ProfilingData(final ProfilingDataOutput output) {
         this.outputType = output;
-        this.rawData = new HashMap<String, List<Long>>();
+        this.rawData = new ArrayList<ProfilingDataItem>();
     }
 
     public void merge(@Nullable final ProfilingData otherData) {
@@ -47,23 +47,54 @@ public class ProfilingData {
                 otherData.getRawData().isEmpty()) {
             return;
         }
-        rawData.putAll(otherData.getRawData());
+        rawData.addAll(otherData.getRawData());
+        Collections.sort(rawData, new Comparator<ProfilingDataItem>() {
+            @Override
+            public int compare(ProfilingDataItem o1, ProfilingDataItem o2) {
+                return o1.getTimestampNsec().compareTo(o2.getTimestampNsec());
+            }
+        });
     }
 
-    public void add(final String profilingId, final long timeUsec) {
-        List<Long> values = rawData.get(profilingId);
-        if (values == null) {
-            values = new LinkedList<Long>();
-            rawData.put(profilingId, values);
-        }
-        values.add(timeUsec);
+    public void addStart(final String key) {
+        rawData.add(new ProfilingDataItem(key, LogLineType.START));
     }
 
-    public Map<String, List<Long>> getRawData() {
+    public void addEnd(final String key) {
+        rawData.add(new ProfilingDataItem(key, LogLineType.END));
+    }
+
+    public List<ProfilingDataItem> getRawData() {
         return rawData;
     }
 
     public ProfilingDataOutput getOutputType() {
         return outputType;
+    }
+
+    public static class ProfilingDataItem {
+        private final String key;
+        private final Long timestampNsec;
+        private final LogLineType lineType;
+
+        private ProfilingDataItem(final String key, final LogLineType lineType) {
+            this.key = key;
+            this.lineType = lineType;
+            this.timestampNsec = System.nanoTime();
+        }
+        public String getKey() {
+            return key;
+        }
+        public Long getTimestampNsec() {
+            return timestampNsec;
+        }
+        public LogLineType getLineType() {
+            return lineType;
+        }
+    }
+
+    public enum LogLineType {
+        START,
+        END
     }
 }

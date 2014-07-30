@@ -34,12 +34,11 @@ public class Profiling<ReturnType> {
         if (profilingData == null) {
             return callback.execute();
         }
-        final long beforeCall = System.nanoTime();
+        profilingData.addStart(profilingId);
         try {
             return callback.execute();
         } finally {
-            final long afterCall = System.nanoTime();
-            profilingData.add(profilingId, (afterCall - beforeCall) / 1000);
+            profilingData.addEnd(profilingId);
         }
     }
 
