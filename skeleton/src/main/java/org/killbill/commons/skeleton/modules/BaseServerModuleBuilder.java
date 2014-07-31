@@ -45,6 +45,9 @@ public class BaseServerModuleBuilder {
     private final Map<String, Class<? extends HttpServlet>> servlets = new HashMap<String, Class<? extends HttpServlet>>();
     private final Map<String, Class<? extends HttpServlet>> servletsRegex = new HashMap<String, Class<? extends HttpServlet>>();
 
+    // Specific filters called by jersey
+    private final List<String> jerseyFilters = new ArrayList<String>();
+
     private JaxrsImplementation jaxrsImplementation = JaxrsImplementation.JERSEY;
 
     public BaseServerModuleBuilder() {
@@ -96,6 +99,12 @@ public class BaseServerModuleBuilder {
         return this;
     }
 
+
+    public BaseServerModuleBuilder addJerseyFilter(final String filterClassName) {
+        this.jerseyFilters.add(filterClassName);
+        return this;
+    }
+
     /**
      * Specify the Uri pattern to use for the Guice/Jersey servlet
      *
@@ -143,7 +152,8 @@ public class BaseServerModuleBuilder {
                                                   jaxrsServlets,
                                                   jaxrsServletsRegex,
                                                   jaxrsUriPattern,
-                                                  jaxrsResources);
+                                                  jaxrsResources,
+                                                  jerseyFilters);
             default:
                 throw new IllegalArgumentException();
         }

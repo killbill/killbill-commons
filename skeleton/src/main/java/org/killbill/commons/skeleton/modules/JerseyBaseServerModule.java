@@ -16,52 +16,26 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class JerseyBaseServerModule extends BaseServerModule {
 
     private static final Joiner joiner = Joiner.on(";");
 
-    /**
-     * These configuration parameters are normally specified as init-param entries in the web.xml. We have to set
-     * them here because GuiceFilter instead has you pass them as arguments to
-     * {@link com.google.inject.servlet.ServletModule.ServletKeyBindingBuilder#with(Class, java.util.Map)}.
-     *
-     * @see com.google.inject.servlet.ServletModule#configureServlets()
-     */
-    private static final Iterable<String> requestFilterClassNames = ImmutableList.of(
-            // The logging filter is still incompatible with the GZIP filter
-            //GZIPContentEncodingFilter.class.getName(),
-            "com.sun.jersey.api.container.filter.LoggingFilter"
-                                                                                    );
-
-    /**
-     * These items are <i>intentionally</i> in the reverse order of the above filters. Jersey respects the order in which
-     * these items appear, and they should be applied to the response in the reverse order of their application to
-     * the request.
-     */
-    private static final Iterable<String> responseFilterClassNames = ImmutableList.of(
-            "com.sun.jersey.api.container.filter.LoggingFilter"
-            //GZIPContentEncodingFilter.class.getName()
-                                                                                     );
-
     // See com.sun.jersey.api.core.ResourceConfig
-    private final ImmutableMap.Builder<String, String> JERSEY_PARAMS = new ImmutableMap.Builder<String, String>()
-            .put("com.sun.jersey.spi.container.ContainerRequestFilters", Joiner.on(';').join(requestFilterClassNames))
-            .put("com.sun.jersey.spi.container.ContainerResponseFilters", Joiner.on(';').join(responseFilterClassNames))
-                    // The LoggingFilter will log the body by default, which breaks StreamingOutput
-            .put("com.sun.jersey.config.feature.logging.DisableEntitylogging", "true");
+    private final ImmutableMap.Builder<String, String> jerseyParams;
+
 
     public JerseyBaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
                                   final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex,
@@ -70,24 +44,31 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServlets,
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
                                   final String jaxrsUriPattern,
-                                  final Collection<String> jaxrsResources) {
+                                  final Collection<String> jaxrsResources,
+                                  final List<String> jerseyFilters) {
         super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern, jaxrsResources);
+        this.jerseyParams = new ImmutableMap.Builder<String, String>()
+                .put("com.sun.jersey.spi.container.ContainerRequestFilters", Joiner.on(';').join(jerseyFilters))
+                .put("com.sun.jersey.spi.container.ContainerResponseFilters", Joiner.on(';').join(Lists.reverse(jerseyFilters)))
+                // The LoggingFilter will log the body by default, which breaks StreamingOutput
+                .put("com.sun.jersey.config.feature.logging.DisableEntitylogging", "true");
+
     }
 
     @Override
     protected void configureResources() {
         for (final String urlPattern : jaxrsServlets.keySet()) {
-            serve(urlPattern).with(jaxrsServlets.get(urlPattern), JERSEY_PARAMS.build());
+            serve(urlPattern).with(jaxrsServlets.get(urlPattern), jerseyParams.build());
         }
 
         for (final String urlPattern : jaxrsServletsRegex.keySet()) {
-            serveRegex(urlPattern).with(jaxrsServletsRegex.get(urlPattern), JERSEY_PARAMS.build());
+            serveRegex(urlPattern).with(jaxrsServletsRegex.get(urlPattern), jerseyParams.build());
         }
 
         // Catch-all resources
         if (jaxrsResources.size() != 0) {
-            JERSEY_PARAMS.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
-            serveRegex(jaxrsUriPattern).with(GuiceContainer.class, JERSEY_PARAMS.build());
+            jerseyParams.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
+            serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
         }
     }
 }
