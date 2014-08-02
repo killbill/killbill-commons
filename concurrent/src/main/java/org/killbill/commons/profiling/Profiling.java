@@ -28,17 +28,17 @@ public class Profiling<ReturnType> {
         public <ExceptionType extends Throwable> ReturnType execute() throws ExceptionType;
     }
 
-    public ReturnType executeWithProfiling(final String profilingId, final WithProfilingCallback<ReturnType> callback) throws Throwable {
+    public ReturnType executeWithProfiling(final ProfilingFeature.ProfilingFeatureType profilingType, final String profilingId, final WithProfilingCallback<ReturnType> callback) throws Throwable {
         // Nothing to do
         final ProfilingData profilingData = Profiling.getPerThreadProfilingData();
         if (profilingData == null) {
             return callback.execute();
         }
-        profilingData.addStart(profilingId);
+        profilingData.addStart(profilingType, profilingId);
         try {
             return callback.execute();
         } finally {
-            profilingData.addEnd(profilingId);
+            profilingData.addEnd(profilingType, profilingId);
         }
     }
 
@@ -46,8 +46,14 @@ public class Profiling<ReturnType> {
         return perThreadProfilingData.get();
     }
 
-    public static void setPerThreadProfilingData(final ProfilingData.ProfilingDataOutput output) {
-        perThreadProfilingData.set(new ProfilingData(output));
+    public static void setPerThreadProfilingData() {
+        final ProfilingFeature profilingFeature = new ProfilingFeature();
+        perThreadProfilingData.set(new ProfilingData(profilingFeature));
+    }
+
+    public static void setPerThreadProfilingData(final String profileFeatures) {
+        final ProfilingFeature profilingFeature = new ProfilingFeature(profileFeatures);
+        perThreadProfilingData.set(new ProfilingData(profilingFeature));
     }
 
     public static void resetPerThreadProfilingData() {

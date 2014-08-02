@@ -18,6 +18,11 @@
 package org.killbill.commons.profiling;
 
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,18 +32,11 @@ import java.util.List;
 public class ProfilingData {
 
 
-
-    public enum ProfilingDataOutput {
-        RAW,
-        AGGREGATE,
-        ALL
-    }
-
     private final List<ProfilingDataItem> rawData;
-    private final ProfilingDataOutput outputType;
+    private final ProfilingFeature profileFeature;
 
-    public ProfilingData(final ProfilingDataOutput output) {
-        this.outputType = output;
+    public ProfilingData(final ProfilingFeature profileFeature) {
+        this.profileFeature = profileFeature;
         this.rawData = new ArrayList<ProfilingDataItem>();
     }
 
@@ -56,38 +54,55 @@ public class ProfilingData {
         });
     }
 
-    public void addStart(final String key) {
-        rawData.add(new ProfilingDataItem(key, LogLineType.START));
+    public void addStart(final ProfilingFeature.ProfilingFeatureType profileType, final String id) {
+        rawData.add(new ProfilingDataItem(profileType, id, LogLineType.START));
     }
 
-    public void addEnd(final String key) {
-        rawData.add(new ProfilingDataItem(key, LogLineType.END));
+    public void addEnd(final ProfilingFeature.ProfilingFeatureType profileType, final String id) {
+        rawData.add(new ProfilingDataItem(profileType, id, LogLineType.END));
     }
 
     public List<ProfilingDataItem> getRawData() {
-        return rawData;
+        if (rawData == null || rawData.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Lists.newArrayList(Iterables.filter(rawData, new Predicate<ProfilingDataItem>() {
+            @Override
+            public boolean apply(final ProfilingDataItem input) {
+                return  profileFeature.isDefined(input.getProfileType());
+            }
+        }));
     }
 
-    public ProfilingDataOutput getOutputType() {
-        return outputType;
+    public ProfilingFeature getProfileFeature() {
+        return profileFeature;
     }
 
     public static class ProfilingDataItem {
-        private final String key;
+        private final ProfilingFeature.ProfilingFeatureType profileType;
+        private final String id;
         private final Long timestampNsec;
         private final LogLineType lineType;
 
-        private ProfilingDataItem(final String key, final LogLineType lineType) {
-            this.key = key;
+        private ProfilingDataItem(final ProfilingFeature.ProfilingFeatureType profileType, final String id, final LogLineType lineType) {
+            this.profileType = profileType;
+            this.id = id;
             this.lineType = lineType;
             this.timestampNsec = System.nanoTime();
         }
-        public String getKey() {
-            return key;
+
+        public ProfilingFeature.ProfilingFeatureType getProfileType() {
+            return profileType;
         }
+
+        public String getKey() {
+            return profileType + ":" + id;
+        }
+
         public Long getTimestampNsec() {
             return timestampNsec;
         }
+
         public LogLineType getLineType() {
             return lineType;
         }

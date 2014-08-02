@@ -47,7 +47,7 @@ public class WithProfilingThreadPoolExecutor  extends ThreadPoolExecutor {
 
     protected void beforeExecute(final Thread t, final Runnable runnable) {
         // Allocate the thread local data
-        Profiling.setPerThreadProfilingData(ProfilingData.ProfilingDataOutput.RAW);
+        Profiling.setPerThreadProfilingData();
     }
 
     protected void afterExecute(final Runnable runnable, final Throwable exception) {
