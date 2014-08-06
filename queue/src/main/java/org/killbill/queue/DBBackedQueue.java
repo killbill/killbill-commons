@@ -16,15 +16,15 @@
 
 package org.killbill.queue;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import org.killbill.Hostname;
+import org.killbill.clock.Clock;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
@@ -33,15 +33,13 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.killbill.Hostname;
-import org.killbill.clock.Clock;
-
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
@@ -326,17 +324,17 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     public void updateOnError(final T entry) {
         // We are not (re)incrementing counters totalInflightInsert and totalInsert for these entries, this is a matter of semantics
-        final Long lastInserted = sqlDao.inTransaction(new Transaction<Long, QueueSqlDao<T>>() {
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
-            public Long inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 transactional.updateOnError(entry.getRecordId(), clock.getUTCNow().toDate(), entry.getErrorCount(), config.getTableName());
                 if (entry.getErrorCount() == 1) {
                     totalProcessedFirstFailures.inc();
                 }
-                return transactional.getLastInsertId();
+                return null;
             }
         });
-        insertIntoInflightQIfRequired(lastInserted, entry);
+        insertIntoInflightQIfRequired(entry.getRecordId(), entry);
     }
 
     public void moveEntryToHistory(final T entry) {
@@ -350,7 +348,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     }
 
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
-        switch(entry.getProcessingState()) {
+        switch (entry.getProcessingState()) {
             case FAILED:
                 totalProcessedAborted.inc();
                 break;
@@ -361,7 +359,12 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + entry.getProcessingState() + " for record_id = " + entry.getRecordId());
                 break;
         }
-        transactional.insertEntry(entry, config.getHistoryTableName());
+
+        if (log.isDebugEnabled()) {
+            log.debug(DB_QUEUE_LOG_ID + "Moving entry " + entry.getRecordId() + " into history ");
+        }
+
+        transactional.insertEntryWithRecordId(entry, config.getHistoryTableName());
         transactional.removeEntry(entry.getRecordId(), config.getTableName());
     }
 

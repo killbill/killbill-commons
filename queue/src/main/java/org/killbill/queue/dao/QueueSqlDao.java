@@ -74,5 +74,9 @@ public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao
     public void insertEntry(@BindBean T evt,
                             @Define("tableName") final String tableName);
 
+    @SqlUpdate
+    public void insertEntryWithRecordId(@BindBean T evt,
+                            @Define("tableName") final String tableName);
+
 
 }

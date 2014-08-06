@@ -183,3 +183,11 @@ insertEntry(tableName) ::= <<
     );
 >>
 
+insertEntryWithRecordId(tableName) ::= <<
+    insert into <tableName> (
+       <allTableFields()>
+    ) values (
+       <allTableValues()>
+    );
+>>
+
