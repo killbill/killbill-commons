@@ -25,12 +25,14 @@ import java.util.regex.Pattern;
 
 public class ProfilingFeature {
 
-    private static final int API_MASK = 0x1;
-    private static final int DAO_MASK = 0x2;
-    private static final int DAO_DETAILS_MASK = 0x4;
-    private static final int PLUGIN_MASK = 0x8;
+    private static final int JAXRS_MASK = 0x1;
+    private static final int API_MASK = 0x2;
+    private static final int DAO_MASK = 0x4;
+    private static final int DAO_DETAILS_MASK = 0x8;
+    private static final int PLUGIN_MASK = 0x16;
 
     public enum ProfilingFeatureType {
+        JAXRS(JAXRS_MASK),
         API(API_MASK),
         DAO(DAO_MASK),
         DAO_DETAILS(DAO_MASK, DAO_DETAILS_MASK),
@@ -53,6 +55,7 @@ public class ProfilingFeature {
 
 
     private final ImmutableList<String> featureTypeList = new ImmutableList.Builder()
+            .add(ProfilingFeatureType.JAXRS)
             .add(ProfilingFeatureType.API)
             /* DAO_DETAILS needs to come before DAO for regex to work, this is a bit naughty... */
             .add(ProfilingFeatureType.DAO_DETAILS)
@@ -85,6 +88,9 @@ public class ProfilingFeature {
 
     public boolean isDefined(final ProfilingFeatureType type) {
         return (profilingBits & type.getMask()) == type.getMask();
+    }
+    public boolean isProfilingJAXRS() {
+        return isDefined(ProfilingFeatureType.JAXRS);
     }
     public boolean isProfilingAPI() {
         return isDefined(ProfilingFeatureType.API);
