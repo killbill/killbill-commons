@@ -355,6 +355,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             case PROCESSED:
                 totalProcessedSuccess.inc();
                 break;
+            case REMOVED:
+                // Don't default for REMOVED since we could call this API 'manually' with that state.
+                break;
             default:
                 log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + entry.getProcessingState() + " for record_id = " + entry.getRecordId());
                 break;
