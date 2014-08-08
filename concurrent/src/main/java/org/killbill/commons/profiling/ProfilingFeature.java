@@ -29,7 +29,7 @@ public class ProfilingFeature {
     private static final int API_MASK = 0x2;
     private static final int DAO_MASK = 0x4;
     private static final int DAO_DETAILS_MASK = 0x8;
-    private static final int PLUGIN_MASK = 0x16;
+    private static final int PLUGIN_MASK = 0x10;
 
     public enum ProfilingFeatureType {
         JAXRS(JAXRS_MASK),
