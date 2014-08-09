@@ -53,8 +53,7 @@ public class ProfilingFeature {
         }
     }
 
-
-    private final ImmutableList<String> featureTypeList = new ImmutableList.Builder()
+    private final ImmutableList<ProfilingFeatureType> featureTypeList = new ImmutableList.Builder<ProfilingFeatureType>()
             .add(ProfilingFeatureType.JAXRS)
             .add(ProfilingFeatureType.API)
             /* DAO_DETAILS needs to come before DAO for regex to work, this is a bit naughty... */
