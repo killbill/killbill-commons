@@ -1,6 +1,7 @@
 0.2.20
     profiling: add support for JAX-RS
     queue: remove harmless warning in DBBackedQueue
+    Fix java 1.6 build
 
 0.2.19
     Add support for profiling data
