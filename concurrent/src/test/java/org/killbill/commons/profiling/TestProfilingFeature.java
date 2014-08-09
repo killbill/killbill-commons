@@ -69,5 +69,4 @@ public class TestProfilingFeature {
         assertFalse(f.isProfilingDAOWithDetails());
         assertTrue(f.isProfilingPlugin());
     }
-
 }
