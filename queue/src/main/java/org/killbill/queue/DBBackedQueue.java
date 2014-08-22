@@ -19,10 +19,12 @@ package org.killbill.queue;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.killbill.Hostname;
 import org.killbill.clock.Clock;
 import org.killbill.queue.api.PersistentQueueConfig;
@@ -33,6 +35,7 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -314,6 +317,11 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     private boolean removeInflightEventsWhenSwitchingToQueueOpenForRead(final List<T> candidates) {
 
+        // There is no entry and yet Q is open for write so we can safely start reading from Q
+        if (candidates.size() == 0) {
+            return true;
+        }
+
         boolean foundEntryInInflightEvents = false;
         for (T entry : candidates) {
             foundEntryInInflightEvents = inflightEvents.remove(entry.getRecordId());
@@ -347,6 +355,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         });
     }
 
+
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
         switch (entry.getProcessingState()) {
             case FAILED:
@@ -370,6 +379,49 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         transactional.insertEntryWithRecordId(entry, config.getHistoryTableName());
         transactional.removeEntry(entry.getRecordId(), config.getTableName());
     }
+
+    public void moveEntriesToHistory(final List<T> entries) {
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                moveEntriesToHistoryFromTransaction(transactional, entries);
+                return null;
+            }
+        });
+    }
+
+    public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final List<T> entries) {
+
+        for (T cur : entries) {
+            switch (cur.getProcessingState()) {
+                case FAILED:
+                    totalProcessedAborted.inc();
+                    break;
+                case PROCESSED:
+                    totalProcessedSuccess.inc();
+                    break;
+                case REMOVED:
+                    // Don't default for REMOVED since we could call this API 'manually' with that state.
+                    break;
+                default:
+                    log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + cur.getProcessingState() + " for record_id = " + cur.getRecordId());
+                    break;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(DB_QUEUE_LOG_ID + "Moving entry " + cur.getRecordId() + " into history ");
+            }
+        }
+
+        final Iterable toBeRemovedRecordIds = Iterables.transform(entries, new Function<T, Object>() {
+            @Override
+            public Object apply(T input) {
+                return input.getRecordId();
+            }
+        });
+        transactional.insertEntriesWithRecordId(entries, config.getHistoryTableName());
+        transactional.removeEntries(toBeRemovedRecordIds, config.getTableName());
+    }
+
 
     private List<T> fetchReadyEntriesFromIds() {
         final int size = config.getMaxEntriesClaimed() < inflightEvents.size() ? config.getMaxEntriesClaimed() : inflightEvents.size();

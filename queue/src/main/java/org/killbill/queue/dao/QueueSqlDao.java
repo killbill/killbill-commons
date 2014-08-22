@@ -18,6 +18,7 @@ package org.killbill.queue.dao;
 
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.BindBean;
+import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
@@ -71,12 +72,18 @@ public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao
                             @Define("tableName") final String tableName);
 
     @SqlUpdate
+    public void removeEntries(@org.killbill.queue.dao.RecordIdCollectionBinder final Iterable<Long> recordIds,
+                              @Define("tableName") final String tableName);
+
+    @SqlUpdate
     public void insertEntry(@BindBean T evt,
                             @Define("tableName") final String tableName);
 
     @SqlUpdate
     public void insertEntryWithRecordId(@BindBean T evt,
-                            @Define("tableName") final String tableName);
+                                        @Define("tableName") final String tableName);
 
-
+    @SqlBatch
+    public void insertEntriesWithRecordId(@BindBean List<T> evts,
+                                          @Define("tableName") final String tableName);
 }

@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -97,6 +98,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }
 
         int result = 0;
+        final List<BusEventModelDao> historyEvents = new ArrayList<BusEventModelDao>();
         for (final BusEventModelDao cur : events) {
             final BusEvent evt = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             result++;
@@ -116,18 +118,20 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             } finally {
                 if (lastException == null) {
                     BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-                    dao.moveEntryToHistory(processedEntry);
+                    historyEvents.add(processedEntry);
                 } else if (errorCount <= config.getMaxFailureRetries()) {
                     log.info("Bus dispatch error, will attempt a retry ", lastException);
+                    // STEPH we could batch those as well
                     BusEventModelDao retriedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
                     dao.updateOnError(retriedEntry);
                 } else {
                     log.error("Fatal Bus dispatch error, data corruption...", lastException);
                     BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
-                    dao.moveEntryToHistory(processedEntry);
+                    historyEvents.add(processedEntry);
                 }
             }
         }
+        dao.moveEntriesToHistory(historyEvents);
         return result;
     }
 

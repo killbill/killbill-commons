@@ -16,19 +16,24 @@
 
 package org.killbill.notificationq.dao;
 
-import java.util.List;
-import java.util.UUID;
-
+import com.google.common.collect.Collections2;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.killbill.Hostname;
+import org.killbill.TestSetup;
+import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.dao.QueueSqlDao;
+import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionStatus;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import org.killbill.Hostname;
-import org.killbill.TestSetup;
-import org.killbill.notificationq.DefaultNotificationQueue;
-import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -57,8 +62,8 @@ public class TestNotificationSqlDao extends TestSetup {
         final DateTime effDt = new DateTime();
 
         final NotificationEventModelDao notif = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
-                                                                        eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
-                                                                        UUID.randomUUID(), effDt, "testBasic");
+                eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                UUID.randomUUID(), effDt, "testBasic");
 
         dao.insertEntry(notif, notificationQueueConfig.getTableName());
 
@@ -77,9 +82,9 @@ public class TestNotificationSqlDao extends TestSetup {
 
 
         final DateTime nextAvailable = now.plusMinutes(5);
-        final int res = dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(),  notificationQueueConfig.getTableName());
+        final int res = dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
         assertEquals(res, 1);
-        dao.claimEntry(notification.getRecordId(), now.toDate(),  ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
+        dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
 
         notification = dao.getByRecordId(notification.getRecordId(), notificationQueueConfig.getTableName());
         assertEquals(notification.getEventJson(), eventJson);
@@ -102,6 +107,70 @@ public class TestNotificationSqlDao extends TestSetup {
         dao.removeEntry(notification.getRecordId(), notificationQueueConfig.getTableName());
         notification = dao.getByRecordId(notification.getRecordId(), notificationQueueConfig.getTableName());
         assertNull(notification);
+    }
+
+    @Test(groups = "slow")
+    public void testBatchOperations() throws InterruptedException {
+        final long searchKey1 = 1242L;
+        final String ownerId = UUID.randomUUID().toString();
+
+        final String eventJson = UUID.randomUUID().toString();
+        final DateTime effDt = new DateTime();
+
+        NotificationEventModelDao notif1 = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
+                eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                UUID.randomUUID(), effDt, "testBasic1");
+
+        final List<NotificationEventModelDao> entries = new ArrayList<NotificationEventModelDao>();
+
+        notif1 = insertEntry(notif1, notificationQueueConfig.getTableName());
+        entries.add(notif1);
+
+        NotificationEventModelDao notif2 = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
+                eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                UUID.randomUUID(), effDt, "testBasic2");
+
+        notif2 = insertEntry(notif2, notificationQueueConfig.getTableName());
+        entries.add(notif2);
+
+        NotificationEventModelDao notif3 = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
+                eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                UUID.randomUUID(), effDt, "testBasic3");
+
+        notif3 = insertEntry(notif3, notificationQueueConfig.getTableName());
+        entries.add(notif3);
+
+        final Collection<Long> entryIds = Collections2.transform(entries, new com.google.common.base.Function<NotificationEventModelDao, Long>() {
+            @Nullable
+            @Override
+            public Long apply(@Nullable NotificationEventModelDao input) {
+                return input.getRecordId();
+            }
+        });
+
+        dao.removeEntries(entryIds, notificationQueueConfig.getTableName());
+        for (Long entry : entryIds) {
+            final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getTableName());
+            assertNull(result);
+        }
+
+        dao.insertEntriesWithRecordId(entries, notificationQueueConfig.getHistoryTableName());
+        for (Long entry : entryIds) {
+            final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getHistoryTableName());
+            assertNotNull(result);
+        }
+
+    }
+
+    private NotificationEventModelDao insertEntry(final NotificationEventModelDao input, final String tableName) {
+        return dao.inTransaction(new Transaction<NotificationEventModelDao, QueueSqlDao<NotificationEventModelDao>>() {
+            @Override
+            public NotificationEventModelDao inTransaction(final QueueSqlDao<NotificationEventModelDao> transactional, final TransactionStatus status) throws Exception {
+                transactional.insertEntry(input, tableName);
+                return transactional.getByRecordId(transactional.getLastInsertId(), notificationQueueConfig.getTableName());
+            }
+        });
+
     }
 
     private void validateDate(DateTime input, DateTime expected) {

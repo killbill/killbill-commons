@@ -19,7 +19,10 @@ package org.killbill.notificationq.dao;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
+import org.skife.jdbi.v2.sqlobject.BindBean;
+import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
+import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 
 import java.util.Date;
@@ -39,6 +42,5 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
                                     @Bind("now") Date now,
                                     @Define("tableName") final String tableName,
                                     @Define("searchKey") final String searchKey);
-
 
 }
