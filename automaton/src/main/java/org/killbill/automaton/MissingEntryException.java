@@ -33,7 +33,10 @@ public class MissingEntryException extends Exception {
         super(cause);
     }
 
+    /*
+    // 1.7 only
     public MissingEntryException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
+    */
 }

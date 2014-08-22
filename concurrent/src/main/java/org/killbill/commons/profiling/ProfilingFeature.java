@@ -17,11 +17,11 @@
 
 package org.killbill.commons.profiling;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 
 public class ProfilingFeature {
 
@@ -40,7 +40,7 @@ public class ProfilingFeature {
 
         private int mask;
 
-        ProfilingFeatureType(int...masks) {
+        ProfilingFeatureType(int... masks) {
             int tmp = 0;
             for (int i = 0; i < masks.length; i++) {
                 tmp |= masks[i];
@@ -53,8 +53,7 @@ public class ProfilingFeature {
         }
     }
 
-
-    private final ImmutableList<String> featureTypeList = new ImmutableList.Builder()
+    private final ImmutableList<ProfilingFeatureType> featureTypeList = new ImmutableList.Builder<ProfilingFeatureType>()
             .add(ProfilingFeatureType.JAXRS)
             .add(ProfilingFeatureType.API)
             /* DAO_DETAILS needs to come before DAO for regex to work, this is a bit naughty... */
@@ -89,9 +88,11 @@ public class ProfilingFeature {
     public boolean isDefined(final ProfilingFeatureType type) {
         return (profilingBits & type.getMask()) == type.getMask();
     }
+
     public boolean isProfilingJAXRS() {
         return isDefined(ProfilingFeatureType.JAXRS);
     }
+
     public boolean isProfilingAPI() {
         return isDefined(ProfilingFeatureType.API);
     }

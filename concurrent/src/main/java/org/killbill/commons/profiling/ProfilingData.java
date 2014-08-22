@@ -17,20 +17,18 @@
 
 package org.killbill.commons.profiling;
 
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class ProfilingData {
+import javax.annotation.Nullable;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+public class ProfilingData {
 
     private final List<ProfilingDataItem> rawData;
     private final ProfilingFeature profileFeature;
@@ -42,7 +40,7 @@ public class ProfilingData {
 
     public void merge(@Nullable final ProfilingData otherData) {
         if (otherData == null ||
-                otherData.getRawData().isEmpty()) {
+            otherData.getRawData().isEmpty()) {
             return;
         }
         rawData.addAll(otherData.getRawData());
@@ -69,7 +67,7 @@ public class ProfilingData {
         return Lists.newArrayList(Iterables.filter(rawData, new Predicate<ProfilingDataItem>() {
             @Override
             public boolean apply(final ProfilingDataItem input) {
-                return  profileFeature.isDefined(input.getProfileType());
+                return profileFeature.isDefined(input.getProfileType());
             }
         }));
     }

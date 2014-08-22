@@ -1,3 +1,9 @@
+0.2.20
+    profiling: add support for JAX-RS
+    queue: remove harmless warning in DBBackedQueue
+    Fix java 1.6 build
+    Update to killbill-oss-parent 0.7.20
+
 0.2.19
     Add support for profiling data
     Fix bug in inflightQ algorithm

@@ -20,9 +20,7 @@ package org.killbill.commons.profiling;
 
 public class Profiling<ReturnType> {
 
-
     private static final ThreadLocal<ProfilingData> perThreadProfilingData = new ThreadLocal<ProfilingData>();
-
 
     public interface WithProfilingCallback<ReturnType> {
         public <ExceptionType extends Throwable> ReturnType execute() throws ExceptionType;

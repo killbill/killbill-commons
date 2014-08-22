@@ -17,15 +17,17 @@
 
 package org.killbill.automaton;
 
-import com.google.common.io.Resources;
 import org.killbill.xmlloader.XMLLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import org.testng.log4testng.Logger;
+
+import com.google.common.io.Resources;
 
 public class TestStateMachine {
 
-    private Logger logger = Logger.getLogger(TestStateMachine.class);
+    private Logger logger = LoggerFactory.getLogger(TestStateMachine.class);
 
     @Test(groups = "fast")
     public void testStateMachine() throws Exception {
@@ -100,74 +102,74 @@ public class TestStateMachine {
         final Operation operation = sm1.getOperation("OP_CAPTURE");
 
         state.runOperation(operation,
-                new Operation.OperationCallback() {
-                    @Override
-                    public OperationResult doOperationCallback() throws OperationException {
-                        return OperationResult.SUCCESS;
-                    }
-                },
-                new State.EnteringStateCallback() {
-                    @Override
-                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
-                        logger.info("Entering state " + newState.getName());
-                        Assert.assertEquals(newState.getName(), "CAPTURE_SUCCESS");
-                    }
-                },
-                new State.LeavingStateCallback() {
-                    @Override
-                    public void leavingState(final State oldState) {
-                        logger.info("Leaving state " + oldState.getName());
-                        Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
-                    }
-                }
-        );
+                           new Operation.OperationCallback() {
+                               @Override
+                               public OperationResult doOperationCallback() throws OperationException {
+                                   return OperationResult.SUCCESS;
+                               }
+                           },
+                           new State.EnteringStateCallback() {
+                               @Override
+                               public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
+                                   logger.info("Entering state " + newState.getName());
+                                   Assert.assertEquals(newState.getName(), "CAPTURE_SUCCESS");
+                               }
+                           },
+                           new State.LeavingStateCallback() {
+                               @Override
+                               public void leavingState(final State oldState) {
+                                   logger.info("Leaving state " + oldState.getName());
+                                   Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
+                               }
+                           }
+                          );
 
         state.runOperation(operation,
-                new Operation.OperationCallback() {
-                    @Override
-                    public OperationResult doOperationCallback() throws OperationException {
-                        return OperationResult.FAILURE;
-                    }
-                },
-                new State.EnteringStateCallback() {
-                    @Override
-                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
-                        logger.info("Entering state " + newState.getName());
-                        Assert.assertEquals(newState.getName(), "CAPTURE_FAILED");
-                    }
-                },
-                new State.LeavingStateCallback() {
-                    @Override
-                    public void leavingState(final State oldState) {
-                        logger.info("Leaving state " + oldState.getName());
-                        Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
-                    }
-                }
-        );
+                           new Operation.OperationCallback() {
+                               @Override
+                               public OperationResult doOperationCallback() throws OperationException {
+                                   return OperationResult.FAILURE;
+                               }
+                           },
+                           new State.EnteringStateCallback() {
+                               @Override
+                               public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
+                                   logger.info("Entering state " + newState.getName());
+                                   Assert.assertEquals(newState.getName(), "CAPTURE_FAILED");
+                               }
+                           },
+                           new State.LeavingStateCallback() {
+                               @Override
+                               public void leavingState(final State oldState) {
+                                   logger.info("Leaving state " + oldState.getName());
+                                   Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
+                               }
+                           }
+                          );
 
         try {
             state.runOperation(operation,
-                    new Operation.OperationCallback() {
-                        @Override
-                        public OperationResult doOperationCallback() throws OperationException {
-                            throw new OperationException();
-                        }
-                    },
-                    new State.EnteringStateCallback() {
-                        @Override
-                        public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
-                            logger.info("Entering state " + newState.getName());
-                            Assert.assertEquals(newState.getName(), "CAPTURE_ERRORED");
-                        }
-                    },
-                    new State.LeavingStateCallback() {
-                        @Override
-                        public void leavingState(final State oldState) {
-                            logger.info("Leaving state " + oldState.getName());
-                            Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
-                        }
-                    }
-            );
+                               new Operation.OperationCallback() {
+                                   @Override
+                                   public OperationResult doOperationCallback() throws OperationException {
+                                       throw new OperationException();
+                                   }
+                               },
+                               new State.EnteringStateCallback() {
+                                   @Override
+                                   public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
+                                       logger.info("Entering state " + newState.getName());
+                                       Assert.assertEquals(newState.getName(), "CAPTURE_ERRORED");
+                                   }
+                               },
+                               new State.LeavingStateCallback() {
+                                   @Override
+                                   public void leavingState(final State oldState) {
+                                       logger.info("Leaving state " + oldState.getName());
+                                       Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
+                                   }
+                               }
+                              );
             Assert.fail("Should throw an exception");
         } catch (OperationException e) {
             Assert.assertTrue(true);
@@ -186,26 +188,26 @@ public class TestStateMachine {
         final Operation operation = sm2.getOperation("OP_CAPTURE");
 
         state.runOperation(operation,
-                new Operation.OperationCallback() {
-                    @Override
-                    public OperationResult doOperationCallback() throws OperationException {
-                        return OperationResult.SUCCESS;
-                    }
-                },
-                new State.EnteringStateCallback() {
-                    @Override
-                    public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
-                        logger.info("Entering state " + newState.getName());
-                        Assert.assertEquals(newState.getName(), "CAPTURE_SUCCESS");
-                    }
-                },
-                new State.LeavingStateCallback() {
-                    @Override
-                    public void leavingState(final State oldState) {
-                        logger.info("Leaving state " + oldState.getName());
-                        Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
-                    }
-                }
-        );
+                           new Operation.OperationCallback() {
+                               @Override
+                               public OperationResult doOperationCallback() throws OperationException {
+                                   return OperationResult.SUCCESS;
+                               }
+                           },
+                           new State.EnteringStateCallback() {
+                               @Override
+                               public void enteringState(final State newState, final Operation.OperationCallback operationCallback, final OperationResult operationResult, final State.LeavingStateCallback leavingStateCallback) {
+                                   logger.info("Entering state " + newState.getName());
+                                   Assert.assertEquals(newState.getName(), "CAPTURE_SUCCESS");
+                               }
+                           },
+                           new State.LeavingStateCallback() {
+                               @Override
+                               public void leavingState(final State oldState) {
+                                   logger.info("Leaving state " + oldState.getName());
+                                   Assert.assertEquals(oldState.getName(), "CAPTURE_INIT");
+                               }
+                           }
+                          );
     }
 }
