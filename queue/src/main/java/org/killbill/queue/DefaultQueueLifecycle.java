@@ -38,6 +38,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final long waitTimeoutMs = 15L * 1000L; // 15 seconds
 
+    private final static long ONE_MILLION = 1000L * 1000L;
+
     private final int nbThreads;
     private final Executor executor;
     private final String svcQName;
@@ -104,6 +106,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                                 break;
                             }
 
+                            final long beforeLoop = System.nanoTime();
                             try {
                                 if (!isProcessingSuspended.get()) {
                                     doProcessEvents();
@@ -113,8 +116,10 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                                                        svcQName,
                                                        Thread.currentThread().getName(),
                                                        Thread.currentThread().getId()), e);
+                            } finally {
+                                final long afterLoop = System.nanoTime();
+                                sleepALittle((afterLoop - beforeLoop) / ONE_MILLION);
                             }
-                            sleepALittle();
                         }
                     } catch (InterruptedException e) {
                         log.info(String.format("%s: Thread %s got interrupted, exting... ", svcQName, Thread.currentThread().getName()));
@@ -129,8 +134,11 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                     }
                 }
 
-                private void sleepALittle() throws InterruptedException {
-                    Thread.sleep(config.getSleepTimeMs());
+                private void sleepALittle(long loopTimeMsec) throws InterruptedException {
+                    final long remainingSleepTime = config.getSleepTimeMs() - loopTimeMsec;
+                    if (remainingSleepTime > 0) {
+                        Thread.sleep(remainingSleepTime);
+                    }
                 }
             });
         }

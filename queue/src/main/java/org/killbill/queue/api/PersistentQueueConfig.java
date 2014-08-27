@@ -20,6 +20,8 @@ import org.skife.config.TimeSpan;
 
 public interface PersistentQueueConfig {
 
+    public boolean isInMemory();
+
     public boolean isSticky();
 
     public int getMaxFailureRetries();

@@ -35,8 +35,8 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Queue;
@@ -112,6 +112,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                          final PersistentQueueConfig config,
                          final String dbBackedQId,
                          final MetricRegistry metricRegistry) {
+
         this.useInflightQueue = config.isUsingInflightQueue();
         this.sqlDao = sqlDao;
         this.config = config;
@@ -201,7 +202,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         totalProcessedFirstFailures.dec(totalProcessedFirstFailures.getCount());
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
-        log.info(DB_QUEUE_LOG_ID + "Initialized with isQueueOpenForWrite = " + isQueueOpenForWrite.get() + ", isQueueOpenForRead = " + isQueueOpenForRead.get());
+        log.info(DB_QUEUE_LOG_ID + "Initialized with useInflightQueue = " + useInflightQueue +
+                ", isSticky = " + config.isSticky() +
+                ", isQueueOpenForWrite = " + isQueueOpenForWrite.get() +
+                ", isQueueOpenForRead = " + isQueueOpenForRead.get());
     }
 
 
@@ -232,14 +236,19 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
         List<T> candidates = ImmutableList.<T>of();
 
-        // If we are not configured to use inflightQ then run expensive query
+        // If we are not configured to use inflightQ then run select query; also we synchronize the block
+        // because there si no point having two concurrent threads racing each other, with only of of which
+        // being able to claim the entries.
+        //
         if (!useInflightQueue) {
-            final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
-            totalFetched.inc(entriesToClaim.size());
-            if (entriesToClaim.size() > 0) {
-                candidates = claimEntries(entriesToClaim);
+            synchronized (this) {
+                final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
+                totalFetched.inc(entriesToClaim.size());
+                if (entriesToClaim.size() > 0) {
+                    candidates = claimEntries(entriesToClaim);
+                }
+                return candidates;
             }
-            return candidates;
         }
 
         if (isQueueOpenForRead.get()) {
@@ -380,7 +389,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         transactional.removeEntry(entry.getRecordId(), config.getTableName());
     }
 
-    public void moveEntriesToHistory(final List<T> entries) {
+    public void moveEntriesToHistory(final Iterable<T> entries) {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
@@ -390,7 +399,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         });
     }
 
-    public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final List<T> entries) {
+    public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
 
         for (T cur : entries) {
             switch (cur.getProcessingState()) {
@@ -418,8 +427,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 return input.getRecordId();
             }
         });
+
         transactional.insertEntriesWithRecordId(entries, config.getHistoryTableName());
-        transactional.removeEntries(toBeRemovedRecordIds, config.getTableName());
+        transactional.removeEntries(ImmutableList.copyOf(toBeRemovedRecordIds), config.getTableName());
     }
 
 
@@ -536,8 +546,45 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         return entries;
     }
 
+    private List<T> claimEntries(final List<T> candidates) {
+        if (config.isSticky()) {
+            return batchClaimEntries(candidates);
+        } else {
+            return sequentialClaimEntries(candidates);
+        }
+    }
 
-    private List<T> claimEntries(List<T> candidates) {
+    //
+    // In sticky mode, we can batch claim update; however we want to avoid two concurrent threads to run the same query
+    // at the same time to realize it cannot claim any entries before of timing issue -- see synchronized statement in getReadyEntries
+    private List<T> batchClaimEntries(List<T> candidates) {
+        final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
+        final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
+            @Override
+            public Long apply(T input) {
+                return input.getRecordId();
+            }
+        });
+        final int result = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName());
+        if (result == candidates.size()) {
+            return candidates;
+        }
+
+        final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+        final Iterable claimed = Iterables.filter(maybeClaimedEntries, new Predicate<T>() {
+            @Override
+            public boolean apply(T input) {
+                return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(Hostname.get());
+            }
+        });
+        return ImmutableList.copyOf(claimed);
+    }
+
+    //
+    // In non sticky mode, we don't optimize claim update because we can't synchronize easily -- we could rely on global lock,
+    // but we are looking for performance and that does not the right choice.
+    //
+    private List<T> sequentialClaimEntries(List<T> candidates) {
         return ImmutableList.<T>copyOf(Collections2.filter(candidates, new Predicate<T>() {
             @Override
             public boolean apply(final T input) {

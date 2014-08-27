@@ -26,6 +26,7 @@ import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -60,6 +61,13 @@ public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao
                           @Bind("nextAvailable") Date nextAvailable,
                           @Define("tableName") final String tableName);
 
+    @SqlUpdate
+    public int claimEntries(@org.killbill.queue.dao.RecordIdCollectionBinder final Collection<Long> recordIds,
+                          @Bind("now") Date now,
+                          @Bind("owner") String owner,
+                          @Bind("nextAvailable") Date nextAvailable,
+                          @Define("tableName") final String tableName);
+
 
     @SqlUpdate
     public int updateOnError(@Bind("recordId") Long id,
@@ -72,7 +80,7 @@ public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao
                             @Define("tableName") final String tableName);
 
     @SqlUpdate
-    public void removeEntries(@org.killbill.queue.dao.RecordIdCollectionBinder final Iterable<Long> recordIds,
+    public void removeEntries(@org.killbill.queue.dao.RecordIdCollectionBinder final Collection<Long> recordIds,
                               @Define("tableName") final String tableName);
 
     @SqlUpdate
@@ -84,6 +92,6 @@ public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao
                                         @Define("tableName") final String tableName);
 
     @SqlBatch
-    public void insertEntriesWithRecordId(@BindBean List<T> evts,
+    public void insertEntriesWithRecordId(@BindBean Iterable<T> evts,
                                           @Define("tableName") final String tableName);
 }

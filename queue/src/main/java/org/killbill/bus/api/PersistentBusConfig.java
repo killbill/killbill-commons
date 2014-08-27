@@ -26,6 +26,13 @@ import org.skife.config.TimeSpan;
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
     @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inMemory")
+    @Default("false")
+    @Description("Whether the bus should be an in memory bus")
+    public abstract boolean isInMemory();
+
+
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.sticky")
     @Default("false")
     @Description("Whether a node should only pick entries it inserted")

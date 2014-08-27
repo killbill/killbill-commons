@@ -155,6 +155,20 @@ claimEntry(tableName) ::= <<
     ;
 >>
 
+claimEntries(tableName, record_ids) ::= <<
+    update <tableName>
+    set
+      processing_owner = :owner
+      , processing_available_date = :nextAvailable
+      , processing_state = 'IN_PROCESSING'
+    where
+      record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
+      and processing_state != 'PROCESSED'
+      and processing_state != 'REMOVED'
+      and (processing_owner IS NULL OR processing_available_date \<= :now)
+    ;
+>>
+
 updateOnError(tableName) ::= <<
     update <tableName>
     set

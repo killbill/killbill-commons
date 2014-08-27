@@ -27,6 +27,12 @@ import org.killbill.queue.api.PersistentQueueConfig;
 public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
+    @Config("org.killbill.notificationq.${instanceName}.inMemory")
+    @Default("false")
+    @Description("Whether the implementation should be an in memory")
+    public abstract boolean isInMemory();
+
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.sticky")
     @Default("false")
     @Description("Whether a node should only pick entries it inserted")

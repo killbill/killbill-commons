@@ -24,7 +24,11 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
 
+import org.killbill.billing.util.entity.Entity;
 import org.skife.jdbi.v2.Query;
 import org.skife.jdbi.v2.SQLStatement;
 import org.skife.jdbi.v2.sqlobject.SqlStatementCustomizer;
@@ -41,26 +45,55 @@ import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface QueueSqlDaoStringTemplate {
-
     static final String DEFAULT_VALUE = " ~ ";
 
     String value() default DEFAULT_VALUE;
 
     public static class QueueSqlDaoStringTemplateFactory extends UseStringTemplate3StatementLocator.LocatorFactory {
 
-        public SqlStatementCustomizer createForType(final Annotation annotation, final Class sqlObjectType) {
-            // From http://www.antlr.org/wiki/display/ST/ST+condensed+--+Templates+and+groups#STcondensed--Templatesandgroups-Withsupergroupfile:
-            //     there is no mechanism for automatically loading a mentioned super-group file
-            new StringTemplate3StatementLocator(QueueSqlDao.class, true, true);
+        final static boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
 
-            final QueueSqlDaoStringTemplate a = (QueueSqlDaoStringTemplate) annotation;
-            final StatementLocator l;
-            if (DEFAULT_VALUE.equals(a.value())) {
-                l = new StringTemplate3StatementLocator(sqlObjectType, true, true);
-            } else {
-                l = new StringTemplate3StatementLocator(a.value(), true, true);
+        static ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
+
+        //
+        // This is only needed to compute the key for the cache -- whether we get a class or a pathname (string)
+        //
+        // (Similar to what jdbi is doing (StringTemplate3StatementLocator))
+        //
+        private final static String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
+
+        public static String mungify(final Class claz) {
+            final String path = "/" + claz.getName();
+            return path.replaceAll("\\.", Matcher.quoteReplacement(sep)) + ".sql.stg";
+        }
+
+
+        private static StatementLocator getLocator(final String locatorPath) {
+
+            if (enableGroupTemplateCaching && locatorCache.containsKey(locatorPath)) {
+                return locatorCache.get(locatorPath);
             }
 
+            final StringTemplate3StatementLocator.Builder builder = StringTemplate3StatementLocator.builder(locatorPath)
+                    .shouldCache()
+                    .withSuperGroup(QueueSqlDao.class)
+                    .allowImplicitTemplateGroup()
+                    .treatLiteralsAsTemplates();
+
+            final StatementLocator locator = builder.build();
+            if (enableGroupTemplateCaching) {
+                locatorCache.put(locatorPath, locator);
+            }
+            return locator;
+        }
+
+
+        public SqlStatementCustomizer createForType(final Annotation annotation, final Class sqlObjectType) {
+
+            final QueueSqlDaoStringTemplate a = (QueueSqlDaoStringTemplate) annotation;
+
+            final String locatorPath = DEFAULT_VALUE.equals(a.value()) ? mungify(sqlObjectType) : a.value();
+            final StatementLocator l = getLocator(locatorPath);
             return new SqlStatementCustomizer() {
                 public void apply(final SQLStatement statement) {
                     statement.setStatementLocator(l);
@@ -71,15 +104,17 @@ public @interface QueueSqlDaoStringTemplate {
                         // Find the model class associated with this sqlObjectType (which is a SqlDao class) to register its mapper
                         // If a custom mapper is defined via @RegisterMapper, don't register our generic one
                         if (sqlObjectType.getGenericInterfaces() != null &&
-                            sqlObjectType.getAnnotation(RegisterMapper.class) == null) {
+                                sqlObjectType.getAnnotation(RegisterMapper.class) == null) {
                             for (int i = 0; i < sqlObjectType.getGenericInterfaces().length; i++) {
                                 if (sqlObjectType.getGenericInterfaces()[i] instanceof ParameterizedType) {
                                     final ParameterizedType type = (ParameterizedType) sqlObjectType.getGenericInterfaces()[i];
                                     for (int j = 0; j < type.getActualTypeArguments().length; j++) {
                                         final Type modelType = type.getActualTypeArguments()[j];
-                                        final Class modelClazz = (Class) modelType;
-                                        if (EventEntryModelDao.class.isAssignableFrom(modelClazz)) {
-                                            query.registerMapper(new LowerToCamelBeanMapperFactory(modelClazz));
+                                        if (modelType instanceof Class) {
+                                            final Class modelClazz = (Class) modelType;
+                                            if (EventEntryModelDao.class.isAssignableFrom(modelClazz)) {
+                                                query.registerMapper(new LowerToCamelBeanMapperFactory(modelClazz));
+                                            }
                                         }
                                     }
                                 }
