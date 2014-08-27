@@ -221,14 +221,20 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
 
+        // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
+        // value that would end up corrupting the inflightQ
+        transactional.resetLastInsertId();
         transactional.insertEntry(entry, config.getTableName());
-        totalInsert.inc();
-
         final Long lastInsertId = transactional.getLastInsertId();
+        if (lastInsertId == 0) {
+            log.warn(DB_QUEUE_LOG_ID + "Failed to insert entry, lastInsertedId " + lastInsertId);
+            return;
+        }
         final boolean isInserted = insertIntoInflightQIfRequired(lastInsertId, entry);
         if (isInserted) {
             totalInflightInsert.inc();
         }
+        totalInsert.inc();
     }
 
 

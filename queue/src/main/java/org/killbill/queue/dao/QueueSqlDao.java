@@ -34,6 +34,9 @@ import java.util.List;
 public interface QueueSqlDao<T extends org.killbill.queue.dao.EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
 
     @SqlQuery
+    public Long resetLastInsertId();
+
+    @SqlQuery
     public Long getLastInsertId();
 
 
