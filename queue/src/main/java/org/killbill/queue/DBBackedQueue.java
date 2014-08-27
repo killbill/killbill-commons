@@ -401,6 +401,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
 
+        if (!entries.iterator().hasNext()) {
+            return;
+        }
+
         for (T cur : entries) {
             switch (cur.getProcessingState()) {
                 case FAILED:
