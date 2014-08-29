@@ -73,9 +73,11 @@ public class TestSetup {
         embeddedDB.initialize();
         embeddedDB.start();
 
-
         final String ddl = toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
         embeddedDB.executeScript(ddl);
+
+        embeddedDB.refreshTableNames();
+
 
         databaseTransactionNotificationApi = new DatabaseTransactionNotificationApi();
         dbi = new DBI(embeddedDB.getDataSource());
