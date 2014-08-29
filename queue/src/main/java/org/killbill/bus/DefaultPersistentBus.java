@@ -25,6 +25,8 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.clock.Clock;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
@@ -59,7 +61,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Inject
-    public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry) {
+    public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super("Bus", Executors.newFixedThreadPool(config.getNbThreads(), new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -70,7 +72,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus-" + config.getTableName(), metricRegistry);
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus-" + config.getTableName(), metricRegistry, databaseTransactionNotificationApi);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
     }

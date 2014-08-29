@@ -90,7 +90,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
         final NotificationSqlDao sqlDao = (dbi != null) ? dbi.onDemand(NotificationSqlDao.class) : null;
-        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry);
+        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry, null);
 
         this.queues = new TreeMap<String, NotificationQueue>();
 

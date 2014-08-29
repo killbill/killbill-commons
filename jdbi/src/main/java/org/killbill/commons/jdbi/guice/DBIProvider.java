@@ -18,9 +18,14 @@
 
 package org.killbill.commons.jdbi.guice;
 
-import org.killbill.commons.jdbi.argument.*;
+import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
+import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
+import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
+import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
+import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
 import org.killbill.commons.jdbi.log.Slf4jLogging;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
+import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.TimingCollector;
@@ -38,12 +43,15 @@ public class DBIProvider implements Provider<IDBI> {
 
     private final DaoConfig config;
     private final DataSource ds;
+    private final TransactionHandler transactionHandler;
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
 
-    public DBIProvider(final DaoConfig config, final DataSource ds) {
+
+    public DBIProvider(final DaoConfig config, final DataSource ds, final TransactionHandler transactionHandler) {
         this.config = config;
         this.ds = ds;
+        this.transactionHandler = transactionHandler;
     }
 
     @com.google.inject.Inject(optional = true)
@@ -65,15 +73,10 @@ public class DBIProvider implements Provider<IDBI> {
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
         dbi.registerArgumentFactory(new EnumArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
-
-        if (config != null && config.getTransactionHandlerClass() != null) {
-            logger.info("Using " + config.getTransactionHandlerClass() + " as a transaction handler class");
-            try {
-                dbi.setTransactionHandler((TransactionHandler) Class.forName(config.getTransactionHandlerClass()).newInstance());
-            } catch (Exception e) {
-                throw new RuntimeException("Error while trying to set the transaction handler to " + config.getTransactionHandlerClass(), e);
-            }
+        if (transactionHandler != null) {
+            dbi.setTransactionHandler(transactionHandler);
         }
+
 
         if (sqlLog != null) {
             dbi.setSQLLog(sqlLog);

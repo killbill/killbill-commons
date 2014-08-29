@@ -77,11 +77,6 @@ public interface DaoConfig {
     @Default("WARN")
     LogLevel getLogLevel();
 
-    @Description("The TransactionHandler to use for all Handle instances")
-    @Config("org.killbill.dao.transactionHandler")
-    @Default("org.killbill.commons.jdbi.transaction.RestartTransactionRunner")
-    String getTransactionHandlerClass();
-
     @Description("Connection pooling type")
     @Config("org.killbill.dao.poolingType")
     @Default("C3P0")

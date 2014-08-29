@@ -27,6 +27,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.killbill.Hostname;
 import org.killbill.clock.Clock;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
@@ -35,13 +39,17 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Queue;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -54,15 +62,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T>
  */
-public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> {
+public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> implements Observer {
 
     private static final Logger log = LoggerFactory.getLogger(DBBackedQueue.class);
-
-    //
-    // Exponential backup retry logic, where we retry up to 10 times for a maximum of about 10 sec ((512 + 256 + 128 + ... ) * 10)
-    //
-    private final static long INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS = 10;
-    private final static int INFLIGHT_ENTRIES_POLL_MAX_RETRY = 10;
 
     //
     // This is somewhat arbitrary, and could made configurable; the correct value
@@ -74,6 +76,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     // start right away with the inflightQ open for read/write.
     //
     private final static int RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE = 10;
+
+    //
+    private final static long INFLIGHT_POLLING_TIMEOUT_MSEC = 50;
 
     //
     // When running with inflightQ, add a polling every 5 minutes to detect if there are
@@ -89,7 +94,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     private final PersistentQueueConfig config;
 
     private final boolean useInflightQueue;
-    private final Queue<Long> inflightEvents;
+    private final LinkedBlockingQueue<Long> inflightEvents;
     private final AtomicBoolean isQueueOpenForWrite;
     private final AtomicBoolean isQueueOpenForRead;
     private final int thresholdToReopenQForWrite;
@@ -107,12 +112,21 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     private final AtomicBoolean isRunningOrphanQuery;
     private final AtomicLong lowestOrphanEntry;
 
+    //
+    // Per thread information to keep track or recordId while it is accessible and right before
+    // transaction gets committed/rollback
+    //
+    private final static AtomicInteger QUEUE_ID_CNT = new AtomicInteger(0);
+    private final ThreadLocal<RowRef> lastInsertedRowId = new ThreadLocal<RowRef>();
+    private final int queueId;
+
     public DBBackedQueue(final Clock clock,
                          final QueueSqlDao<T> sqlDao,
                          final PersistentQueueConfig config,
                          final String dbBackedQId,
-                         final MetricRegistry metricRegistry) {
-
+                         final MetricRegistry metricRegistry,
+                         @Nullable final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
+        this.queueId = QUEUE_ID_CNT.incrementAndGet();
         this.useInflightQueue = config.isUsingInflightQueue();
         this.sqlDao = sqlDao;
         this.config = config;
@@ -120,6 +134,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         this.isQueueOpenForWrite = new AtomicBoolean(false);
         this.isQueueOpenForRead = new AtomicBoolean(false);
         this.clock = clock;
+        if (useInflightQueue && databaseTransactionNotificationApi != null) {
+            databaseTransactionNotificationApi.registerForNotification(this);
+        }
 
         //
         // Metrics
@@ -230,13 +247,19 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             log.warn(DB_QUEUE_LOG_ID + "Failed to insert entry, lastInsertedId " + lastInsertId);
             return;
         }
-        final boolean isInserted = insertIntoInflightQIfRequired(lastInsertId, entry);
-        if (isInserted) {
-            totalInflightInsert.inc();
+
+        // The current thread is in the middle of  a transaction and this is the only times it knows about the recordId for the queue event;
+        // It keeps track of it as a per thread data. Very soon, when the transaction gets committed/rolled back it can then extract the info
+        // and insert the recordId into a blockingQ that is highly optimized to dispatch events.
+        if (useInflightQueue && isQueueOpenForWrite.get()) {
+            if (lastInsertedRowId.get() != null) {
+                log.warn("InflightQ thread local variable was not reset properly for " + lastInsertedRowId.get().rowId + ", new row = " + lastInsertId);
+            }
+            lastInsertedRowId.set(new RowRef(queueId, lastInsertId));
+            //log.info(DB_QUEUE_LOG_ID + "Setting for thread " + Thread.currentThread().getId() + ", row = " + lastInsertId);
         }
         totalInsert.inc();
     }
-
 
     public List<T> getReadyEntries() {
 
@@ -262,7 +285,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             checkForOrphanEntries();
 
             candidates = fetchReadyEntriesFromIds();
-            // There are entries in the Q, we just return those
+                        // There are entries in the Q, we just return those
             if (candidates.size() > 0) {
                 totalInflightFetched.inc(candidates.size());
                 totalFetched.inc(candidates.size());
@@ -283,6 +306,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         if (!isQueueOpenForRead.get()) {
             final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
             candidates = fetchReadyEntries(fetchedSize);
+
             // There is a small number so we re-enable adding entries in the Q
             if (candidates.size() < thresholdToReopenQForWrite) {
                 boolean r = isQueueOpenForWrite.compareAndSet(false, true);
@@ -354,10 +378,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 if (entry.getErrorCount() == 1) {
                     totalProcessedFirstFailures.inc();
                 }
+                lastInsertedRowId.set(new RowRef(queueId, entry.getRecordId()));
                 return null;
             }
         });
-        insertIntoInflightQIfRequired(entry.getRecordId(), entry);
     }
 
     public void moveEntryToHistory(final T entry) {
@@ -443,13 +467,30 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     }
 
 
+
     private List<T> fetchReadyEntriesFromIds() {
+        //
+        // We want to fetch no more than max requested (getMaxEntriesClaimed) OR size of the queue
+        // However if there is nothing we also want to block the thread so it is awoken on the very first ready event instead or retuning
+        // and polling (sleeping).
+        //
         final int size = config.getMaxEntriesClaimed() < inflightEvents.size() ? config.getMaxEntriesClaimed() : inflightEvents.size();
-        final List<Long> recordIds = new ArrayList<Long>(size);
-        for (int i = 0; i < size; i++) {
-            final Long entryId = inflightEvents.poll();
-            if (entryId != null) {
+        final int nonZeroSize = size == 0 ? 1 : size;
+        final List<Long> recordIds = new ArrayList<Long>(nonZeroSize);
+        for (int i = 0; i < nonZeroSize; i++) {
+            final Long entryId;
+            try {
+                entryId = size == 0 ?
+                        inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS) : // There seems be nothing in the Q so we block
+                        inflightEvents.poll(); // The queue does not seem empty so we don't want to block for no reason if there is less entries than detected.
+                if (entryId == null) {
+                    break;
+                }
                 recordIds.add(entryId);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn(DB_QUEUE_LOG_ID + "Got interrupted ");
+                return ImmutableList.of();
             }
         }
 
@@ -460,10 +501,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         if (recordIds.size() > 0) {
 
             if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + size + ", ids = " + Joiner.on(", ").join(recordIds));
+                log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + nonZeroSize + ", ids = " + Joiner.on(", ").join(recordIds));
             }
 
-            final List<T> entriesFromIds = getEntriesFromIds(recordIds);
+            final List<T> entriesFromIds = sqlDao.getEntriesFromIds(recordIds, config.getTableName());
             result = ImmutableList.<T>copyOf(Collections2.filter(entriesFromIds, new Predicate<T>() {
                 @Override
                 public boolean apply(final T input) {
@@ -473,81 +514,6 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         }
         return result;
     }
-
-    private boolean insertIntoInflightQIfRequired(Long lastInsertId, T entry) {
-        boolean result = false;
-        if (useInflightQueue && isQueueOpenForWrite.get()) {
-
-            result = inflightEvents.offer(lastInsertId);
-
-            if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + lastInsertId +
-                        (result ? " into inflightQ" : " into disk") +
-                        " [" + entry.getEventJson() + "]");
-            }
-
-            // Q overflowed
-            if (!result) {
-                final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
-                if (q) {
-                    log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + lastInsertId);
-                }
-            }
-        }
-        return result;
-    }
-
-    //
-    //  When there are some entries in the inflightQ, 3 cases may have occured:
-    //  1. The thread that posted the entry already committed his transaction and in which case the entry
-    //     should be found on disk
-    //  2. The thread that posted the entry rolled back and therefore that entry will never make it on disk, it should
-    //     be ignored.
-    //  3. The thread that posted the entry did not complete its transaction and so we don't know whether or not the entry
-    //     will make it on disk.
-    //
-    //  The code below looks for all entries by retrying the lookup on disk, and it eventually returns the one that have been found.
-    //  Note that:
-    //  - It is is OK for that thread to sleep and retry as this is its nature -- it sleeps and polls
-    //  - If for some reason the entry is not found but the transaction eventually commits, we will end up in a situation
-    //    where we have entries AVAILABLE on disk; those would be cleared as we restart the service. If this ends up being an issue
-    //    we could had some additional logic to catch them.
-    //
-    private List<T> getEntriesFromIds(final List<Long> recordIds) {
-
-        int originalSize = recordIds.size();
-        List<T> result = new ArrayList<T>(recordIds.size());
-        int nbTries = 0;
-
-        do {
-            final List<T> tmp = sqlDao.getEntriesFromIds(recordIds, config.getTableName());
-            if (tmp.size() > 0) {
-                for (T cur : tmp) {
-                    recordIds.remove(cur.getRecordId());
-                }
-                result.addAll(tmp);
-            }
-
-            if (result.size() < originalSize) {
-                try {
-                    long sleepTime = INFLIGHT_ENTRIES_INITIAL_POLL_SLEEP_MS * (int) Math.pow(2, nbTries);
-                    Thread.sleep(sleepTime);
-                    log.info(DB_QUEUE_LOG_ID + "Sleeping " + sleepTime + " for IDS = " + Joiner.on(",").join(recordIds));
-                } catch (InterruptedException e) {
-                    log.warn(DB_QUEUE_LOG_ID + "Thread " + Thread.currentThread() + " got interrupted");
-                    Thread.currentThread().interrupt();
-                    return result;
-                }
-            }
-            nbTries++;
-
-        } while (result.size() < originalSize && nbTries < INFLIGHT_ENTRIES_POLL_MAX_RETRY);
-        if (recordIds.size() > 0) {
-            log.warn(DB_QUEUE_LOG_ID + " Missing inflight entries from disk, recordIds = [" + Joiner.on(",").join(recordIds) + " ]");
-        }
-        return result;
-    }
-
 
     private List<T> fetchReadyEntries(int size) {
         final Date now = clock.getUTCNow().toDate();
@@ -568,6 +534,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     // In sticky mode, we can batch claim update; however we want to avoid two concurrent threads to run the same query
     // at the same time to realize it cannot claim any entries before of timing issue -- see synchronized statement in getReadyEntries
     private List<T> batchClaimEntries(List<T> candidates) {
+        if (candidates.size() == 0) {
+            return ImmutableList.of();
+        }
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
         final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
             @Override
@@ -642,5 +611,54 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     public long getTotalInsert() {
         return totalInsert.getCount();
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+
+        final RowRef rowRef = lastInsertedRowId.get();
+        final DatabaseTransactionEvent event = (DatabaseTransactionEvent) arg;
+
+        // Either a transaction we are not interested in, or for the wrong queue; just return.
+        if (rowRef == null || rowRef.queueId != queueId) {
+            return;
+        }
+
+        // This is a ROLLBACK, clear the threadLocal and return
+        if (event.getType() == DatabaseTransactionEventType.ROLLBACK) {
+            lastInsertedRowId.set(null);
+            return;
+        }
+
+        // Add entry in the inflightQ and clear threadlocal
+        try {
+            final boolean result = inflightEvents.offer(rowRef.rowId);
+            if (result) {
+                if (log.isDebugEnabled()) {
+                    log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + rowRef.rowId +
+                            (result ? " into inflightQ" : " into disk"));
+                }
+                totalInflightInsert.inc();
+                // Q overflowed ?
+            } else {
+                final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
+                if (q) {
+                    log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + rowRef.rowId);
+                }
+            }
+        } finally {
+            lastInsertedRowId.set(null);
+        }
+    }
+
+    // Internal structure to keep track or recordId per queue
+    private final class RowRef {
+        public final int queueId;
+        public final long rowId;
+
+        private RowRef(int queueId, long rowId) {
+            this.queueId = queueId;
+            this.rowId = rowId;
+        }
     }
 }

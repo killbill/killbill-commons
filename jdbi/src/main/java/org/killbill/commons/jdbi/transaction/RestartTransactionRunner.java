@@ -43,8 +43,8 @@ public class RestartTransactionRunner extends DelegatingTransactionHandler imple
 
     private final Configuration configuration;
 
-    public RestartTransactionRunner() {
-        this(new Configuration(), new LocalTransactionHandler());
+    public RestartTransactionRunner(final TransactionHandler delegate) {
+        this(new Configuration(), delegate);
     }
 
     public RestartTransactionRunner(final Configuration configuration, final TransactionHandler delegate) {

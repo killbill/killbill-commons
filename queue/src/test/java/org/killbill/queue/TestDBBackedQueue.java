@@ -16,22 +16,10 @@
 
 package org.killbill.queue;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import org.skife.config.TimeSpan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import org.killbill.Hostname;
 import org.killbill.TestSetup;
 import org.killbill.bus.DefaultBusPersistentEvent;
@@ -39,11 +27,20 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.skife.config.TimeSpan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -69,18 +66,17 @@ public class TestDBBackedQueue extends TestSetup {
         super.beforeMethod();
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
         assertEquals(ready.size(), 0);
-
     }
 
 
     @Test(groups = "load")
     public void testLoad() {
 
-        final int NB_EVENTS = 10000;
+        final int NB_EVENTS = 1000;
         final int CLAIMED_EVENTS = 10;
 
         final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, false, false);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "perf-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "perf-bus_event", metricRegistry, null);
         queue.initialize();
 
 
@@ -105,7 +101,7 @@ public class TestDBBackedQueue extends TestSetup {
             final Iterable<BusEventModelDao> processed = Iterables.transform(ready, new Function<BusEventModelDao, BusEventModelDao>() {
                 @Override
                 public BusEventModelDao apply(@Nullable BusEventModelDao input) {
-                    return  new BusEventModelDao(input, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                    return new BusEventModelDao(input, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                 }
             });
             long t3 = System.nanoTime();
@@ -116,7 +112,7 @@ public class TestDBBackedQueue extends TestSetup {
         long fini = System.nanoTime();
 
         log.error("Load test took " + ((fini - ini) / 1000000) + " ms, getReadyEntry = " +
-                (cumlGetReadyEntries / 1000000) + " ms, moveEntriesToHistory = " + (cumlMoveEntriesToHistory/ 1000000));
+                (cumlGetReadyEntries / 1000000) + " ms, moveEntriesToHistory = " + (cumlMoveEntriesToHistory / 1000000));
     }
 
 
@@ -129,7 +125,7 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "slow")
     public void testOnlyInflightQ() {
         final PersistentBusConfig config = createConfig(1, 10, false, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "onlyInflightQ-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "onlyInflightQ-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -189,7 +185,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 10, true, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -251,7 +247,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(7, 100, false, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithSmallExistingEntriesOnStart-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithSmallExistingEntriesOnStart-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -328,7 +324,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(20, 100, false, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithLargeExistingEntriesOnStart-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithLargeExistingEntriesOnStart-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -432,7 +428,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, false, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "smallExistingEntriesOnStartAndOverflowWrite_bus-event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "smallExistingEntriesOnStartAndOverflowWrite_bus-event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -503,7 +499,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testWithOneReaderOneWriter() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, false, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "oneReaderOneWriter-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "oneReaderOneWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
 
@@ -525,7 +521,7 @@ public class TestDBBackedQueue extends TestSetup {
             writer.join();
             reader.join();
         } catch (InterruptedException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            Assert.fail("InterruptedException ", e);
         }
 
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
@@ -547,7 +543,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testMultipleWritersMultipleReaders() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, false, true);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
 
@@ -688,6 +684,7 @@ public class TestDBBackedQueue extends TestSetup {
             public boolean isInMemory() {
                 return false;
             }
+
             @Override
             public boolean isSticky() {
                 return isSticky;

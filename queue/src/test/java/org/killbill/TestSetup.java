@@ -16,29 +16,6 @@
 
 package org.killbill;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-
-import org.skife.config.ConfigSource;
-import org.skife.config.ConfigurationObjectFactory;
-import org.skife.config.SimplePropertyConfigSource;
-import org.skife.jdbi.v2.DBI;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-
-import org.killbill.bus.api.PersistentBusConfig;
-import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
-import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
-import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
-import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
-import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
-import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
-import org.killbill.commons.jdbi.mapper.UUIDMapper;
-import org.killbill.notificationq.api.NotificationQueueConfig;
-import org.killbill.clock.ClockMock;
-
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
@@ -46,18 +23,44 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.io.InputSupplier;
 import com.google.common.io.Resources;
+import org.killbill.bus.api.PersistentBusConfig;
+import org.killbill.clock.ClockMock;
+import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
+import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
+import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
+import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
+import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
+import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
+import org.killbill.commons.jdbi.mapper.UUIDMapper;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
+import org.killbill.notificationq.api.NotificationQueueConfig;
+import org.skife.config.ConfigSource;
+import org.skife.config.ConfigurationObjectFactory;
+import org.skife.config.SimplePropertyConfigSource;
+import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.tweak.HandleCallback;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 import static org.testng.Assert.assertNotNull;
 
 public class TestSetup {
 
     private MySQLEmbeddedDB embeddedDB;
-    private DBI dbi;
 
+    protected DBI dbi;
     protected PersistentBusConfig persistentBusConfig;
     protected NotificationQueueConfig notificationQueueConfig;
     protected ClockMock clock;
     protected MetricRegistry metricRegistry = new MetricRegistry();
+    protected DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
 
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
@@ -74,6 +77,7 @@ public class TestSetup {
         final String ddl = toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
         embeddedDB.executeScript(ddl);
 
+        databaseTransactionNotificationApi = new DatabaseTransactionNotificationApi();
         dbi = new DBI(embeddedDB.getDataSource());
         dbi.registerArgumentFactory(new UUIDArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
@@ -81,12 +85,13 @@ public class TestSetup {
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
         dbi.registerArgumentFactory(new EnumArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
+        dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
         persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                                                                                                 ImmutableMap.<String, String>of("instanceName", "main"));
+                ImmutableMap.<String, String>of("instanceName", "main"));
         notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                                                                                                     ImmutableMap.<String, String>of("instanceName", "main"));
+                ImmutableMap.<String, String>of("instanceName", "main"));
     }
 
     @BeforeMethod(groups = "slow")
@@ -112,7 +117,7 @@ public class TestSetup {
         return CharStreams.toString(CharStreams.newReaderSupplier(inputSupplier, Charsets.UTF_8));
     }
 
-    public DBI getDBI()  {
+    public DBI getDBI() {
         return dbi;
     }
 
@@ -133,7 +138,6 @@ public class TestSetup {
             throw new RuntimeException(e);
         }
     }
-
 
 
 }

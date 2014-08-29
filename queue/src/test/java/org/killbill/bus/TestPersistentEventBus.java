@@ -33,7 +33,7 @@ public class TestPersistentEventBus extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry);
+        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry, databaseTransactionNotificationApi);
         testEventBusBase = new TestEventBusBase(busService);
     }
 
