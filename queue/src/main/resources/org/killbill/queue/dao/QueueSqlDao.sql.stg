@@ -102,7 +102,7 @@ allTableValues() ::= <<
 
 
 resetLastInsertId() ::= <<
-    select LAST_INSERT_ID(0);
+    select LAST_INSERT_ID(/*! 0 */);
 >>
 
 getLastInsertId() ::= <<

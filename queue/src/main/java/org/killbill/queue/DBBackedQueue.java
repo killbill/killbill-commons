@@ -240,6 +240,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
         // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
         // value that would end up corrupting the inflightQ
+        // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
         transactional.resetLastInsertId();
         transactional.insertEntry(entry, config.getTableName());
         final Long lastInsertId = transactional.getLastInsertId();
