@@ -1,5 +1,6 @@
 0.2.21
     Update to killbill-oss-parent 0.7.21
+    Lower default jdbi logging level
     Queue: performance improvements
       - Batch queries when possible
       - Optimize jdbi string template loading
