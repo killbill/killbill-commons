@@ -16,17 +16,13 @@
 
 package org.killbill.bus.api;
 
-import java.util.UUID;
-
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
-
 import org.killbill.queue.api.QueueLifecycle;
+import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 public interface PersistentBus extends QueueLifecycle {
 
 
     public static final String EVENT_BUS_GROUP_NAME = "bus-grp";
-    public static final String EVENT_BUS_TH_NAME = "bus-th";
 
     public static final String EVENT_BUS_SERVICE = "bus-service";
     public static final String EVENT_BUS_IDENTIFIER = EVENT_BUS_SERVICE;
@@ -79,7 +75,6 @@ public interface PersistentBus extends QueueLifecycle {
     /**
      * Post an event asynchronously
      *
-     *
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
@@ -88,7 +83,6 @@ public interface PersistentBus extends QueueLifecycle {
     /**
      * Post an event from within a transaction.
      * Guarantees that the event is persisted on disk from within the same transaction
-     *
      *
      * @param event to be posted
      * @throws EventBusException if bus not been started yet

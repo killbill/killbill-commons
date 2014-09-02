@@ -30,6 +30,8 @@ public interface PersistentQueueConfig {
 
     public int getMaxEntriesClaimed();
 
+    public int getMaxInflightQEntriesClaimed();
+
     public TimeSpan getClaimedTime();
 
     public long getSleepTimeMs();

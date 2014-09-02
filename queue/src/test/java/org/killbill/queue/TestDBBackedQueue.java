@@ -701,6 +701,11 @@ public class TestDBBackedQueue extends TestSetup {
             }
 
             @Override
+            public int getMaxInflightQEntriesClaimed() {
+                return claimed;
+            }
+
+            @Override
             public TimeSpan getClaimedTime() {
                 return new TimeSpan("5m");
             }

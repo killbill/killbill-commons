@@ -16,6 +16,8 @@
 
 package org.killbill.bus;
 
+import org.killbill.bus.api.PersistentBusConfig;
+import org.skife.config.TimeSpan;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -31,7 +33,60 @@ public class TestEventBus {
 
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
-        busService = new InMemoryPersistentBus();
+        busService = new InMemoryPersistentBus(new PersistentBusConfig() {
+            @Override
+            public boolean isInMemory() {
+                return false;
+            }
+            @Override
+            public boolean isSticky() {
+                return false;
+            }
+            @Override
+            public int getMaxFailureRetries() {
+                return 0;
+            }
+            @Override
+            public int getMaxEntriesClaimed() {
+                return 0;
+            }
+            @Override
+            public int getMaxInflightQEntriesClaimed() {
+                return 0;
+            }
+            @Override
+            public TimeSpan getClaimedTime() {
+                return null;
+            }
+            @Override
+            public long getSleepTimeMs() {
+                return 0;
+            }
+            @Override
+            public boolean isProcessingOff() {
+                return false;
+            }
+            @Override
+            public int getNbThreads() {
+                return 0;
+            }
+            @Override
+            public boolean isUsingInflightQueue() {
+                return false;
+            }
+            @Override
+            public int getQueueCapacity() {
+                return 0;
+            }
+            @Override
+            public String getTableName() {
+                return "test";
+            }
+            @Override
+            public String getHistoryTableName() {
+                return null;
+            }
+        });
         testEventBusBase = new TestEventBusBase(busService);
     }
 

@@ -18,6 +18,7 @@ package org.killbill.bus;
 
 import java.util.UUID;
 
+import com.google.common.eventbus.AllowConcurrentEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -173,8 +174,9 @@ public class TestEventBusBase {
             return gotEvents;
         }
 
+        @AllowConcurrentEvents
         @Subscribe
-        public synchronized void processMyEvent(final MyEvent event) {
+        public void processMyEvent(final MyEvent event) {
 
             //log.debug("Got event {} {}", event.name, event.value);
 

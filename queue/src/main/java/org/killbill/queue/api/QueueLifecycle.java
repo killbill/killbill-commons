@@ -19,7 +19,7 @@ public interface QueueLifecycle {
     /**
      * Starts the queue
      */
-    public void startQueue();
+    public boolean startQueue();
 
     /**
      * Stop the queue

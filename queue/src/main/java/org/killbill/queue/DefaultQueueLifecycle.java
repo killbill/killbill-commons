@@ -36,20 +36,19 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     public static final String QUEUE_NAME = "Queue";
 
-    private static final long waitTimeoutMs = 15L * 1000L; // 15 seconds
-
+    protected static final long waitTimeoutMs = 15L * 1000L; // 15 seconds
     private final static long ONE_MILLION = 1000L * 1000L;
 
     private final int nbThreads;
-    private final Executor executor;
     private final String svcQName;
     protected final PersistentQueueConfig config;
     private boolean isProcessingEvents;
-    private int curActiveThreads;
+    private volatile int curActiveThreads;
 
+    protected final Executor executor;
     protected final ObjectMapper objectMapper;
 
-    private final AtomicBoolean isStarted = new AtomicBoolean(false);
+    protected final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     // Allow to disable/re-enable notification processing through JMX
     private final AtomicBoolean isProcessingSuspended;
@@ -70,9 +69,9 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     }
 
     @Override
-    public void startQueue() {
+    public boolean startQueue() {
         if (config.isProcessingOff() || !isStarted.compareAndSet(false, true)) {
-            return;
+            return false;
         }
 
         isProcessingEvents = true;
@@ -153,6 +152,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         } catch (InterruptedException e) {
             log.warn(String.format("%s: Start sequence, got interrupted", svcQName));
         }
+        return true;
     }
 
 
@@ -169,7 +169,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                 final long ini = System.currentTimeMillis();
                 long remainingWaitTimeMs = waitTimeoutMs;
                 while (curActiveThreads > 0 && remainingWaitTimeMs > 0) {
-                    wait(1000);
+                    wait(100);
                     remainingWaitTimeMs = waitTimeoutMs - (System.currentTimeMillis() - ini);
                 }
                 remaining = curActiveThreads;

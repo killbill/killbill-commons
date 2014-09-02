@@ -51,6 +51,12 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract int getMaxEntriesClaimed();
 
     @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.claimed")
+    @Default("5")
+    @Description("Number of bus events to dispatch from the inflightQ at once")
+    public abstract int getMaxInflightQEntriesClaimed();
+
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.claim.time")
     @Default("5m")
     @Description("Claim time")

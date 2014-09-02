@@ -470,11 +470,11 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     private List<T> fetchReadyEntriesFromIds() {
         //
-        // We want to fetch no more than max requested (getMaxEntriesClaimed) OR size of the queue
+        // We want to fetch no more than max requested (getMaxInflightQEntriesClaimed) OR size of the queue
         // However if there is nothing we also want to block the thread so it is awoken on the very first ready event instead or retuning
         // and polling (sleeping).
         //
-        final int size = config.getMaxEntriesClaimed() < inflightEvents.size() ? config.getMaxEntriesClaimed() : inflightEvents.size();
+        final int size = config.getMaxInflightQEntriesClaimed() < inflightEvents.size() ? config.getMaxInflightQEntriesClaimed() : inflightEvents.size();
         final int nonZeroSize = size == 0 ? 1 : size;
         final List<Long> recordIds = new ArrayList<Long>(nonZeroSize);
         for (int i = 0; i < nonZeroSize; i++) {

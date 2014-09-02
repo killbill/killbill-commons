@@ -183,9 +183,10 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void startQueue() {
+    public boolean startQueue() {
         notificationQueueService.startQueue();
         isStarted = true;
+        return true;
     }
 
     @Override

@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 
+import org.killbill.bus.api.PersistentBusConfig;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,8 @@ public class InMemoryPersistentBus implements PersistentBus {
     private final AtomicBoolean isInitialized;
 
     @Override
-    public void startQueue() {
+    public boolean startQueue() {
+        return true;
     }
 
     @Override
@@ -78,13 +80,13 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Inject
-    public InMemoryPersistentBus() {
+    public InMemoryPersistentBus(final PersistentBusConfig config) {
 
         final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);
         final Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
-                return new Thread(group, r, EVENT_BUS_TH_NAME);
+                return new Thread(group, r, config.getTableName() + "-th");
             }
         });
 

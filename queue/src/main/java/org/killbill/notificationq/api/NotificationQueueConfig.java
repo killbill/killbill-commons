@@ -51,6 +51,12 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     public abstract int getMaxEntriesClaimed();
 
     @Override
+    @Config("org.killbill.notificationq.${instanceName}.inflight.claimed")
+    @Default("7")
+    @Description("Number of notifications to fetch at once")
+    public abstract int getMaxInflightQEntriesClaimed();
+
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.claim.time")
     @Default("5m")
     @Description("Claim time")
@@ -82,8 +88,8 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
-    @Default("0")
-    @Description("Number of threads to use")
+    @Default("10000")
+    @Description("Capacity for the worker queue")
     public abstract int getQueueCapacity();
 
     @Override

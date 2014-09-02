@@ -20,6 +20,8 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.joda.time.DateTime;
 import org.killbill.Hostname;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
@@ -31,7 +33,6 @@ import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-import org.joda.time.DateTime;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
@@ -52,7 +56,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     public static final int CLAIM_TIME_MS = (5 * 60 * 1000); // 5 minutes
 
-    private static final String NOTIFICATION_THREAD_NAME = "Notification-queue-dispatch";
 
     private final AtomicLong nbProcessedEvents;
 
@@ -62,6 +65,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected final DBBackedQueue<NotificationEventModelDao> dao;
     protected final MetricRegistry metricRegistry;
 
+    private final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
+
     //
     // Metrics
     //
@@ -69,13 +74,15 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     private final Counter processedNotificationsSinceStart;
     private final Map<String, Histogram> perQueueProcessingTime;
 
+    private final NotificationRunner[] runners;
+
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
-        super("NotificationQ", Executors.newFixedThreadPool(1, new ThreadFactory() {
+        super("NotificationQ", Executors.newFixedThreadPool(config.getNbThreads() + 1, new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
                 final Thread th = new Thread(r);
-                th.setName(NOTIFICATION_THREAD_NAME);
+                th.setName(config.getTableName() + "-th");
                 th.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
                     @Override
                     public void uncaughtException(final Thread t, final Throwable e) {
@@ -84,7 +91,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                 });
                 return th;
             }
-        }), config.getNbThreads(), config);
+        }), 1, config);
 
         this.clock = clock;
         this.config = config;
@@ -94,18 +101,34 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         this.queues = new TreeMap<String, NotificationQueue>();
 
+        this.processedNotificationsSinceStart = metricRegistry.counter(MetricRegistry.name(NotificationQueueDispatcher.class, "processed-notifications-since-start"));
+        this.perQueueProcessingTime = new HashMap<String, Histogram>();
+        this.pendingNotificationsQ = new LinkedBlockingQueue<NotificationEventModelDao>(config.getQueueCapacity());
+
         this.metricRegistry = metricRegistry;
         this.pendingNotifications = metricRegistry.register(MetricRegistry.name(NotificationQueueDispatcher.class, "pending-notifications"),
                 new Gauge<Integer>() {
                     @Override
                     public Integer getValue() {
-                        // TODO STEPH
-                        return 0; // STEPH dao != null ? dao.getPendingCountNotifications(clock.getUTCNow().toDate()) : 0;
+                        return pendingNotificationsQ.size();
                     }
                 });
 
-        this.processedNotificationsSinceStart = metricRegistry.counter(MetricRegistry.name(NotificationQueueDispatcher.class, "processed-notifications-since-start"));
-        this.perQueueProcessingTime = new HashMap<String, Histogram>();
+        this.runners = new NotificationRunner[config.getNbThreads()];
+        for (int i = 0; i < config.getNbThreads(); i++) {
+            runners[i] = new NotificationRunner(pendingNotificationsQ, clock, config, objectMapper, nbProcessedEvents, queues, dao, perQueueProcessingTime, metricRegistry, processedNotificationsSinceStart);
+        }
+    }
+
+    @Override
+    public boolean startQueue() {
+        if (super.startQueue()) {
+            for (int i = 0; i < config.getNbThreads(); i++) {
+                executor.execute(runners[i]);
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -128,27 +151,16 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         }
         if (nbQueueStarted == 0) {
             super.stopQueue();
+            for (int i = 0; i < config.getNbThreads(); i++) {
+                runners[i].stop();
+            }
         }
-    }
-
-    public AtomicLong getNbProcessedEvents() {
-        return nbProcessedEvents;
     }
 
     public Clock getClock() {
         return clock;
     }
 
-
-    protected NotificationQueueHandler getHandlerForActiveQueue(final String compositeName) {
-        synchronized (queues) {
-            final NotificationQueue queue = queues.get(compositeName);
-            if (queue == null || !queue.isStarted()) {
-                return null;
-            }
-            return queue.getHandler();
-        }
-    }
 
     @Override
     public int doProcessEvents() {
@@ -170,85 +182,191 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                 notifications.remove(notifications.size() - 1);
             }
         }
-
-        logDebug("START processing %d events at time %s", notifications.size(), getClock().getUTCNow().toDate());
-
-        int result = 0;
         for (final NotificationEventModelDao cur : notifications) {
-            getNbProcessedEvents().incrementAndGet();
-            final NotificationEvent key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
-
-            NotificationQueueHandler handler = getHandlerForActiveQueue(cur.getQueueName());
-            if (handler == null) {
-                continue;
-            }
-
-            NotificationQueueException lastException = null;
-            long errorCount = cur.getErrorCount();
             try {
-                handleNotificationWithMetrics(handler, cur, key);
-            } catch (NotificationQueueException e) {
-                lastException = e;
-                errorCount++;
-            } finally {
-                if (lastException == null) {
-                    result++;
-                    clearNotification(cur);
-                    logDebug("done handling notification %s, key = %s for time %s", cur.getRecordId(), cur.getEventJson(), cur.getEffectiveDate());
-                } else if (errorCount <= config.getMaxFailureRetries()) {
-                    log.info("NotificationQ dispatch error, will attempt a retry ", lastException);
-                    NotificationEventModelDao failedNotification = new NotificationEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
-                    dao.updateOnError(failedNotification);
-                } else {
-                    log.error("Fatal NotificationQ dispatch error, data corruption...", lastException);
-                    clearFailedNotification(cur);
+                pendingNotificationsQ.put(cur);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("NotificationQueueDispatcher thread got interrupted");
+                return 0;
+            }
+        }
+        return notifications.size();
+    }
+
+    public static class NotificationRunner implements Runnable {
+
+        private final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
+        private final Clock clock;
+        private final NotificationQueueConfig config;
+        private final ObjectMapper objectMapper;
+        private final AtomicLong nbProcessedEvents;
+        private final Map<String, NotificationQueue> queues;
+        private final DBBackedQueue<NotificationEventModelDao> dao;
+        private final Map<String, Histogram> perQueueProcessingTime;
+        private final MetricRegistry metricRegistry;
+        private final Counter processedNotificationsSinceStart;
+        private final AtomicBoolean isProcessingevents;
+        private final AtomicBoolean isExited;
+
+        private String LOG_PREFIX;
+        private Thread runnerTh;
+
+        public NotificationRunner(final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ,
+                                  final Clock clock, NotificationQueueConfig config,
+                                  final ObjectMapper objectMapper,
+                                  final AtomicLong nbProcessedEvents,
+                                  final Map<String, NotificationQueue> queues,
+                                  final DBBackedQueue<NotificationEventModelDao> dao,
+                                  final Map<String, Histogram> perQueueProcessingTime,
+                                  final MetricRegistry metricRegistry,
+                                  final Counter processedNotificationsSinceStart) {
+            this.pendingNotificationsQ = pendingNotificationsQ;
+            this.clock = clock;
+            this.config = config;
+            this.objectMapper = objectMapper;
+            this.nbProcessedEvents = nbProcessedEvents;
+            this.queues = queues;
+            this.dao = dao;
+            this.perQueueProcessingTime = perQueueProcessingTime;
+            this.metricRegistry = metricRegistry;
+            this.processedNotificationsSinceStart = processedNotificationsSinceStart;
+            this.isProcessingevents = new AtomicBoolean(false);
+            this.isExited = new AtomicBoolean(false);
+        }
+
+        @Override
+        public void run() {
+
+            this.LOG_PREFIX = "NotificationRunner " + Thread.currentThread().getName() + "-" + Thread.currentThread().getId() + ": ";
+
+            if (!isProcessingevents.compareAndSet(false, true)) {
+                log.warn(LOG_PREFIX + "is already running");
+                return;
+            }
+
+            this.runnerTh = Thread.currentThread();
+
+            log.info(LOG_PREFIX + "starting...");
+            do {
+                try {
+                    final NotificationEventModelDao notification = pendingNotificationsQ.poll(1, TimeUnit.SECONDS);
+                    if (notification != null) {
+                        nbProcessedEvents.incrementAndGet();
+                        final NotificationEvent key = deserializeEvent(notification.getClassName(), objectMapper, notification.getEventJson());
+
+                        NotificationQueueHandler handler = getHandlerForActiveQueue(notification.getQueueName());
+                        if (handler == null) {
+                            continue;
+                        }
+
+                        NotificationQueueException lastException = null;
+                        long errorCount = notification.getErrorCount();
+                        try {
+                            handleNotificationWithMetrics(handler, notification, key);
+                        } catch (NotificationQueueException e) {
+                            lastException = e;
+                            errorCount++;
+                        } finally {
+                            if (lastException == null) {
+                                clearNotification(notification);
+                                if (log.isDebugEnabled()) {
+                                    log.debug(LOG_PREFIX + "done handling notification %s, key = %s for time %s", notification.getRecordId(), notification.getEventJson(), notification.getEffectiveDate());
+                                }
+                            } else if (errorCount <= config.getMaxFailureRetries()) {
+                                log.info(LOG_PREFIX + "dispatch error, will attempt a retry ", lastException);
+                                NotificationEventModelDao failedNotification = new NotificationEventModelDao(notification, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
+                                dao.updateOnError(failedNotification);
+                            } else {
+                                log.error(LOG_PREFIX + "fatal NotificationQ dispatch error, data corruption...", lastException);
+                                clearFailedNotification(notification);
+                            }
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.info(LOG_PREFIX + "got interrupted ");
+                    break;
                 }
+            } while (isProcessingevents.get());
+            log.info(LOG_PREFIX + "exiting loop...");
+            isExited.set(true);
+            synchronized (this) {
+                notifyAll();
             }
         }
-        return result;
-    }
 
-    private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventModelDao notification, final NotificationEvent key) throws NotificationQueueException {
+        public void stop() {
 
-        // Create specific metric name because:
-        // - ':' is not allowed for metric name
-        // - name would be too long (e.g entitlement-service:subscription-events-process-time -> ent-subscription-events-process-time)
-        //
-        final String[] parts = notification.getQueueName().split(":");
-        final String metricName = new StringBuilder(parts[0].substring(0, 3))
-                .append("-")
-                .append(parts[1])
-                .append("-process-time").toString();
+            isProcessingevents.set(false);
+            runnerTh.interrupt();
 
-        final Histogram perQueueHistogramProcessingTime;
-        synchronized (perQueueProcessingTime) {
-            if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
-                perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
+            try {
+                long ini = System.currentTimeMillis();
+                long remainingWaitTimeMs = waitTimeoutMs;
+                synchronized (this) {
+                    while (!isExited.get() && remainingWaitTimeMs > 0) {
+                        wait(100);
+                        remainingWaitTimeMs = waitTimeoutMs - (System.currentTimeMillis() - ini);
+                    }
+                }
+            } catch (InterruptedException e) {
+                log.warn("Got interrupted while stopping " + LOG_PREFIX);
             }
-            perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
         }
-        final DateTime beforeProcessing = clock.getUTCNow();
 
-        try {
-            handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getSearchKey1(), notification.getSearchKey2());
-        } catch (RuntimeException e) {
-            throw new NotificationQueueException(e);
-        } finally {
-            // Unclear if those stats should include failures
-            final DateTime afterProcessing = clock.getUTCNow();
-            perQueueHistogramProcessingTime.update(afterProcessing.getMillis() - beforeProcessing.getMillis());
-            processedNotificationsSinceStart.inc();
+        private void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventModelDao notification, final NotificationEvent key) throws NotificationQueueException {
+
+            // Create specific metric name because:
+            // - ':' is not allowed for metric name
+            // - name would be too long (e.g entitlement-service:subscription-events-process-time -> ent-subscription-events-process-time)
+            //
+            final String[] parts = notification.getQueueName().split(":");
+            final String metricName = new StringBuilder(parts[0].substring(0, 3))
+                    .append("-")
+                    .append(parts[1])
+                    .append("-process-time").toString();
+
+            final Histogram perQueueHistogramProcessingTime;
+            synchronized (perQueueProcessingTime) {
+                if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
+                    perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
+                }
+                perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
+            }
+            final DateTime beforeProcessing = clock.getUTCNow();
+
+            try {
+                handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getSearchKey1(), notification.getSearchKey2());
+            } catch (RuntimeException e) {
+                throw new NotificationQueueException(e);
+            } finally {
+                // Unclear if those stats should include failures
+                final DateTime afterProcessing = clock.getUTCNow();
+                perQueueHistogramProcessingTime.update(afterProcessing.getMillis() - beforeProcessing.getMillis());
+                processedNotificationsSinceStart.inc();
+            }
         }
-    }
 
-    private void clearNotification(final NotificationEventModelDao cleared) {
-        NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-        dao.moveEntryToHistory(processedEntry);
-    }
+        private void clearNotification(final NotificationEventModelDao cleared) {
+            NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            dao.moveEntryToHistory(processedEntry);
+        }
 
-    private void clearFailedNotification(final NotificationEventModelDao cleared) {
-        NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
-        dao.moveEntryToHistory(processedEntry);
+        private void clearFailedNotification(final NotificationEventModelDao cleared) {
+            NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
+            dao.moveEntryToHistory(processedEntry);
+        }
+
+        private NotificationQueueHandler getHandlerForActiveQueue(final String compositeName) {
+            synchronized (queues) {
+                final NotificationQueue queue = queues.get(compositeName);
+                if (queue == null || !queue.isStarted()) {
+                    return null;
+                }
+                return queue.getHandler();
+            }
+        }
     }
 
     private List<NotificationEventModelDao> getReadyNotifications() {

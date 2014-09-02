@@ -67,7 +67,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             public Thread newThread(final Runnable r) {
                 return new Thread(new ThreadGroup(EVENT_BUS_GROUP_NAME),
                         r,
-                        EVENT_BUS_TH_NAME);
+                        config.getTableName() + "-th");
             }
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
