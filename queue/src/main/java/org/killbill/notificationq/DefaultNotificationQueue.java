@@ -100,23 +100,23 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Class<T> type, final Long searchKey1, final Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return getFutureNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Class<T> type, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
         return getFutureNotificationsInternal(transactionalNotificationDao, searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(Class<T> type, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(Long searchKey2) {
         return getFutureNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), null, searchKey2);
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Class<T> type, Long searchKey2, Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Long searchKey2, Transmogrifier transmogrifier) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
         return getFutureNotificationsInternal(transactionalNotificationDao, null, searchKey2);
     }

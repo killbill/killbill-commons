@@ -204,7 +204,7 @@ public class TestNotificationQueue extends TestSetup {
         });
 
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futuresAll = queue.getFutureNotificationForSearchKeys(TestNotificationKey.class, SEARCH_KEY_1, SEARCH_KEY_2);
+        final List<NotificationEventWithMetadata<TestNotificationKey>> futuresAll = queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2);
         Assert.assertEquals(futuresAll.size(), 2);
         int found = 0;
         for (int i = 0; i < 2; i++) {
@@ -216,7 +216,7 @@ public class TestNotificationQueue extends TestSetup {
         Assert.assertEquals(found, 2);
 
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futures2 = queue.getFutureNotificationForSearchKey2(TestNotificationKey.class, SEARCH_KEY_2);
+        final List<NotificationEventWithMetadata<TestNotificationKey>> futures2 = queue.getFutureNotificationForSearchKey2(SEARCH_KEY_2);
         Assert.assertEquals(futures2.size(), 3);
         found = 0;
         for (int i = 0; i < 3; i++) {
