@@ -21,11 +21,11 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.7.21-SNAPSHOT</version>
+        <version>0.7.21</version>
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
-    <version>0.2.21-SNAPSHOT</version>
+    <version>0.2.22-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>

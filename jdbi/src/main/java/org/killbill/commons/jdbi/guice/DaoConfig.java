@@ -74,7 +74,7 @@ public interface DaoConfig {
 
     @Description("Log level for SQL queries")
     @Config("org.killbill.dao.logLevel")
-    @Default("WARN")
+    @Default("DEBUG")
     LogLevel getLogLevel();
 
     @Description("Connection pooling type")
