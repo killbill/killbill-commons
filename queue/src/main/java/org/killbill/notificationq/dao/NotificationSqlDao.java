@@ -33,14 +33,14 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
 
     @SqlQuery
     public List<NotificationEventModelDao> getReadyQueueEntriesForSearchKey(@Bind("queueName") String queueName,
-                                                                            @Bind("searchKey") final Long keyValue,
-                                                                            @Define("tableName") final String tableName,
-                                                                            @Define("searchKey") final String searchKey);
+                                                                            @Bind("searchKey1") final Long searchKey1,
+                                                                            @Bind("searchKey2") final Long searchKey2,
+                                                                            @Define("tableName") final String tableName);
 
     @SqlQuery
-    public int getCountReadyEntries(@Bind("searchKey") final Long keyValue,
+    public int getCountReadyEntries(@Bind("searchKey1") final Long searchKey1,
+                                    @Bind("searchKey2") final Long searchKey2,
                                     @Bind("now") Date now,
-                                    @Define("tableName") final String tableName,
-                                    @Define("searchKey") final String searchKey);
+                                    @Define("tableName") final String tableName);
 
 }

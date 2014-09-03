@@ -16,14 +16,19 @@
 
 package org.killbill.notificationq;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import org.joda.time.DateTime;
+import org.killbill.TestSetup;
+import org.killbill.clock.ClockMock;
+import org.killbill.notificationq.api.NotificationEvent;
+import org.killbill.notificationq.api.NotificationEventWithMetadata;
+import org.killbill.notificationq.api.NotificationQueue;
+import org.killbill.notificationq.api.NotificationQueueService;
+import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import org.killbill.notificationq.dao.DummySqlTest;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
@@ -33,18 +38,13 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import org.killbill.TestSetup;
-import org.killbill.notificationq.api.NotificationEvent;
-import org.killbill.notificationq.api.NotificationQueueService;
-import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import org.killbill.notificationq.api.NotificationQueue;
-import org.killbill.notificationq.dao.DummySqlTest;
-import org.killbill.clock.ClockMock;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -87,6 +87,23 @@ public class TestNotificationQueue extends TestSetup {
             sb.append(value);
             return sb.toString();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof TestNotificationKey)) return false;
+
+            TestNotificationKey that = (TestNotificationKey) o;
+
+            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return value != null ? value.hashCode() : 0;
+        }
     }
 
     @Override
@@ -115,39 +132,88 @@ public class TestNotificationQueue extends TestSetup {
         final Map<NotificationEvent, Boolean> expectedNotifications = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queue = queueService.createNotificationQueue("test-svc",
-                                                                             "foo",
-                                                                             new NotificationQueueHandler() {
-                                                                                 @Override
-                                                                                 public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
-                                                                                     synchronized (expectedNotifications) {
-                                                                                         log.info("Handler received key: " + eventJson);
+                "foo",
+                new NotificationQueueHandler() {
+                    @Override
+                    public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+                        synchronized (expectedNotifications) {
+                            log.info("Handler received key: " + eventJson);
 
-                                                                                         expectedNotifications.put(eventJson, Boolean.TRUE);
-                                                                                         expectedNotifications.notify();
-                                                                                     }
-                                                                                 }
-                                                                             });
+                            expectedNotifications.put(eventJson, Boolean.TRUE);
+                            expectedNotifications.notify();
+                        }
+                    }
+                });
 
         queue.startQueue();
 
-        final UUID key = UUID.randomUUID();
-        final DummyObject obj = new DummyObject("foo", key);
         final DateTime now = new DateTime();
         final DateTime readyTime = now.plusMillis(2000);
-        final NotificationEvent eventJson = new TestNotificationKey(key.toString());
 
-        expectedNotifications.put(eventJson, Boolean.FALSE);
+
+        final UUID key1 = UUID.randomUUID();
+        final NotificationEvent eventJson1 = new TestNotificationKey(key1.toString());
+        expectedNotifications.put(eventJson1, Boolean.FALSE);
 
         DummySqlTest dummyDbi = getDBI().onDemand(DummySqlTest.class);
         dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
             @Override
             public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
-                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
-                log.info("Posted key: " + eventJson);
+                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson1, TOKEN_ID, 1L, SEARCH_KEY_2);
+                log.info("Posted key: " + eventJson1);
                 return null;
             }
         });
 
+        final UUID key2 = UUID.randomUUID();
+        final NotificationEvent eventJson2 = new TestNotificationKey(key2.toString());
+        expectedNotifications.put(eventJson2, Boolean.FALSE);
+
+        dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
+            @Override
+            public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
+                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson2, TOKEN_ID, SEARCH_KEY_1, 1L);
+                log.info("Posted key: " + eventJson2);
+                return null;
+            }
+        });
+
+        final UUID key3 = UUID.randomUUID();
+        final NotificationEvent eventJson3 = new TestNotificationKey(key3.toString());
+        expectedNotifications.put(eventJson3, Boolean.FALSE);
+
+        dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
+            @Override
+            public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
+                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson3, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+                log.info("Posted key: " + eventJson3);
+                return null;
+            }
+        });
+
+        final UUID key4 = UUID.randomUUID();
+        final NotificationEvent eventJson4 = new TestNotificationKey(key4.toString());
+        expectedNotifications.put(eventJson4, Boolean.FALSE);
+        dummyDbi.inTransaction(new Transaction<Object, DummySqlTest>() {
+            @Override
+            public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
+                queue.recordFutureNotificationFromTransaction(transactional, readyTime, eventJson4, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+                log.info("Posted key: " + eventJson4);
+                return null;
+            }
+        });
+
+
+        final List<NotificationEventWithMetadata<TestNotificationKey>> futures = queue.getFutureNotificationForSearchKeys(TestNotificationKey.class, SEARCH_KEY_1, SEARCH_KEY_2);
+        Assert.assertEquals(futures.size(), 2);
+        int found = 0;
+        for (int i = 0; i < 2; i++) {
+            if (futures.get(i).getEvent().getValue().equals(key3.toString()) ||
+                    futures.get(i).getEvent().getValue().equals(key4.toString())) {
+                found++;
+            }
+        }
+        Assert.assertEquals(found, 2);
 
         // Move time in the future after the notification effectiveDate
         ((ClockMock) clock).setDeltaFromReality(3000);
@@ -156,17 +222,17 @@ public class TestNotificationQueue extends TestSetup {
         // Notification should have kicked but give it at least a sec' for thread scheduling
         await().atMost(1, MINUTES)
                 .until(new Callable<Boolean>() {
-                    @Override
-                    public Boolean call() throws
-                                          Exception {
-                        return expectedNotifications.get(eventJson);
-                    }
-                }
-
-                      );
-
+                           @Override
+                           public Boolean call() throws
+                                   Exception {
+                               return expectedNotifications.get(eventJson1) &&
+                                       expectedNotifications.get(eventJson2) &&
+                                       expectedNotifications.get(eventJson3) &&
+                                       expectedNotifications.get(eventJson4);
+                           }
+                       }
+                );
         queue.stopQueue();
-        Assert.assertTrue(expectedNotifications.get(eventJson));
     }
 
     @Test(groups = "slow")
@@ -174,18 +240,18 @@ public class TestNotificationQueue extends TestSetup {
         final Map<NotificationEvent, Boolean> expectedNotifications = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queue = queueService.createNotificationQueue("test-svc",
-                                                                             "many",
-                                                                             new NotificationQueueHandler() {
-                                                                                 @Override
-                                                                                 public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
-                                                                                     synchronized (expectedNotifications) {
-                                                                                         log.info("Handler received key: " + eventJson.toString());
+                "many",
+                new NotificationQueueHandler() {
+                    @Override
+                    public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+                        synchronized (expectedNotifications) {
+                            log.info("Handler received key: " + eventJson.toString());
 
-                                                                                         expectedNotifications.put(eventJson, Boolean.TRUE);
-                                                                                         expectedNotifications.notify();
-                                                                                     }
-                                                                                 }
-                                                                             });
+                            expectedNotifications.put(eventJson, Boolean.TRUE);
+                            expectedNotifications.notify();
+                        }
+                    }
+                });
         queue.startQueue();
 
         final DateTime now = clock.getUTCNow();
@@ -207,7 +273,7 @@ public class TestNotificationQueue extends TestSetup {
                 @Override
                 public Object inTransaction(final DummySqlTest transactional, final TransactionStatus status) throws Exception {
                     queue.recordFutureNotificationFromTransaction(transactional, now.plus((currentIteration + 1) * nextReadyTimeIncrementMs),
-                                                                  eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+                            eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
                     return null;
                 }
             });

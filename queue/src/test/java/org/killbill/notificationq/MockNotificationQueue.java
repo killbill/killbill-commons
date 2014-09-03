@@ -100,33 +100,13 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey1(final Class<T> type, final Long searchKey1) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(Class<T> type, Long searchKey1, Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey1(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(Class<T> type, Long searchKey1, Long searchKey2, Transmogrifier transmogrifier) {
         return null;
-    }
-
-    @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Class<T> type, final Long searchKey2) {
-        return null;
-    }
-
-    @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Class<T> type, final Long searchKey2, final Transmogrifier transmogrifier) {
-        return null;
-    }
-
-    @Override
-    public int getReadyNotificationEntriesForSearchKey1(Long searchKey1) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int getReadyNotificationEntriesForSearchKey2(Long searchKey2) {
-        throw new UnsupportedOperationException();
     }
 
 
