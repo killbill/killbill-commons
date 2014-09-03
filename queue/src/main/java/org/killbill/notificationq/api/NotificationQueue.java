@@ -83,6 +83,7 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @param type       the class associated with the event
      * @param searchKey1 the value for key1
+     * @param searchKey2         the value for key2
      * @param <T>        the type of event
      * @return           a list of NotificationEventWithMetadata objects matching the search
      */
@@ -95,11 +96,37 @@ public interface NotificationQueue extends QueueLifecycle {
      *
      * @param type               the class associated with the event
      * @param searchKey1         the value for key1
+     * @param searchKey2         the value for key2
      * @param transmogrifier     the transaction that should be used to make that search
      * @param <T>                the type of event
      * @return                   a list of NotificationEventWithMetadata objects matching the search
      */
     public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Class<T> type, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier);
+
+
+    /**
+     *
+     *  Retrieve all future notifications associated with that queue and matching that search key
+     *
+     * @param type       the class associated with the event
+     * @param searchKey2 the value for key2
+     * @param <T>        the type of event
+     * @return           a list of NotificationEventWithMetadata objects matching the search
+     */
+    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Class<T> type, final Long searchKey2);
+
+
+    /**
+     *
+     *  Retrieve all future notifications associated with that queue and matching that search key
+     *
+     * @param type               the class associated with the event
+     * @param searchKey2         the value for key2
+     * @param transmogrifier     the transaction that should be used to make that search
+     * @param <T>                the type of event
+     * @return                   a list of NotificationEventWithMetadata objects matching the search
+     */
+    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Class<T> type, final Long searchKey2, final Transmogrifier transmogrifier);
 
 
 

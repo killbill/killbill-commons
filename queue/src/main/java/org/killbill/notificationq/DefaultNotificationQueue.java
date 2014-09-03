@@ -42,6 +42,8 @@ import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 
+import javax.annotation.Nullable;
+
 public class DefaultNotificationQueue implements NotificationQueue {
 
     private final DBBackedQueue<NotificationEventModelDao> dao;
@@ -99,20 +101,34 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     @Override
     public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Class<T> type, final Long searchKey1, final Long searchKey2) {
-        return getFutureNotificationsInternal(type, (NotificationSqlDao) dao.getSqlDao(), searchKey1, searchKey2);
+        return getFutureNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), searchKey1, searchKey2);
     }
 
     @Override
     public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Class<T> type, final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier) {
         final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        return getFutureNotificationsInternal(type, transactionalNotificationDao, searchKey1, searchKey2);
+        return getFutureNotificationsInternal(transactionalNotificationDao, searchKey1, searchKey2);
+    }
+
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(Class<T> type, Long searchKey2) {
+        return getFutureNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), null, searchKey2);
+    }
+
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Class<T> type, Long searchKey2, Transmogrifier transmogrifier) {
+        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
+        return getFutureNotificationsInternal(transactionalNotificationDao, null, searchKey2);
     }
 
 
-    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> typeX, final NotificationSqlDao transactionalDao, final Long searchKey1, final Long searchKey2) {
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
 
         final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
-        final List<NotificationEventModelDao> entries = transactionalDao.getReadyQueueEntriesForSearchKey(getFullQName(), searchKey1, searchKey2, config.getTableName());
+        final List<NotificationEventModelDao> entries = searchKey1 !=null ?
+                transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+
         for (NotificationEventModelDao cur : entries) {
             final T event = (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,

@@ -204,16 +204,29 @@ public class TestNotificationQueue extends TestSetup {
         });
 
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futures = queue.getFutureNotificationForSearchKeys(TestNotificationKey.class, SEARCH_KEY_1, SEARCH_KEY_2);
-        Assert.assertEquals(futures.size(), 2);
+        final List<NotificationEventWithMetadata<TestNotificationKey>> futuresAll = queue.getFutureNotificationForSearchKeys(TestNotificationKey.class, SEARCH_KEY_1, SEARCH_KEY_2);
+        Assert.assertEquals(futuresAll.size(), 2);
         int found = 0;
         for (int i = 0; i < 2; i++) {
-            if (futures.get(i).getEvent().getValue().equals(key3.toString()) ||
-                    futures.get(i).getEvent().getValue().equals(key4.toString())) {
+            if (futuresAll.get(i).getEvent().getValue().equals(key3.toString()) ||
+                    futuresAll.get(i).getEvent().getValue().equals(key4.toString())) {
                 found++;
             }
         }
         Assert.assertEquals(found, 2);
+
+
+        final List<NotificationEventWithMetadata<TestNotificationKey>> futures2 = queue.getFutureNotificationForSearchKey2(TestNotificationKey.class, SEARCH_KEY_2);
+        Assert.assertEquals(futures2.size(), 3);
+        found = 0;
+        for (int i = 0; i < 3; i++) {
+            if (futures2.get(i).getEvent().getValue().equals(key3.toString()) ||
+                    futures2.get(i).getEvent().getValue().equals(key4.toString()) ||
+                    futures2.get(i).getEvent().getValue().equals(key1.toString())) {
+                found++;
+            }
+        }
+        Assert.assertEquals(found, 3);
 
         // Move time in the future after the notification effectiveDate
         ((ClockMock) clock).setDeltaFromReality(3000);

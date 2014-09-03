@@ -109,6 +109,16 @@ public class MockNotificationQueue implements NotificationQueue {
         return null;
     }
 
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(Class<T> type, Long searchKey2) {
+        return null;
+    }
+
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Class<T> type, Long searchKey2, Transmogrifier transmogrifier) {
+        return null;
+    }
+
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
         final List<NotificationEventWithMetadata<T>> result = new ArrayList<NotificationEventWithMetadata<T>>();

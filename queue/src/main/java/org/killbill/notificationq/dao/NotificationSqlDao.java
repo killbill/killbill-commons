@@ -32,10 +32,16 @@ import java.util.List;
 public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDao> {
 
     @SqlQuery
-    public List<NotificationEventModelDao> getReadyQueueEntriesForSearchKey(@Bind("queueName") String queueName,
-                                                                            @Bind("searchKey1") final Long searchKey1,
-                                                                            @Bind("searchKey2") final Long searchKey2,
-                                                                            @Define("tableName") final String tableName);
+    public List<NotificationEventModelDao> getReadyQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
+                                                                             @Bind("searchKey1") final Long searchKey1,
+                                                                             @Bind("searchKey2") final Long searchKey2,
+                                                                             @Define("tableName") final String tableName);
+
+    @SqlQuery
+    public List<NotificationEventModelDao> getReadyQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
+                                                                             @Bind("searchKey2") final Long searchKey2,
+                                                                             @Define("tableName") final String tableName);
+
 
     @SqlQuery
     public int getCountReadyEntries(@Bind("searchKey1") final Long searchKey1,
