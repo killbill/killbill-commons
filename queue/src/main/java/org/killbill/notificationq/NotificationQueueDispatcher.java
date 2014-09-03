@@ -327,12 +327,14 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                     .append(parts[1])
                     .append("-process-time").toString();
 
-            final Histogram perQueueHistogramProcessingTime;
-            synchronized (perQueueProcessingTime) {
-                if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
-                    perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
+            Histogram perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
+            if (perQueueHistogramProcessingTime == null) {
+                synchronized (perQueueProcessingTime) {
+                    if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
+                        perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
+                    }
+                    perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
                 }
-                perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
             }
             final DateTime beforeProcessing = clock.getUTCNow();
 
@@ -359,13 +361,11 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         }
 
         private NotificationQueueHandler getHandlerForActiveQueue(final String compositeName) {
-            synchronized (queues) {
-                final NotificationQueue queue = queues.get(compositeName);
-                if (queue == null || !queue.isStarted()) {
-                    return null;
-                }
-                return queue.getHandler();
+            final NotificationQueue queue = queues.get(compositeName);
+            if (queue == null || !queue.isStarted()) {
+                return null;
             }
+            return queue.getHandler();
         }
     }
 
