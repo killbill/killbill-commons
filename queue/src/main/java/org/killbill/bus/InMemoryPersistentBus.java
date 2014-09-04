@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 
+import com.google.common.eventbus.EventBus;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
@@ -30,8 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.PersistentBus;
-
-import com.google.common.eventbus.AsyncEventBus;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -54,19 +53,12 @@ public class InMemoryPersistentBus implements PersistentBus {
         return true;
     }
 
-    public class EventBusDelegate extends AsyncEventBus {
+    public class EventBusDelegate extends EventBus {
 
-        private final Executor executor;
-        private final ThreadGroup grp;
-
-        public EventBusDelegate(final String name, final ThreadGroup grp, final Executor executor) {
-            super(name, executor);
-            this.executor = executor;
-            this.grp = grp;
+        public EventBusDelegate() {
         }
 
         public void completeDispatch() {
-            dispatchQueuedEvents();
         }
 
         // No way to really 'stop' an executor; what we do is:
@@ -90,7 +82,7 @@ public class InMemoryPersistentBus implements PersistentBus {
             }
         });
 
-        this.delegate = new EventBusDelegate(EVENT_BUS_IDENTIFIER, group, executor);
+        this.delegate = new EventBusDelegate();
         this.isInitialized = new AtomicBoolean(false);
     }
 
