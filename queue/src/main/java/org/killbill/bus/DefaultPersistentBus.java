@@ -17,6 +17,7 @@
 package org.killbill.bus;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.eventbus.EventBusThatThrowsException;
 import org.killbill.Hostname;
 import org.killbill.bus.api.BusEvent;
@@ -50,6 +51,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final EventBusDelegate eventBusDelegate;
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
+    final Timer dispatchTimer;
 
     private AtomicBoolean isStarted;
 
@@ -72,8 +74,10 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }), config.getNbThreads(), config);
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "bus-" + config.getTableName(), metricRegistry, databaseTransactionNotificationApi);
+        String dbBackedQId = "bus-" + config.getTableName();
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
+        this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
         this.isStarted = new AtomicBoolean(false);
     }
 
@@ -107,6 +111,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
             long errorCount = cur.getErrorCount();
             Throwable lastException = null;
+
+            final Timer.Context dispatchTimerContext = dispatchTimer.time();
             try {
                 eventBusDelegate.postWithException(evt);
             } catch (com.google.common.eventbus.EventBusException e) {
@@ -118,6 +124,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 }
                 errorCount++;
             } finally {
+                dispatchTimerContext.stop();
                 if (lastException == null) {
                     BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                     historyEvents.add(processedEntry);
