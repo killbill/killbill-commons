@@ -1,3 +1,6 @@
+0.2.22
+    Queue perf improvement and bug fixes
+
 0.2.21
     Update to killbill-oss-parent 0.7.21
     Lower default jdbi logging level
