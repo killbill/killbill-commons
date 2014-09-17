@@ -545,8 +545,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 return input.getRecordId();
             }
         });
-        final int result = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName());
-        if (result == candidates.size()) {
+        final int resultCount = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName());
+        if (resultCount == candidates.size()) {
+            totalClaimed.inc(resultCount);
             return candidates;
         }
 
@@ -557,7 +558,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(Hostname.get());
             }
         });
-        return ImmutableList.copyOf(claimed);
+        final List<T> result = ImmutableList.copyOf(claimed);
+        totalClaimed.inc(result.size());
+        return result;
     }
 
     //
