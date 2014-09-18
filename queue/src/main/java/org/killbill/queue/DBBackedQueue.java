@@ -383,7 +383,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 if (entry.getErrorCount() == 1) {
                     totalProcessedFirstFailures.inc();
                 }
-                if(useInflightQueue) {
+                if (useInflightQueue) {
                     transientInflightQRowIdCache.addRowId(entry.getRecordId());
                 }
                 return null;
@@ -392,42 +392,42 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     }
 
     public void moveEntryToHistory(final T entry) {
-        try {
-            sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
-                @Override
-                public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                    moveEntryToHistoryFromTransaction(transactional, entry);
-                    return null;
-                }
-            });
-        } catch (final Exception e) {
-            log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + entry.getRecordId() + "] into history ", e);
-        }
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                moveEntryToHistoryFromTransaction(transactional, entry);
+                return null;
+            }
+        });
     }
 
 
-    private void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
-        switch (entry.getProcessingState()) {
-            case FAILED:
-                totalProcessedAborted.inc();
-                break;
-            case PROCESSED:
-                totalProcessedSuccess.inc();
-                break;
-            case REMOVED:
-                // Don't default for REMOVED since we could call this API 'manually' with that state.
-                break;
-            default:
-                log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + entry.getProcessingState() + " for record_id = " + entry.getRecordId());
-                break;
-        }
+    public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
+        try {
+            switch (entry.getProcessingState()) {
+                case FAILED:
+                    totalProcessedAborted.inc();
+                    break;
+                case PROCESSED:
+                    totalProcessedSuccess.inc();
+                    break;
+                case REMOVED:
+                    // Don't default for REMOVED since we could call this API 'manually' with that state.
+                    break;
+                default:
+                    log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + entry.getProcessingState() + " for record_id = " + entry.getRecordId());
+                    break;
+            }
 
-        if (log.isDebugEnabled()) {
-            log.debug(DB_QUEUE_LOG_ID + "Moving entry " + entry.getRecordId() + " into history ");
-        }
+            if (log.isDebugEnabled()) {
+                log.debug(DB_QUEUE_LOG_ID + "Moving entry " + entry.getRecordId() + " into history ");
+            }
 
-        transactional.insertEntryWithRecordId(entry, config.getHistoryTableName());
-        transactional.removeEntry(entry.getRecordId(), config.getTableName());
+            transactional.insertEntryWithRecordId(entry, config.getHistoryTableName());
+            transactional.removeEntry(entry.getRecordId(), config.getTableName());
+        } catch (final Exception e) {
+            log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + entry.getRecordId() + "] into history ", e);
+        }
     }
 
     public void moveEntriesToHistory(final Iterable<T> entries) {
@@ -655,7 +655,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
         try {
             // Add entry in the inflightQ and clear threadlocal
-            final Iterator<Long> entries =  transientInflightQRowIdCache.iterator();
+            final Iterator<Long> entries = transientInflightQRowIdCache.iterator();
             while (entries.hasNext()) {
                 final Long entry = entries.next();
                 final boolean result = inflightEvents.offer(entry);
@@ -743,14 +743,17 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 return new Iterator<Long>() {
 
                     private int iteratorOffset = 0;
+
                     @Override
                     public boolean hasNext() {
                         return (iteratorOffset <= offset);
                     }
+
                     @Override
                     public Long next() {
                         return rowIds[iteratorOffset++];
                     }
+
                     @Override
                     public void remove() {
                         throw new IllegalStateException();
