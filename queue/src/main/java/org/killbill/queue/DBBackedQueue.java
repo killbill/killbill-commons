@@ -392,17 +392,21 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     }
 
     public void moveEntryToHistory(final T entry) {
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
-            @Override
-            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                moveEntryToHistoryFromTransaction(transactional, entry);
-                return null;
-            }
-        });
+        try {
+            sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+                @Override
+                public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                    moveEntryToHistoryFromTransaction(transactional, entry);
+                    return null;
+                }
+            });
+        } catch (final Exception e) {
+            log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + entry.getRecordId() + "] into history ", e);
+        }
     }
 
 
-    public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
+    private void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
         switch (entry.getProcessingState()) {
             case FAILED:
                 totalProcessedAborted.inc();
@@ -427,16 +431,27 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     }
 
     public void moveEntriesToHistory(final Iterable<T> entries) {
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
-            @Override
-            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                moveEntriesToHistoryFromTransaction(transactional, entries);
-                return null;
-            }
-        });
+        try {
+            sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+                @Override
+                public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                    moveEntriesToHistoryFromTransaction(transactional, entries);
+                    return null;
+                }
+            });
+        } catch (final Exception e) {
+            final Iterable<Long> recordIds = Iterables.transform(entries, new Function<T, Long>() {
+                @Nullable
+                @Override
+                public Long apply(@Nullable T input) {
+                    return input.getRecordId();
+                }
+            });
+            log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + Joiner.on(", ").join(recordIds) + "] into history ", e);
+        }
     }
 
-    public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
+    private void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
 
         if (!entries.iterator().hasNext()) {
             return;

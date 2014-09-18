@@ -27,7 +27,6 @@ import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
-import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
