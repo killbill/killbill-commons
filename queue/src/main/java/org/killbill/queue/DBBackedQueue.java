@@ -21,6 +21,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
@@ -30,7 +31,6 @@ import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
-import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
@@ -43,6 +43,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -79,6 +80,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     //
     private final static long INFLIGHT_POLLING_TIMEOUT_MSEC = 50;
+
+    // Maximum number of events that can be set from within one transaction (we could make it a config param if required)
+    private static final int MAX_BUS_ENTRIES_PER_TRANSACTIONS = 3;
+
 
     //
     // When running with inflightQ, add a polling every 5 minutes to detect if there are
@@ -117,8 +122,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     // transaction gets committed/rollback
     //
     private final static AtomicInteger QUEUE_ID_CNT = new AtomicInteger(0);
-    private final ThreadLocal<RowRef> lastInsertedRowId = new ThreadLocal<RowRef>();
     private final int queueId;
+    private final TransientInflightQRowIdCache transientInflightQRowIdCache;
 
     public DBBackedQueue(final Clock clock,
                          final QueueSqlDao<T> sqlDao,
@@ -187,7 +192,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         this.lastPollingOrphanTime = new AtomicLong(clock.getUTCNow().getMillis());
         this.isRunningOrphanQuery = new AtomicBoolean(false);
         this.lowestOrphanEntry = new AtomicLong(-1L);
-
+        this.transientInflightQRowIdCache = useInflightQueue ? new TransientInflightQRowIdCache(queueId) : null;
         this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }
 
@@ -220,6 +225,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
         log.info(DB_QUEUE_LOG_ID + "Initialized with useInflightQueue = " + useInflightQueue +
+                ", queueId = " + queueId +
                 ", isSticky = " + config.isSticky() +
                 ", isQueueOpenForWrite = " + isQueueOpenForWrite.get() +
                 ", isQueueOpenForRead = " + isQueueOpenForRead.get());
@@ -235,6 +241,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             }
         });
     }
+
 
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
 
@@ -253,10 +260,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         // It keeps track of it as a per thread data. Very soon, when the transaction gets committed/rolled back it can then extract the info
         // and insert the recordId into a blockingQ that is highly optimized to dispatch events.
         if (useInflightQueue && isQueueOpenForWrite.get()) {
-            if (lastInsertedRowId.get() != null) {
-                log.warn("InflightQ thread local variable was not reset properly for " + lastInsertedRowId.get().rowId + ", new row = " + lastInsertId);
-            }
-            lastInsertedRowId.set(new RowRef(queueId, lastInsertId));
+            transientInflightQRowIdCache.addRowId(lastInsertId);
             //log.info(DB_QUEUE_LOG_ID + "Setting for thread " + Thread.currentThread().getId() + ", row = " + lastInsertId);
         }
         totalInsert.inc();
@@ -286,7 +290,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             checkForOrphanEntries();
 
             candidates = fetchReadyEntriesFromIds();
-                        // There are entries in the Q, we just return those
+            // There are entries in the Q, we just return those
             if (candidates.size() > 0) {
                 totalInflightFetched.inc(candidates.size());
                 totalFetched.inc(candidates.size());
@@ -379,7 +383,9 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 if (entry.getErrorCount() == 1) {
                     totalProcessedFirstFailures.inc();
                 }
-                lastInsertedRowId.set(new RowRef(queueId, entry.getRecordId()));
+                if(useInflightQueue) {
+                    transientInflightQRowIdCache.addRowId(entry.getRecordId());
+                }
                 return null;
             }
         });
@@ -466,7 +472,6 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         transactional.insertEntriesWithRecordId(entries, config.getHistoryTableName());
         transactional.removeEntries(ImmutableList.copyOf(toBeRemovedRecordIds), config.getTableName());
     }
-
 
 
     private List<T> fetchReadyEntriesFromIds() {
@@ -620,49 +625,123 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     @Override
     public void update(Observable o, Object arg) {
 
-        final RowRef rowRef = lastInsertedRowId.get();
         final DatabaseTransactionEvent event = (DatabaseTransactionEvent) arg;
 
         // Either a transaction we are not interested in, or for the wrong queue; just return.
-        if (rowRef == null || rowRef.queueId != queueId) {
+        if (transientInflightQRowIdCache == null || !transientInflightQRowIdCache.isValid()) {
             return;
         }
 
         // This is a ROLLBACK, clear the threadLocal and return
         if (event.getType() == DatabaseTransactionEventType.ROLLBACK) {
-            lastInsertedRowId.set(null);
+            transientInflightQRowIdCache.reset();
             return;
         }
 
-        // Add entry in the inflightQ and clear threadlocal
         try {
-            final boolean result = inflightEvents.offer(rowRef.rowId);
-            if (result) {
-                if (log.isDebugEnabled()) {
-                    log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + rowRef.rowId +
-                            (result ? " into inflightQ" : " into disk"));
-                }
-                totalInflightInsert.inc();
-                // Q overflowed ?
-            } else {
-                final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
-                if (q) {
-                    log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + rowRef.rowId);
+            // Add entry in the inflightQ and clear threadlocal
+            final Iterator<Long> entries =  transientInflightQRowIdCache.iterator();
+            while (entries.hasNext()) {
+                final Long entry = entries.next();
+                final boolean result = inflightEvents.offer(entry);
+                if (result) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + entry +
+                                (result ? " into inflightQ" : " into disk"));
+                    }
+                    totalInflightInsert.inc();
+                    // Q overflowed ?
+                } else {
+                    final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
+                    if (q) {
+                        log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + entry);
+                    }
                 }
             }
         } finally {
-            lastInsertedRowId.set(null);
+            transientInflightQRowIdCache.reset();
         }
     }
 
-    // Internal structure to keep track or recordId per queue
-    private final class RowRef {
-        public final int queueId;
-        public final long rowId;
+    //
+    // Hide the ThreadLocal logic required for inflightQ algorithm in that class and export an easy to use interface.
+    //
+    private static class TransientInflightQRowIdCache {
 
-        private RowRef(int queueId, long rowId) {
+        private final ThreadLocal<RowRef> rowRefThreadLocal = new ThreadLocal<RowRef>();
+        private final int queueId;
+
+        private TransientInflightQRowIdCache(int queueId) {
             this.queueId = queueId;
-            this.rowId = rowId;
+        }
+
+        public boolean isValid() {
+            final RowRef entry = rowRefThreadLocal.get();
+            return (entry != null && entry.queueId == queueId);
+        }
+
+        public void addRowId(final Long rowId) {
+            RowRef entry = rowRefThreadLocal.get();
+            if (entry == null) {
+                entry = new RowRef(queueId, rowId);
+                rowRefThreadLocal.set(entry);
+            } else {
+                entry.addRowId(rowId);
+            }
+        }
+
+        public void reset() {
+            rowRefThreadLocal.remove();
+        }
+
+        public Iterator<Long> iterator() {
+            final RowRef entry = rowRefThreadLocal.get();
+            Preconditions.checkNotNull(entry);
+            return entry.iterator();
+        }
+
+
+        // Internal structure to keep track or recordId per queue
+        private final class RowRef {
+
+            private final int queueId;
+            private final long[] rowIds;
+
+            private int offset;
+
+            public RowRef(int queueId, long initialRowId) {
+                this.queueId = queueId;
+                this.rowIds = new long[MAX_BUS_ENTRIES_PER_TRANSACTIONS];
+                this.offset = 0;
+                this.rowIds[offset] = initialRowId;
+            }
+
+            public void addRowId(long rowId) {
+                if (offset == MAX_BUS_ENTRIES_PER_TRANSACTIONS - 1) {
+                    log.error("InflightQ thread local variable for queue " + queueId + " has too many entries, and was probably not reset correctly! ");
+                    return;
+                }
+                rowIds[++offset] = rowId;
+            }
+
+            public Iterator<Long> iterator() {
+                return new Iterator<Long>() {
+
+                    private int iteratorOffset = 0;
+                    @Override
+                    public boolean hasNext() {
+                        return (iteratorOffset <= offset);
+                    }
+                    @Override
+                    public Long next() {
+                        return rowIds[iteratorOffset++];
+                    }
+                    @Override
+                    public void remove() {
+                        throw new IllegalStateException();
+                    }
+                };
+            }
         }
     }
 }

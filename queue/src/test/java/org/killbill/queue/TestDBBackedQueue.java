@@ -27,7 +27,10 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.config.TimeSpan;
+import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -231,6 +234,42 @@ public class TestDBBackedQueue extends TestSetup {
             sqlDao.removeEntry(cur.getRecordId(), "bus_events");
         }
     }
+
+
+    @Test(groups = "slow")
+    public void testInflightQWithMultipleEntriesPerTransaction() {
+        final PersistentBusConfig config = createConfig(3, 10, false, true);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "MultipleEntriesPerTransaction-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue.initialize();
+
+        final BusEventModelDao input1 = createEntry(new Long(1));
+        final BusEventModelDao input2 = createEntry(new Long(2));
+        final BusEventModelDao input3 = createEntry(new Long(3));
+
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<BusEventModelDao>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<BusEventModelDao> transactional, final TransactionStatus status) throws Exception {
+                queue.insertEntryFromTransaction(transactional, input1);
+                queue.insertEntryFromTransaction(transactional, input2);
+                queue.insertEntryFromTransaction(transactional, input3);
+                return null;
+            }
+        });
+
+        final List<BusEventModelDao> claimed = queue.getReadyEntries();
+        assertEquals(claimed.size(), 3);
+
+        long expectedRecordId = -1;
+        for (int i = 0; i < claimed.size(); i++) {
+            final BusEventModelDao output = claimed.get(i);
+            expectedRecordId = (i == 0) ? output.getRecordId() : (expectedRecordId + 1);
+            assertEquals(output.getRecordId(), new Long(expectedRecordId));
+            assertEquals(output.getClassName(), String.class.getName());
+            assertEquals(output.getEventJson(), "json");
+        }
+    }
+
+
 
     /**
      * We start with 5 events on disk, a queue capacity of 100, and we fetch elements 7 by 7
