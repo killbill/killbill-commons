@@ -1,3 +1,6 @@
+0.2.23
+    Fix inflightQ queue to allow multiple events to be submitted per transactions
+
 0.2.22
     Queue perf improvement and bug fixes
 
