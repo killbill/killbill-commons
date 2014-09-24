@@ -733,7 +733,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
             public void addRowId(long rowId) {
                 if (offset == MAX_BUS_ENTRIES_PER_TRANSACTIONS - 1) {
-                    log.error("InflightQ thread local variable for queue " + queueId + " has too many entries, and was probably not reset correctly! ");
+                    log.error("DBBackedQ- Thread " + Thread.currentThread().getId() + "DBBackedQueue InflightQ thread local variable for queue " + queueId + " has too many entries, and was probably not reset correctly! offset = " + offset);
                     return;
                 }
                 rowIds[++offset] = rowId;
