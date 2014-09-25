@@ -309,35 +309,38 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         }
 
         if (!isQueueOpenForRead.get()) {
-            final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
-            candidates = fetchReadyEntries(fetchedSize);
+            // Again we synchronized here to avoid 2 threads fetching (and  when in sticky mode, also claiming same entries).
+            synchronized (this) {
+                final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
+                candidates = fetchReadyEntries(fetchedSize);
 
-            // There is a small number so we re-enable adding entries in the Q
-            if (candidates.size() < thresholdToReopenQForWrite) {
-                boolean r = isQueueOpenForWrite.compareAndSet(false, true);
-                if (r) {
-                    log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
+                // There is a small number so we re-enable adding entries in the Q
+                if (candidates.size() < thresholdToReopenQForWrite) {
+                    boolean r = isQueueOpenForWrite.compareAndSet(false, true);
+                    if (r) {
+                        log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
+                    }
                 }
-            }
-            if (candidates.size() > config.getMaxEntriesClaimed()) {
-                candidates = candidates.subList(0, config.getMaxEntriesClaimed());
-            }
-
-            //
-            // If we see that we catch up with entries in the inflightQ, we need to switch mode and remove entries we are processing
-            // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
-            // elements as expected, because entries have already been processed.
-            //
-            if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
-                final boolean q = isQueueOpenForRead.compareAndSet(false, true);
-                if (q) {
-                    log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
+                if (candidates.size() > config.getMaxEntriesClaimed()) {
+                    candidates = candidates.subList(0, config.getMaxEntriesClaimed());
                 }
-            }
 
-            // Only keep as many candidates as we are allowed to
-            totalFetched.inc(candidates.size());
-            return claimEntries(candidates);
+                //
+                // If we see that we catch up with entries in the inflightQ, we need to switch mode and remove entries we are processing
+                // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
+                // elements as expected, because entries have already been processed.
+                //
+                if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
+                    final boolean q = isQueueOpenForRead.compareAndSet(false, true);
+                    if (q) {
+                        log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
+                    }
+                }
+
+                // Only keep as many candidates as we are allowed to
+                totalFetched.inc(candidates.size());
+                return claimEntries(candidates);
+            }
         }
         return ImmutableList.<T>of();
     }
@@ -553,7 +556,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     //
     // In sticky mode, we can batch claim update; however we want to avoid two concurrent threads to run the same query
-    // at the same time to realize it cannot claim any entries before of timing issue -- see synchronized statement in getReadyEntries
+    // at the same time because they would both succeed to claim the entries -- see synchronized statement in getReadyEntries
     private List<T> batchClaimEntries(List<T> candidates) {
         if (candidates.size() == 0) {
             return ImmutableList.of();
@@ -566,21 +569,25 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             }
         });
         final int resultCount = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName());
+        // Same number, we got them all, we can optimize
         if (resultCount == candidates.size()) {
             totalClaimed.inc(resultCount);
             return candidates;
+            // Nothing... the synchronized block let go another concurrent thread
+        } else if (resultCount == 0) {
+            return ImmutableList.of();
+        } else {
+            final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+            final Iterable claimed = Iterables.filter(maybeClaimedEntries, new Predicate<T>() {
+                @Override
+                public boolean apply(T input) {
+                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(Hostname.get());
+                }
+            });
+            final List<T> result = ImmutableList.copyOf(claimed);
+            totalClaimed.inc(result.size());
+            return result;
         }
-
-        final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
-        final Iterable claimed = Iterables.filter(maybeClaimedEntries, new Predicate<T>() {
-            @Override
-            public boolean apply(T input) {
-                return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(Hostname.get());
-            }
-        });
-        final List<T> result = ImmutableList.copyOf(claimed);
-        totalClaimed.inc(result.size());
-        return result;
     }
 
     //
