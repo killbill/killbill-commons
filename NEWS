@@ -1,3 +1,7 @@
+0.2.24
+    Queue: fix duplicate entry issue when configured with sticky and multiple threads
+    Update to killbill-oss-parent 0.7.26
+
 0.2.23
     Fix inflightQ queue to allow multiple events to be submitted per transactions
 
