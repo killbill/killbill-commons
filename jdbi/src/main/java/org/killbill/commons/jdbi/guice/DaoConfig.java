@@ -21,6 +21,7 @@ package org.killbill.commons.jdbi.guice;
 import org.killbill.commons.jdbi.log.LogLevel;
 import org.skife.config.Config;
 import org.skife.config.Default;
+import org.skife.config.DefaultNull;
 import org.skife.config.Description;
 import org.skife.config.TimeSpan;
 
@@ -72,6 +73,41 @@ public interface DaoConfig {
     @Default("5m")
     TimeSpan getIdleConnectionTestPeriod();
 
+    @Description("Number of prepared statements that the driver will cache per connection")
+    @Config("org.killbill.dao.prepStmtCacheSize")
+    @Default("500")
+    int getPreparedStatementsCacheSize();
+
+    @Description("Maximum length of a prepared SQL statement that the driver will cache")
+    @Config("org.killbill.dao.prepStmtCacheSqlLimit")
+    @Default("2048")
+    int getPreparedStatementsCacheSqlLimit();
+
+    @Description("Enable prepared statements cache")
+    @Config("org.killbill.dao.cachePrepStmts")
+    @Default("true")
+    boolean isPreparedStatementsCacheEnabled();
+
+    @Description("Enable server-side prepared statements")
+    @Config("org.killbill.dao.useServerPrepStmts")
+    @Default("true")
+    boolean isServerSidePreparedStatementsEnabled();
+
+    @Description("DataSource class name provided by the JDBC driver, leave null for autodetection")
+    @Config("org.killbill.dao.dataSourceClassName")
+    @DefaultNull
+    String getDataSourceClassName();
+
+    @Description("JDBC driver to use (when dataSourceClassName is null)")
+    @Config("org.killbill.dao.driverClassName")
+    @DefaultNull
+    String getDriverClassName();
+
+    @Description("MySQL server version")
+    @Config("org.killbill.dao.mysqlServerVersion")
+    @Default("4.0")
+    String getMySQLServerVersion();
+
     @Description("Log level for SQL queries")
     @Config("org.killbill.dao.logLevel")
     @Default("DEBUG")
@@ -79,6 +115,6 @@ public interface DaoConfig {
 
     @Description("Connection pooling type")
     @Config("org.killbill.dao.poolingType")
-    @Default("C3P0")
+    @Default("HIKARICP")
     DataSourceConnectionPoolingType getConnectionPoolingType();
 }

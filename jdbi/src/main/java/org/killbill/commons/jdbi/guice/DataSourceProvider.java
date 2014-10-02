@@ -18,23 +18,53 @@
 
 package org.killbill.commons.jdbi.guice;
 
-import com.jolbox.bonecp.BoneCPConfig;
-import com.jolbox.bonecp.BoneCPDataSource;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
-import org.skife.config.TimeSpan;
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.sql.DataSource;
-import java.util.concurrent.TimeUnit;
+
+import org.skife.config.TimeSpan;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.jolbox.bonecp.BoneCPConfig;
+import com.jolbox.bonecp.BoneCPDataSource;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 public class DataSourceProvider implements Provider<DataSource> {
 
     private final DaoConfig config;
+    private final String poolName;
+    private final boolean useMariaDB;
+
+    private DatabaseType databaseType;
+    private String dataSourceClassName;
+    private String driverClassName;
+
+    @VisibleForTesting
+    static enum DatabaseType {
+        GENERIC,
+        MYSQL,
+        H2
+    }
 
     @Inject
     public DataSourceProvider(final DaoConfig config) {
+        this(config, null);
+    }
+
+    public DataSourceProvider(final DaoConfig config, final String poolName) {
+        this(config, poolName, true);
+    }
+
+    public DataSourceProvider(final DaoConfig config, final String poolName, final boolean useMariaDB) {
         this.config = config;
+        this.poolName = poolName;
+        this.useMariaDB = useMariaDB;
+        parseJDBCUrl();
     }
 
     @Override
@@ -46,14 +76,71 @@ public class DataSourceProvider implements Provider<DataSource> {
         final DataSource ds;
 
         if (DataSourceConnectionPoolingType.C3P0.equals(config.getConnectionPoolingType())) {
+            loadDriver();
             ds = getC3P0DataSource();
         } else if (DataSourceConnectionPoolingType.BONECP.equals(config.getConnectionPoolingType())) {
+            loadDriver();
             ds = getBoneCPDatSource();
+        } else if (DataSourceConnectionPoolingType.HIKARICP.equals(config.getConnectionPoolingType())) {
+            if (dataSourceClassName != null) {
+                loadDriver();
+            }
+            ds = getHikariCPDataSource();
         } else {
             throw new IllegalArgumentException("DataSource " + config.getConnectionPoolingType() + " unsupported");
         }
 
         return ds;
+    }
+
+    private DataSource getHikariCPDataSource() {
+        final HikariConfig hikariConfig = new HikariConfig();
+
+        hikariConfig.setUsername(config.getUsername());
+        hikariConfig.setPassword(config.getPassword());
+        hikariConfig.setMinimumIdle(config.getMinIdle());
+        hikariConfig.setMaximumPoolSize(config.getMaxActive());
+        hikariConfig.setConnectionTimeout(toMilliSeconds(config.getConnectionTimeout()));
+        hikariConfig.setIdleTimeout(toMilliSeconds(config.getIdleMaxAge()));
+        hikariConfig.setMaxLifetime(toMilliSeconds(config.getMaxConnectionAge()));
+        // TODO config.getIdleConnectionTestPeriod() ?
+
+        hikariConfig.setRegisterMbeans(true);
+
+        // TODO Not yet supported
+        // hikariConfig.setRecordMetrics(true);
+
+        if (poolName != null) {
+            hikariConfig.setPoolName(poolName);
+        }
+
+        hikariConfig.addDataSourceProperty("url", config.getJdbcUrl());
+        hikariConfig.addDataSourceProperty("user", config.getUsername());
+        hikariConfig.addDataSourceProperty("password", config.getPassword());
+
+        if (DatabaseType.MYSQL.equals(databaseType)) {
+            // TODO How to configure these on MariaDB?
+            if (!useMariaDB) {
+                hikariConfig.addDataSourceProperty("cachePrepStmts", config.isPreparedStatementsCacheEnabled());
+                hikariConfig.addDataSourceProperty("prepStmtCacheSize", config.getPreparedStatementsCacheSize());
+                hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", config.getPreparedStatementsCacheSqlLimit());
+                if (Float.valueOf(config.getMySQLServerVersion()) >= 5.1) {
+                    hikariConfig.addDataSourceProperty("useServerPrepStmts", config.isServerSidePreparedStatementsEnabled());
+                }
+            }
+        }
+
+        if (dataSourceClassName != null) {
+            hikariConfig.setDataSourceClassName(dataSourceClassName);
+        } else {
+            // Old-school DriverManager-based JDBC
+            hikariConfig.setJdbcUrl(config.getJdbcUrl());
+            if (driverClassName != null) {
+                hikariConfig.setDriverClassName(driverClassName);
+            }
+        }
+
+        return new HikariDataSource(hikariConfig);
     }
 
     private DataSource getBoneCPDatSource() {
@@ -69,6 +156,8 @@ public class DataSourceProvider implements Provider<DataSource> {
         dbConfig.setIdleConnectionTestPeriod(config.getIdleConnectionTestPeriod().getPeriod(), config.getIdleConnectionTestPeriod().getUnit());
         dbConfig.setPartitionCount(1);
         dbConfig.setDisableJMX(false);
+        dbConfig.setStatementsCacheSize(config.getPreparedStatementsCacheSize());
+        dbConfig.setPoolName(poolName);
 
         return new BoneCPDataSource(dbConfig);
     }
@@ -100,6 +189,16 @@ public class DataSourceProvider implements Provider<DataSource> {
         // http://www.mchange.com/projects/c3p0/#idleConnectionTestPeriod
         // If this is a number greater than 0, c3p0 will test all idle, pooled but unchecked-out connections, every this number of seconds.
         cpds.setIdleConnectionTestPeriod(toSeconds(config.getIdleConnectionTestPeriod()));
+        // The number of PreparedStatements c3p0 will cache for a single pooled Connection.
+        // If both maxStatements and maxStatementsPerConnection are zero, statement caching will not be enabled.
+        // If maxStatementsPerConnection is zero but maxStatements is a non-zero value, statement caching will be enabled,
+        // and a global limit enforced, but otherwise no limit will be set on the number of cached statements for a single Connection.
+        // If set, maxStatementsPerConnection should be set to about the number distinct PreparedStatements that are used
+        // frequently in your application, plus two or three extra so infrequently statements don't force the more common
+        // cached statements to be culled. Though maxStatements is the JDBC standard parameter for controlling statement caching,
+        // users may find maxStatementsPerConnection more intuitive to use.
+        cpds.setMaxStatementsPerConnection(config.getPreparedStatementsCacheSize());
+        cpds.setDataSourceName(poolName);
 
         return cpds;
     }
@@ -118,5 +217,60 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     private int toMilliSeconds(final long period, final TimeUnit timeUnit) {
         return (int) TimeUnit.MILLISECONDS.convert(period, timeUnit);
+    }
+
+    private void parseJDBCUrl() {
+        final URI uri = URI.create(config.getJdbcUrl().substring(5));
+
+        final String schemeLocation;
+        if (uri.getPath() != null) {
+            schemeLocation = null;
+        } else if (uri.getSchemeSpecificPart() != null) {
+            final String[] schemeParts = uri.getSchemeSpecificPart().split(":");
+            schemeLocation = schemeParts[0];
+        } else {
+            schemeLocation = null;
+        }
+
+        dataSourceClassName = config.getDataSourceClassName();
+        driverClassName = config.getDriverClassName();
+
+        if ("mysql".equals(uri.getScheme())) {
+            databaseType = DatabaseType.MYSQL;
+            if (dataSourceClassName == null) {
+                if (useMariaDB) {
+                    dataSourceClassName = "org.mariadb.jdbc.MySQLDataSource";
+                } else {
+                    dataSourceClassName = "com.mysql.jdbc.jdbc2.optional.MysqlDataSource";
+                }
+            }
+            if (driverClassName == null) {
+                if (useMariaDB) {
+                    driverClassName = "org.mariadb.jdbc.Driver";
+                } else {
+                    driverClassName = "com.mysql.jdbc.Driver";
+                }
+            }
+        } else if ("h2".equals(uri.getScheme()) && ("mem".equals(schemeLocation) || "file".equals(schemeLocation))) {
+            databaseType = DatabaseType.H2;
+            if (dataSourceClassName == null) {
+                dataSourceClassName = "org.h2.jdbcx.JdbcDataSource";
+            }
+            if (driverClassName == null) {
+                driverClassName = "org.h2.Driver";
+            }
+        } else {
+            databaseType = DatabaseType.GENERIC;
+        }
+    }
+
+    private void loadDriver() {
+        if (driverClassName != null) {
+            try {
+                Class.forName(driverClassName).newInstance();
+            } catch (final Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
     }
 }

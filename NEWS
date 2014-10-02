@@ -1,3 +1,6 @@
+0.2.25
+    jdbi: switch to HikariCP pool and MariaDB JDBC driver
+
 0.2.24
     Queue: fix duplicate entry issue when configured with sticky and multiple threads
     Update to killbill-oss-parent 0.7.26

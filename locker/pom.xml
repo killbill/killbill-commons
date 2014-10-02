@@ -29,11 +29,6 @@
     <dependencies>
         <dependency>
             <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
             <artifactId>mysql-connector-mxj</artifactId>
             <scope>test</scope>
         </dependency>
@@ -45,6 +40,11 @@
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-embeddeddb-mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
