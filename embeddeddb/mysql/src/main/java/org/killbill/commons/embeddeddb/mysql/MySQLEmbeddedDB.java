@@ -16,6 +16,12 @@
 
 package org.killbill.commons.embeddeddb.mysql;
 
+import com.mysql.management.MysqldResource;
+import com.mysql.management.MysqldResourceI;
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.mariadb.jdbc.MySQLDataSource;
+
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,19 +34,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.sql.DataSource;
-
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-import com.mysql.management.MysqldResource;
-import com.mysql.management.MysqldResourceI;
-
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    protected MysqlDataSource dataSource;
+    protected MySQLDataSource dataSource;
     protected int port;
 
     private File dbDir;
@@ -72,7 +70,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     @Override
     public void initialize() throws IOException {
-        dataSource = new MysqlDataSource();
+        dataSource = new MySQLDataSource();
         dataSource.setDatabaseName(databaseName);
         dataSource.setUser(username);
         dataSource.setPassword(password);
