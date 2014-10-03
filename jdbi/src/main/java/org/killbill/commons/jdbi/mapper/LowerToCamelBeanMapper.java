@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.killbill.billing.util.dao;
+package org.killbill.commons.jdbi.mapper;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
