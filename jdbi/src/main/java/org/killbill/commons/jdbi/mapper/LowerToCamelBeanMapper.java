@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2010-2012 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.killbill.commons.jdbi.mapper;
+package org.killbill.billing.util.dao;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -24,14 +24,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.sql.Blob;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
@@ -41,7 +44,6 @@ import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.google.common.base.CaseFormat;
-
 
 // Identical to org.skife.jdbi.v2.BeanMapper but maps created_date to createdDate
 public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
@@ -57,7 +59,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
             for (final PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
                 properties.put(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, descriptor.getName()).toLowerCase(), descriptor);
             }
-        } catch (IntrospectionException e) {
+        } catch (final IntrospectionException e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -66,7 +68,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         final T bean;
         try {
             bean = type.newInstance();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new IllegalArgumentException(String.format("A bean, %s, was mapped " +
                                                              "which was not instantiable", type.getName()),
                                                e);
@@ -107,8 +109,16 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                 } else if (type.isAssignableFrom(Time.class)) {
                     value = rs.getTime(i);
                 } else if (type.isAssignableFrom(LocalDate.class)) {
-                    final Date date = rs.getDate(i);
-                    value = date == null ? null : new LocalDate(date, DateTimeZone.UTC);
+                    //
+                    // We store the LocalDate into a mysql 'date' as a string
+                    // (See https://github.com/killbill/killbill-commons/blob/master/jdbi/src/main/java/org/killbill/commons/jdbi/argument/LocalDateArgumentFactory.java)
+                    // So we also read it as a String which avoids any kind of transformation
+                    //
+                    // Note that we used previously the getDate(index, Calendar) method, but this is not thread safe as we discovered
+                    // unless maybe -- untested --we pass a new instance of a Calendar each time
+                    //
+                    final String dateString = rs.getString(i);
+                    value = dateString == null ? null : new LocalDate(dateString, DateTimeZone.UTC);
                 } else if (type.isAssignableFrom(DateTimeZone.class)) {
                     final String dateTimeZoneString = rs.getString(i);
                     value = dateTimeZoneString == null ? null : DateTimeZone.forID(dateTimeZoneString);
@@ -127,6 +137,11 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                     value = rs.getObject(i);
                 }
 
+                // For h2, transform a JdbcBlob into a byte[]
+                if (value instanceof Blob) {
+                    final Blob blob = (Blob) value;
+                    value = blob.getBytes(0, (int) blob.length());
+                }
                 if (rs.wasNull() && !type.isPrimitive()) {
                     value = null;
                 }
@@ -141,16 +156,16 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                         field.setAccessible(true); // Often private...
                         field.set(bean, value);
                     }
-                } catch (NoSuchFieldException e) {
+                } catch (final NoSuchFieldException e) {
                     throw new IllegalArgumentException(String.format("Unable to find field for " +
                                                                      "property, %s", name), e);
-                } catch (IllegalAccessException e) {
+                } catch (final IllegalAccessException e) {
                     throw new IllegalArgumentException(String.format("Unable to access setter for " +
                                                                      "property, %s", name), e);
-                } catch (InvocationTargetException e) {
+                } catch (final InvocationTargetException e) {
                     throw new IllegalArgumentException(String.format("Invocation target exception trying to " +
                                                                      "invoker setter for the %s property", name), e);
-                } catch (NullPointerException e) {
+                } catch (final NullPointerException e) {
                     throw new IllegalArgumentException(String.format("No appropriate method to " +
                                                                      "write value %s ", value.toString()), e);
                 }
@@ -163,7 +178,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
     private static Field getField(final Class clazz, final String fieldName) throws NoSuchFieldException {
         try {
             return clazz.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
+        } catch (final NoSuchFieldException e) {
             // Go up in the hierarchy
             final Class superClass = clazz.getSuperclass();
             if (superClass == null) {
