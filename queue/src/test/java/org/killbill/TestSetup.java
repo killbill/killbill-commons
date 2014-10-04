@@ -69,7 +69,7 @@ public class TestSetup {
 
         clock = new ClockMock();
 
-        embeddedDB = new MySQLEmbeddedDB("killbillq", "killbillq", "killbillq");
+        embeddedDB = new MySQLEmbeddedDB("killbillq", "killbillq", "killbillq", false);
         embeddedDB.initialize();
         embeddedDB.start();
 
