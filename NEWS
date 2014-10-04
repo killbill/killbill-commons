@@ -1,4 +1,7 @@
 0.2.25
+    Move to MariaDB and HikariCP (connection pool)
+    Fix in queue for duplicate entries
+    Fix for LowerToCamelBeanMapper when reading date
     jdbi: switch to HikariCP pool and MariaDB JDBC driver
 
 0.2.24
