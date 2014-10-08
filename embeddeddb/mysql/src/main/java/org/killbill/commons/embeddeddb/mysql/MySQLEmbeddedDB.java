@@ -17,6 +17,7 @@
 package org.killbill.commons.embeddeddb.mysql;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.mysql.management.HackedMysqldResource;
 import com.mysql.management.MysqldResource;
 import com.mysql.management.MysqldResourceI;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
@@ -44,7 +45,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     private File dbDir;
     private File dataDir;
-    private MysqldResource mysqldResource;
+    private HackedMysqldResource mysqldResource;
 
     private boolean useMariaDB;
 
@@ -169,7 +170,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         }
 
         final PrintStream out = new PrintStream(new LoggingOutputStream(logger), true);
-        mysqldResource = new MysqldResource(dbDir, dataDir, null, out, out);
+        mysqldResource = new HackedMysqldResource(dbDir, dataDir, null, out, out);
 
         final Map<String, String> dbOpts = new HashMap<String, String>();
         dbOpts.put(MysqldResourceI.PORT, Integer.toString(port));
