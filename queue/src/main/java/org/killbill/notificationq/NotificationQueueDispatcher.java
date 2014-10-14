@@ -152,7 +152,11 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         if (nbQueueStarted == 0) {
             super.stopQueue();
             for (int i = 0; i < config.getNbThreads(); i++) {
-                runners[i].stop();
+                try {
+                    runners[i].stop();
+                } catch (Exception e) {
+                    log.warn("Failed to stop Notification runner {} {}", i, e);
+                }
             }
         }
     }
