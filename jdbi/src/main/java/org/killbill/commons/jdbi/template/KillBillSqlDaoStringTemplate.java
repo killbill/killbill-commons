@@ -50,8 +50,6 @@ public @interface KillBillSqlDaoStringTemplate {
 
     public static class KillBillSqlDaoStringTemplateFactory<SqlDao, ModelDao> extends UseStringTemplate3StatementLocator.LocatorFactory {
 
-        final static boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
-
         static ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
 
 
@@ -70,7 +68,7 @@ public @interface KillBillSqlDaoStringTemplate {
 
         private StatementLocator getLocator(final String locatorPath) {
 
-            if (enableGroupTemplateCaching && locatorCache.containsKey(locatorPath)) {
+            if (locatorCache.containsKey(locatorPath)) {
                 return locatorCache.get(locatorPath);
             }
 
@@ -86,9 +84,7 @@ public @interface KillBillSqlDaoStringTemplate {
                     .treatLiteralsAsTemplates();
 
             final StatementLocator locator = builder.build();
-            if (enableGroupTemplateCaching) {
-                locatorCache.put(locatorPath, locator);
-            }
+            locatorCache.put(locatorPath, locator);
             return locator;
         }
 
