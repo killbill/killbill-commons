@@ -261,6 +261,9 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
                         NotificationQueueHandler handler = getHandlerForActiveQueue(notification.getQueueName());
                         if (handler == null) {
+                            log.warn("Cannot find handler for notification: queue = {}, record_id = {}",
+                                    notification.getQueueName(),
+                                    notification.getRecordId());
                             continue;
                         }
 
