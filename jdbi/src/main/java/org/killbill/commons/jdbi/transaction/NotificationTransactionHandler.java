@@ -24,11 +24,15 @@ import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.skife.jdbi.v2.tweak.transactions.DelegatingTransactionHandler;
 import org.skife.jdbi.v2.tweak.transactions.LocalTransactionHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A transaction handler that allows to notify observers about database transaction success/failure.
  */
 public class NotificationTransactionHandler extends DelegatingTransactionHandler implements TransactionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(NotificationTransactionHandler.class);
 
     private final DatabaseTransactionNotificationApi transactionNotificationApi;
 
@@ -48,6 +52,10 @@ public class NotificationTransactionHandler extends DelegatingTransactionHandler
     }
 
     private void dispatchEvent(final DatabaseTransactionEvent event) {
-        transactionNotificationApi.dispatchNotification(event);
+        try {
+            transactionNotificationApi.dispatchNotification(event);
+        } catch (Exception e) {
+            logger.warn("Failed to notify for event {}", event);
+        }
     }
 }

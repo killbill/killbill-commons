@@ -355,7 +355,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 lastPollingOrphanTime.set(clock.getUTCNow().getMillis());
 
                 if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry.get()) {
-                    log.warn(DB_QUEUE_LOG_ID + "ORPHAN ENTRY FOR RECORD_ID " + previousLowestOrphanEntry + " ?");
+                    log.warn(DB_QUEUE_LOG_ID + "Detected unprocessed bus event {}, may need to restart server...", previousLowestOrphanEntry);
                 }
                 isRunningOrphanQuery.set(false);
             }
