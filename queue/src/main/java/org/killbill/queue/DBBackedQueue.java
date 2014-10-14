@@ -152,7 +152,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         this.totalInflightFetched = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInflightFetched"));
         // Number of entries written on disk -- if transaction is rolled back, it is still counted.
         this.totalInsert = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInsert"));
-        // Number of entries written on disk -- if transaction is rolled back, it is still counted.
+        // Number of entries fetched from disk -- if transaction is rolled back, it is still counted.
         this.totalFetched = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalFetched"));
         // Number of successfully claimed events
         this.totalClaimed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalClaimed"));
