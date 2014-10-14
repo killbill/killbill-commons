@@ -318,6 +318,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                     }
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 log.warn("Got interrupted while stopping " + LOG_PREFIX);
             }
         }
