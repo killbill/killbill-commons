@@ -21,13 +21,21 @@ import java.net.UnknownHostException;
 
 public class Hostname {
 
-    public static String get() {
-        try {
-            final InetAddress addr = InetAddress.getLocalHost();
-            return addr.getHostName();
-        } catch (UnknownHostException e) {
-            return "hostname-unknown";
-        }
-    }
+    private static String hostname;
 
+    public static String get() {
+        if (hostname == null) {
+            synchronized (Hostname.class) {
+                if (hostname == null) {
+                    try {
+                        final InetAddress addr = InetAddress.getLocalHost();
+                        hostname = addr.getHostName();
+                    } catch (UnknownHostException e) {
+                        hostname = "hostname-unknown";
+                    }
+                }
+            }
+        }
+        return hostname;
+    }
 }
