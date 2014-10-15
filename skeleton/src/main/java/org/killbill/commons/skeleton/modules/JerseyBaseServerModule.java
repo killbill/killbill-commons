@@ -16,26 +16,36 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-
-import javax.servlet.Filter;
-import javax.servlet.http.HttpServlet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.Filter;
+import javax.servlet.http.HttpServlet;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
+
 public class JerseyBaseServerModule extends BaseServerModule {
 
     private static final Joiner joiner = Joiner.on(";");
 
+    @VisibleForTesting
+    static final String JERSEY_CONTAINER_REQUEST_FILTERS = "com.sun.jersey.spi.container.ContainerRequestFilters";
+    @VisibleForTesting
+    static final String JERSEY_CONTAINER_RESPONSE_FILTERS = "com.sun.jersey.spi.container.ContainerResponseFilters";
+    @VisibleForTesting
+    static final String JERSEY_DISABLE_ENTITYLOGGING = "com.sun.jersey.config.feature.logging.DisableEntitylogging";
+
     // See com.sun.jersey.api.core.ResourceConfig
     private final ImmutableMap.Builder<String, String> jerseyParams;
-
 
     public JerseyBaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
                                   final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex,
@@ -45,14 +55,35 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
                                   final String jaxrsUriPattern,
                                   final Collection<String> jaxrsResources,
-                                  final List<String> jerseyFilters) {
+                                  final List<String> jerseyFilters,
+                                  final Map<String, String> jerseyParams) {
         super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern, jaxrsResources);
-        this.jerseyParams = new ImmutableMap.Builder<String, String>()
-                .put("com.sun.jersey.spi.container.ContainerRequestFilters", Joiner.on(';').join(jerseyFilters))
-                .put("com.sun.jersey.spi.container.ContainerResponseFilters", Joiner.on(';').join(Lists.reverse(jerseyFilters)))
-                // The LoggingFilter will log the body by default, which breaks StreamingOutput
-                .put("com.sun.jersey.config.feature.logging.DisableEntitylogging", "true");
 
+        String manuallySpecifiedRequestFilters = Strings.nullToEmpty(jerseyParams.remove(JERSEY_CONTAINER_REQUEST_FILTERS));
+        String manuallySpecifiedResponseFilters = Strings.nullToEmpty(jerseyParams.remove(JERSEY_CONTAINER_RESPONSE_FILTERS));
+        if (!jerseyFilters.isEmpty()) {
+            if (!manuallySpecifiedRequestFilters.isEmpty()) {
+                manuallySpecifiedRequestFilters += ";";
+            }
+            if (!manuallySpecifiedResponseFilters.isEmpty()) {
+                manuallySpecifiedResponseFilters += ";";
+            }
+        }
+        final String containerRequestFilters = manuallySpecifiedRequestFilters + joiner.join(jerseyFilters);
+        final String containerResponseFilters = manuallySpecifiedResponseFilters + joiner.join(Lists.reverse(jerseyFilters));
+
+        this.jerseyParams = new ImmutableMap.Builder<String, String>();
+        if (!containerRequestFilters.isEmpty()) {
+            this.jerseyParams.put(JERSEY_CONTAINER_REQUEST_FILTERS, containerRequestFilters);
+        }
+        if (!containerResponseFilters.isEmpty()) {
+            this.jerseyParams.put(JERSEY_CONTAINER_RESPONSE_FILTERS, containerResponseFilters);
+        }
+
+        // The LoggingFilter will log the body by default, which breaks StreamingOutput
+        final String disableEntityLogging = Objects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_DISABLE_ENTITYLOGGING)), "true");
+        this.jerseyParams.put(JERSEY_DISABLE_ENTITYLOGGING, disableEntityLogging)
+                         .putAll(jerseyParams);
     }
 
     @Override
@@ -70,5 +101,10 @@ public class JerseyBaseServerModule extends BaseServerModule {
             jerseyParams.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
             serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
         }
+    }
+
+    @VisibleForTesting
+    ImmutableMap.Builder<String, String> getJerseyParams() {
+        return jerseyParams;
     }
 }

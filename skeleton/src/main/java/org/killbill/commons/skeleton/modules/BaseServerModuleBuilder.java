@@ -47,6 +47,7 @@ public class BaseServerModuleBuilder {
 
     // Specific filters called by jersey
     private final List<String> jerseyFilters = new ArrayList<String>();
+    private final Map<String, String> jerseyParams = new HashMap<String, String>();
 
     private JaxrsImplementation jaxrsImplementation = JaxrsImplementation.JERSEY;
 
@@ -99,9 +100,13 @@ public class BaseServerModuleBuilder {
         return this;
     }
 
-
     public BaseServerModuleBuilder addJerseyFilter(final String filterClassName) {
         this.jerseyFilters.add(filterClassName);
+        return this;
+    }
+
+    public BaseServerModuleBuilder addJerseyParam(final String key, final String value) {
+        this.jerseyParams.put(key, value);
         return this;
     }
 
@@ -153,7 +158,8 @@ public class BaseServerModuleBuilder {
                                                   jaxrsServletsRegex,
                                                   jaxrsUriPattern,
                                                   jaxrsResources,
-                                                  jerseyFilters);
+                                                  jerseyFilters,
+                                                  jerseyParams);
             default:
                 throw new IllegalArgumentException();
         }
