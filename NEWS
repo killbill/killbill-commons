@@ -1,3 +1,7 @@
+0.2.27
+    Fix around MysqldResource (test)
+    Code review integration
+
 0.2.26
     Move to MariaDB and HikariCP (connection pool)
     Fix in queue for duplicate entries
