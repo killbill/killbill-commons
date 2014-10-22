@@ -1,3 +1,6 @@
+0.2.28
+    Create ClockUtil to start encapsulating Clock functions
+
 0.2.27
     Fix around MysqldResource (test)
     Code review integration
