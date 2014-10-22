@@ -29,6 +29,4 @@ public interface Clock {
     public LocalDate getUTCToday();
 
     public LocalDate getToday(DateTimeZone timeZone);
-
-    //public DateTime addDuration(DateTime input, IDuration duration);
 }
