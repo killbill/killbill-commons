@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2014 Groupon, Inc
+ * Copyright 2014 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -13,7 +15,6 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-
 
 package org.killbill.xmlloader;
 
@@ -30,13 +31,13 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
+import org.killbill.billing.catalog.api.InvalidConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.killbill.billing.catalog.api.InvalidConfigException;
-
 public class XMLLoader {
+
     public static Logger log = LoggerFactory.getLogger(XMLLoader.class);
 
     public static <T extends ValidatingConfig<T>> T getObjectFromString(final String uri, final Class<T> objectType) throws Exception {
@@ -68,9 +69,8 @@ public class XMLLoader {
             T castObject = (T) o;
             try {
                 validate(uri, castObject);
-            } catch (ValidationException e) {
+            } catch (final ValidationException e) {
                 e.getErrors().log(log);
-                System.err.println(e.getErrors().toString());
                 throw e;
             }
             return castObject;
@@ -111,5 +111,4 @@ public class XMLLoader {
 
         return um;
     }
-
 }
