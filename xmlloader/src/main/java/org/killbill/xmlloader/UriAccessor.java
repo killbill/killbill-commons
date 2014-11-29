@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2014 Groupon, Inc
+ * Copyright 2014 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -19,12 +21,11 @@ package org.killbill.xmlloader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Scanner;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import com.google.common.io.Resources;
 
@@ -46,7 +47,7 @@ public class UriAccessor {
             uri = new URI(Resources.getResource(uri.toString()).toExternalForm());
         } else if (scheme.equals(URI_SCHEME_FOR_CLASSPATH)) {
             if (uri.toString().startsWith(URI_SCHEME_FOR_ARCHIVE_FILE)) {
-                return getInputStreamFromJarFile(uri.toString());
+                return getInputStreamFromJarFile(uri);
             } else {
                 return UriAccessor.class.getResourceAsStream(uri.getPath());
             }
@@ -59,20 +60,14 @@ public class UriAccessor {
     }
 
     /**
-     *
-     * @param classPathFile of the form jar:file:/path!/resource
-     * @return
+     * @param uri of the form jar:file:/path!/resource
      * @throws IOException if fail to extract InputStream
      */
-    private static InputStream getInputStreamFromJarFile(final String classPathFile) throws IOException {
+    private static InputStream getInputStreamFromJarFile(final URI uri) throws IOException {
+        final URL url = uri.toURL();
+        final JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
 
-        final String[] partsPathAndResource = classPathFile.split("!");
-        final String resourceInJar = partsPathAndResource[1].substring(1);
-
-        final String[] partsColumns = partsPathAndResource[0].split(":");
-        final String jarFileName = partsColumns[2];
-
-        return new ZipFile(new File(jarFileName)).getInputStream(new ZipEntry(resourceInJar));
+        return jarURLConnection.getJarFile().getInputStream(jarURLConnection.getJarEntry());
     }
 
     public static String accessUriAsString(final String uri) throws IOException, URISyntaxException {
