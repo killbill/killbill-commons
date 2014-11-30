@@ -94,7 +94,7 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("^ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.RuntimeException: Fail!\n"));
+        assertPattern(actual, Pattern.compile("^ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: Fail!\r?\n"));
         assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
     }
 
@@ -115,7 +115,7 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("^ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.OutOfMemoryError: Poof!\n"));
+        assertPattern(actual, Pattern.compile("^ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.OutOfMemoryError: Poof!\r?\n"));
         assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
     }
 
@@ -159,8 +159,8 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("^DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\njava.lang.Exception: Oops!\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\njava.lang.OutOfMemoryError: Uh oh!\n"));
+        assertPattern(actual, Pattern.compile("^DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.Exception: Oops!\r?\n"));
+        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.OutOfMemoryError: Uh oh!\r?\n"));
         assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
     }
 
@@ -230,11 +230,11 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.RuntimeException: D'oh!\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.OutOfMemoryError: Zoinks!\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.RuntimeException: Eep!\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.OutOfMemoryError: Zounds!\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\njava.lang.RuntimeException: Egad!\n"));
+        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: D'oh!\r?\n"));
+        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.OutOfMemoryError: Zoinks!\r?\n"));
+        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: Eep!\r?\n"));
+        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.OutOfMemoryError: Zounds!\r?\n"));
+        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: Egad!\r?\n"));
         assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
     }
 
