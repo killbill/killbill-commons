@@ -1,3 +1,6 @@
+0.2.29
+    https://github.com/killbill/killbill/issues/226
+
 0.2.28
     Create ClockUtil to start encapsulating Clock functions
 
