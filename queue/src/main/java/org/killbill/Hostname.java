@@ -16,12 +16,20 @@
 
 package org.killbill;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class Hostname {
 
+    private static final Logger logger = LoggerFactory.getLogger(Hostname.class);
+
     private static String hostname;
+
+    // Can be used for testing with multiple instances on the same machine (with same  InetAddress)
+    private static final String POSTFIX_HOSTNAME = "org.killbill.hostname.postfix";
 
     public static String get() {
         if (hostname == null) {
@@ -32,6 +40,10 @@ public class Hostname {
                         hostname = addr.getHostName();
                     } catch (UnknownHostException e) {
                         hostname = "hostname-unknown";
+                    }
+                    if (System.getProperty(POSTFIX_HOSTNAME) != null) {
+                        hostname = hostname + System.getProperty(POSTFIX_HOSTNAME);
+                        logger.warn("Found system property " + POSTFIX_HOSTNAME + ": hostname for queue = " + hostname);
                     }
                 }
             }
