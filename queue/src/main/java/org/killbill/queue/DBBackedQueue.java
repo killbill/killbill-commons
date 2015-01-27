@@ -266,23 +266,24 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         totalInsert.inc();
     }
 
-    public List<T> getReadyEntries() {
+    //
+    // We synchronize the method because there is no point in having two concurrent threads racing each other,
+    // with only of of which being able to claim the entries.
+    // * In sticky mode the, since only threads from that JVM can fetch the same entries, that solves the problem
+    // * In non sticky mode, another JVM could fetch the same entries, so this may be a little inefficient, but because
+    //   the claim is sequential, this will lead to correct results
+    //
+    public synchronized List<T> getReadyEntries() {
 
         List<T> candidates = ImmutableList.<T>of();
 
-        // If we are not configured to use inflightQ then run select query; also we synchronize the block
-        // because there si no point having two concurrent threads racing each other, with only of of which
-        // being able to claim the entries.
-        //
         if (!useInflightQueue) {
-            synchronized (this) {
-                final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
-                totalFetched.inc(entriesToClaim.size());
-                if (entriesToClaim.size() > 0) {
-                    candidates = claimEntries(entriesToClaim);
-                }
-                return candidates;
+            final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
+            totalFetched.inc(entriesToClaim.size());
+            if (entriesToClaim.size() > 0) {
+                candidates = claimEntries(entriesToClaim);
             }
+            return candidates;
         }
 
         if (isQueueOpenForRead.get()) {
@@ -309,38 +310,35 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         }
 
         if (!isQueueOpenForRead.get()) {
-            // Again we synchronized here to avoid 2 threads fetching (and  when in sticky mode, also claiming same entries).
-            synchronized (this) {
-                final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
-                candidates = fetchReadyEntries(fetchedSize);
+            final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
+            candidates = fetchReadyEntries(fetchedSize);
 
-                // There is a small number so we re-enable adding entries in the Q
-                if (candidates.size() < thresholdToReopenQForWrite) {
-                    boolean r = isQueueOpenForWrite.compareAndSet(false, true);
-                    if (r) {
-                        log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
-                    }
+            // There is a small number so we re-enable adding entries in the Q
+            if (candidates.size() < thresholdToReopenQForWrite) {
+                boolean r = isQueueOpenForWrite.compareAndSet(false, true);
+                if (r) {
+                    log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
                 }
-                if (candidates.size() > config.getMaxEntriesClaimed()) {
-                    candidates = candidates.subList(0, config.getMaxEntriesClaimed());
-                }
-
-                //
-                // If we see that we catch up with entries in the inflightQ, we need to switch mode and remove entries we are processing
-                // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
-                // elements as expected, because entries have already been processed.
-                //
-                if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
-                    final boolean q = isQueueOpenForRead.compareAndSet(false, true);
-                    if (q) {
-                        log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
-                    }
-                }
-
-                // Only keep as many candidates as we are allowed to
-                totalFetched.inc(candidates.size());
-                return claimEntries(candidates);
             }
+            if (candidates.size() > config.getMaxEntriesClaimed()) {
+                candidates = candidates.subList(0, config.getMaxEntriesClaimed());
+            }
+
+            //
+            // If we see that we catch up with entries in the inflightQ, we need to switch mode and remove entries we are processing
+            // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
+            // elements as expected, because entries have already been processed.
+            //
+            if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
+                final boolean q = isQueueOpenForRead.compareAndSet(false, true);
+                if (q) {
+                    log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
+                }
+            }
+
+            // Only keep as many candidates as we are allowed to
+            totalFetched.inc(candidates.size());
+            return claimEntries(candidates);
         }
         return ImmutableList.<T>of();
     }
