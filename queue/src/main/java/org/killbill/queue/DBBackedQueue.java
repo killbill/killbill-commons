@@ -81,9 +81,6 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
     //
     private final static long INFLIGHT_POLLING_TIMEOUT_MSEC = 50;
 
-    // Maximum number of events that can be set from within one transaction (we could make it a config param if required)
-    private static final int MAX_BUS_ENTRIES_PER_TRANSACTIONS = 3;
-
 
     //
     // When running with inflightQ, add a polling every 5 minutes to detect if there are
@@ -703,7 +700,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         public void addRowId(final Long rowId) {
             RowRef entry = rowRefThreadLocal.get();
             if (entry == null) {
-                entry = new RowRef(queueId, rowId);
+                entry = new RowRef(queueId);
                 rowRefThreadLocal.set(entry);
             } else {
                 entry.addRowId(rowId);
@@ -725,45 +722,19 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         private final class RowRef {
 
             private final int queueId;
-            private final long[] rowIds;
+            private final List<Long> rowIds;
 
-            private int offset;
-
-            public RowRef(int queueId, long initialRowId) {
+            public RowRef(int queueId) {
                 this.queueId = queueId;
-                this.rowIds = new long[MAX_BUS_ENTRIES_PER_TRANSACTIONS];
-                this.offset = 0;
-                this.rowIds[offset] = initialRowId;
+                this.rowIds = new ArrayList<Long>();
             }
 
             public void addRowId(long rowId) {
-                if (offset == MAX_BUS_ENTRIES_PER_TRANSACTIONS - 1) {
-                    log.error("DBBackedQ- Thread " + Thread.currentThread().getId() + "DBBackedQueue InflightQ thread local variable for queue " + queueId + " has too many entries, and was probably not reset correctly! offset = " + offset);
-                    return;
-                }
-                rowIds[++offset] = rowId;
+                rowIds.add(rowId);
             }
 
             public Iterator<Long> iterator() {
-                return new Iterator<Long>() {
-
-                    private int iteratorOffset = 0;
-
-                    @Override
-                    public boolean hasNext() {
-                        return (iteratorOffset <= offset);
-                    }
-
-                    @Override
-                    public Long next() {
-                        return rowIds[iteratorOffset++];
-                    }
-
-                    @Override
-                    public void remove() {
-                        throw new IllegalStateException();
-                    }
-                };
+                return rowIds.iterator();
             }
         }
     }
