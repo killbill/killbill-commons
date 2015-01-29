@@ -93,7 +93,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
-        this(new DBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).build(PersistentBusConfig.class), new MetricRegistry(), new DatabaseTransactionNotificationApi());
+        this(InTransaction.buildDDBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).build(PersistentBusConfig.class), new MetricRegistry(), new DatabaseTransactionNotificationApi());
     }
 
     @Override

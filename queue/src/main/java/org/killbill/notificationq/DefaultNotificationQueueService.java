@@ -18,22 +18,20 @@
 
 package org.killbill.notificationq;
 
-import java.util.Properties;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.sql.DataSource;
-
+import com.codahale.metrics.MetricRegistry;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
+import org.killbill.queue.InTransaction;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
-import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 
-import com.codahale.metrics.MetricRegistry;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.sql.DataSource;
+import java.util.Properties;
 
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
 
@@ -43,7 +41,7 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
     }
 
     public DefaultNotificationQueueService(final DataSource dataSource, final Properties properties) {
-        super(new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).build(NotificationQueueConfig.class), new DBI(dataSource), new MetricRegistry());
+        super(new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).build(NotificationQueueConfig.class), InTransaction.buildDDBI(dataSource), new MetricRegistry());
     }
 
     @Override

@@ -55,8 +55,12 @@ public class InTransaction {
         }
     }
 
-    private static DBI buildDDBI(final Connection connection) {
+    public static DBI buildDDBI(final Connection connection) {
         final DataSourceWithDelegate dataSource = new DataSourceWithDelegate(connection);
+        return buildDDBI(dataSource);
+    }
+
+    public static DBI buildDDBI(final DataSource dataSource) {
         final DBI dbi = new DBI(dataSource);
         dbi.registerArgumentFactory(new UUIDArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());

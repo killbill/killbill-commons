@@ -284,7 +284,6 @@ public class TestNotificationQueue extends TestSetup {
             final int nextReadyTimeIncrementMs = 1000;
 
             final UUID key = UUID.randomUUID();
-            final DummyObject obj = new DummyObject("foo", key);
             final int currentIteration = i;
 
             final NotificationEvent eventJson = new TestNotificationKey(new Integer(i).toString());
@@ -371,7 +370,6 @@ public class TestNotificationQueue extends TestSetup {
         //		We don't start Barney so it can never pick up notifications
 
         final UUID key = UUID.randomUUID();
-        final DummyObject obj = new DummyObject("foo", key);
         final DateTime now = new DateTime();
         final DateTime readyTime = now.plusMillis(2000);
         final NotificationEvent eventJsonFred = new TestNotificationKey("Fred");
