@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -30,7 +32,6 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Default("false")
     @Description("Whether the bus should be an in memory bus")
     public abstract boolean isInMemory();
-
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.sticky")

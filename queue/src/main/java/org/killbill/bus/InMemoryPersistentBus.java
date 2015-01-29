@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,6 +18,7 @@
 
 package org.killbill.bus;
 
+import java.sql.Connection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -23,14 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 
-import com.google.common.eventbus.EventBus;
+import org.killbill.bus.api.BusEvent;
+import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBusConfig;
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.killbill.bus.api.BusEvent;
-import org.killbill.bus.api.PersistentBus;
+import com.google.common.eventbus.EventBus;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -105,7 +107,7 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public void postFromTransaction(final BusEvent event, final Transmogrifier transmogrifier) throws EventBusException {
+    public void postFromTransaction(final BusEvent event, final Connection connection) throws EventBusException {
         checkInitialized("postFromTransaction");
         delegate.post(event);
     }

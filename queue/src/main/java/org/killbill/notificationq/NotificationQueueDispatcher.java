@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2012 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,11 +18,19 @@
 
 package org.killbill.notificationq;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.joda.time.DateTime;
 import org.killbill.Hostname;
 import org.killbill.clock.Clock;
@@ -37,25 +47,17 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     protected static final Logger log = LoggerFactory.getLogger(NotificationQueueDispatcher.class);
 
     public static final int CLAIM_TIME_MS = (5 * 60 * 1000); // 5 minutes
-
 
     private final AtomicLong nbProcessedEvents;
 
@@ -107,12 +109,12 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         this.metricRegistry = metricRegistry;
         this.pendingNotifications = metricRegistry.register(MetricRegistry.name(NotificationQueueDispatcher.class, "pending-notifications"),
-                new Gauge<Integer>() {
-                    @Override
-                    public Integer getValue() {
-                        return pendingNotificationsQ.size();
-                    }
-                });
+                                                            new Gauge<Integer>() {
+                                                                @Override
+                                                                public Integer getValue() {
+                                                                    return pendingNotificationsQ.size();
+                                                                }
+                                                            });
 
         this.runners = new NotificationRunner[config.getNbThreads()];
         for (int i = 0; i < config.getNbThreads(); i++) {
@@ -154,7 +156,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             for (int i = 0; i < config.getNbThreads(); i++) {
                 try {
                     runners[i].stop();
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     log.warn("Failed to stop Notification runner {} {}", i, e);
                 }
             }
@@ -171,7 +173,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         return doProcessEventsWithLimit(-1);
     }
 
-    protected int doProcessEventsWithLimit(int limit) {
+    protected int doProcessEventsWithLimit(final int limit) {
 
         logDebug("ENTER doProcessEvents");
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
@@ -189,7 +191,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         for (final NotificationEventModelDao cur : notifications) {
             try {
                 pendingNotificationsQ.put(cur);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("NotificationQueueDispatcher thread got interrupted");
                 return 0;
@@ -217,7 +219,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         private Thread runnerTh;
 
         public NotificationRunner(final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ,
-                                  final Clock clock, NotificationQueueConfig config,
+                                  final Clock clock,
+                                  final NotificationQueueConfig config,
                                   final ObjectMapper objectMapper,
                                   final AtomicLong nbProcessedEvents,
                                   final Map<String, NotificationQueue> queues,
@@ -259,11 +262,11 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                         nbProcessedEvents.incrementAndGet();
                         final NotificationEvent key = deserializeEvent(notification.getClassName(), objectMapper, notification.getEventJson());
 
-                        NotificationQueueHandler handler = getHandlerForActiveQueue(notification.getQueueName());
+                        final NotificationQueueHandler handler = getHandlerForActiveQueue(notification.getQueueName());
                         if (handler == null) {
                             log.warn("Cannot find handler for notification: queue = {}, record_id = {}",
-                                    notification.getQueueName(),
-                                    notification.getRecordId());
+                                     notification.getQueueName(),
+                                     notification.getRecordId());
                             continue;
                         }
 
@@ -271,7 +274,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                         long errorCount = notification.getErrorCount();
                         try {
                             handleNotificationWithMetrics(handler, notification, key);
-                        } catch (NotificationQueueException e) {
+                        } catch (final NotificationQueueException e) {
                             lastException = e;
                             errorCount++;
                         } finally {
@@ -282,7 +285,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                                 }
                             } else if (errorCount <= config.getMaxFailureRetries()) {
                                 log.info(LOG_PREFIX + "dispatch error, will attempt a retry ", lastException);
-                                NotificationEventModelDao failedNotification = new NotificationEventModelDao(notification, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
+                                final NotificationEventModelDao failedNotification = new NotificationEventModelDao(notification, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
                                 dao.updateOnError(failedNotification);
                             } else {
                                 log.error(LOG_PREFIX + "fatal NotificationQ dispatch error, data corruption...", lastException);
@@ -290,7 +293,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                             }
                         }
                     }
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
                     log.info(LOG_PREFIX + "got interrupted ");
                     break;
@@ -309,7 +312,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             runnerTh.interrupt();
 
             try {
-                long ini = System.currentTimeMillis();
+                final long ini = System.currentTimeMillis();
                 long remainingWaitTimeMs = waitTimeoutMs;
                 synchronized (this) {
                     while (!isExited.get() && remainingWaitTimeMs > 0) {
@@ -317,7 +320,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                         remainingWaitTimeMs = waitTimeoutMs - (System.currentTimeMillis() - ini);
                     }
                 }
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("Got interrupted while stopping " + LOG_PREFIX);
             }
@@ -348,7 +351,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
             try {
                 handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getSearchKey1(), notification.getSearchKey2());
-            } catch (RuntimeException e) {
+            } catch (final RuntimeException e) {
                 throw new NotificationQueueException(e);
             } finally {
                 // Unclear if those stats should include failures
@@ -359,12 +362,12 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         }
 
         private void clearNotification(final NotificationEventModelDao cleared) {
-            NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            final NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
             dao.moveEntryToHistory(processedEntry);
         }
 
         private void clearFailedNotification(final NotificationEventModelDao cleared) {
-            NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
+            final NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
             dao.moveEntryToHistory(processedEntry);
         }
 

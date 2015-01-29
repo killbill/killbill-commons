@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -16,11 +18,11 @@
 
 package org.killbill.bus.api;
 
+import java.sql.Connection;
+
 import org.killbill.queue.api.QueueLifecycle;
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
 
 public interface PersistentBus extends QueueLifecycle {
-
 
     public static final String EVENT_BUS_GROUP_NAME = "bus-grp";
 
@@ -84,10 +86,9 @@ public interface PersistentBus extends QueueLifecycle {
      * Post an event from within a transaction.
      * Guarantees that the event is persisted on disk from within the same transaction
      *
-     * @param event to be posted
+     * @param event      to be posted
+     * @param connection current connection
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusEvent event, final Transmogrifier transmogrifier) throws EventBusException;
-
-
+    public void postFromTransaction(BusEvent event, Connection connection) throws EventBusException;
 }

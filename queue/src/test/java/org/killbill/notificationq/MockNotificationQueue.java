@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -17,6 +19,7 @@
 package org.killbill.notificationq;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,11 +28,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.killbill.Hostname;
+import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -37,7 +37,8 @@ import org.killbill.notificationq.api.NotificationQueueService.NotificationQueue
 import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-import org.killbill.clock.Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
@@ -54,7 +55,7 @@ public class MockNotificationQueue implements NotificationQueue {
     private final NotificationQueueHandler handler;
     private final MockNotificationQueueService queueService;
 
-    private AtomicLong recordIds;
+    private final AtomicLong recordIds;
 
     private volatile boolean isStarted;
 
@@ -86,8 +87,8 @@ public class MockNotificationQueue implements NotificationQueue {
         final String json = objectMapper.writeValueAsString(eventJson);
         final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, new Long(0));
         final NotificationEventModelDao notification = new NotificationEventModelDao(recordIds.incrementAndGet(), "MockQueue", hostname, clock.getUTCNow(), null, PersistentQueueEntryLifecycleState.AVAILABLE,
-                                                                               eventJson.getClass().getName(), json, 0L, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
-                                                                               futureNotificationTime, "MockQueue");
+                                                                                     eventJson.getClass().getName(), json, 0L, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
+                                                                                     futureNotificationTime, "MockQueue");
 
         synchronized (notifications) {
             notifications.add(notification);
@@ -95,7 +96,7 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
+    public void recordFutureNotificationFromTransaction(final Connection connection, final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         recordFutureNotification(futureNotificationTime, eventJson, userToken, searchKey1, searchKey2);
     }
 
@@ -105,7 +106,7 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection) {
         return null;
     }
 
@@ -115,12 +116,12 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Long searchKey2, Transmogrifier transmogrifier) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Long searchKey2, Connection connection) {
         return null;
     }
 
 
-    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final Long searchKey1, final Transmogrifier transmogrifier) {
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final Class<T> type, final Long searchKey1, final Connection connection) {
         final List<NotificationEventWithMetadata<T>> result = new ArrayList<NotificationEventWithMetadata<T>>();
         synchronized (notifications) {
             for (final NotificationEventModelDao notification : notifications) {
@@ -144,7 +145,7 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
+    public void removeNotificationFromTransaction(final Connection connection, final Long recordId) {
         synchronized (notifications) {
             for (final NotificationEventModelDao cur : notifications) {
                 if (cur.getRecordId().equals(recordId)) {
@@ -194,16 +195,16 @@ public class MockNotificationQueue implements NotificationQueue {
         return isStarted;
     }
 
-    private Logger log = LoggerFactory.getLogger("MockNotificationQueue");
+    private final Logger log = LoggerFactory.getLogger("MockNotificationQueue");
 
     public List<NotificationEventModelDao> getReadyNotifications() {
         final List<NotificationEventModelDao> readyNotifications = new ArrayList<NotificationEventModelDao>();
         synchronized (notifications) {
             for (final NotificationEventModelDao cur : notifications) {
-                if ( cur.getEffectiveDate().isBefore(clock.getUTCNow()) && cur.isAvailableForProcessing(clock.getUTCNow())) {
+                if (cur.getEffectiveDate().isBefore(clock.getUTCNow()) && cur.isAvailableForProcessing(clock.getUTCNow())) {
 
                     log.info("MockNotificationQ getReadyNotifications found notification: NOW = " + clock.getUTCNow() + " recordId = " + cur.getRecordId() +
-                            ", state = " + cur.getProcessingState() + ", effectiveDate = " + cur.getEffectiveDate());
+                             ", state = " + cur.getProcessingState() + ", effectiveDate = " + cur.getEffectiveDate());
                     readyNotifications.add(cur);
                 }
             }

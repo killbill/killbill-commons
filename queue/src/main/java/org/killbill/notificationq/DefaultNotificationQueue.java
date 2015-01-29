@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -17,13 +19,14 @@
 package org.killbill.notificationq;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import org.joda.time.DateTime;
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
+import javax.annotation.Nullable;
 
+import org.joda.time.DateTime;
 import org.killbill.Hostname;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
@@ -36,13 +39,12 @@ import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
+import org.killbill.queue.InTransaction;
 import org.killbill.queue.QueueObjectMapper;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
-
-import javax.annotation.Nullable;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
@@ -80,24 +82,28 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
-        final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
+        final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, new Long(0));
         final NotificationEventModelDao notification = new NotificationEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
         dao.insertEntry(notification);
     }
 
     @Override
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier, final DateTime futureNotificationTime, final NotificationEvent event,
+    public void recordFutureNotificationFromTransaction(final Connection connection, final DateTime futureNotificationTime, final NotificationEvent event,
                                                         final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
-        final Long searchKey2WithNull =  Objects.firstNonNull(searchKey2, new Long(0));
+        final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, 0L);
         final NotificationEventModelDao notification = new NotificationEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
-        dao.insertEntryFromTransaction(transactionalNotificationDao, notification);
 
+        final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
+            @Override
+            public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                dao.insertEntryFromTransaction(transactional, notification);
+                return null;
+            }
+        };
+        InTransaction.execute(connection, handler, NotificationSqlDao.class);
     }
-
 
     @Override
     public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
@@ -105,31 +111,40 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier) {
-        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        return getFutureNotificationsInternal(transactionalNotificationDao, searchKey1, searchKey2);
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>>() {
+            @Override
+            public List<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                return getFutureNotificationsInternal(transactional, searchKey1, searchKey2);
+            }
+        };
+        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Long searchKey2) {
         return getFutureNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), null, searchKey2);
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Long searchKey2, Transmogrifier transmogrifier) {
-        final NotificationSqlDao transactionalNotificationDao = transmogrifier.become(NotificationSqlDao.class);
-        return getFutureNotificationsInternal(transactionalNotificationDao, null, searchKey2);
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>>() {
+            @Override
+            public List<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                return getFutureNotificationsInternal(transactional, null, searchKey2);
+            }
+        };
+        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
     }
-
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
 
         final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
-        final List<NotificationEventModelDao> entries = searchKey1 !=null ?
-                transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
-                transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+        final List<NotificationEventModelDao> entries = searchKey1 != null ?
+                                                        transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                                                        transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
 
-        for (NotificationEventModelDao cur : entries) {
+        for (final NotificationEventModelDao cur : entries) {
             final T event = (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
                                                                                               cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
@@ -138,23 +153,27 @@ public class DefaultNotificationQueue implements NotificationQueue {
         return result;
     }
 
-
     @Override
     public void removeNotification(final Long recordId) {
         final NotificationEventModelDao existing = dao.getSqlDao().getByRecordId(recordId, config.getTableName());
         final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
         dao.moveEntryToHistory(removedEntry);
-
     }
 
     @Override
-    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier, final Long recordId) {
-        final NotificationSqlDao transactional = transmogrifier.become(NotificationSqlDao.class);
-        final NotificationEventModelDao existing = transactional.getByRecordId(recordId, config.getTableName());
-        final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
-        dao.moveEntryToHistoryFromTransaction(transactional, removedEntry);
-    }
+    public void removeNotificationFromTransaction(final Connection connection, final Long recordId) {
+        final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
+            @Override
+            public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                final NotificationEventModelDao existing = transactional.getByRecordId(recordId, config.getTableName());
+                final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
+                dao.moveEntryToHistoryFromTransaction(transactional, removedEntry);
 
+                return null;
+            }
+        };
+        InTransaction.execute(connection, handler, NotificationSqlDao.class);
+    }
 
     @Override
     public String getFullQName() {
@@ -170,7 +189,6 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public String getQueueName() {
         return queueName;
     }
-
 
     @Override
     public NotificationQueueHandler getHandler() {
@@ -195,5 +213,4 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public boolean isStarted() {
         return isStarted;
     }
-
 }

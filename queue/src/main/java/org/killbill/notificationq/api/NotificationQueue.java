@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -17,20 +19,16 @@
 package org.killbill.notificationq.api;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.List;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
-import org.skife.jdbi.v2.sqlobject.mixins.Transmogrifier;
-
 import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.queue.api.QueueLifecycle;
 
 /**
  * A NotificationQueue offers a persistent queue with a set of API to record future notifications along with their callbacks.
- *
- * <p>
  */
 public interface NotificationQueue extends QueueLifecycle {
 
@@ -43,13 +41,12 @@ public interface NotificationQueue extends QueueLifecycle {
      */
 
     /**
-     *
      * @param futureNotificationTime the time at which the notification is ready
      * @param eventJson              the event to be serailzed on disk
      * @param userToken              a opaque token that can be attached to that event
      * @param searchKey1             a key that can be used for search
      * @param searchKey2             a key that can be used for search
-     * @throws IOException           if the serialization of the event fails
+     * @throws IOException if the serialization of the event fails
      */
     public void recordFutureNotification(final DateTime futureNotificationTime,
                                          final NotificationEvent eventJson,
@@ -59,16 +56,15 @@ public interface NotificationQueue extends QueueLifecycle {
             throws IOException;
 
     /**
-     *
-     * @param transmogrifier         the transaction that should be used to record the event
+     * @param connection             the transaction that should be used to record the event
      * @param futureNotificationTime the time at which the notification is ready
      * @param eventJson              the event to be serailzed on disk
      * @param userToken              a opaque token that can be attached to that event
      * @param searchKey1             a key that can be used for search
      * @param searchKey2             a key that can be used for search
-     * @throws IOException           if the serialization of the event fails
+     * @throws IOException if the serialization of the event fails
      */
-    public void recordFutureNotificationFromTransaction(final Transmogrifier transmogrifier,
+    public void recordFutureNotificationFromTransaction(final Connection connection,
                                                         final DateTime futureNotificationTime,
                                                         final NotificationEvent eventJson,
                                                         final UUID userToken,
@@ -76,51 +72,41 @@ public interface NotificationQueue extends QueueLifecycle {
                                                         final Long searchKey2)
             throws IOException;
 
-
     /**
-     *
-     *  Retrieve all future notifications associated with that queue and matching that search key
+     * Retrieve all future notifications associated with that queue and matching that search key
      *
      * @param searchKey1 the value for key1
-     * @param searchKey2         the value for key2
-     * @return           a list of NotificationEventWithMetadata objects matching the search
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
-
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
 
     /**
+     * Retrieve all future notifications associated with that queue and matching that search key
      *
-     *  Retrieve all future notifications associated with that queue and matching that search key
-     *
-     * @param searchKey1         the value for key1
-     * @param searchKey2         the value for key2
-     * @param transmogrifier     the transaction that should be used to make that search
-     * @return                   a list of NotificationEventWithMetadata objects matching the search
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Transmogrifier transmogrifier);
-
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
 
     /**
-     *
-     *  Retrieve all future notifications associated with that queue and matching that search key
+     * Retrieve all future notifications associated with that queue and matching that search key
      *
      * @param searchKey2 the value for key2
-     * @return           a list of NotificationEventWithMetadata objects matching the search
+     * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Long searchKey2);
-
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Long searchKey2);
 
     /**
+     * Retrieve all future notifications associated with that queue and matching that search key
      *
-     *  Retrieve all future notifications associated with that queue and matching that search key
-     *
-     * @param searchKey2         the value for key2
-     * @param transmogrifier     the transaction that should be used to make that search
-     * @return                   a list of NotificationEventWithMetadata objects matching the search
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public  <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Transmogrifier transmogrifier);
-
-
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
 
     /**
      * Move the notification to history table and mark it as 'removed'
@@ -129,7 +115,7 @@ public interface NotificationQueue extends QueueLifecycle {
      */
     public void removeNotification(final Long recordId);
 
-    public void removeNotificationFromTransaction(final Transmogrifier transmogrifier,
+    public void removeNotificationFromTransaction(final Connection connection,
                                                   final Long recordId);
 
     /**
@@ -148,7 +134,6 @@ public interface NotificationQueue extends QueueLifecycle {
     public String getQueueName();
 
     /**
-     *
      * @return the handler associated with that notification queue
      */
     public NotificationQueueHandler getHandler();
