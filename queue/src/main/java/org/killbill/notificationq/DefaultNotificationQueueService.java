@@ -19,6 +19,7 @@
 package org.killbill.notificationq;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableMap;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -41,7 +42,7 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
     }
 
     public DefaultNotificationQueueService(final DataSource dataSource, final Properties properties) {
-        super(new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).build(NotificationQueueConfig.class), InTransaction.buildDDBI(dataSource), new MetricRegistry());
+        super(new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, ImmutableMap.<String, String>of("instanceName", "main")), InTransaction.buildDDBI(dataSource), new MetricRegistry());
     }
 
     @Override
