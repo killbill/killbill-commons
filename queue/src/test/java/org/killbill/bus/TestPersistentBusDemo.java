@@ -71,7 +71,7 @@ public class TestPersistentBusDemo {
         properties.setProperty("org.killbill.persistent.bus.main.claimed", "1");
         properties.setProperty("org.killbill.persistent.bus.main.inflight.claimed", "1");
         properties.setProperty("org.killbill.persistent.bus.main.claim.time", "5m");
-        properties.setProperty("org.killbill.persistent.bus.main.sleep", "3000");
+        properties.setProperty("org.killbill.persistent.bus.main.sleep", "100");
         properties.setProperty("org.killbill.persistent.bus.main.off", "false");
         properties.setProperty("org.killbill.persistent.bus.main.nbThreads", "1");
         properties.setProperty("org.killbill.persistent.bus.main.useInflightQ", "false");
