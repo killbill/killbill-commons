@@ -1,3 +1,6 @@
+0.2.31
+    Refactor queue to remove deprecated Transmogrifier class and use jdbc Connection instead
+
 0.2.30
     Attempt to fix https://github.com/killbill/killbill-commons/issues/6
 
