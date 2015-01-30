@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
+import com.google.common.collect.ImmutableMap;
 import org.killbill.Hostname;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.PersistentBus;
@@ -93,7 +94,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
-        this(InTransaction.buildDDBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).build(PersistentBusConfig.class), new MetricRegistry(), new DatabaseTransactionNotificationApi());
+        this(InTransaction.buildDDBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class,
+                ImmutableMap.<String, String>of("instanceName", "main")), new MetricRegistry(), new DatabaseTransactionNotificationApi());
     }
 
     @Override

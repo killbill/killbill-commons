@@ -702,9 +702,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             if (entry == null) {
                 entry = new RowRef(queueId);
                 rowRefThreadLocal.set(entry);
-            } else {
-                entry.addRowId(rowId);
             }
+            entry.addRowId(rowId);
         }
 
         public void reset() {

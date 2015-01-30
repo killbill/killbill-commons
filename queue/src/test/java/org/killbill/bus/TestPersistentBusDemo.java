@@ -74,7 +74,7 @@ public class TestPersistentBusDemo {
         properties.setProperty("org.killbill.persistent.bus.main.sleep", "3000");
         properties.setProperty("org.killbill.persistent.bus.main.off", "false");
         properties.setProperty("org.killbill.persistent.bus.main.nbThreads", "1");
-        properties.setProperty("org.killbill.persistent.bus.main.useInflightQ", "true");
+        properties.setProperty("org.killbill.persistent.bus.main.useInflightQ", "false");
         properties.setProperty("org.killbill.persistent.bus.main.queue.capacity", "3000");
         properties.setProperty("org.killbill.persistent.bus.main.tableName", "bus_events");
         properties.setProperty("org.killbill.persistent.bus.main.historyTableName", "bus_events_history");
