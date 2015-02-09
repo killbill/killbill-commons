@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -16,30 +18,6 @@
 
 package org.killbill.queue;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import org.killbill.Hostname;
-import org.killbill.clock.Clock;
-import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
-import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
-import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
-import org.killbill.queue.api.PersistentQueueConfig;
-import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-import org.killbill.queue.dao.QueueSqlDao;
-import org.skife.jdbi.v2.Transaction;
-import org.skife.jdbi.v2.TransactionStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -53,6 +31,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.annotation.Nullable;
+
+import org.killbill.Hostname;
+import org.killbill.clock.Clock;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
+import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.queue.api.PersistentQueueConfig;
+import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.dao.EventEntryModelDao;
+import org.killbill.queue.dao.QueueSqlDao;
+import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
  * notification events.
@@ -63,7 +68,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T>
  */
-public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> implements Observer {
+public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
 
     private static final Logger log = LoggerFactory.getLogger(DBBackedQueue.class);
 
@@ -91,7 +96,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
     private final String DB_QUEUE_LOG_ID;
 
-    private final org.killbill.queue.dao.QueueSqlDao<T> sqlDao;
+    private final QueueSqlDao<T> sqlDao;
     private final Clock clock;
     private final PersistentQueueConfig config;
 
@@ -139,6 +144,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         if (useInflightQueue && databaseTransactionNotificationApi != null) {
             databaseTransactionNotificationApi.registerForNotification(this);
         }
+
+        resetInsertIdIfNeeded();
 
         //
         // Metrics
@@ -222,10 +229,10 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
         log.info(DB_QUEUE_LOG_ID + "Initialized with useInflightQueue = " + useInflightQueue +
-                ", queueId = " + queueId +
-                ", isSticky = " + config.isSticky() +
-                ", isQueueOpenForWrite = " + isQueueOpenForWrite.get() +
-                ", isQueueOpenForRead = " + isQueueOpenForRead.get());
+                 ", queueId = " + queueId +
+                 ", isSticky = " + config.isSticky() +
+                 ", isQueueOpenForWrite = " + isQueueOpenForWrite.get() +
+                 ", isQueueOpenForRead = " + isQueueOpenForRead.get());
     }
 
 
@@ -241,13 +248,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
 
 
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
-
-        // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
-        // value that would end up corrupting the inflightQ
-        // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
-        transactional.resetLastInsertId();
-        transactional.insertEntry(entry, config.getTableName());
-        final Long lastInsertId = transactional.getLastInsertId();
+        final Long lastInsertId = safeInsertEntry(transactional, entry);
         if (lastInsertId == 0) {
             log.warn(DB_QUEUE_LOG_ID + "Failed to insert entry, lastInsertedId " + lastInsertId);
             return;
@@ -421,7 +422,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 log.debug(DB_QUEUE_LOG_ID + "Moving entry " + entry.getRecordId() + " into history ");
             }
 
-            transactional.insertEntryWithRecordId(entry, config.getHistoryTableName());
+            transactional.insertEntryWithRecordId(entry, entry.getRecordId(), config.getHistoryTableName());
             transactional.removeEntry(entry.getRecordId(), config.getTableName());
         } catch (final Exception e) {
             log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + entry.getRecordId() + "] into history ", e);
@@ -500,8 +501,8 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
             final Long entryId;
             try {
                 entryId = size == 0 ?
-                        inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS) : // There seems be nothing in the Q so we block
-                        inflightEvents.poll(); // The queue does not seem empty so we don't want to block for no reason if there is less entries than detected.
+                          inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS) : // There seems be nothing in the Q so we block
+                          inflightEvents.poll(); // The queue does not seem empty so we don't want to block for no reason if there is less entries than detected.
                 if (entryId == null) {
                     break;
                 }
@@ -664,7 +665,7 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 if (result) {
                     if (log.isDebugEnabled()) {
                         log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + entry +
-                                (result ? " into inflightQ" : " into disk"));
+                                  (result ? " into inflightQ" : " into disk"));
                     }
                     totalInflightInsert.inc();
                     // Q overflowed ?
@@ -736,5 +737,43 @@ public class DBBackedQueue<T extends org.killbill.queue.dao.EventEntryModelDao> 
                 return rowIds.iterator();
             }
         }
+    }
+
+    // Because we manually sync the record_id between the current and the history tables,
+    // we need to make sure the auto_increment field is in a sane state in the non history table
+    // (it could have been reset by a truncate for instance).
+    // See https://github.com/killbill/killbill-commons/issues/6
+    public void resetInsertIdIfNeeded() {
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                final Long maxRecordId = transactional.getMaxRecordId(config.getHistoryTableName());
+                if (maxRecordId == null || maxRecordId == 0) {
+                    // Any value will do
+                } else {
+                    final T dummyEntry = transactional.getByRecordId(maxRecordId, config.getHistoryTableName());
+                    final Long lastInsertId = safeInsertEntry(transactional, dummyEntry);
+                    if (lastInsertId > maxRecordId) {
+                        // Nothing to do
+                        transactional.removeEntry(lastInsertId, config.getTableName());
+                    } else {
+                        final long nextMaxRecordId = maxRecordId + 1;
+                        // Avoid ALTER table, which would rebuild the entire table
+                        transactional.insertEntryWithRecordId(dummyEntry, nextMaxRecordId, config.getTableName());
+                        transactional.removeEntry(nextMaxRecordId, config.getTableName());
+                    }
+                }
+                return null;
+            }
+        });
+    }
+
+    private Long safeInsertEntry(final QueueSqlDao<T> transactional, final T entry) {
+        // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
+        // value that would end up corrupting the inflightQ
+        // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
+        transactional.resetLastInsertId();
+        transactional.insertEntry(entry, config.getTableName());
+        return transactional.getLastInsertId();
     }
 }

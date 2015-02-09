@@ -100,6 +100,11 @@ allTableValues() ::= <<
       <extraValuesWithComma()>
 >>
 
+getMaxRecordId(tableName) ::= <<
+    select max(record_id)
+    from <tableName>
+    ;
+>>
 
 resetLastInsertId() ::= <<
     select LAST_INSERT_ID(/*! 0 */);
@@ -210,9 +215,11 @@ insertEntry(tableName) ::= <<
 
 insertEntryWithRecordId(tableName) ::= <<
     insert into <tableName> (
-       <allTableFields()>
+         record_id
+       , <allTableFieldsNoRecordId()>
     ) values (
-       <allTableValues()>
+         :recordId
+       , <allTableValuesNoRecordId()>
     );
 >>
 
