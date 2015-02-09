@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -30,6 +32,7 @@ import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.skife.jdbi.v2.DBI;
 
 import com.codahale.metrics.MetricRegistry;
 
@@ -37,8 +40,8 @@ import com.codahale.metrics.MetricRegistry;
 public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
     @Inject
-    public MockNotificationQueueService(final Clock clock, final NotificationQueueConfig config, final MetricRegistry metricRegistry) {
-        super(clock, config, null, metricRegistry);
+    public MockNotificationQueueService(final Clock clock, final NotificationQueueConfig config, final DBI dbi, final MetricRegistry metricRegistry) {
+        super(clock, config, dbi, metricRegistry);
     }
 
     @Override
@@ -49,12 +52,11 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
     @Override
     public int doProcessEvents() {
-
         int retry = 2;
         do {
             try {
                 int result = 0;
-                Iterator<String> it = queues.keySet().iterator();
+                final Iterator<String> it = queues.keySet().iterator();
                 while (it.hasNext()) {
                     final String queueName = it.next();
                     final NotificationQueue cur = queues.get(queueName);
@@ -63,7 +65,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
                     }
                 }
                 return result;
-            } catch (ConcurrentModificationException e) {
+            } catch (final ConcurrentModificationException e) {
                 retry--;
             }
         } while (retry > 0);
@@ -77,7 +79,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
         final List<NotificationEventModelDao> processedNotifications = new ArrayList<NotificationEventModelDao>();
         final List<NotificationEventModelDao> oldNotifications = new ArrayList<NotificationEventModelDao>();
 
-        List<NotificationEventModelDao> readyNotifications = queue.getReadyNotifications();
+        final List<NotificationEventModelDao> readyNotifications = queue.getReadyNotifications();
         for (final NotificationEventModelDao cur : readyNotifications) {
             final NotificationEvent key = deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
@@ -96,5 +98,4 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
         queue.markProcessedNotifications(oldNotifications, processedNotifications);
         return result;
     }
-
 }
