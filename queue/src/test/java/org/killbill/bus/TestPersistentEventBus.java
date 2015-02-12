@@ -1,7 +1,9 @@
-/* 
+/*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,6 +18,7 @@
 
 package org.killbill.bus;
 
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -49,19 +52,24 @@ public class TestPersistentEventBus extends TestSetup {
         busService.stop();
     }
 
-
     @Test(groups = "slow")
     public void testSimple() {
+        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
         testEventBusBase.testSimple();
+        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
     }
 
     @Test(groups = "slow")
     public void testSimpleWithExceptionAndRetrySuccess() {
+        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
         testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
+        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
     }
 
     @Test(groups = "slow")
     public void testSimpleWithExceptionAndFail() {
+        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
         testEventBusBase.testSimpleWithExceptionAndFail();
+        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
     }
 }

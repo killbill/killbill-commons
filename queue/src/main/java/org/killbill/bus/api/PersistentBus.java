@@ -19,6 +19,7 @@
 package org.killbill.bus.api;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.killbill.queue.api.QueueLifecycle;
 
@@ -91,4 +92,45 @@ public interface PersistentBus extends QueueLifecycle {
      * @throws EventBusException if bus not been started yet
      */
     public void postFromTransaction(BusEvent event, Connection connection) throws EventBusException;
+
+    /**
+     * Retrieve all available bus events matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+
+    /**
+     * Retrieve all available bus events matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
+
+    /**
+     * Retrieve all available bus events matching that search key
+     *
+     * @param searchKey2 the value for key2
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(Long searchKey2);
+
+    /**
+     * Retrieve all available bus events matching that search key
+     *
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
+
+    /**
+     * @return the number of bus events that have been claimed and are being processed
+     */
+    public Integer inProcessingBusEventsCount();
 }

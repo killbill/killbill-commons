@@ -90,6 +90,11 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
     }
 
     @Override
+    public Integer inProcessingNotificationsCount() {
+        return pendingNotificationsQ.size();
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("NotificationQueueServiceBase");

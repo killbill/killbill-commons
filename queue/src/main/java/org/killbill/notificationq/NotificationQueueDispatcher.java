@@ -67,7 +67,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected final DBBackedQueue<NotificationEventModelDao> dao;
     protected final MetricRegistry metricRegistry;
 
-    private final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
+    protected final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
 
     //
     // Metrics
@@ -174,7 +174,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     }
 
     protected int doProcessEventsWithLimit(final int limit) {
-
         logDebug("ENTER doProcessEvents");
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
         if (notifications.size() == 0) {

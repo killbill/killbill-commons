@@ -213,6 +213,7 @@ public class TestNotificationQueue extends TestSetup {
             }
         });
 
+        Assert.assertEquals(queueService.inProcessingNotificationsCount(), (Integer) 0);
 
         final List<NotificationEventWithMetadata<TestNotificationKey>> futuresAll = queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2);
         Assert.assertEquals(futuresAll.size(), 2);

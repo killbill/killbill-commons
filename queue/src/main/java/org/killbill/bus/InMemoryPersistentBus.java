@@ -19,6 +19,7 @@
 package org.killbill.bus;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 
 import org.killbill.bus.api.BusEvent;
+import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.slf4j.Logger;
@@ -135,5 +137,30 @@ public class InMemoryPersistentBus implements PersistentBus {
             delegate.stop();
             log.info("InMemoryPersistentBus stopped...");
         }
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(final Long searchKey2) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public Integer inProcessingBusEventsCount() {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 }

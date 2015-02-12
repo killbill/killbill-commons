@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -20,7 +22,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
-
 import org.killbill.queue.api.QueueLifecycle;
 
 /**
@@ -65,7 +66,7 @@ public interface NotificationQueueService extends QueueLifecycle {
      * @param svcName   the name of the service using that queue
      * @param queueName a name for that queue (unique per service)
      * @param handler   the handler required for notifying the caller of state change
-     * @return          a new NotificationQueue
+     * @return a new NotificationQueue
      * @throws NotificationQueueAlreadyExists is the queue associated with that service and name already exits
      */
     public NotificationQueue createNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler)
@@ -76,7 +77,7 @@ public interface NotificationQueueService extends QueueLifecycle {
      *
      * @param svcName   the name of the service using that queue
      * @param queueName a name for that queue (unique per service)
-     * @return          a new NotificationQueue
+     * @return a new NotificationQueue
      * @throws NoSuchNotificationQueue if queue does not exist
      */
     public NotificationQueue getNotificationQueue(final String svcName, final String queueName)
@@ -87,7 +88,7 @@ public interface NotificationQueueService extends QueueLifecycle {
      *
      * @param svcName   the name of the service using that queue
      * @param queueName a name for that queue (unique per service)
-     * @return          a new NotificationQueue
+     * @return a new NotificationQueue
      * @throws NoSuchNotificationQueue if queue does not exist
      */
     public void deleteNotificationQueue(final String svcName, final String queueName)
@@ -100,4 +101,8 @@ public interface NotificationQueueService extends QueueLifecycle {
      */
     public List<NotificationQueue> getNotificationQueues();
 
+    /**
+     * @return the number of notifications that have been claimed and are being processed
+     */
+    public Integer inProcessingNotificationsCount();
 }
