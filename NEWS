@@ -1,3 +1,8 @@
+0.2.32
+    Another fix for https://github.com/killbill/killbill-commons/issues/6
+    New search APIs for the queues
+    Update to killbill-oss-parent 0.9.10
+
 0.2.31
     Refactor queue to remove deprecated Transmogrifier class and use jdbc Connection instead
 
