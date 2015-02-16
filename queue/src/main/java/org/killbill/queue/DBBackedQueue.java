@@ -719,7 +719,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
         }
 
 
-        // Internal structure to keep track or recordId per queue
+        // Internal structure to keep track of recordId per queue
         private final class RowRef {
 
             private final int queueId;
