@@ -55,6 +55,32 @@ getReadyQueueEntriesForSearchKey2(tableName) ::= <<
 ;
 >>
 
+getReadyOrInProcessingQueueEntriesForSearchKeys(tableName) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+      queue_name = :queueName
+      and processing_state in ('AVAILABLE', 'PROCESSING')
+      and search_key1 = :searchKey1
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+      queue_name = :queueName
+      and processing_state in ('AVAILABLE', 'PROCESSING')
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
 
 /** Notifications specific queries **/
 getCountReadyEntries(tableName) ::= <<

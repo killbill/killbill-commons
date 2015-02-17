@@ -18,14 +18,13 @@
 
 package org.killbill.bus;
 
+import org.killbill.TestSetup;
+import org.killbill.bus.api.PersistentBus;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import org.killbill.TestSetup;
-import org.killbill.bus.api.PersistentBus;
 
 public class TestPersistentEventBus extends TestSetup {
 
@@ -54,22 +53,22 @@ public class TestPersistentEventBus extends TestSetup {
 
     @Test(groups = "slow")
     public void testSimple() {
-        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
+        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
         testEventBusBase.testSimple();
-        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
+        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
     }
 
     @Test(groups = "slow")
     public void testSimpleWithExceptionAndRetrySuccess() {
-        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
+        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
         testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
-        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
+        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
     }
 
     @Test(groups = "slow")
     public void testSimpleWithExceptionAndFail() {
-        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
+        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
         testEventBusBase.testSimpleWithExceptionAndFail();
-        Assert.assertEquals(busService.inProcessingBusEventsCount(), (Integer) 0);
+        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
     }
 }

@@ -16,17 +16,14 @@
 
 package org.killbill.notificationq.dao;
 
+import java.util.Date;
+import java.util.List;
+
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
-import org.skife.jdbi.v2.sqlobject.BindBean;
-import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
-import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
-
-import java.util.Date;
-import java.util.List;
 
 @QueueSqlDaoStringTemplate
 public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDao> {
@@ -42,11 +39,21 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
                                                                              @Bind("searchKey2") final Long searchKey2,
                                                                              @Define("tableName") final String tableName);
 
+    @SqlQuery
+    public List<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
+                                                                                           @Bind("searchKey1") final Long searchKey1,
+                                                                                           @Bind("searchKey2") final Long searchKey2,
+                                                                                           @Define("tableName") final String tableName);
+
+    @SqlQuery
+    public List<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
+                                                                                           @Bind("searchKey2") final Long searchKey2,
+                                                                                           @Define("tableName") final String tableName);
+
 
     @SqlQuery
     public int getCountReadyEntries(@Bind("searchKey1") final Long searchKey1,
                                     @Bind("searchKey2") final Long searchKey2,
                                     @Bind("now") Date now,
                                     @Define("tableName") final String tableName);
-
 }

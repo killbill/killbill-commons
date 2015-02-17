@@ -137,18 +137,64 @@ public class DefaultNotificationQueue implements NotificationQueue {
         return InTransaction.execute(connection, handler, NotificationSqlDao.class);
     }
 
-    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getInProcessingNotifications() {
+        return toNotificationEventWithMetadataList(dao.getSqlDao().getInProcessingEntries(config.getTableName()));
+    }
 
-        final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        return getFutureOrInProcessingNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), searchKey1, searchKey2);
+    }
+
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>>() {
+            @Override
+            public List<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                return getFutureOrInProcessingNotificationsInternal(transactional, searchKey1, searchKey2);
+            }
+        };
+        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
+    }
+
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final Long searchKey2) {
+        return getFutureOrInProcessingNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), null, searchKey2);
+    }
+
+    @Override
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, List<NotificationEventWithMetadata<T>>>() {
+            @Override
+            public List<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                return getFutureOrInProcessingNotificationsInternal(transactional, null, searchKey2);
+            }
+        };
+        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
+    }
+
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
         final List<NotificationEventModelDao> entries = searchKey1 != null ?
                                                         transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
                                                         transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+        return toNotificationEventWithMetadataList(entries);
+    }
 
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
+        final List<NotificationEventModelDao> entries = searchKey1 != null ?
+                                                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                                                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+        return toNotificationEventWithMetadataList(entries);
+    }
+
+    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> toNotificationEventWithMetadataList(final List<NotificationEventModelDao> entries) {
+        final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
         for (final NotificationEventModelDao cur : entries) {
             final T event = (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
-            final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
-                                                                                              cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
-            result.add(foo);
+            final NotificationEventWithMetadata<T> eventWithMetadata = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
+                                                                                                            cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
+            result.add(eventWithMetadata);
         }
         return result;
     }

@@ -61,6 +61,9 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                                    @Nullable @Define("owner") String owner,
                                    @Define("tableName") final String tableName);
 
+    @SqlQuery
+    public List<T> getInProcessingEntries(@Define("tableName") final String tableName);
+
     @SqlUpdate
     public int claimEntry(@Bind("recordId") Long id,
                           @Bind("now") Date now,
@@ -74,7 +77,6 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                             @Bind("owner") String owner,
                             @Bind("nextAvailable") Date nextAvailable,
                             @Define("tableName") final String tableName);
-
 
     @SqlUpdate
     public int updateOnError(@Bind("recordId") Long id,

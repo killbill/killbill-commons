@@ -100,9 +100,4 @@ public interface NotificationQueueService extends QueueLifecycle {
      * @return
      */
     public List<NotificationQueue> getNotificationQueues();
-
-    /**
-     * @return the number of notifications that have been claimed and are being processed
-     */
-    public Integer inProcessingNotificationsCount();
 }

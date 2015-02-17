@@ -67,7 +67,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected final DBBackedQueue<NotificationEventModelDao> dao;
     protected final MetricRegistry metricRegistry;
 
-    protected final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
+    private final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
 
     //
     // Metrics

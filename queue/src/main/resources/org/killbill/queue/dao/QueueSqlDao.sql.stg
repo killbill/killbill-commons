@@ -149,6 +149,16 @@ getReadyEntries(owner, tableName) ::= <<
     ;
 >>
 
+getInProcessingEntries(tableName) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+      processing_state = 'IN_PROCESSING'
+    order by
+      <readyOrderByClause()>
+    ;
+>>
 
 claimEntry(tableName) ::= <<
     update <tableName>

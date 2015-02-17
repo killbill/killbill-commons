@@ -130,7 +130,43 @@ public interface PersistentBus extends QueueLifecycle {
     public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
 
     /**
-     * @return the number of bus events that have been claimed and are being processed
+     * @return the bus events that have been claimed and are being processed
      */
-    public Integer inProcessingBusEventsCount();
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getInProcessingBusEvents();
+
+    /**
+     * Retrieve all available or in processing bus events matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+
+    /**
+     * Retrieve all available or in processing bus events matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
+
+    /**
+     * Retrieve all available or in processing bus events matching that search key
+     *
+     * @param searchKey2 the value for key2
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(Long searchKey2);
+
+    /**
+     * Retrieve all available or in processing bus events matching that search key
+     *
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
 }

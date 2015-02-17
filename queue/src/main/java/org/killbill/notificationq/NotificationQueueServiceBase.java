@@ -16,15 +16,16 @@
 
 package org.killbill.notificationq;
 
-import com.codahale.metrics.MetricRegistry;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.notificationq.api.NotificationQueueService;
 import org.skife.jdbi.v2.IDBI;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.codahale.metrics.MetricRegistry;
 
 
 public abstract class NotificationQueueServiceBase extends NotificationQueueDispatcher implements NotificationQueueService {
@@ -47,7 +48,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
             result = queues.get(compositeName);
             if (result != null) {
                 throw new NotificationQueueAlreadyExists(String.format("Queue for svc %s and name %s already exist",
-                        svcName, queueName));
+                                                                       svcName, queueName));
             }
             result = createNotificationQueueInternal(svcName, queueName, handler);
             queues.put(compositeName, result);
@@ -65,7 +66,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
             result = queues.get(compositeName);
             if (result == null) {
                 throw new NoSuchNotificationQueue(String.format("Queue for svc %s and name %s does not exist",
-                        svcName, queueName));
+                                                                svcName, queueName));
             }
         }
         return result;
@@ -78,7 +79,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
             final NotificationQueue result = queues.get(compositeName);
             if (result == null) {
                 throw new NoSuchNotificationQueue(String.format("Queue for svc %s and name %s does not exist",
-                        svcName, queueName));
+                                                                svcName, queueName));
             }
             queues.remove(compositeName);
         }
@@ -87,11 +88,6 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
     @Override
     public List<NotificationQueue> getNotificationQueues() {
         return new ArrayList<NotificationQueue>(queues.values());
-    }
-
-    @Override
-    public Integer inProcessingNotificationsCount() {
-        return pendingNotificationsQ.size();
     }
 
     @Override

@@ -37,4 +37,13 @@ public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
     @SqlQuery
     public List<BusEventModelDao> getReadyQueueEntriesForSearchKey2(@Bind("searchKey2") final Long searchKey2,
                                                                     @Define("tableName") final String tableName);
+
+    @SqlQuery
+    public List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
+                                                                                  @Bind("searchKey2") final Long searchKey2,
+                                                                                  @Define("tableName") final String tableName);
+
+    @SqlQuery
+    public List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("searchKey2") final Long searchKey2,
+                                                                                  @Define("tableName") final String tableName);
 }

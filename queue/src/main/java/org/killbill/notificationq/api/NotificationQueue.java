@@ -109,6 +109,47 @@ public interface NotificationQueue extends QueueLifecycle {
     public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
 
     /**
+     * @return the notifications that have been claimed and are being processed
+     */
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getInProcessingNotifications();
+
+    /**
+     * Retrieve all future or in processing notifications associated with that queue and matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+
+    /**
+     * Retrieve all future or in processing notifications associated with that queue and matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
+
+    /**
+     * Retrieve all future or in processing notifications associated with that queue and matching that search key
+     *
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final Long searchKey2);
+
+    /**
+     * Retrieve all future or in processing notifications associated with that queue and matching that search key
+     *
+     * @param searchKey2 the value for key2
+     * @param connection the transaction that should be used to make that search
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
+
+    /**
      * Move the notification to history table and mark it as 'removed'
      *
      * @param recordId the recordId

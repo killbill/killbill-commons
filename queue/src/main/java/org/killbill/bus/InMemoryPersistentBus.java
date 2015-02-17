@@ -160,7 +160,27 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public Integer inProcessingBusEventsCount() {
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getInProcessingBusEvents() {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(final Long searchKey2) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 }
