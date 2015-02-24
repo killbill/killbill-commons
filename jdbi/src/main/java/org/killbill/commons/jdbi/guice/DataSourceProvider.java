@@ -19,6 +19,8 @@
 package org.killbill.commons.jdbi.guice;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -93,8 +95,14 @@ public class DataSourceProvider implements Provider<DataSource> {
             hikariConfig.setMinimumIdle(config.getMinIdle());
             hikariConfig.setConnectionTimeout(toMilliSeconds(config.getConnectionTimeout()));
             hikariConfig.setIdleTimeout(toMilliSeconds(config.getIdleMaxAge()));
+            // value of 0 indicates no maximum lifetime (infinite lifetime), subject of course to the idleTimeout setting
             hikariConfig.setMaxLifetime(toMilliSeconds(config.getMaxConnectionAge()));
             // TODO config.getIdleConnectionTestPeriod() ?
+            // ... no such thing on the HikariCP config.getIdleConnectionTestPeriod()
+            final String initSQL = config.getConnectionInitSql();
+            if ( initSQL != null && ! initSQL.isEmpty() ) {
+                hikariConfig.setConnectionInitSql(initSQL);
+            }
 
             hikariConfig.setRegisterMbeans(true);
 
@@ -110,7 +118,7 @@ public class DataSourceProvider implements Provider<DataSource> {
             hikariConfig.addDataSourceProperty("password", config.getPassword());
 
             if (DatabaseType.MYSQL.equals(databaseType)) {
-                // TODO How to configure these on MariaDB?
+                // NOTE MariaDB's DataSource impl does not support these (nor does HikariCP come with a cache) ...
                 if (!useMariaDB) {
                     hikariConfig.addDataSourceProperty("cachePrepStmts", config.isPreparedStatementsCacheEnabled());
                     hikariConfig.addDataSourceProperty("prepStmtCacheSize", config.getPreparedStatementsCacheSize());
@@ -176,24 +184,31 @@ public class DataSourceProvider implements Provider<DataSource> {
             cpds.setMaxStatementsPerConnection(config.getPreparedStatementsCacheSize());
             cpds.setDataSourceName(poolName);
 
+            final String initSQL = config.getConnectionInitSql();
+            if ( initSQL != null && ! initSQL.isEmpty() ) {
+                final Map<String, Object> extensions = new HashMap<String, Object>(4);
+                extensions.put("initSql", initSQL); cpds.setExtensions(extensions);
+                cpds.setConnectionCustomizerClassName("com.mchange.v2.c3p0.example.InitSqlConnectionCustomizer");
+            }
+
             return cpds;
         }
 
     }
 
-    private int toSeconds(final TimeSpan timeSpan) {
+    static int toSeconds(final TimeSpan timeSpan) {
         return toSeconds(timeSpan.getPeriod(), timeSpan.getUnit());
     }
 
-    private int toSeconds(final long period, final TimeUnit timeUnit) {
+    static int toSeconds(final long period, final TimeUnit timeUnit) {
         return (int) TimeUnit.SECONDS.convert(period, timeUnit);
     }
 
-    private int toMilliSeconds(final TimeSpan timeSpan) {
+    static int toMilliSeconds(final TimeSpan timeSpan) {
         return toMilliSeconds(timeSpan.getPeriod(), timeSpan.getUnit());
     }
 
-    private int toMilliSeconds(final long period, final TimeUnit timeUnit) {
+    static int toMilliSeconds(final long period, final TimeUnit timeUnit) {
         return (int) TimeUnit.MILLISECONDS.convert(period, timeUnit);
     }
 

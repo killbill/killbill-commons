@@ -74,6 +74,24 @@ public class TestDataSourceProvider {
     }
 
     @Test(groups = "fast")
+    public void testDataSourceProviderHikariCPSetsInitSQL() {
+        final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
+
+        DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
+        boolean shouldUseMariaDB = true;
+
+        final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
+        properties.put("org.killbill.dao.connectionInitSql", "SELECT 42");
+        final DaoConfig daoConfig = buildDaoConfig(properties);
+
+        final DataSource dataSource = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB).get();
+        assertTrue(dataSource instanceof HikariDataSource);
+
+        HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
+        assertEquals("SELECT 42", hikariDataSource.getConnectionInitSql());
+    }
+
+    @Test(groups = "fast")
     public void testDataSourceProviderC3P0() throws Exception {
         for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
             for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {

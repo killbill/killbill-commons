@@ -73,6 +73,11 @@ public interface DaoConfig {
     @Default("5m")
     TimeSpan getIdleConnectionTestPeriod();
 
+    @Description("Sets a SQL statement executed after every new connection creation before adding it to the pool")
+    @Config("org.killbill.dao.connectionInitSql")
+    @DefaultNull
+    String getConnectionInitSql();
+
     @Description("Number of prepared statements that the driver will cache per connection")
     @Config("org.killbill.dao.prepStmtCacheSize")
     @Default("500")
@@ -117,4 +122,5 @@ public interface DaoConfig {
     @Config("org.killbill.dao.poolingType")
     @Default("HIKARICP")
     DataSourceConnectionPoolingType getConnectionPoolingType();
+    
 }
