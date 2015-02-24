@@ -43,11 +43,7 @@ public class DataSourceProvider implements Provider<DataSource> {
     private String driverClassName;
 
     @VisibleForTesting
-    static enum DatabaseType {
-        GENERIC,
-        MYSQL,
-        H2
-    }
+    static enum DatabaseType { GENERIC, MYSQL, H2 }
 
     @Inject
     public DataSourceProvider(final DaoConfig config) {
@@ -67,116 +63,122 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     @Override
     public DataSource get() {
-        return getDataSource();
+        return buildDataSource();
     }
 
-    private DataSource getDataSource() {
-        final DataSource ds;
-
+    private DataSource buildDataSource() {
         if (DataSourceConnectionPoolingType.C3P0.equals(config.getConnectionPoolingType())) {
             loadDriver();
-            ds = getC3P0DataSource();
-        } else if (DataSourceConnectionPoolingType.HIKARICP.equals(config.getConnectionPoolingType())) {
+            return new C3P0DataSourceBuilder().buildDataSource();
+        }
+
+        if (DataSourceConnectionPoolingType.HIKARICP.equals(config.getConnectionPoolingType())) {
             if (dataSourceClassName != null) {
                 loadDriver();
             }
-            ds = getHikariCPDataSource();
-        } else {
-            throw new IllegalArgumentException("DataSource " + config.getConnectionPoolingType() + " unsupported");
+            return new HikariDataSourceBuilder().buildDataSource();
         }
 
-        return ds;
+        throw new IllegalArgumentException("DataSource " + config.getConnectionPoolingType() + " unsupported");
     }
 
-    private DataSource getHikariCPDataSource() {
-        final HikariConfig hikariConfig = new HikariConfig();
+    private class HikariDataSourceBuilder {
 
-        hikariConfig.setUsername(config.getUsername());
-        hikariConfig.setPassword(config.getPassword());
-        hikariConfig.setMinimumIdle(config.getMinIdle());
-        hikariConfig.setMaximumPoolSize(config.getMaxActive());
-        hikariConfig.setConnectionTimeout(toMilliSeconds(config.getConnectionTimeout()));
-        hikariConfig.setIdleTimeout(toMilliSeconds(config.getIdleMaxAge()));
-        hikariConfig.setMaxLifetime(toMilliSeconds(config.getMaxConnectionAge()));
-        // TODO config.getIdleConnectionTestPeriod() ?
+        DataSource buildDataSource() {
+            final HikariConfig hikariConfig = new HikariConfig();
 
-        hikariConfig.setRegisterMbeans(true);
+            hikariConfig.setUsername(config.getUsername());
+            hikariConfig.setPassword(config.getPassword());
+            hikariConfig.setMinimumIdle(config.getMinIdle());
+            hikariConfig.setMaximumPoolSize(config.getMaxActive());
+            hikariConfig.setConnectionTimeout(toMilliSeconds(config.getConnectionTimeout()));
+            hikariConfig.setIdleTimeout(toMilliSeconds(config.getIdleMaxAge()));
+            hikariConfig.setMaxLifetime(toMilliSeconds(config.getMaxConnectionAge()));
+            // TODO config.getIdleConnectionTestPeriod() ?
 
-        // TODO Not yet supported
-        // hikariConfig.setRecordMetrics(true);
+            hikariConfig.setRegisterMbeans(true);
 
-        if (poolName != null) {
-            hikariConfig.setPoolName(poolName);
-        }
+            // TODO Not yet supported
+            // hikariConfig.setRecordMetrics(true);
 
-        hikariConfig.addDataSourceProperty("url", config.getJdbcUrl());
-        hikariConfig.addDataSourceProperty("user", config.getUsername());
-        hikariConfig.addDataSourceProperty("password", config.getPassword());
+            if (poolName != null) {
+                hikariConfig.setPoolName(poolName);
+            }
 
-        if (DatabaseType.MYSQL.equals(databaseType)) {
-            // TODO How to configure these on MariaDB?
-            if (!useMariaDB) {
-                hikariConfig.addDataSourceProperty("cachePrepStmts", config.isPreparedStatementsCacheEnabled());
-                hikariConfig.addDataSourceProperty("prepStmtCacheSize", config.getPreparedStatementsCacheSize());
-                hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", config.getPreparedStatementsCacheSqlLimit());
-                if (Float.valueOf(config.getMySQLServerVersion()) >= 5.1) {
-                    hikariConfig.addDataSourceProperty("useServerPrepStmts", config.isServerSidePreparedStatementsEnabled());
+            hikariConfig.addDataSourceProperty("url", config.getJdbcUrl());
+            hikariConfig.addDataSourceProperty("user", config.getUsername());
+            hikariConfig.addDataSourceProperty("password", config.getPassword());
+
+            if (DatabaseType.MYSQL.equals(databaseType)) {
+                // TODO How to configure these on MariaDB?
+                if (!useMariaDB) {
+                    hikariConfig.addDataSourceProperty("cachePrepStmts", config.isPreparedStatementsCacheEnabled());
+                    hikariConfig.addDataSourceProperty("prepStmtCacheSize", config.getPreparedStatementsCacheSize());
+                    hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", config.getPreparedStatementsCacheSqlLimit());
+                    if (Float.valueOf(config.getMySQLServerVersion()) >= 5.1) {
+                        hikariConfig.addDataSourceProperty("useServerPrepStmts", config.isServerSidePreparedStatementsEnabled());
+                    }
                 }
             }
-        }
 
-        if (dataSourceClassName != null) {
-            hikariConfig.setDataSourceClassName(dataSourceClassName);
-        } else {
-            // Old-school DriverManager-based JDBC
-            hikariConfig.setJdbcUrl(config.getJdbcUrl());
-            if (driverClassName != null) {
-                hikariConfig.setDriverClassName(driverClassName);
+            if (dataSourceClassName != null) {
+                hikariConfig.setDataSourceClassName(dataSourceClassName);
+            } else {
+                // Old-school DriverManager-based JDBC
+                hikariConfig.setJdbcUrl(config.getJdbcUrl());
+                if (driverClassName != null) {
+                    hikariConfig.setDriverClassName(driverClassName);
+                }
             }
+
+            return new HikariDataSource(hikariConfig);
         }
 
-        return new HikariDataSource(hikariConfig);
     }
 
-    private DataSource getC3P0DataSource() {
-        final ComboPooledDataSource cpds = new ComboPooledDataSource();
-        cpds.setJdbcUrl(config.getJdbcUrl());
-        cpds.setUser(config.getUsername());
-        cpds.setPassword(config.getPassword());
-        // http://www.mchange.com/projects/c3p0/#minPoolSize
-        // Minimum number of Connections a pool will maintain at any given time.
-        cpds.setMinPoolSize(config.getMinIdle());
-        // http://www.mchange.com/projects/c3p0/#maxPoolSize
-        // Maximum number of Connections a pool will maintain at any given time.
-        cpds.setMaxPoolSize(config.getMaxActive());
-        // http://www.mchange.com/projects/c3p0/#checkoutTimeout
-        // The number of milliseconds a client calling getConnection() will wait for a Connection to be checked-in or
-        // acquired when the pool is exhausted. Zero means wait indefinitely. Setting any positive value will cause the getConnection()
-        // call to time-out and break with an SQLException after the specified number of milliseconds.
-        cpds.setCheckoutTimeout(toMilliSeconds(config.getConnectionTimeout()));
-        // http://www.mchange.com/projects/c3p0/#maxIdleTime
-        // Seconds a Connection can remain pooled but unused before being discarded. Zero means idle connections never expire.
-        cpds.setMaxIdleTime(toSeconds(config.getIdleMaxAge()));
-        // http://www.mchange.com/projects/c3p0/#maxConnectionAge
-        // Seconds, effectively a time to live. A Connection older than maxConnectionAge will be destroyed and purged from the pool.
-        // This differs from maxIdleTime in that it refers to absolute age. Even a Connection which has not been much idle will be purged
-        // from the pool if it exceeds maxConnectionAge. Zero means no maximum absolute age is enforced.
-        cpds.setMaxConnectionAge(toSeconds(config.getMaxConnectionAge()));
-        // http://www.mchange.com/projects/c3p0/#idleConnectionTestPeriod
-        // If this is a number greater than 0, c3p0 will test all idle, pooled but unchecked-out connections, every this number of seconds.
-        cpds.setIdleConnectionTestPeriod(toSeconds(config.getIdleConnectionTestPeriod()));
-        // The number of PreparedStatements c3p0 will cache for a single pooled Connection.
-        // If both maxStatements and maxStatementsPerConnection are zero, statement caching will not be enabled.
-        // If maxStatementsPerConnection is zero but maxStatements is a non-zero value, statement caching will be enabled,
-        // and a global limit enforced, but otherwise no limit will be set on the number of cached statements for a single Connection.
-        // If set, maxStatementsPerConnection should be set to about the number distinct PreparedStatements that are used
-        // frequently in your application, plus two or three extra so infrequently statements don't force the more common
-        // cached statements to be culled. Though maxStatements is the JDBC standard parameter for controlling statement caching,
-        // users may find maxStatementsPerConnection more intuitive to use.
-        cpds.setMaxStatementsPerConnection(config.getPreparedStatementsCacheSize());
-        cpds.setDataSourceName(poolName);
+    private class C3P0DataSourceBuilder {
 
-        return cpds;
+        DataSource buildDataSource() {
+            final ComboPooledDataSource cpds = new ComboPooledDataSource();
+            cpds.setJdbcUrl(config.getJdbcUrl());
+            cpds.setUser(config.getUsername());
+            cpds.setPassword(config.getPassword());
+            // http://www.mchange.com/projects/c3p0/#minPoolSize
+            // Minimum number of Connections a pool will maintain at any given time.
+            cpds.setMinPoolSize(config.getMinIdle());
+            // http://www.mchange.com/projects/c3p0/#maxPoolSize
+            // Maximum number of Connections a pool will maintain at any given time.
+            cpds.setMaxPoolSize(config.getMaxActive());
+            // http://www.mchange.com/projects/c3p0/#checkoutTimeout
+            // The number of milliseconds a client calling getConnection() will wait for a Connection to be checked-in or
+            // acquired when the pool is exhausted. Zero means wait indefinitely. Setting any positive value will cause the getConnection()
+            // call to time-out and break with an SQLException after the specified number of milliseconds.
+            cpds.setCheckoutTimeout(toMilliSeconds(config.getConnectionTimeout()));
+            // http://www.mchange.com/projects/c3p0/#maxIdleTime
+            // Seconds a Connection can remain pooled but unused before being discarded. Zero means idle connections never expire.
+            cpds.setMaxIdleTime(toSeconds(config.getIdleMaxAge()));
+            // http://www.mchange.com/projects/c3p0/#maxConnectionAge
+            // Seconds, effectively a time to live. A Connection older than maxConnectionAge will be destroyed and purged from the pool.
+            // This differs from maxIdleTime in that it refers to absolute age. Even a Connection which has not been much idle will be purged
+            // from the pool if it exceeds maxConnectionAge. Zero means no maximum absolute age is enforced.
+            cpds.setMaxConnectionAge(toSeconds(config.getMaxConnectionAge()));
+            // http://www.mchange.com/projects/c3p0/#idleConnectionTestPeriod
+            // If this is a number greater than 0, c3p0 will test all idle, pooled but unchecked-out connections, every this number of seconds.
+            cpds.setIdleConnectionTestPeriod(toSeconds(config.getIdleConnectionTestPeriod()));
+            // The number of PreparedStatements c3p0 will cache for a single pooled Connection.
+            // If both maxStatements and maxStatementsPerConnection are zero, statement caching will not be enabled.
+            // If maxStatementsPerConnection is zero but maxStatements is a non-zero value, statement caching will be enabled,
+            // and a global limit enforced, but otherwise no limit will be set on the number of cached statements for a single Connection.
+            // If set, maxStatementsPerConnection should be set to about the number distinct PreparedStatements that are used
+            // frequently in your application, plus two or three extra so infrequently statements don't force the more common
+            // cached statements to be culled. Though maxStatements is the JDBC standard parameter for controlling statement caching,
+            // users may find maxStatementsPerConnection more intuitive to use.
+            cpds.setMaxStatementsPerConnection(config.getPreparedStatementsCacheSize());
+            cpds.setDataSourceName(poolName);
+
+            return cpds;
+        }
+
     }
 
     private int toSeconds(final TimeSpan timeSpan) {
