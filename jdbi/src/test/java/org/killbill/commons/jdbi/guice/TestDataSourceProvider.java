@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import org.skife.config.ConfigurationObjectFactory;
-import org.testng.Assert;
+import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
@@ -48,9 +48,29 @@ public class TestDataSourceProvider {
                 final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB);
 
                 final DataSource dataSource = dataSourceProvider.get();
-                Assert.assertTrue(dataSource instanceof HikariDataSource);
+                assertTrue(dataSource instanceof HikariDataSource);
             }
         }
+    }
+
+    @Test(groups = "fast")
+    public void testDataSourceProviderHikariCPPoolSizing() {
+        final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
+
+        DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
+        boolean shouldUseMariaDB = true;
+
+        final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
+        properties.put("org.killbill.dao.minIdle", "20");
+        properties.put("org.killbill.dao.maxActive", "50");
+        final DaoConfig daoConfig = buildDaoConfig(properties);
+
+        final DataSource dataSource = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB).get();
+        assertTrue(dataSource instanceof HikariDataSource);
+
+        HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
+        assertEquals(50, hikariDataSource.getMaximumPoolSize());
+        assertEquals(20, hikariDataSource.getMinimumIdle());
     }
 
     @Test(groups = "fast")
@@ -62,12 +82,20 @@ public class TestDataSourceProvider {
                 final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB);
 
                 final DataSource dataSource = dataSourceProvider.get();
-                Assert.assertTrue(dataSource instanceof ComboPooledDataSource);
+                assertTrue(dataSource instanceof ComboPooledDataSource);
             }
         }
     }
 
-    private DaoConfig buildDaoConfig(DataSourceConnectionPoolingType poolingType, DataSourceProvider.DatabaseType databaseType) {
+    DaoConfig buildDaoConfig(DataSourceConnectionPoolingType poolingType, DataSourceProvider.DatabaseType databaseType) {
+        return buildDaoConfig( defaultDaoConfigProperties(poolingType, databaseType) );
+    }
+
+    DaoConfig buildDaoConfig(final Properties properties) {
+        return new ConfigurationObjectFactory(properties).build(DaoConfig.class);
+    }
+
+    private Properties defaultDaoConfigProperties(DataSourceConnectionPoolingType poolingType, DataSourceProvider.DatabaseType databaseType) {
         final Properties properties = new Properties();
         properties.put("org.killbill.dao.poolingType", poolingType.toString());
         if (DataSourceProvider.DatabaseType.MYSQL.equals(databaseType)) {
@@ -78,10 +106,8 @@ public class TestDataSourceProvider {
             properties.put("org.killbill.dao.url", "jdbc:oracle:thin:@myhost:1521:orcl");
             properties.put("org.killbill.dao.driverClassName", GenericDriver.class.getName());
         }
-
-        return new ConfigurationObjectFactory(properties).build(DaoConfig.class);
+        return properties;
     }
-
 
     public static final class GenericDriver implements Driver {
 

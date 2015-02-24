@@ -89,8 +89,8 @@ public class DataSourceProvider implements Provider<DataSource> {
 
             hikariConfig.setUsername(config.getUsername());
             hikariConfig.setPassword(config.getPassword());
-            hikariConfig.setMinimumIdle(config.getMinIdle());
             hikariConfig.setMaximumPoolSize(config.getMaxActive());
+            hikariConfig.setMinimumIdle(config.getMinIdle());
             hikariConfig.setConnectionTimeout(toMilliSeconds(config.getConnectionTimeout()));
             hikariConfig.setIdleTimeout(toMilliSeconds(config.getIdleMaxAge()));
             hikariConfig.setMaxLifetime(toMilliSeconds(config.getMaxConnectionAge()));
