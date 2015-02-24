@@ -28,8 +28,6 @@ import javax.sql.DataSource;
 import org.skife.config.TimeSpan;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.jolbox.bonecp.BoneCPConfig;
-import com.jolbox.bonecp.BoneCPDataSource;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -78,9 +76,6 @@ public class DataSourceProvider implements Provider<DataSource> {
         if (DataSourceConnectionPoolingType.C3P0.equals(config.getConnectionPoolingType())) {
             loadDriver();
             ds = getC3P0DataSource();
-        } else if (DataSourceConnectionPoolingType.BONECP.equals(config.getConnectionPoolingType())) {
-            loadDriver();
-            ds = getBoneCPDatSource();
         } else if (DataSourceConnectionPoolingType.HIKARICP.equals(config.getConnectionPoolingType())) {
             if (dataSourceClassName != null) {
                 loadDriver();
@@ -141,25 +136,6 @@ public class DataSourceProvider implements Provider<DataSource> {
         }
 
         return new HikariDataSource(hikariConfig);
-    }
-
-    private DataSource getBoneCPDatSource() {
-        final BoneCPConfig dbConfig = new BoneCPConfig();
-        dbConfig.setJdbcUrl(config.getJdbcUrl());
-        dbConfig.setUsername(config.getUsername());
-        dbConfig.setPassword(config.getPassword());
-        dbConfig.setMinConnectionsPerPartition(config.getMinIdle());
-        dbConfig.setMaxConnectionsPerPartition(config.getMaxActive());
-        dbConfig.setConnectionTimeout(config.getConnectionTimeout().getPeriod(), config.getConnectionTimeout().getUnit());
-        dbConfig.setIdleMaxAge(config.getIdleMaxAge().getPeriod(), config.getIdleMaxAge().getUnit());
-        dbConfig.setMaxConnectionAge(config.getMaxConnectionAge().getPeriod(), config.getMaxConnectionAge().getUnit());
-        dbConfig.setIdleConnectionTestPeriod(config.getIdleConnectionTestPeriod().getPeriod(), config.getIdleConnectionTestPeriod().getUnit());
-        dbConfig.setPartitionCount(1);
-        dbConfig.setDisableJMX(false);
-        dbConfig.setStatementsCacheSize(config.getPreparedStatementsCacheSize());
-        dbConfig.setPoolName(poolName);
-
-        return new BoneCPDataSource(dbConfig);
     }
 
     private DataSource getC3P0DataSource() {

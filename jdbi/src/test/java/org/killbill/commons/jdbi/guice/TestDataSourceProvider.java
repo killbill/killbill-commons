@@ -32,7 +32,6 @@ import org.skife.config.ConfigurationObjectFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.jolbox.bonecp.BoneCPDataSource;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -50,20 +49,6 @@ public class TestDataSourceProvider {
 
                 final DataSource dataSource = dataSourceProvider.get();
                 Assert.assertTrue(dataSource instanceof HikariDataSource);
-            }
-        }
-    }
-
-    @Test(groups = "fast")
-    public void testDataSourceProviderBoneCP() throws Exception {
-        for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
-            for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
-                final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.BONECP, databaseType);
-
-                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB);
-
-                final DataSource dataSource = dataSourceProvider.get();
-                Assert.assertTrue(dataSource instanceof BoneCPDataSource);
             }
         }
     }

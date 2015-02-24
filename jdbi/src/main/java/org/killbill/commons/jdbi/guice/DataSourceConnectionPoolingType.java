@@ -20,6 +20,5 @@ package org.killbill.commons.jdbi.guice;
 
 public enum DataSourceConnectionPoolingType {
     C3P0,
-    BONECP,
     HIKARICP
 }
