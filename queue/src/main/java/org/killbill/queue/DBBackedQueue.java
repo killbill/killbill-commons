@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
 
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
@@ -44,7 +44,6 @@ import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
-import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -536,7 +535,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
 
     private List<T> fetchReadyEntries(int size) {
         final Date now = clock.getUTCNow().toDate();
-        final String owner = config.isSticky() ? Hostname.get() : null;
+        final String owner = config.isSticky() ? CreatorName.get() : null;
         final List<T> entries = sqlDao.getReadyEntries(now, size, owner, config.getTableName());
         return entries;
     }
@@ -563,7 +562,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
                 return input.getRecordId();
             }
         });
-        final int resultCount = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName());
+        final int resultCount = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
         // Same number, we got them all, we can optimize
         if (resultCount == candidates.size()) {
             totalClaimed.inc(resultCount);
@@ -576,7 +575,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             final Iterable claimed = Iterables.filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
                 public boolean apply(T input) {
-                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(Hostname.get());
+                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(CreatorName.get());
                 }
             });
             final List<T> result = ImmutableList.copyOf(claimed);
@@ -600,7 +599,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
 
     private boolean claimEntry(T entry) {
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
-        final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), Hostname.get(), nextAvailable, config.getTableName()) == 1);
+        final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName()) == 1);
 
         if (claimed) {
             totalClaimed.inc();

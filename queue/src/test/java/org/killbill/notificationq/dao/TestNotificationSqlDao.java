@@ -19,7 +19,7 @@ package org.killbill.notificationq.dao;
 import com.google.common.collect.Collections2;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
@@ -94,13 +94,13 @@ public class TestNotificationSqlDao extends TestSetup {
         validateDate(notification.getNextAvailableDate(), nextAvailable);
 
         final DateTime processedTime = clock.getUTCNow();
-        NotificationEventModelDao notificationHistory = new NotificationEventModelDao(notification, Hostname.get(), processedTime, PersistentQueueEntryLifecycleState.PROCESSED);
+        NotificationEventModelDao notificationHistory = new NotificationEventModelDao(notification, CreatorName.get(), processedTime, PersistentQueueEntryLifecycleState.PROCESSED);
         dao.insertEntry(notificationHistory, notificationQueueConfig.getHistoryTableName());
 
         notificationHistory = dao.getByRecordId(notification.getRecordId(), notificationQueueConfig.getHistoryTableName());
         assertEquals(notificationHistory.getEventJson(), eventJson);
         validateDate(notificationHistory.getEffectiveDate(), effDt);
-        assertEquals(notificationHistory.getProcessingOwner(), Hostname.get());
+        assertEquals(notificationHistory.getProcessingOwner(), CreatorName.get());
         assertEquals(notificationHistory.getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
         validateDate(notificationHistory.getNextAvailableDate(), processedTime);
 

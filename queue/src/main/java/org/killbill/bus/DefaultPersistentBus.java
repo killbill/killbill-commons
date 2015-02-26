@@ -33,7 +33,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
@@ -144,16 +144,16 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             } finally {
                 dispatchTimerContext.stop();
                 if (lastException == null) {
-                    final BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                    final BusEventModelDao processedEntry = new BusEventModelDao(cur, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                     historyEvents.add(processedEntry);
                 } else if (errorCount <= config.getMaxFailureRetries()) {
                     log.info("Bus dispatch error, will attempt a retry ", lastException);
                     // STEPH we could batch those as well
-                    final BusEventModelDao retriedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
+                    final BusEventModelDao retriedEntry = new BusEventModelDao(cur, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
                     dao.updateOnError(retriedEntry);
                 } else {
                     log.error("Fatal Bus dispatch error, data corruption...", lastException);
-                    final BusEventModelDao processedEntry = new BusEventModelDao(cur, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
+                    final BusEventModelDao processedEntry = new BusEventModelDao(cur, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
                     historyEvents.add(processedEntry);
                 }
             }
@@ -191,7 +191,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         try {
             if (isStarted.get()) {
                 final String json = objectMapper.writeValueAsString(event);
-                final BusEventModelDao entry = new BusEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), json,
+                final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), json,
                                                                     event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
 
@@ -218,7 +218,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             return;
         }
 
-        final BusEventModelDao entry = new BusEventModelDao(Hostname.get(),
+        final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(),
                                                             clock.getUTCNow(),
                                                             event.getClass().getName(),
                                                             json,

@@ -16,38 +16,31 @@
 
 package org.killbill;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class Hostname {
+public class CreatorName {
 
-    private static final Logger logger = LoggerFactory.getLogger(Hostname.class);
+    // Allow to override the default naming based on Hostname
+    private final static String QUEUE_CREATOR_NAME = "org.killbill.queue.creator.name";
 
-    private static String hostname;
-
-    // Can be used for testing with multiple instances on the same machine (with same  InetAddress)
-    private static final String POSTFIX_HOSTNAME = "org.killbill.hostname.postfix";
+    private static String creatorName;
 
     public static String get() {
-        if (hostname == null) {
-            synchronized (Hostname.class) {
-                if (hostname == null) {
+        if (creatorName == null) {
+            synchronized (CreatorName.class) {
+                creatorName = System.getProperty(QUEUE_CREATOR_NAME);
+                if (creatorName == null) {
                     try {
                         final InetAddress addr = InetAddress.getLocalHost();
-                        hostname = addr.getHostName();
+                        creatorName = addr.getHostName();
                     } catch (UnknownHostException e) {
-                        hostname = "hostname-unknown";
-                    }
-                    if (System.getProperty(POSTFIX_HOSTNAME) != null) {
-                        hostname = hostname + System.getProperty(POSTFIX_HOSTNAME);
-                        logger.warn("Found system property " + POSTFIX_HOSTNAME + ": hostname for queue = " + hostname);
+                        creatorName = "creatorName-unknown";
                     }
                 }
             }
         }
-        return hostname;
+        return creatorName;
     }
 }

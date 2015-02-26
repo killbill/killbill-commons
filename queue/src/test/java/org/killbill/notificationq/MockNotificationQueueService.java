@@ -25,7 +25,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -85,7 +85,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
 
 
-            final NotificationEventModelDao processedNotification = new NotificationEventModelDao(cur.getRecordId(), Hostname.get(), Hostname.get(), clock.getUTCNow(),
+            final NotificationEventModelDao processedNotification = new NotificationEventModelDao(cur.getRecordId(), CreatorName.get(), CreatorName.get(), clock.getUTCNow(),
                                                                                                   getClock().getUTCNow().plus(CLAIM_TIME_MS),
                                                                                                   PersistentQueueEntryLifecycleState.PROCESSED, cur.getClassName(),
                                                                                                   cur.getEventJson(), 0L, cur.getUserToken(), cur.getSearchKey1(), cur.getSearchKey2(),

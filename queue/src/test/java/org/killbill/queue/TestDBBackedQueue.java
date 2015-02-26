@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.bus.DefaultBusPersistentEvent;
 import org.killbill.bus.api.PersistentBusConfig;
@@ -53,7 +53,7 @@ public class TestDBBackedQueue extends TestSetup {
 
     private final static Logger log = LoggerFactory.getLogger(TestDBBackedQueue.class);
 
-    private final static String OWNER = Hostname.get();
+    private final static String OWNER = CreatorName.get();
 
     private DBBackedQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;
@@ -104,7 +104,7 @@ public class TestDBBackedQueue extends TestSetup {
             final Iterable<BusEventModelDao> processed = Iterables.transform(ready, new Function<BusEventModelDao, BusEventModelDao>() {
                 @Override
                 public BusEventModelDao apply(@Nullable BusEventModelDao input) {
-                    return new BusEventModelDao(input, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+                    return new BusEventModelDao(input, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                 }
             });
             long t3 = System.nanoTime();

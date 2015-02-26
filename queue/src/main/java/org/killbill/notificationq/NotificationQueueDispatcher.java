@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -284,7 +284,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                                 }
                             } else if (errorCount <= config.getMaxFailureRetries()) {
                                 log.info(LOG_PREFIX + "dispatch error, will attempt a retry ", lastException);
-                                final NotificationEventModelDao failedNotification = new NotificationEventModelDao(notification, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
+                                final NotificationEventModelDao failedNotification = new NotificationEventModelDao(notification, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
                                 dao.updateOnError(failedNotification);
                             } else {
                                 log.error(LOG_PREFIX + "fatal NotificationQ dispatch error, data corruption...", lastException);
@@ -361,12 +361,12 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         }
 
         private void clearNotification(final NotificationEventModelDao cleared) {
-            final NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            final NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
             dao.moveEntryToHistory(processedEntry);
         }
 
         private void clearFailedNotification(final NotificationEventModelDao cleared) {
-            final NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
+            final NotificationEventModelDao processedEntry = new NotificationEventModelDao(cleared, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED);
             dao.moveEntryToHistory(processedEntry);
         }
 

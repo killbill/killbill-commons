@@ -28,7 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
@@ -65,7 +65,7 @@ public class MockNotificationQueue implements NotificationQueue {
         this.queueName = queueName;
         this.handler = handler;
         this.clock = clock;
-        this.hostname = Hostname.get();
+        this.hostname = CreatorName.get();
         this.queueService = mockNotificationQueueService;
 
         this.recordIds = new AtomicLong();

@@ -27,7 +27,7 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
-import org.killbill.Hostname;
+import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
@@ -83,7 +83,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, new Long(0));
-        final NotificationEventModelDao notification = new NotificationEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
+        final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
         dao.insertEntry(notification);
     }
 
@@ -93,7 +93,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, 0L);
-        final NotificationEventModelDao notification = new NotificationEventModelDao(Hostname.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
+        final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
 
         final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
             @Override
@@ -202,7 +202,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     @Override
     public void removeNotification(final Long recordId) {
         final NotificationEventModelDao existing = dao.getSqlDao().getByRecordId(recordId, config.getTableName());
-        final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
+        final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
         dao.moveEntryToHistory(removedEntry);
     }
 
@@ -212,7 +212,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
             @Override
             public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
                 final NotificationEventModelDao existing = transactional.getByRecordId(recordId, config.getTableName());
-                final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, Hostname.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
+                final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
                 dao.moveEntryToHistoryFromTransaction(transactional, removedEntry);
 
                 return null;
