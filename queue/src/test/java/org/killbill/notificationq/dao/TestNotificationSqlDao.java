@@ -154,7 +154,7 @@ public class TestNotificationSqlDao extends TestSetup {
             assertNull(result);
         }
 
-        dao.insertEntriesWithRecordId(entries, notificationQueueConfig.getHistoryTableName());
+        dao.insertEntries(entries, notificationQueueConfig.getHistoryTableName());
         for (Long entry : entryIds) {
             final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getHistoryTableName());
             assertNotNull(result);

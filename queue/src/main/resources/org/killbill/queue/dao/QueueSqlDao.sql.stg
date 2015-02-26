@@ -223,21 +223,12 @@ insertEntry(tableName) ::= <<
     );
 >>
 
-insertEntryWithRecordId(tableName) ::= <<
-    insert into <tableName> (
-         record_id
-       , <allTableFieldsNoRecordId()>
-    ) values (
-         :recordId
-       , <allTableValuesNoRecordId()>
-    );
->>
 
-insertEntriesWithRecordId(tableName) ::= <<
+insertEntries(tableName) ::= <<
     insert into <tableName> (
-       <allTableFields()>
+       <allTableFieldsNoRecordId()>
     ) values (
-       <allTableValues()>
+       <allTableValuesNoRecordId()>
     );
 >>
 

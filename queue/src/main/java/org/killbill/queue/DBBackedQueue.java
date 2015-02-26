@@ -146,8 +146,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             databaseTransactionNotificationApi.registerForNotification(this);
         }
 
-        resetInsertIdIfNeeded();
-
         //
         // Metrics
         //
@@ -423,7 +421,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
                 log.debug(DB_QUEUE_LOG_ID + "Moving entry " + entry.getRecordId() + " into history ");
             }
 
-            transactional.insertEntryWithRecordId(entry, entry.getRecordId(), config.getHistoryTableName());
+            transactional.insertEntry(entry, config.getHistoryTableName());
             transactional.removeEntry(entry.getRecordId(), config.getTableName());
         } catch (final Exception e) {
             log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + entry.getRecordId() + "] into history ", e);
@@ -484,7 +482,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             }
         });
 
-        transactional.insertEntriesWithRecordId(entries, config.getHistoryTableName());
+        transactional.insertEntries(entries, config.getHistoryTableName());
         transactional.removeEntries(ImmutableList.copyOf(toBeRemovedRecordIds), config.getTableName());
     }
 
@@ -737,40 +735,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             public Iterator<Long> iterator() {
                 return rowIds.iterator();
             }
-        }
-    }
-
-    // Because we manually sync the record_id between the current and the history tables,
-    // we need to make sure the auto_increment field is in a sane state in the non history table
-    // (it could have been reset by a truncate for instance).
-    // See https://github.com/killbill/killbill-commons/issues/6
-    public void resetInsertIdIfNeeded() {
-        try {
-            sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
-                @Override
-                public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                    final Long maxRecordId = transactional.getMaxRecordId(config.getHistoryTableName());
-                    if (maxRecordId == null || maxRecordId == 0) {
-                        // Any value will do
-                    } else {
-                        final T dummyEntry = transactional.getByRecordId(maxRecordId, config.getHistoryTableName());
-                        final Long lastInsertId = safeInsertEntry(transactional, dummyEntry);
-                        if (lastInsertId > maxRecordId) {
-                            // Nothing to do
-                            transactional.removeEntry(lastInsertId, config.getTableName());
-                        } else {
-                            final long nextMaxRecordId = maxRecordId + 1;
-                            log.warn("In table {}, last insert id was {} but the max record id of {} is {} - resetting it to {}", config.getTableName(), lastInsertId, config.getHistoryTableName(), maxRecordId, nextMaxRecordId);
-                            // Avoid ALTER table, which would rebuild the entire table
-                            transactional.insertEntryWithRecordId(dummyEntry, nextMaxRecordId, config.getTableName());
-                            transactional.removeEntry(nextMaxRecordId, config.getTableName());
-                        }
-                    }
-                    return null;
-                }
-            });
-        } catch (final DBIException e) {
-            log.warn("Exception trying to assess the state of the tables", e);
         }
     }
 
