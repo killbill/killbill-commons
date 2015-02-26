@@ -42,7 +42,7 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.max.failure.retry")
     @Default("3")
-    @Description("Number retry for a given event when an exception occurs")
+    @Description("Number of retries for a given event when an exception occurs")
     public abstract int getMaxFailureRetries();
 
     @Override
@@ -90,7 +90,7 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity")
     @Default("3000")
-    @Description("Number of threads to use")
+    @Description("Size of the inflight queue")
     public abstract int getQueueCapacity();
 
     @Override
