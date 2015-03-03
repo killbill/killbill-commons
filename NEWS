@@ -1,3 +1,7 @@
+0.2.33
+    Add auto-increment for the queue historical tables (which caused a lot of headaches because of how mysql implements the auto_increment)
+    Minor buf fixes in queue search APIs
+
 0.2.32
     Another fix for https://github.com/killbill/killbill-commons/issues/6
     New search APIs for the queues
