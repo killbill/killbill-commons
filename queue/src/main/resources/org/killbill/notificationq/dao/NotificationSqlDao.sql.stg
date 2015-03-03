@@ -61,7 +61,7 @@ getReadyOrInProcessingQueueEntriesForSearchKeys(tableName) ::= <<
     from <tableName>
     where
       queue_name = :queueName
-      and processing_state in ('AVAILABLE', 'PROCESSING')
+      and processing_state in ('AVAILABLE', 'IN_PROCESSING')
       and search_key1 = :searchKey1
       and search_key2 = :searchKey2
     order by
@@ -75,7 +75,7 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
     from <tableName>
     where
       queue_name = :queueName
-      and processing_state in ('AVAILABLE', 'PROCESSING')
+      and processing_state in ('AVAILABLE', 'IN_PROCESSING')
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>
