@@ -44,7 +44,7 @@ public interface DaoConfig {
 
     @Description("The minimum allowed number of idle connections to the database")
     @Config("org.killbill.dao.minIdle")
-    @Default("1")
+    @Default("0")
     int getMinIdle();
 
     @Description("The maximum allowed number of active connections to the database")
@@ -122,5 +122,5 @@ public interface DaoConfig {
     @Config("org.killbill.dao.poolingType")
     @Default("HIKARICP")
     DataSourceConnectionPoolingType getConnectionPoolingType();
-    
+
 }
