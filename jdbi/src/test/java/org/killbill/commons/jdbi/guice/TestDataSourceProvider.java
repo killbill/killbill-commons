@@ -37,15 +37,16 @@ import com.zaxxer.hikari.HikariDataSource;
 
 public class TestDataSourceProvider {
 
-    private static final String TEST_POOL = "test-pool";
+    private static final String TEST_POOL_PREFIX = "test-pool";
 
     @Test(groups = "fast")
     public void testDataSourceProviderHikariCP() throws Exception {
-        for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
-            for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
+        for ( final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values() ) {
+            for ( final boolean shouldUseMariaDB : new boolean[] { false, true } ) {
                 final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.HIKARICP, databaseType);
 
-                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB);
+                final String poolName = TEST_POOL_PREFIX + "-" + databaseType + "_" + shouldUseMariaDB;
+                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB);
 
                 final DataSource dataSource = dataSourceProvider.get();
                 assertTrue(dataSource instanceof HikariDataSource);
@@ -58,14 +59,14 @@ public class TestDataSourceProvider {
         final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
 
         DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
-        boolean shouldUseMariaDB = true;
 
         final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
         properties.put("org.killbill.dao.minIdle", "20");
         properties.put("org.killbill.dao.maxActive", "50");
         final DaoConfig daoConfig = buildDaoConfig(properties);
 
-        final DataSource dataSource = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB).get();
+        final String poolName = TEST_POOL_PREFIX + "-1";
+        final DataSource dataSource = new DataSourceProvider(daoConfig, poolName).get();
         assertTrue(dataSource instanceof HikariDataSource);
 
         HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
@@ -78,13 +79,14 @@ public class TestDataSourceProvider {
         final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
 
         DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
-        boolean shouldUseMariaDB = true;
+        final boolean shouldUseMariaDB = true;
 
         final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
         properties.put("org.killbill.dao.connectionInitSql", "SELECT 42");
         final DaoConfig daoConfig = buildDaoConfig(properties);
 
-        final DataSource dataSource = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB).get();
+        final String poolName = TEST_POOL_PREFIX + "-2";
+        final DataSource dataSource = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB).get();
         assertTrue(dataSource instanceof HikariDataSource);
 
         HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
@@ -93,11 +95,12 @@ public class TestDataSourceProvider {
 
     @Test(groups = "fast")
     public void testDataSourceProviderC3P0() throws Exception {
-        for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
-            for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
+        for ( final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values() ) {
+            for ( final boolean shouldUseMariaDB : new boolean[] { false, true } ) {
                 final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.C3P0, databaseType);
 
-                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, TEST_POOL, shouldUseMariaDB);
+                final String poolName = TEST_POOL_PREFIX + "-" + databaseType + "_C3P0";
+                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB);
 
                 final DataSource dataSource = dataSourceProvider.get();
                 assertTrue(dataSource instanceof ComboPooledDataSource);
