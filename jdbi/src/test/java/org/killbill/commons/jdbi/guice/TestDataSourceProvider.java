@@ -17,13 +17,29 @@
 
 package org.killbill.commons.jdbi.guice;
 
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
@@ -41,17 +57,26 @@ public class TestDataSourceProvider {
 
     @Test(groups = "fast")
     public void testDataSourceProviderHikariCP() throws Exception {
-        for ( final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values() ) {
-            for ( final boolean shouldUseMariaDB : new boolean[] { false, true } ) {
-                final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.HIKARICP, databaseType);
+        DataSourceProvider.DatabaseType databaseType;
+        DaoConfig daoConfig; String poolName; DataSourceProvider dataSourceProvider;
 
-                final String poolName = TEST_POOL_PREFIX + "-" + databaseType + "_" + shouldUseMariaDB;
-                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB);
+        // H2
+        databaseType = DataSourceProvider.DatabaseType.H2;
+        daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.HIKARICP, databaseType);
 
-                final DataSource dataSource = dataSourceProvider.get();
-                assertTrue(dataSource instanceof HikariDataSource);
-            }
-        }
+        poolName = TEST_POOL_PREFIX + "-0-" + databaseType;
+        dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
+
+        assertTrue( dataSourceProvider.get() instanceof HikariDataSource );
+
+        // Generic
+        databaseType = DataSourceProvider.DatabaseType.GENERIC;
+        daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.HIKARICP, databaseType);
+
+        poolName = TEST_POOL_PREFIX + "-0-" + databaseType;
+        dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
+
+        assertTrue( dataSourceProvider.get() instanceof HikariDataSource );
     }
 
     @Test(groups = "fast")
@@ -124,7 +149,10 @@ public class TestDataSourceProvider {
         } else if (DataSourceProvider.DatabaseType.H2.equals(databaseType)) {
             properties.put("org.killbill.dao.url", "jdbc:h2:file:killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;MVCC=true;DB_CLOSE_ON_EXIT=FALSE");
         } else {
-            properties.put("org.killbill.dao.url", "jdbc:oracle:thin:@myhost:1521:orcl");
+            properties.put("org.killbill.dao.url", "jdbc:test:@myhost:1521:orcl");
+
+            System.out.println("GenericDriver.class.getName() = " + GenericDriver.class.getName());
+
             properties.put("org.killbill.dao.driverClassName", GenericDriver.class.getName());
         }
         return properties;
@@ -141,11 +169,12 @@ public class TestDataSourceProvider {
         }
 
         public Connection connect(String url, Properties info) throws SQLException {
-            return null;
+            System.err.println(this + " connect " + url + " " + info);
+            return new ConnectionStub();
         }
 
         public boolean acceptsURL(String url) throws SQLException {
-            return url.contains("oracle");
+            return url.contains(":test:");
         }
 
         public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
@@ -164,8 +193,227 @@ public class TestDataSourceProvider {
             return false;
         }
 
-        public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-            return null;
+        public Logger getParentLogger() { return null; }
+
+        private class ConnectionStub implements Connection {
+
+            public boolean isValid(int timeout) throws SQLException { return ! closed; }
+
+            private boolean closed;
+
+            public void close() throws SQLException {
+                closed = true;
+            }
+
+            public boolean isClosed() throws SQLException {
+                return closed;
+            }
+
+            public DatabaseMetaData getMetaData() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setReadOnly(boolean readOnly) throws SQLException {
+                return;
+            }
+
+            public boolean isReadOnly() throws SQLException {
+                return true;
+            }
+
+            public void setCatalog(String catalog) throws SQLException {
+                return;
+            }
+
+            public String getCatalog() throws SQLException {
+                return null;
+            }
+
+            public void setTransactionIsolation(int level) throws SQLException {
+                return;
+            }
+
+            public int getTransactionIsolation() throws SQLException {
+                return 0;
+            }
+
+            public Statement createStatement() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PreparedStatement prepareStatement(String sql) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public CallableStatement prepareCall(String sql) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public String nativeSQL(String sql) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setAutoCommit(boolean autoCommit) throws SQLException {
+                return;
+            }
+
+            public boolean getAutoCommit() throws SQLException {
+                return false;
+            }
+
+            public void commit() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void rollback() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public SQLWarning getWarnings() throws SQLException {
+                return null;
+            }
+
+            public void clearWarnings() throws SQLException {
+                return;
+            }
+
+            public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Map<String, Class<?>> getTypeMap() throws SQLException {
+                return Collections.emptyMap();
+            }
+
+            public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+                return;
+            }
+
+            public void setHoldability(int holdability) throws SQLException {
+                return;
+            }
+
+            public int getHoldability() throws SQLException {
+                return 0;
+            }
+
+            public Savepoint setSavepoint() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Savepoint setSavepoint(String name) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void rollback(Savepoint savepoint) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Clob createClob() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Blob createBlob() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public NClob createNClob() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public SQLXML createSQLXML() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setClientInfo(String name, String value) throws SQLClientInfoException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setClientInfo(Properties properties) throws SQLClientInfoException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public String getClientInfo(String name) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Properties getClientInfo() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setSchema(String schema) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public String getSchema() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void abort(Executor executor) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public int getNetworkTimeout() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public <T> T unwrap(Class<T> iface) throws SQLException {
+                return (T) this;
+            }
+
+            public boolean isWrapperFor(Class<?> iface) throws SQLException {
+                return iface.isInstance(this);
+            }
+
         }
+
     }
 }
