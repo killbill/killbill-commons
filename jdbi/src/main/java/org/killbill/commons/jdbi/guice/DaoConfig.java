@@ -44,7 +44,7 @@ public interface DaoConfig {
 
     @Description("The minimum allowed number of idle connections to the database")
     @Config("org.killbill.dao.minIdle")
-    @Default("1")
+    @Default("0")
     int getMinIdle();
 
     @Description("The maximum allowed number of active connections to the database")
@@ -72,6 +72,11 @@ public interface DaoConfig {
     @Config("org.killbill.dao.idleConnectionTestPeriod")
     @Default("5m")
     TimeSpan getIdleConnectionTestPeriod();
+
+    @Description("Sets a SQL statement executed after every new connection creation before adding it to the pool")
+    @Config("org.killbill.dao.connectionInitSql")
+    @DefaultNull
+    String getConnectionInitSql();
 
     @Description("Number of prepared statements that the driver will cache per connection")
     @Config("org.killbill.dao.prepStmtCacheSize")
@@ -117,4 +122,5 @@ public interface DaoConfig {
     @Config("org.killbill.dao.poolingType")
     @Default("HIKARICP")
     DataSourceConnectionPoolingType getConnectionPoolingType();
+
 }

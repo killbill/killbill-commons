@@ -84,47 +84,38 @@ public class InTransaction {
             this.connection = connection;
         }
 
-        @Override
         public Connection getConnection() throws SQLException {
             return connection;
         }
 
-        @Override
         public Connection getConnection(final String username, final String password) throws SQLException {
             return connection;
         }
 
-        @Override
         public PrintWriter getLogWriter() throws SQLException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public void setLogWriter(final PrintWriter out) throws SQLException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public void setLoginTimeout(final int seconds) throws SQLException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public int getLoginTimeout() throws SQLException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public <T> T unwrap(final Class<T> iface) throws SQLException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public boolean isWrapperFor(final Class<?> iface) throws SQLException {
             throw new UnsupportedOperationException();
         }
