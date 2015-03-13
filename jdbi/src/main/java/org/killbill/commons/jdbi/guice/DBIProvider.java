@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014 Groupon, Inc
- * Copyright 2014 The Billing Project, LLC
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,14 +18,15 @@
 
 package org.killbill.commons.jdbi.guice;
 
+import javax.inject.Provider;
+import javax.sql.DataSource;
+
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
 import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
-import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
 import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
 import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
 import org.killbill.commons.jdbi.log.Slf4jLogging;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
-import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.TimingCollector;
@@ -33,9 +34,6 @@ import org.skife.jdbi.v2.tweak.SQLLog;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.inject.Provider;
-import javax.sql.DataSource;
 
 public class DBIProvider implements Provider<IDBI> {
 
@@ -71,12 +69,10 @@ public class DBIProvider implements Provider<IDBI> {
         dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeArgumentFactory());
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
-        dbi.registerArgumentFactory(new EnumArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
         if (transactionHandler != null) {
             dbi.setTransactionHandler(transactionHandler);
         }
-
 
         if (sqlLog != null) {
             dbi.setSQLLog(sqlLog);

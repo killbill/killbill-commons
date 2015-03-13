@@ -26,7 +26,6 @@ import javax.sql.DataSource;
 
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
 import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
-import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
 import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
 import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
@@ -66,7 +65,6 @@ public class InTransaction {
         dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeArgumentFactory());
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
-        dbi.registerArgumentFactory(new EnumArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
         return dbi;
     }

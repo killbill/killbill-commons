@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -16,19 +18,15 @@
 
 package org.killbill;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.CharStreams;
-import com.google.common.io.InputSupplier;
-import com.google.common.io.Resources;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.clock.ClockMock;
 import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
 import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
-import org.killbill.commons.jdbi.argument.EnumArgumentFactory;
 import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
 import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
@@ -39,15 +37,17 @@ import org.skife.config.ConfigSource;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.CharStreams;
+import com.google.common.io.InputSupplier;
+import com.google.common.io.Resources;
 
 import static org.testng.Assert.assertNotNull;
 
@@ -85,15 +85,14 @@ public class TestSetup {
         dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeArgumentFactory());
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
-        dbi.registerArgumentFactory(new EnumArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
         dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
         persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                ImmutableMap.<String, String>of("instanceName", "main"));
+                                                                                                 ImmutableMap.<String, String>of("instanceName", "main"));
         notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                ImmutableMap.<String, String>of("instanceName", "main"));
+                                                                                                     ImmutableMap.<String, String>of("instanceName", "main"));
     }
 
     @BeforeMethod(groups = "slow")
@@ -136,10 +135,8 @@ public class TestSetup {
         assertNotNull(url);
         try {
             System.getProperties().load(url.openStream());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
-
-
 }

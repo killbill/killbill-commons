@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,18 +18,13 @@
 
 package org.killbill.commons.jdbi.argument;
 
-import java.io.IOException;
-
-import org.h2.jdbc.JdbcSQLException;
-import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
+import org.killbill.commons.jdbi.JDBITestBase;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import org.killbill.commons.jdbi.JDBITestBase;
 
 public class TestEnumArgumentFactory extends JDBITestBase {
 
@@ -43,20 +40,7 @@ public class TestEnumArgumentFactory extends JDBITestBase {
     }
 
     @Test(groups = "slow")
-    public void testWithoutArgument() throws IOException {
-        final SomethingSqlDao somethingSqlDao = dbi.onDemand(SomethingSqlDao.class);
-        try {
-            somethingSqlDao.create(1, "pierre", Bier.ipa);
-            Assert.fail();
-        } catch (final UnableToExecuteStatementException e) {
-            Assert.assertTrue(e.getCause() instanceof JdbcSQLException);
-        }
-    }
-
-    @Test(groups = "slow")
     public void testWithArgument() throws Exception {
-        dbi.registerArgumentFactory(new EnumArgumentFactory());
-
         final SomethingSqlDao somethingSqlDao = dbi.onDemand(SomethingSqlDao.class);
         final Bier bierPierre = Bier.ipa;
         somethingSqlDao.create(1, "pierre", bierPierre);
