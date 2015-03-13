@@ -196,7 +196,7 @@ public class TestPersistentBusDemo {
         @AllowConcurrentEvents
         @Subscribe
         public void processEvent(final DummyEvent event) {
-            System.out.println("YEAH!!!!! event = " + event);
+            //System.out.println("YEAH!!!!! event = " + event);
             nbEvents++;
         }
 

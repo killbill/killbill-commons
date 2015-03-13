@@ -1,6 +1,6 @@
 /*
- * Copyright 2014 Groupon, Inc
- * Copyright 2014 The Billing Project, LLC
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -30,7 +30,6 @@ import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
@@ -45,20 +44,27 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import org.skife.config.ConfigurationObjectFactory;
-import static org.testng.Assert.*;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 public class TestDataSourceProvider {
+
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(TestDataSourceProvider.class);
 
     private static final String TEST_POOL_PREFIX = "test-pool";
 
     @Test(groups = "fast")
     public void testDataSourceProviderHikariCP() throws Exception {
         DataSourceProvider.DatabaseType databaseType;
-        DaoConfig daoConfig; String poolName; DataSourceProvider dataSourceProvider;
+        DaoConfig daoConfig;
+        String poolName;
+        DataSourceProvider dataSourceProvider;
 
         // H2
         databaseType = DataSourceProvider.DatabaseType.H2;
@@ -67,7 +73,7 @@ public class TestDataSourceProvider {
         poolName = TEST_POOL_PREFIX + "-0-" + databaseType;
         dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
 
-        assertTrue( dataSourceProvider.get() instanceof HikariDataSource );
+        assertTrue(dataSourceProvider.get() instanceof HikariDataSource);
 
         // Generic
         databaseType = DataSourceProvider.DatabaseType.GENERIC;
@@ -76,14 +82,14 @@ public class TestDataSourceProvider {
         poolName = TEST_POOL_PREFIX + "-0-" + databaseType;
         dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
 
-        assertTrue( dataSourceProvider.get() instanceof HikariDataSource );
+        assertTrue(dataSourceProvider.get() instanceof HikariDataSource);
     }
 
     @Test(groups = "fast")
     public void testDataSourceProviderHikariCPPoolSizing() {
         final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
 
-        DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
+        final DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
 
         final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
         properties.put("org.killbill.dao.minIdle", "20");
@@ -94,7 +100,7 @@ public class TestDataSourceProvider {
         final DataSource dataSource = new DataSourceProvider(daoConfig, poolName).get();
         assertTrue(dataSource instanceof HikariDataSource);
 
-        HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
+        final HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
         assertEquals(50, hikariDataSource.getMaximumPoolSize());
         assertEquals(20, hikariDataSource.getMinimumIdle());
     }
@@ -103,7 +109,7 @@ public class TestDataSourceProvider {
     public void testDataSourceProviderHikariCPSetsInitSQL() {
         final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
 
-        DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
+        final DataSourceProvider.DatabaseType databaseType = DataSourceProvider.DatabaseType.H2;
         final boolean shouldUseMariaDB = true;
 
         final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
@@ -114,14 +120,14 @@ public class TestDataSourceProvider {
         final DataSource dataSource = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB).get();
         assertTrue(dataSource instanceof HikariDataSource);
 
-        HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
+        final HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
         assertEquals("SELECT 42", hikariDataSource.getConnectionInitSql());
     }
 
     @Test(groups = "fast")
     public void testDataSourceProviderC3P0() throws Exception {
-        for ( final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values() ) {
-            for ( final boolean shouldUseMariaDB : new boolean[] { false, true } ) {
+        for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
+            for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
                 final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.C3P0, databaseType);
 
                 final String poolName = TEST_POOL_PREFIX + "-" + databaseType + "_C3P0";
@@ -133,15 +139,15 @@ public class TestDataSourceProvider {
         }
     }
 
-    DaoConfig buildDaoConfig(DataSourceConnectionPoolingType poolingType, DataSourceProvider.DatabaseType databaseType) {
-        return buildDaoConfig( defaultDaoConfigProperties(poolingType, databaseType) );
+    DaoConfig buildDaoConfig(final DataSourceConnectionPoolingType poolingType, final DataSourceProvider.DatabaseType databaseType) {
+        return buildDaoConfig(defaultDaoConfigProperties(poolingType, databaseType));
     }
 
     DaoConfig buildDaoConfig(final Properties properties) {
         return new ConfigurationObjectFactory(properties).build(DaoConfig.class);
     }
 
-    private Properties defaultDaoConfigProperties(DataSourceConnectionPoolingType poolingType, DataSourceProvider.DatabaseType databaseType) {
+    private Properties defaultDaoConfigProperties(final DataSourceConnectionPoolingType poolingType, final DataSourceProvider.DatabaseType databaseType) {
         final Properties properties = new Properties();
         properties.put("org.killbill.dao.poolingType", poolingType.toString());
         if (DataSourceProvider.DatabaseType.MYSQL.equals(databaseType)) {
@@ -151,7 +157,7 @@ public class TestDataSourceProvider {
         } else {
             properties.put("org.killbill.dao.url", "jdbc:test:@myhost:1521:orcl");
 
-            System.out.println("GenericDriver.class.getName() = " + GenericDriver.class.getName());
+            logger.info("GenericDriver.class.getName() = " + GenericDriver.class.getName());
 
             properties.put("org.killbill.dao.driverClassName", GenericDriver.class.getName());
         }
@@ -163,21 +169,21 @@ public class TestDataSourceProvider {
         static {
             try {
                 DriverManager.registerDriver(new GenericDriver());
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
                 throw new RuntimeException("Could not register driver", e);
             }
         }
 
-        public Connection connect(String url, Properties info) throws SQLException {
-            System.err.println(this + " connect " + url + " " + info);
+        public Connection connect(final String url, final Properties info) throws SQLException {
+            logger.info(this + " connect " + url + " " + info);
             return new ConnectionStub();
         }
 
-        public boolean acceptsURL(String url) throws SQLException {
+        public boolean acceptsURL(final String url) throws SQLException {
             return url.contains(":test:");
         }
 
-        public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+        public DriverPropertyInfo[] getPropertyInfo(final String url, final Properties info) throws SQLException {
             return new DriverPropertyInfo[0];
         }
 
@@ -193,11 +199,15 @@ public class TestDataSourceProvider {
             return false;
         }
 
-        public Logger getParentLogger() { return null; }
+        public Logger getParentLogger() {
+            return null;
+        }
 
         private class ConnectionStub implements Connection {
 
-            public boolean isValid(int timeout) throws SQLException { return ! closed; }
+            public boolean isValid(final int timeout) throws SQLException {
+                return !closed;
+            }
 
             private boolean closed;
 
@@ -213,24 +223,21 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setReadOnly(boolean readOnly) throws SQLException {
-                return;
+            public void setReadOnly(final boolean readOnly) throws SQLException {
             }
 
             public boolean isReadOnly() throws SQLException {
                 return true;
             }
 
-            public void setCatalog(String catalog) throws SQLException {
-                return;
+            public void setCatalog(final String catalog) throws SQLException {
             }
 
             public String getCatalog() throws SQLException {
                 return null;
             }
 
-            public void setTransactionIsolation(int level) throws SQLException {
-                return;
+            public void setTransactionIsolation(final int level) throws SQLException {
             }
 
             public int getTransactionIsolation() throws SQLException {
@@ -241,20 +248,19 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public PreparedStatement prepareStatement(String sql) throws SQLException {
+            public PreparedStatement prepareStatement(final String sql) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public CallableStatement prepareCall(String sql) throws SQLException {
+            public CallableStatement prepareCall(final String sql) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public String nativeSQL(String sql) throws SQLException {
+            public String nativeSQL(final String sql) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setAutoCommit(boolean autoCommit) throws SQLException {
-                return;
+            public void setAutoCommit(final boolean autoCommit) throws SQLException {
             }
 
             public boolean getAutoCommit() throws SQLException {
@@ -274,18 +280,17 @@ public class TestDataSourceProvider {
             }
 
             public void clearWarnings() throws SQLException {
-                return;
             }
 
-            public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+            public Statement createStatement(final int resultSetType, final int resultSetConcurrency) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+            public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+            public CallableStatement prepareCall(final String sql, final int resultSetType, final int resultSetConcurrency) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -293,12 +298,10 @@ public class TestDataSourceProvider {
                 return Collections.emptyMap();
             }
 
-            public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-                return;
+            public void setTypeMap(final Map<String, Class<?>> map) throws SQLException {
             }
 
-            public void setHoldability(int holdability) throws SQLException {
-                return;
+            public void setHoldability(final int holdability) throws SQLException {
             }
 
             public int getHoldability() throws SQLException {
@@ -309,39 +312,39 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public Savepoint setSavepoint(String name) throws SQLException {
+            public Savepoint setSavepoint(final String name) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void rollback(Savepoint savepoint) throws SQLException {
+            public void rollback(final Savepoint savepoint) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+            public void releaseSavepoint(final Savepoint savepoint) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+            public Statement createStatement(final int resultSetType, final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+            public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+            public CallableStatement prepareCall(final String sql, final int resultSetType, final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+            public PreparedStatement prepareStatement(final String sql, final int autoGeneratedKeys) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+            public PreparedStatement prepareStatement(final String sql, final int[] columnIndexes) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+            public PreparedStatement prepareStatement(final String sql, final String[] columnNames) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -361,15 +364,15 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setClientInfo(String name, String value) throws SQLClientInfoException {
+            public void setClientInfo(final String name, final String value) throws SQLClientInfoException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setClientInfo(Properties properties) throws SQLClientInfoException {
+            public void setClientInfo(final Properties properties) throws SQLClientInfoException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public String getClientInfo(String name) throws SQLException {
+            public String getClientInfo(final String name) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -377,15 +380,15 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+            public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+            public Struct createStruct(final String typeName, final Object[] attributes) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setSchema(String schema) throws SQLException {
+            public void setSchema(final String schema) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -393,11 +396,11 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void abort(Executor executor) throws SQLException {
+            public void abort(final Executor executor) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+            public void setNetworkTimeout(final Executor executor, final int milliseconds) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -405,15 +408,13 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public <T> T unwrap(Class<T> iface) throws SQLException {
+            public <T> T unwrap(final Class<T> iface) throws SQLException {
                 return (T) this;
             }
 
-            public boolean isWrapperFor(Class<?> iface) throws SQLException {
+            public boolean isWrapperFor(final Class<?> iface) throws SQLException {
                 return iface.isInstance(this);
             }
-
         }
-
     }
 }

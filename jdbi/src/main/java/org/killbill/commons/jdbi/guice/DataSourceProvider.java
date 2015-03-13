@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014 Groupon, Inc
- * Copyright 2014 The Billing Project, LLC
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -45,7 +45,9 @@ public class DataSourceProvider implements Provider<DataSource> {
     private String driverClassName;
 
     @VisibleForTesting
-    static enum DatabaseType { GENERIC, MYSQL, H2 }
+    static enum DatabaseType {
+        GENERIC, MYSQL, H2
+    }
 
     @Inject
     public DataSourceProvider(final DaoConfig config) {
@@ -100,7 +102,7 @@ public class DataSourceProvider implements Provider<DataSource> {
             // TODO config.getIdleConnectionTestPeriod() ?
             // ... no such thing on the HikariCP config.getIdleConnectionTestPeriod()
             final String initSQL = config.getConnectionInitSql();
-            if ( initSQL != null && ! initSQL.isEmpty() ) {
+            if (initSQL != null && !initSQL.isEmpty()) {
                 hikariConfig.setConnectionInitSql(initSQL);
             }
 
@@ -185,15 +187,14 @@ public class DataSourceProvider implements Provider<DataSource> {
             cpds.setDataSourceName(poolName);
 
             final String initSQL = config.getConnectionInitSql();
-            if ( initSQL != null && ! initSQL.isEmpty() ) {
+            if (initSQL != null && !initSQL.isEmpty()) {
                 final Map<String, Object> extensions = new HashMap<String, Object>(4);
-                extensions.put("initSql", initSQL); cpds.setExtensions(extensions);
+                extensions.put("initSql", initSQL);
+                cpds.setExtensions(extensions);
                 cpds.setConnectionCustomizerClassName("com.mchange.v2.c3p0.example.InitSqlConnectionCustomizer");
             }
-
             return cpds;
         }
-
     }
 
     static int toSeconds(final TimeSpan timeSpan) {
