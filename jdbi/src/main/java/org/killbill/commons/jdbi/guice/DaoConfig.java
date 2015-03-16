@@ -122,4 +122,14 @@ public interface DaoConfig {
     @Config("org.killbill.dao.poolingType")
     @Default("HIKARICP")
     DataSourceConnectionPoolingType getConnectionPoolingType();
+
+    @Description("How long to wait before a connection attempt to the database is considered timed out (healthcheck only)")
+    @Config("org.killbill.dao.healthCheckConnectionTimeout")
+    @Default("10s")
+    TimeSpan getHealthCheckConnectionTimeout();
+
+    @Description("Expected 99th percentile calculation to obtain a connection (healthcheck only)")
+    @Config("org.killbill.dao.healthCheckExpected99thPercentile")
+    @Default("50ms")
+    TimeSpan getHealthCheckExpected99thPercentile();
 }

@@ -29,6 +29,8 @@ import javax.sql.DataSource;
 
 import org.skife.config.TimeSpan;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
@@ -43,6 +45,9 @@ public class DataSourceProvider implements Provider<DataSource> {
     private DatabaseType databaseType;
     private String dataSourceClassName;
     private String driverClassName;
+
+    private Object metricRegistry;
+    private Object healthCheckRegistry;
 
     @VisibleForTesting
     static enum DatabaseType {
@@ -63,6 +68,26 @@ public class DataSourceProvider implements Provider<DataSource> {
         this.poolName = poolName;
         this.useMariaDB = useMariaDB;
         parseJDBCUrl();
+    }
+
+    /**
+     * Set a Dropwizard MetricRegistry to use for HikariCP.
+     *
+     * @param metricRegistry the Dropwizard MetricRegistry to set
+     */
+    @com.google.inject.Inject(optional = true)
+    public void setMetricRegistry(final MetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
+    }
+
+    /**
+     * Set a Dropwizard HealthCheckRegistry to use for HikariCP.
+     *
+     * @param healthCheckRegistry the Dropwizard HealthCheckRegistry to set
+     */
+    @com.google.inject.Inject(optional = true)
+    public void setHealthCheckRegistry(final HealthCheckRegistry healthCheckRegistry) {
+        this.healthCheckRegistry = healthCheckRegistry;
     }
 
     @Override
@@ -108,8 +133,16 @@ public class DataSourceProvider implements Provider<DataSource> {
 
             hikariConfig.setRegisterMbeans(true);
 
-            // TODO Not yet supported
-            // hikariConfig.setRecordMetrics(true);
+            if (metricRegistry != null) {
+                // See https://github.com/brettwooldridge/HikariCP/wiki/Dropwizard-Metrics
+                hikariConfig.setMetricRegistry(metricRegistry);
+            }
+            if (healthCheckRegistry != null) {
+                // See https://github.com/brettwooldridge/HikariCP/wiki/Dropwizard-HealthChecks
+                hikariConfig.addHealthCheckProperty("connectivityCheckTimeoutMs", String.valueOf(toMilliSeconds(config.getHealthCheckConnectionTimeout())));
+                hikariConfig.addHealthCheckProperty("expected99thPercentileMs", String.valueOf(toMilliSeconds(config.getHealthCheckExpected99thPercentile())));
+                hikariConfig.setHealthCheckRegistry(healthCheckRegistry);
+            }
 
             if (poolName != null) {
                 hikariConfig.setPoolName(poolName);

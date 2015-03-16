@@ -18,12 +18,14 @@ package org.killbill.commons.skeleton.modules;
 
 import org.killbill.commons.skeleton.metrics.TimedResourceListener;
 
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
-import com.palominolabs.metrics.guice.InstrumentationModule;
+import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
 import com.palominolabs.metrics.guice.servlet.AdminServletModule;
 
 public class StatsModule extends AbstractModule {
@@ -61,8 +63,11 @@ public class StatsModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        // Codahale's metrics
-        install(new InstrumentationModule());
+        // Dropwizard metrics
+        final MetricRegistry metricRegistry = createMetricRegistry();
+        bind(MetricRegistry.class).toInstance(metricRegistry);
+        bind(HealthCheckRegistry.class).toInstance(createHealthCheckRegistry());
+        install(new MetricsInstrumentationModule(metricRegistry));
 
         // HealthChecks
         final Multibinder<HealthCheck> healthChecksBinder = Multibinder.newSetBinder(binder(), HealthCheck.class);
@@ -75,5 +80,23 @@ public class StatsModule extends AbstractModule {
         final TimedResourceListener listener = new TimedResourceListener();
         requestInjection(listener);
         bindListener(Matchers.any(), listener);
+    }
+
+    /**
+     * Override to provide a custom {@link HealthCheckRegistry}
+     *
+     * @return HealthCheckRegistry instance to bind
+     */
+    protected HealthCheckRegistry createHealthCheckRegistry() {
+        return new HealthCheckRegistry();
+    }
+
+    /**
+     * Override to provide a custom {@link MetricRegistry}
+     *
+     * @return MetricRegistry instance to bind
+     */
+    protected MetricRegistry createMetricRegistry() {
+        return new MetricRegistry();
     }
 }
