@@ -16,6 +16,8 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import java.util.Set;
+
 import org.killbill.commons.skeleton.metrics.TimedResourceListener;
 
 import com.codahale.metrics.MetricRegistry;
@@ -23,6 +25,8 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
@@ -66,10 +70,9 @@ public class StatsModule extends AbstractModule {
         // Dropwizard metrics
         final MetricRegistry metricRegistry = createMetricRegistry();
         bind(MetricRegistry.class).toInstance(metricRegistry);
-        bind(HealthCheckRegistry.class).toInstance(createHealthCheckRegistry());
         install(new MetricsInstrumentationModule(metricRegistry));
 
-        // HealthChecks
+        // Dropwizard healthChecks
         final Multibinder<HealthCheck> healthChecksBinder = Multibinder.newSetBinder(binder(), HealthCheck.class);
         for (final Class<? extends HealthCheck> healthCheckClass : healthChecks) {
             healthChecksBinder.addBinding().to(healthCheckClass).asEagerSingleton();
@@ -80,6 +83,19 @@ public class StatsModule extends AbstractModule {
         final TimedResourceListener listener = new TimedResourceListener();
         requestInjection(listener);
         bindListener(Matchers.any(), listener);
+    }
+
+    @Provides
+    @Singleton
+    protected HealthCheckRegistry provideHealthCheckRegistry(final Set<HealthCheck> healthChecks) {
+        final HealthCheckRegistry healthCheckRegistry = createHealthCheckRegistry();
+
+        // It used to be done by AdminServletProvider. JavaDoc of AdminServletModule outdated?
+        for (final HealthCheck healthCheck : healthChecks) {
+            healthCheckRegistry.register(healthCheck.getClass().getName(), healthCheck);
+        }
+
+        return healthCheckRegistry;
     }
 
     /**
