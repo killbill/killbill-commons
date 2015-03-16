@@ -18,7 +18,6 @@
 
 package org.killbill.commons.jdbi.guice;
 
-import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
@@ -35,6 +34,9 @@ import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+
 public class DBIProvider implements Provider<IDBI> {
 
     private static final Logger logger = LoggerFactory.getLogger(DBIProvider.class);
@@ -45,19 +47,19 @@ public class DBIProvider implements Provider<IDBI> {
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
 
-
+    @Inject
     public DBIProvider(final DaoConfig config, final DataSource ds, final TransactionHandler transactionHandler) {
         this.config = config;
         this.ds = ds;
         this.transactionHandler = transactionHandler;
     }
 
-    @com.google.inject.Inject(optional = true)
+    @Inject(optional = true)
     public void setSqlLog(final SQLLog sqlLog) {
         this.sqlLog = sqlLog;
     }
 
-    @com.google.inject.Inject(optional = true)
+    @Inject(optional = true)
     public void setTimingCollector(final TimingCollector timingCollector) {
         this.timingCollector = timingCollector;
     }

@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import org.skife.config.TimeSpan;
@@ -32,15 +30,17 @@ import org.skife.config.TimeSpan;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class DataSourceProvider implements Provider<DataSource> {
 
-    private final DaoConfig config;
-    private final String poolName;
-    private final boolean useMariaDB;
+    protected final DaoConfig config;
+    protected final String poolName;
+    protected final boolean useMariaDB;
 
     private DatabaseType databaseType;
     private String dataSourceClassName;
