@@ -31,7 +31,7 @@ import com.ning.http.client.Response;
 
 public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
-    @Test(groups = "slow", enabled = false, description = "https://github.com/killbill/killbill-commons/issues/5")
+    @Test(groups = "slow")
     public void testJerseyIntegration() throws Exception {
         final BaseServerModuleBuilder builder = new BaseServerModuleBuilder();
         builder.addJaxrsResource("org.killbill.commons.skeleton.modules");

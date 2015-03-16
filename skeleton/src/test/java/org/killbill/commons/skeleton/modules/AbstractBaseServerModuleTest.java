@@ -45,7 +45,7 @@ public abstract class AbstractBaseServerModuleTest {
         });
 
         servletContextHandler.addFilter(GuiceFilter.class, "/*", null);
-        servletContextHandler.addServlet(DefaultServlet.class, "/");
+        servletContextHandler.addServlet(DefaultServlet.class, "/*");
         server.setHandler(servletContextHandler);
         server.start();
 
