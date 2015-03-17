@@ -31,6 +31,7 @@ import org.killbill.commons.jdbi.log.Slf4jLogging;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
+import org.skife.jdbi.v2.ResultSetMapperFactory;
 import org.skife.jdbi.v2.TimingCollector;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
@@ -50,6 +51,7 @@ public class DBIProvider implements Provider<IDBI> {
     private final DataSource ds;
     private final TransactionHandler transactionHandler;
     private final Set<ArgumentFactory> argumentFactorySet = new LinkedHashSet<ArgumentFactory>();
+    private final Set<ResultSetMapperFactory> resultSetMapperFactorySet = new LinkedHashSet<ResultSetMapperFactory>();
     private final Set<ResultSetMapper> resultSetMapperSet = new LinkedHashSet<ResultSetMapper>();
 
     private SQLLog sqlLog;
@@ -68,6 +70,13 @@ public class DBIProvider implements Provider<IDBI> {
     public void setArgumentFactorySet(final Set<ArgumentFactory> argumentFactorySet) {
         for (final ArgumentFactory argumentFactory : argumentFactorySet) {
             this.argumentFactorySet.add(argumentFactory);
+        }
+    }
+
+    @Inject(optional = true)
+    public void setResultSetMapperFactorySet(final Set<ResultSetMapperFactory> resultSetMapperFactorySet) {
+        for (final ResultSetMapperFactory resultSetMapperFactory : resultSetMapperFactorySet) {
+            this.resultSetMapperFactorySet.add(resultSetMapperFactory);
         }
     }
 
@@ -94,6 +103,10 @@ public class DBIProvider implements Provider<IDBI> {
 
         for (final ArgumentFactory argumentFactory : argumentFactorySet) {
             dbi.registerArgumentFactory(argumentFactory);
+        }
+
+        for (final ResultSetMapperFactory resultSetMapperFactory : resultSetMapperFactorySet) {
+            dbi.registerMapper(resultSetMapperFactory);
         }
 
         for (final ResultSetMapper resultSetMapper : resultSetMapperSet) {
