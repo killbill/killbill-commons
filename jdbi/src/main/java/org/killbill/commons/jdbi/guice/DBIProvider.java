@@ -18,6 +18,9 @@
 
 package org.killbill.commons.jdbi.guice;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import javax.sql.DataSource;
 
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
@@ -29,6 +32,8 @@ import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.TimingCollector;
+import org.skife.jdbi.v2.tweak.ArgumentFactory;
+import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import org.skife.jdbi.v2.tweak.SQLLog;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
@@ -44,6 +49,9 @@ public class DBIProvider implements Provider<IDBI> {
     private final DaoConfig config;
     private final DataSource ds;
     private final TransactionHandler transactionHandler;
+    private final Set<ArgumentFactory> argumentFactorySet = new LinkedHashSet<ArgumentFactory>();
+    private final Set<ResultSetMapper> resultSetMapperSet = new LinkedHashSet<ResultSetMapper>();
+
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
 
@@ -52,6 +60,22 @@ public class DBIProvider implements Provider<IDBI> {
         this.config = config;
         this.ds = ds;
         this.transactionHandler = transactionHandler;
+        setDefaultArgumentFactorySet();
+        setDefaultResultSetMapperSet();
+    }
+
+    @Inject(optional = true)
+    public void setArgumentFactorySet(final Set<ArgumentFactory> argumentFactorySet) {
+        for (final ArgumentFactory argumentFactory : argumentFactorySet) {
+            this.argumentFactorySet.add(argumentFactory);
+        }
+    }
+
+    @Inject(optional = true)
+    public void setResultSetMapperSet(final Set<ResultSetMapper> resultSetMapperSet) {
+        for (final ResultSetMapper resultSetMapper : resultSetMapperSet) {
+            this.resultSetMapperSet.add(resultSetMapper);
+        }
     }
 
     @Inject(optional = true)
@@ -67,11 +91,15 @@ public class DBIProvider implements Provider<IDBI> {
     @Override
     public IDBI get() {
         final DBI dbi = new DBI(ds);
-        dbi.registerArgumentFactory(new UUIDArgumentFactory());
-        dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
-        dbi.registerArgumentFactory(new DateTimeArgumentFactory());
-        dbi.registerArgumentFactory(new LocalDateArgumentFactory());
-        dbi.registerMapper(new UUIDMapper());
+
+        for (final ArgumentFactory argumentFactory : argumentFactorySet) {
+            dbi.registerArgumentFactory(argumentFactory);
+        }
+
+        for (final ResultSetMapper resultSetMapper : resultSetMapperSet) {
+            dbi.registerMapper(resultSetMapper);
+        }
+
         if (transactionHandler != null) {
             dbi.setTransactionHandler(transactionHandler);
         }
@@ -88,5 +116,16 @@ public class DBIProvider implements Provider<IDBI> {
         }
 
         return dbi;
+    }
+
+    protected void setDefaultArgumentFactorySet() {
+        argumentFactorySet.add(new UUIDArgumentFactory());
+        argumentFactorySet.add(new DateTimeZoneArgumentFactory());
+        argumentFactorySet.add(new DateTimeArgumentFactory());
+        argumentFactorySet.add(new LocalDateArgumentFactory());
+    }
+
+    protected void setDefaultResultSetMapperSet() {
+        resultSetMapperSet.add(new UUIDMapper());
     }
 }
