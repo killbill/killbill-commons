@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -20,27 +22,36 @@ package org.killbill;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+
 public class CreatorName {
 
     // Allow to override the default naming based on Hostname
-    private final static String QUEUE_CREATOR_NAME = "org.killbill.queue.creator.name";
+    static final String QUEUE_CREATOR_NAME = "org.killbill.queue.creator.name";
 
     private static String creatorName;
 
     public static String get() {
         if (creatorName == null) {
             synchronized (CreatorName.class) {
-                creatorName = System.getProperty(QUEUE_CREATOR_NAME);
-                if (creatorName == null) {
+                String tmpCreatorName = System.getProperty(QUEUE_CREATOR_NAME);
+                if (Strings.emptyToNull(tmpCreatorName) == null) {
                     try {
                         final InetAddress addr = InetAddress.getLocalHost();
-                        creatorName = addr.getHostName();
-                    } catch (UnknownHostException e) {
-                        creatorName = "creatorName-unknown";
+                        tmpCreatorName = addr.getHostName();
+                    } catch (final UnknownHostException e) {
+                        tmpCreatorName = "creatorName-unknown";
                     }
                 }
+                creatorName = tmpCreatorName.length() > 45 ? tmpCreatorName.substring(0, 45) : tmpCreatorName;
             }
         }
         return creatorName;
+    }
+
+    @VisibleForTesting
+    static synchronized void reset() {
+        creatorName = null;
     }
 }
