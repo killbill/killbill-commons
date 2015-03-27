@@ -1,10 +1,10 @@
 0.3.0
     Remove BoneCP support
     org.killbill.dao.minIdle now defaults to 0
-    Upgrade Dropwizard metrics (3.1.1) and jDBI (2.59)
+    Upgrade Dropwizard metrics (3.1.1), jDBI (2.59) and H2 (1.4.186)
     https://github.com/killbill/killbill-commons/issues/5
     https://github.com/killbill/killbill-commons/issues/8
-    Update to killbill-oss-parent 0.10.0
+    Update to killbill-oss-parent 0.11.0
 
 0.2.33
     Add auto-increment for the queue historical tables (which caused a lot of headaches because of how mysql implements the auto_increment)

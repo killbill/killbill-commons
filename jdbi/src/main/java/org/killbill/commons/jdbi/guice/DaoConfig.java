@@ -29,7 +29,7 @@ public interface DaoConfig {
 
     @Description("The jdbc url for the database")
     @Config("org.killbill.dao.url")
-    @Default("jdbc:h2:file:killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;MVCC=true;DB_CLOSE_ON_EXIT=FALSE")
+    @Default("jdbc:h2:file:/var/tmp/killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;MVCC=true;DB_CLOSE_ON_EXIT=FALSE")
     String getJdbcUrl();
 
     @Description("The jdbc user name for the database")
