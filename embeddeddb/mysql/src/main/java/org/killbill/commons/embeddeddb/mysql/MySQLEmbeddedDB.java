@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,14 +18,6 @@
 
 package org.killbill.commons.embeddeddb.mysql;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-import com.mysql.management.HackedMysqldResource;
-import com.mysql.management.MysqldResource;
-import com.mysql.management.MysqldResourceI;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.mariadb.jdbc.MySQLDataSource;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,6 +30,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.sql.DataSource;
+
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.mariadb.jdbc.MySQLDataSource;
+
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.mysql.management.HackedMysqldResource;
+import com.mysql.management.MysqldResourceI;
+
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
@@ -47,15 +50,14 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     private File dataDir;
     private HackedMysqldResource mysqldResource;
 
-    private boolean useMariaDB;
+    private final boolean useMariaDB;
 
     public MySQLEmbeddedDB() {
         // Avoid dashes - MySQL doesn't like them
         this("database" + UUID.randomUUID().toString().substring(0, 8),
-                "user" + UUID.randomUUID().toString().substring(0, 8),
-                "pass" + UUID.randomUUID().toString().substring(0, 8),
-                // Until we have a fix for the NPE in MariaDb connector when reading null datetimes
-                false);
+             "user" + UUID.randomUUID().toString().substring(0, 8),
+             "pass" + UUID.randomUUID().toString().substring(0, 8),
+             true);
     }
 
     public MySQLEmbeddedDB(final String databaseName, final String username, final String password, final boolean useMariaDB) {

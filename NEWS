@@ -2,6 +2,7 @@
     Remove BoneCP support
     org.killbill.dao.minIdle now defaults to 0
     Upgrade Dropwizard metrics (3.1.1), jDBI (2.59) and H2 (1.4.186)
+    embeddeddb: default to MariaDB driver for MySQL
     https://github.com/killbill/killbill-commons/issues/5
     https://github.com/killbill/killbill-commons/issues/8
     Update to killbill-oss-parent 0.11.0
