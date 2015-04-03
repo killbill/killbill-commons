@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -24,6 +26,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
+import org.mariadb.jdbc.MySQLDataSource;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
@@ -32,9 +35,10 @@ import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
  */
 public class MySQLStandaloneDB extends GenericStandaloneDB {
 
-    protected MysqlDataSource dataSource;
+    protected DataSource dataSource;
 
     private final int port;
+    private final boolean useMariaDB;
 
     public MySQLStandaloneDB(final String databaseName) {
         this(databaseName, "root", null);
@@ -45,8 +49,13 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
     }
 
     public MySQLStandaloneDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
+        this(databaseName, username, password, jdbcConnectionString, true);
+    }
+
+    public MySQLStandaloneDB(final String databaseName, final String username, final String password, final String jdbcConnectionString, final boolean useMariaDB) {
         super(databaseName, username, password, jdbcConnectionString);
         this.port = URI.create(jdbcConnectionString.substring(5)).getPort();
+        this.useMariaDB = useMariaDB;
     }
 
     @Override
@@ -58,13 +67,25 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
     public void initialize() throws IOException {
         super.initialize();
 
-        dataSource = new MysqlDataSource();
-        dataSource.setDatabaseName(databaseName);
-        dataSource.setUser(username);
-        dataSource.setPassword(password);
-        dataSource.setPort(port);
-        // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-configuration-properties.html
-        dataSource.setURL(jdbcConnectionString);
+        if (useMariaDB) {
+            final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
+            mariaDBDataSource.setDatabaseName(databaseName);
+            mariaDBDataSource.setUser(username);
+            mariaDBDataSource.setPassword(password);
+            mariaDBDataSource.setPort(port);
+            // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-configuration-properties.html
+            mariaDBDataSource.setURL(jdbcConnectionString);
+            dataSource = mariaDBDataSource;
+        } else {
+            final MysqlDataSource mysqlDataSource = new MysqlDataSource();
+            mysqlDataSource.setDatabaseName(databaseName);
+            mysqlDataSource.setUser(username);
+            mysqlDataSource.setPassword(password);
+            mysqlDataSource.setPort(port);
+            // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-configuration-properties.html
+            mysqlDataSource.setURL(jdbcConnectionString);
+            dataSource = mysqlDataSource;
+        }
     }
 
     @Override
