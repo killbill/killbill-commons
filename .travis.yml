@@ -14,3 +14,6 @@ jdk:
 
 env:
   - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
+
+after_success:
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && echo "<settings><servers><server><id>sonatype-nexus-snapshots</id><username>\${env.OSSRH_USER}</username><password>\${env.OSSRH_PASS}</password></server></servers></settings>" > ~/settings.xml && mvn deploy --settings ~/settings.xml ; rm -f ~/settings.xml'
