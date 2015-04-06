@@ -1,4 +1,10 @@
 language: java
+
+sudo: false
+cache:
+  directories:
+      - $HOME/.m2
+
 script: mvn clean install -Ptravis-nodb
 # Remove --quiet to avoid timeouts
 install: mvn install -DskipTests=true
