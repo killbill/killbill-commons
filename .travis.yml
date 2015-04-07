@@ -7,7 +7,7 @@ cache:
 
 script: mvn clean install -Ptravis-nodb
 # Remove --quiet to avoid timeouts
-install: mvn install -DskipTests=true
+install: mvn -U install -DskipTests=true
 
 notifications:
   email:
