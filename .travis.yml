@@ -13,11 +13,6 @@ notifications:
   email:
     - kill-bill-commits@googlegroups.com
 
-jdk:
-  - openjdk7
-  - oraclejdk7
-  - oraclejdk8
-
 env:
   global:
     - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
