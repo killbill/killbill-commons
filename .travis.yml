@@ -5,7 +5,7 @@ cache:
   directories:
       - $HOME/.m2
 
-script: mvn clean install -Ptravis-nodb
+script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn clean install $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'; [ ${PIPESTATUS[0]} == 0 ]; fi
 # Remove --quiet to avoid timeouts
 install: mvn -U install -DskipTests=true
 
@@ -14,12 +14,29 @@ notifications:
     - kill-bill-commits@googlegroups.com
 
 jdk:
-  - openjdk6
   - openjdk7
   - oraclejdk7
+  - oraclejdk8
 
 env:
-  - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
+  global:
+    - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
+
+matrix:
+  allow_failures:
+    - jdk: oraclejdk8
+  include:
+    - env: PHASE="-Ptravis-nodb"
+      jdk: openjdk7
+    - env: PHASE="-Ptravis-nodb"
+      jdk: oraclejdk7
+    - env: PHASE="-Ptravis-nodb,jdk17"
+      jdk: openjdk7
+    - env: PHASE="-Ptravis-nodb,jdk17"
+      jdk: oraclejdk7
+    - env: PHASE="-Ptravis-nodb,jdk18"
+      jdk: oraclejdk8
+  fast_finish: true
 
 after_success:
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && echo "<settings><servers><server><id>sonatype-nexus-snapshots</id><username>\${env.OSSRH_USER}</username><password>\${env.OSSRH_PASS}</password></server></servers></settings>" > ~/settings.xml && mvn deploy --settings ~/settings.xml ; rm -f ~/settings.xml'
