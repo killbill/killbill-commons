@@ -5,7 +5,7 @@
     embeddeddb: default to MariaDB driver for MySQL
     https://github.com/killbill/killbill-commons/issues/5
     https://github.com/killbill/killbill-commons/issues/8
-    Update to killbill-oss-parent 0.11.0
+    Update to killbill-oss-parent 0.11
 
 0.2.33
     Add auto-increment for the queue historical tables (which caused a lot of headaches because of how mysql implements the auto_increment)
