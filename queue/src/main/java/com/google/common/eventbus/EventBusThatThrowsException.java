@@ -21,6 +21,7 @@ import org.killbill.bus.api.BusEvent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -37,6 +38,11 @@ import java.util.concurrent.locks.ReadWriteLock;
  * There is a new postWithException method that will throw an EventBusException if there is any exceptions during
  * the dispatch phase, which means that some handlers might have been called successfully and others not, which is
  * fine with our 'at least once' delivery semantics.
+ *
+ * NOTE that starting in guava-16.0 there is a new mechanism where one can register a `SubscriberExceptionHandler`, but
+ * that does not quite fit our needs because we are processing events in a loop and the context of that loop needs to be taken
+ * into consideration to know how to handle the exception, so we are keeping the hack below.
+ *
  */
 public class EventBusThatThrowsException extends EventBus {
 
@@ -45,54 +51,57 @@ public class EventBusThatThrowsException extends EventBus {
     }
 
     public void postWithException(Object event) throws EventBusException {
-        Set<Class<?>> dispatchTypes = flattenHierarchy(event.getClass());
-
+        Set dispatchTypes = this.flattenHierarchy(event.getClass());
         boolean dispatched = false;
-        for (Class<?> eventType : dispatchTypes) {
-            getHandlersByTypeLock().readLock().lock();
-            try {
-                Set<EventHandler> wrappers = getHandlersByType().get(eventType);
+        Iterator i$ = dispatchTypes.iterator();
 
-                if (!wrappers.isEmpty()) {
+        while(i$.hasNext()) {
+            Class eventType = (Class)i$.next();
+            getSubscribersByTypeLock().readLock().lock();
+
+            try {
+                Set wrappers = getSubscribersByType().get(eventType);
+                if(!wrappers.isEmpty()) {
                     dispatched = true;
-                    for (EventHandler wrapper : wrappers) {
-                        enqueueEvent(event, wrapper);
+                    Iterator i$1 = wrappers.iterator();
+
+                    while(i$1.hasNext()) {
+                        EventSubscriber wrapper = (EventSubscriber)i$1.next();
+                        this.enqueueEvent(event, wrapper);
                     }
                 }
             } finally {
-                getHandlersByTypeLock().readLock().unlock();
+                getSubscribersByTypeLock().readLock().unlock();
             }
         }
 
-        if (!dispatched && !(event instanceof DeadEvent)) {
-            post(new DeadEvent(this, event));
+        if(!dispatched && !(event instanceof DeadEvent)) {
+            this.post(new DeadEvent(this, event));
         }
 
         dispatchQueuedEventsWithException();
     }
 
     void dispatchQueuedEventsWithException() throws EventBusException {
-        // don't dispatch if we're already dispatching, that would allow reentrancy
-        // and out-of-order events. Instead, leave the events to be dispatched
-        // after the in-progress dispatch is complete.
-        if (getIsDispatching().get()) {
-            return;
-        }
+        if(!((Boolean)getIsDispatching().get()).booleanValue()) {
+            getIsDispatching().set(Boolean.valueOf(true));
 
-        getIsDispatching().set(true);
-        try {
-            Queue<EventWithHandler> events = getEventsToDispatch().get();
-            EventWithHandler eventWithHandler;
-            while ((eventWithHandler = events.poll()) != null) {
-                dispatchWithException(eventWithHandler.event, eventWithHandler.handler);
+            try {
+                Queue events = (Queue)getEventsToDispatch().get();
+
+                EventBus.EventWithSubscriber eventWithSubscriber;
+                while((eventWithSubscriber = (EventBus.EventWithSubscriber)events.poll()) != null) {
+                    dispatchWithException(eventWithSubscriber.event, eventWithSubscriber.subscriber);
+                }
+            } finally {
+                getIsDispatching().remove();
+                getIsDispatching().remove();
             }
-        } finally {
-            getIsDispatching().remove();
-            getEventsToDispatch().remove();
+
         }
     }
 
-    void dispatchWithException(Object event, EventHandler wrapper) throws EventBusException {
+    void dispatchWithException(Object event, EventSubscriber wrapper) throws EventBusException {
         try {
             wrapper.handleEvent(event);
         } catch (InvocationTargetException e) {
@@ -106,19 +115,19 @@ public class EventBusThatThrowsException extends EventBus {
     // if they decide to just rename their field name field, all hell breaks loose. So updating guava will
     //  require some attention-- but none of our tests would work so we should also see it pretty quick!
     //
-    private ReadWriteLock getHandlersByTypeLock() throws EventBusException {
-        return getDeclaredField("handlersByTypeLock");
+    private ReadWriteLock getSubscribersByTypeLock() throws EventBusException {
+        return getDeclaredField("subscribersByTypeLock");
     }
 
-    private SetMultimap<Class<?>, EventHandler> getHandlersByType() throws EventBusException {
-        return getDeclaredField("handlersByType");
+    private SetMultimap<Class<?>, EventSubscriber> getSubscribersByType() throws EventBusException {
+        return getDeclaredField("subscribersByType");
     }
 
     private ThreadLocal<Boolean> getIsDispatching() throws EventBusException {
         return getDeclaredField("isDispatching");
     }
 
-    private ThreadLocal<Queue<EventWithHandler>> getEventsToDispatch() throws EventBusException {
+    private ThreadLocal<Queue<EventBus.EventWithSubscriber>> getEventsToDispatch() throws EventBusException {
         return getDeclaredField("eventsToDispatch");
     }
 

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import com.google.common.io.ByteStreams;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.clock.ClockMock;
 import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
@@ -108,14 +109,8 @@ public class TestSetup {
     }
 
 
-    public static String toString(final InputStream stream) throws IOException {
-        final InputSupplier<InputStream> inputSupplier = new InputSupplier<InputStream>() {
-            @Override
-            public InputStream getInput() throws IOException {
-                return stream;
-            }
-        };
-        return CharStreams.toString(CharStreams.newReaderSupplier(inputSupplier, Charsets.UTF_8));
+    public static String toString(final InputStream inputStream) throws IOException {
+        return new String(ByteStreams.toByteArray(inputStream), Charsets.UTF_8);
     }
 
     public DBI getDBI() {
