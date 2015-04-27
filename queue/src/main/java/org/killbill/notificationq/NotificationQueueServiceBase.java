@@ -43,7 +43,7 @@ public abstract class NotificationQueueServiceBase extends NotificationQueueDisp
         }
 
         final String compositeName = getCompositeName(svcName, queueName);
-        NotificationQueue result = null;
+        NotificationQueue result;
         synchronized (queues) {
             result = queues.get(compositeName);
             if (result != null) {

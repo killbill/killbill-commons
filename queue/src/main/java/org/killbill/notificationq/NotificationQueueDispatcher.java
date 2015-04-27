@@ -300,6 +300,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             } while (isProcessingevents.get());
             log.info(LOG_PREFIX + "exiting loop...");
             isExited.set(true);
+            // Only to speedup shutdown sequence
             synchronized (this) {
                 notifyAll();
             }
@@ -312,11 +313,11 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
             try {
                 final long ini = System.currentTimeMillis();
-                long remainingWaitTimeMs = waitTimeoutMs;
+                long remainingWaitTimeMs = STOP_SLEEP_TOTAL_TIMEOUT_MSEC;
                 synchronized (this) {
                     while (!isExited.get() && remainingWaitTimeMs > 0) {
-                        wait(100);
-                        remainingWaitTimeMs = waitTimeoutMs - (System.currentTimeMillis() - ini);
+                        wait(STOP_SLEEP_INCREMENT_TIMEOUT_MSEC);
+                        remainingWaitTimeMs = STOP_SLEEP_TOTAL_TIMEOUT_MSEC - (System.currentTimeMillis() - ini);
                     }
                 }
             } catch (final InterruptedException e) {

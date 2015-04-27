@@ -32,23 +32,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultQueueLifecycle.class);
-
     public static final String QUEUE_NAME = "Queue";
 
-    protected static final long waitTimeoutMs = 15L * 1000L; // 15 seconds
-    private final static long ONE_MILLION = 1000L * 1000L;
+    private static final Logger log = LoggerFactory.getLogger(DefaultQueueLifecycle.class);
 
-    private final int nbThreads;
-    private final String svcQName;
-    protected final PersistentQueueConfig config;
-    private boolean isProcessingEvents;
-    private volatile int curActiveThreads;
+    protected static final int STOP_SLEEP_INCREMENT_TIMEOUT_MSEC = 100;
+    protected static final long STOP_SLEEP_TOTAL_TIMEOUT_MSEC = 15L * 1000L; // 15 seconds
+
+    private final static long ONE_MILLION = 1000L * 1000L;
 
     protected final Executor executor;
     protected final ObjectMapper objectMapper;
-
     protected final AtomicBoolean isStarted = new AtomicBoolean(false);
+    protected final PersistentQueueConfig config;
+
+    private final int nbThreads;
+    private final String svcQName;
+
+    private boolean isProcessingEvents;
+    private volatile int curActiveThreads;
+
 
     // Allow to disable/re-enable notification processing through JMX
     private final AtomicBoolean isProcessingSuspended;
@@ -142,7 +145,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
             });
         }
         try {
-            final boolean success = doneInitialization.await(waitTimeoutMs, TimeUnit.MILLISECONDS);
+            final boolean success = doneInitialization.await(STOP_SLEEP_TOTAL_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
             if (!success) {
 
                 log.warn(String.format("%s: Failed to wait for all threads to be started, got %d/%d", svcQName, (nbThreads - doneInitialization.getCount()), nbThreads));
@@ -167,10 +170,10 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
             synchronized (this) {
                 isProcessingEvents = false;
                 final long ini = System.currentTimeMillis();
-                long remainingWaitTimeMs = waitTimeoutMs;
+                long remainingWaitTimeMs = STOP_SLEEP_TOTAL_TIMEOUT_MSEC;
                 while (curActiveThreads > 0 && remainingWaitTimeMs > 0) {
-                    wait(100);
-                    remainingWaitTimeMs = waitTimeoutMs - (System.currentTimeMillis() - ini);
+                    wait(STOP_SLEEP_INCREMENT_TIMEOUT_MSEC);
+                    remainingWaitTimeMs = STOP_SLEEP_TOTAL_TIMEOUT_MSEC - (System.currentTimeMillis() - ini);
                 }
                 remaining = curActiveThreads;
             }
