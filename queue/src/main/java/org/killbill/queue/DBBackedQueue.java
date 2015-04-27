@@ -18,21 +18,16 @@
 
 package org.killbill.queue;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.annotation.Nullable;
-
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
@@ -47,16 +42,17 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
@@ -102,8 +98,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
 
     private final boolean useInflightQueue;
     private final LinkedBlockingQueue<Long> inflightEvents;
-    private final AtomicBoolean isQueueOpenForWrite;
-    private final AtomicBoolean isQueueOpenForRead;
     private final int thresholdToReopenQForWrite;
 
     private final Counter totalInflightInsert;
@@ -115,9 +109,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
     private final Counter totalProcessedSuccess;
     private final Counter totalProcessedAborted;
 
-    private final AtomicLong lastPollingOrphanTime;
-    private final AtomicBoolean isRunningOrphanQuery;
-    private final AtomicLong lowestOrphanEntry;
+    private boolean isQueueOpenForWrite;
+    private boolean isQueueOpenForRead;
+    private long lastPollingOrphanTime;
+    private long lowestOrphanEntry;
 
     //
     // Per thread information to keep track or recordId while it is accessible and right before
@@ -138,8 +133,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
         this.sqlDao = sqlDao;
         this.config = config;
         this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getQueueCapacity()) : null;
-        this.isQueueOpenForWrite = new AtomicBoolean(false);
-        this.isQueueOpenForRead = new AtomicBoolean(false);
+        this.isQueueOpenForWrite = false;
+        this.isQueueOpenForRead = false;
         this.clock = clock;
         if (useInflightQueue && databaseTransactionNotificationApi != null) {
             databaseTransactionNotificationApi.registerForNotification(this);
@@ -174,26 +169,25 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
         metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "isOpenForRead"), new Gauge<Boolean>() {
             @Override
             public Boolean getValue() {
-                return isQueueOpenForRead.get();
+                return isQueueOpenForRead;
             }
         });
         metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "isOpenForWrite"), new Gauge<Boolean>() {
             @Override
             public Boolean getValue() {
-                return isQueueOpenForWrite.get();
+                return isQueueOpenForWrite;
             }
         });
         metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "lowestOrphanEntry"), new Gauge<Long>() {
             @Override
             public Long getValue() {
-                return lowestOrphanEntry.get();
+                return lowestOrphanEntry;
             }
         });
 
         this.thresholdToReopenQForWrite = config.getQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
-        this.lastPollingOrphanTime = new AtomicLong(clock.getUTCNow().getMillis());
-        this.isRunningOrphanQuery = new AtomicBoolean(false);
-        this.lowestOrphanEntry = new AtomicLong(-1L);
+        this.lastPollingOrphanTime = clock.getUTCNow().getMillis();
+        this.lowestOrphanEntry = -1L;
         this.transientInflightQRowIdCache = useInflightQueue ? new TransientInflightQRowIdCache(queueId) : null;
         this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
     }
@@ -205,15 +199,15 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             inflightEvents.clear();
             final List<T> entries = fetchReadyEntries(thresholdToReopenQForWrite);
             if (entries.size() == 0) {
-                isQueueOpenForRead.set(true);
-                isQueueOpenForWrite.set(true);
+                isQueueOpenForRead = true;
+                isQueueOpenForWrite = true;
             } else {
-                isQueueOpenForRead.set(false);
-                isQueueOpenForWrite.set(entries.size() < thresholdToReopenQForWrite);
+                isQueueOpenForRead = false;
+                isQueueOpenForWrite = entries.size() < thresholdToReopenQForWrite;
             }
         } else {
-            isQueueOpenForRead.set(false);
-            isQueueOpenForWrite.set(false);
+            isQueueOpenForRead = false;
+            isQueueOpenForWrite = false;
         }
 
         // Reset counters.
@@ -227,10 +221,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
         log.info(DB_QUEUE_LOG_ID + "Initialized with useInflightQueue = " + useInflightQueue +
-                 ", queueId = " + queueId +
-                 ", isSticky = " + config.isSticky() +
-                 ", isQueueOpenForWrite = " + isQueueOpenForWrite.get() +
-                 ", isQueueOpenForRead = " + isQueueOpenForRead.get());
+                ", queueId = " + queueId +
+                ", isSticky = " + config.isSticky() +
+                ", isQueueOpenForWrite = " + isQueueOpenForWrite +
+                ", isQueueOpenForRead = " + isQueueOpenForRead);
     }
 
 
@@ -255,7 +249,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
         // The current thread is in the middle of  a transaction and this is the only times it knows about the recordId for the queue event;
         // It keeps track of it as a per thread data. Very soon, when the transaction gets committed/rolled back it can then extract the info
         // and insert the recordId into a blockingQ that is highly optimized to dispatch events.
-        if (useInflightQueue && isQueueOpenForWrite.get()) {
+        if (useInflightQueue && isQueueOpenForWrite) {
             transientInflightQRowIdCache.addRowId(lastInsertId);
             //log.info(DB_QUEUE_LOG_ID + "Setting for thread " + Thread.currentThread().getId() + ", row = " + lastInsertId);
         }
@@ -263,11 +257,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
     }
 
     //
-    // We synchronize the method because there is no point in having two concurrent threads racing each other,
-    // with only of of which being able to claim the entries.
-    // * In sticky mode the, since only threads from that JVM can fetch the same entries, that solves the problem
-    // * In non sticky mode, another JVM could fetch the same entries, so this may be a little inefficient, but because
-    //   the claim is sequential, this will lead to correct results
+    // The `synchronized` statement here serves two different purposes:
+    // 1. When the `isUsingInflightQueue` is false (polling mode), we want to avoid concurrent threads making the same query to the database
+    //    and returning the same entries (which only one of them would be able to claim). Note that when `isSticky` is false, this still leaves
+    //    the possibility for concurrent threads running in another JVM to run that query at the same time, wasting cycles.
+    // 2. In the optimized `isSticky` and `isUsingInflightQueue` scenario, the call `batchClaimEntries` requires some synchronization
+    //    (to make ensure concurrent threads would not succeed to claim the same entries); so by grabbing the lock at this level this also
+    //    serves that purpose.
     //
     public synchronized List<T> getReadyEntries() {
 
@@ -282,7 +278,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             return candidates;
         }
 
-        if (isQueueOpenForRead.get()) {
+        if (isQueueOpenForRead) {
 
             checkForOrphanEntries();
 
@@ -297,24 +293,20 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
 
             // There are no more entries in the Q but the Q is not open for write so either there is nothing to be read, or
             // the Q overflowed previously so we disable reading from the Q and continue below.
-            if (!isQueueOpenForWrite.get()) {
-                final boolean q = isQueueOpenForRead.compareAndSet(true, false);
-                if (q) {
-                    log.info(DB_QUEUE_LOG_ID + " Closing Q for read");
-                }
+            if (!isQueueOpenForWrite) {
+                isQueueOpenForRead = false;
+                log.info(DB_QUEUE_LOG_ID + " Closing Q for read");
             }
         }
 
-        if (!isQueueOpenForRead.get()) {
+        if (!isQueueOpenForRead) {
             final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
             candidates = fetchReadyEntries(fetchedSize);
 
             // There is a small number so we re-enable adding entries in the Q
-            if (candidates.size() < thresholdToReopenQForWrite) {
-                boolean r = isQueueOpenForWrite.compareAndSet(false, true);
-                if (r) {
-                    log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
-                }
+            if (candidates.size() < thresholdToReopenQForWrite && !isQueueOpenForWrite) {
+                isQueueOpenForWrite = true;
+                log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
             }
             if (candidates.size() > config.getMaxEntriesClaimed()) {
                 candidates = candidates.subList(0, config.getMaxEntriesClaimed());
@@ -325,11 +317,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
             // elements as expected, because entries have already been processed.
             //
-            if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
-                final boolean q = isQueueOpenForRead.compareAndSet(false, true);
-                if (q) {
-                    log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
-                }
+            if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates) && !isQueueOpenForRead) {
+                isQueueOpenForRead = true;
+                log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
             }
 
             // Only keep as many candidates as we are allowed to
@@ -340,19 +330,16 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
     }
 
     private void checkForOrphanEntries() {
-        if (clock.getUTCNow().getMillis() > lastPollingOrphanTime.get() + POLLING_ORPHANS_MSEC) {
+        if (clock.getUTCNow().getMillis() > lastPollingOrphanTime + POLLING_ORPHANS_MSEC) {
 
-            if (isRunningOrphanQuery.compareAndSet(false, true)) {
-                final List<T> entriesToClaim = fetchReadyEntries(1);
-                final Long previousLowestOrphanEntry = lowestOrphanEntry.getAndSet((entriesToClaim.size() == 0) ? -1L : entriesToClaim.get(0).getRecordId());
-
-                lastPollingOrphanTime.set(clock.getUTCNow().getMillis());
-
-                if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry.get()) {
-                    log.warn(DB_QUEUE_LOG_ID + "Detected unprocessed bus event {}, may need to restart server...", previousLowestOrphanEntry);
-                }
-                isRunningOrphanQuery.set(false);
+            final List<T> entriesToClaim = fetchReadyEntries(1);
+            final Long previousLowestOrphanEntry = lowestOrphanEntry;
+            lowestOrphanEntry = (entriesToClaim.size() == 0) ? -1L : entriesToClaim.get(0).getRecordId();
+            if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry) {
+                log.warn(DB_QUEUE_LOG_ID + "Detected unprocessed bus event {}, may need to restart server...", previousLowestOrphanEntry);
             }
+
+            lastPollingOrphanTime = clock.getUTCNow().getMillis();
         }
     }
 
@@ -499,8 +486,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
             final Long entryId;
             try {
                 entryId = size == 0 ?
-                          inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS) : // There seems be nothing in the Q so we block
-                          inflightEvents.poll(); // The queue does not seem empty so we don't want to block for no reason if there is less entries than detected.
+                        inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS) : // There seems be nothing in the Q so we block
+                        inflightEvents.poll(); // The queue does not seem empty so we don't want to block for no reason if there is less entries than detected.
                 if (entryId == null) {
                     break;
                 }
@@ -615,11 +602,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
     }
 
     public boolean isQueueOpenForWrite() {
-        return isQueueOpenForWrite.get();
+        return isQueueOpenForWrite;
     }
 
     public boolean isQueueOpenForRead() {
-        return isQueueOpenForRead.get();
+        return isQueueOpenForRead;
     }
 
     public long getTotalInflightFetched() {
@@ -663,15 +650,14 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
                 if (result) {
                     if (log.isDebugEnabled()) {
                         log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + entry +
-                                  (result ? " into inflightQ" : " into disk"));
+                                (result ? " into inflightQ" : " into disk"));
                     }
                     totalInflightInsert.inc();
-                    // Q overflowed ?
-                } else {
-                    final boolean q = isQueueOpenForWrite.compareAndSet(true, false);
-                    if (q) {
-                        log.info(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + entry);
-                    }
+                    // Q overflowed, which means we will stop writing entries into the Q, and as a result, we will end up stop reading
+                    // from the Q and return to polling mode
+                } else if (isQueueOpenForWrite) {
+                    isQueueOpenForWrite = false;
+                    log.warn(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + entry);
                 }
             }
         } finally {
