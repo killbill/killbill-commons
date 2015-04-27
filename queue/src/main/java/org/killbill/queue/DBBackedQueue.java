@@ -28,6 +28,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.eventbus.AllowConcurrentEvents;
+import com.google.common.eventbus.Subscribe;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
@@ -48,8 +50,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @param <T>
  */
-public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
+public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private static final Logger log = LoggerFactory.getLogger(DBBackedQueue.class);
 
@@ -625,11 +625,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> implements Observer {
         return totalInsert.getCount();
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-
-        final DatabaseTransactionEvent event = (DatabaseTransactionEvent) arg;
-
+    @AllowConcurrentEvents
+    @Subscribe
+    public void handleDatabaseTransactionEvent(final DatabaseTransactionEvent event) {
         // Either a transaction we are not interested in, or for the wrong queue; just return.
         if (transientInflightQRowIdCache == null || !transientInflightQRowIdCache.isValid()) {
             return;

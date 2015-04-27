@@ -17,54 +17,29 @@
 
 package org.killbill.commons.jdbi.notification;
 
+import com.google.common.eventbus.EventBus;
+
 import java.util.Observable;
 import java.util.Observer;
 
 public class DatabaseTransactionNotificationApi {
 
-    private final NotificationTransactionHandlerObservable observable;
+
+    private final EventBus eventBus;
 
     public DatabaseTransactionNotificationApi() {
-        this.observable = new NotificationTransactionHandlerObservable();
+        this.eventBus = new EventBus(this.getClass().getName());
     }
 
-    public void registerForNotification(final Observer observer) {
-        observable.addObserver(observer);
+    public void registerForNotification(final Object listener) {
+        eventBus.register(listener);
     }
 
-    public void unregisterForNotification(final Observer observer) {
-        observable.deleteObserver(observer);
+    public void unregisterForNotification(final Object listener) {
+        eventBus.unregister(listener);
     }
 
-    //
-    // Dispatch the event the observers right after the rollback/commit occurred.
-    // Of course there is window of doom during which we could crash at this time, so observer
-    // must know that it could happen and that state on disk (when commit occured) should then be retrieved.
-    //
     public void dispatchNotification(final DatabaseTransactionEvent event) {
-        //
-        // Observer/Observable pattern is very poorly implemented...
-        // The setChanged is need to for the dispatch to occur; but two threads racing each other
-        // could end up in events being lost because the first one dispatching the event will reset the changed
-        // to false which will end up in the second dispatch to be skipped... This is quite lame!
-        //
-        // As a result we synchronize both operations but this is sub optimal because then dispatch occurs
-        // with lock being held. Yack...
-        //
-        // So, observers should not attempt lengthy operations so as to not end up serializing all operations,
-        // which fortunately is our use case, but beware..
-        synchronized (observable) {
-            observable.setChanged();
-            observable.notifyObservers(event);
-        }
-    }
-
-
-    public static class NotificationTransactionHandlerObservable extends Observable {
-        // Make the method visible...
-        @Override
-        public void setChanged() {
-            super.setChanged();
-        }
+        eventBus.post(event);
     }
 }
