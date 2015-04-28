@@ -16,13 +16,8 @@
 
 package org.killbill.queue;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
-import org.killbill.bus.DefaultBusPersistentEvent;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
@@ -38,7 +33,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -69,53 +63,6 @@ public class TestDBBackedQueue extends TestSetup {
         super.beforeMethod();
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
         assertEquals(ready.size(), 0);
-    }
-
-
-    @Test(groups = "load")
-    public void testLoad() {
-
-        final int NB_EVENTS = 1000;
-        final int CLAIMED_EVENTS = 10;
-
-        final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, false, false);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "perf-bus_event", metricRegistry, null);
-        queue.initialize();
-
-
-        for (int i = 0; i < NB_EVENTS; i++) {
-            final BusEventModelDao input = createEntry(new Long(i));
-            queue.insertEntry(input);
-        }
-
-        log.error("Starting load test");
-
-        long ini = System.nanoTime();
-        long cumlGetReadyEntries = 0;
-        long cumlMoveEntriesToHistory = 0;
-        for (int i = 0; i < NB_EVENTS / CLAIMED_EVENTS; i++) {
-
-            long t1 = System.nanoTime();
-            final List<BusEventModelDao> ready = queue.getReadyEntries();
-            assertEquals(ready.size(), CLAIMED_EVENTS);
-            long t2 = System.nanoTime();
-            cumlGetReadyEntries += (t2 - t1);
-
-            final Iterable<BusEventModelDao> processed = Iterables.transform(ready, new Function<BusEventModelDao, BusEventModelDao>() {
-                @Override
-                public BusEventModelDao apply(@Nullable BusEventModelDao input) {
-                    return new BusEventModelDao(input, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-                }
-            });
-            long t3 = System.nanoTime();
-            queue.moveEntriesToHistory(processed);
-            long t4 = System.nanoTime();
-            cumlMoveEntriesToHistory += (t4 - t3);
-        }
-        long fini = System.nanoTime();
-
-        log.error("Load test took " + ((fini - ini) / 1000000) + " ms, getReadyEntry = " +
-                (cumlGetReadyEntries / 1000000) + " ms, moveEntriesToHistory = " + (cumlMoveEntriesToHistory / 1000000));
     }
 
 
@@ -268,7 +215,6 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(output.getEventJson(), "json");
         }
     }
-
 
 
     /**
@@ -628,16 +574,15 @@ public class TestDBBackedQueue extends TestSetup {
         assertEquals(queue.getTotalInsert(), 2000);
     }
 
+
     public class ReaderRunnable implements Runnable {
 
-        private final int readerId;
         private final DBBackedQueue<BusEventModelDao> queue;
         private final AtomicLong consumed;
         private final int maxEntries;
         private final List<Long> search1;
 
         public ReaderRunnable(final int readerId, AtomicLong consumed, final int maxEntries, final DBBackedQueue<BusEventModelDao> queue) {
-            this.readerId = readerId;
             this.queue = queue;
             this.consumed = consumed;
             this.maxEntries = maxEntries;
@@ -784,38 +729,5 @@ public class TestDBBackedQueue extends TestSetup {
                 return "bus_events_history";
             }
         };
-    }
-
-
-    public static class MyEvent extends DefaultBusPersistentEvent {
-
-        private final String name;
-        private final Long value;
-        private final String type;
-
-        @JsonCreator
-        public MyEvent(@JsonProperty("name") final String name,
-                       @JsonProperty("value") final Long value,
-                       @JsonProperty("token") final UUID token,
-                       @JsonProperty("type") final String type,
-                       @JsonProperty("searchKey1") final Long searchKey1,
-                       @JsonProperty("searchKey2") final Long searchKey2) {
-            super(token, searchKey1, searchKey2);
-            this.name = name;
-            this.value = value;
-            this.type = type;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Long getValue() {
-            return value;
-        }
-
-        public String getType() {
-            return type;
-        }
     }
 }

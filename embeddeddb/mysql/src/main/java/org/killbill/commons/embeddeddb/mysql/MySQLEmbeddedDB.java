@@ -132,7 +132,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, port, dataDir, databaseName);
     }
 
-    private void createDataSource() {
+    protected void createDataSource() {
         if (useMariaDB) {
             final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
             mariaDBDataSource.setDatabaseName(databaseName);

@@ -18,11 +18,12 @@
 
 package org.killbill;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Resources;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.clock.ClockMock;
 import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
@@ -30,6 +31,10 @@ import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
 import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
 import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
 import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
+import org.killbill.commons.jdbi.guice.DaoConfig;
+import org.killbill.commons.jdbi.guice.DataSourceConnectionPoolingType;
+import org.killbill.commons.jdbi.guice.DataSourceProvider;
+import org.killbill.commons.jdbi.log.LogLevel;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
@@ -37,24 +42,23 @@ import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.skife.config.ConfigSource;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
+import org.skife.config.TimeSpan;
 import org.skife.jdbi.v2.DBI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.CharStreams;
-import com.google.common.io.InputSupplier;
-import com.google.common.io.Resources;
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Properties;
 
 import static org.testng.Assert.assertNotNull;
 
 public class TestSetup {
 
-    private MySQLEmbeddedDB embeddedDB;
+    private MySQLEmbeddedDBWithDataSource embeddedDB;
 
     protected DBI dbi;
     protected PersistentBusConfig persistentBusConfig;
@@ -63,6 +67,29 @@ public class TestSetup {
     protected MetricRegistry metricRegistry = new MetricRegistry();
     protected DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
 
+    public class MySQLEmbeddedDBWithDataSource extends MySQLEmbeddedDB {
+
+        public MySQLEmbeddedDBWithDataSource() {
+        }
+
+        public MySQLEmbeddedDBWithDataSource(String databaseName, String username, String password, boolean useMariaDB) {
+            super(databaseName, username, password, useMariaDB);
+        }
+
+        public void overwriteDataSource() {
+            this.dataSource = new DataSourceProvider(buildDaoConfig(), "TEST_POOL_NAME").get();
+        }
+
+        private DaoConfig buildDaoConfig() {
+            final Properties properties = new Properties();
+            properties.put("org.killbill.dao.user", username);
+            properties.put("org.killbill.dao.password", password);
+            properties.put("org.killbill.dao.url", jdbcConnectionString);
+            return new ConfigurationObjectFactory(properties).build(DaoConfig.class);
+        }
+
+    }
+
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
 
@@ -70,9 +97,13 @@ public class TestSetup {
 
         clock = new ClockMock();
 
-        embeddedDB = new MySQLEmbeddedDB("killbillq", "killbillq", "killbillq", false);
+
+
+        embeddedDB = new MySQLEmbeddedDBWithDataSource("killbillq", "killbillq", "killbillq", false);
         embeddedDB.initialize();
         embeddedDB.start();
+
+        embeddedDB.overwriteDataSource();
 
         final String ddl = toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
         embeddedDB.executeScript(ddl);
@@ -91,9 +122,9 @@ public class TestSetup {
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
         persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                                                                                                 ImmutableMap.<String, String>of("instanceName", "main"));
+                ImmutableMap.<String, String>of("instanceName", "main"));
         notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                                                                                                     ImmutableMap.<String, String>of("instanceName", "main"));
+                ImmutableMap.<String, String>of("instanceName", "main"));
     }
 
     @BeforeMethod(groups = "slow")
@@ -134,4 +165,5 @@ public class TestSetup {
             throw new RuntimeException(e);
         }
     }
+
 }
