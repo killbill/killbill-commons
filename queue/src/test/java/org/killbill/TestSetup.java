@@ -141,7 +141,11 @@ public class TestSetup {
 
 
     public static String toString(final InputStream inputStream) throws IOException {
-        return new String(ByteStreams.toByteArray(inputStream), Charsets.UTF_8);
+        try {
+            return new String(ByteStreams.toByteArray(inputStream), Charsets.UTF_8);
+        } finally {
+            inputStream.close();
+        }
     }
 
     public DBI getDBI() {
