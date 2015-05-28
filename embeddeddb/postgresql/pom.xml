@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 2010-2013 Ning, Inc.
+  ~ Copyright 2014 Groupon, Inc
+  ~ Copyright 2014 The Billing Project, LLC
   ~
-  ~ Ning licenses this file to you under the Apache License, version 2.0
+  ~ The Billing Project licenses this file to you under the Apache License, version 2.0
   ~ (the "License"); you may not use this file except in compliance with the
   ~ License.  You may obtain a copy of the License at:
   ~
@@ -17,18 +19,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>killbill-commons</artifactId>
+        <artifactId>killbill-embeddeddb</artifactId>
         <groupId>org.kill-bill.commons</groupId>
         <version>0.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>killbill-embeddeddb</artifactId>
-    <packaging>pom</packaging>
-    <name>Kill Bill library of embedded dbs</name>
-    <modules>
-        <module>common</module>
-        <module>h2</module>
-        <module>mysql</module>
-        <module>postgresql</module>
-    </modules>
+    <artifactId>killbill-embeddeddb-postgresql</artifactId>
+    <name>Kill Bill library of embedded dbs: PostgreSQL</name>
+    <dependencies>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-embeddeddb-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.4-1201-jdbc41</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>

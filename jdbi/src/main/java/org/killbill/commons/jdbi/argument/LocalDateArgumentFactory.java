@@ -48,10 +48,9 @@ public class LocalDateArgumentFactory implements ArgumentFactory<LocalDate> {
         @Override
         public void apply(final int position, final PreparedStatement statement, final StatementContext ctx) throws SQLException {
             if (value != null) {
-                // ISO8601 format
-                statement.setString(position, value.toString());
+                statement.setDate(position, new java.sql.Date(value.toDate().getTime()));
             } else {
-                statement.setNull(position, Types.VARCHAR);
+                statement.setNull(position, Types.DATE);
             }
         }
 
