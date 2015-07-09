@@ -37,7 +37,8 @@ public abstract class EmbeddedDB {
     public enum DBEngine {
         GENERIC,
         MYSQL,
-        H2
+        H2,
+        POSTGRESQL
     }
 
     // Not final to allow more flexible implementers
