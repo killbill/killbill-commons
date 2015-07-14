@@ -27,14 +27,16 @@
     <name>Kill Bill library of embedded dbs: PostgreSQL</name>
     <dependencies>
         <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>testing-postgresql-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-embeddeddb-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4-1201-jdbc41</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

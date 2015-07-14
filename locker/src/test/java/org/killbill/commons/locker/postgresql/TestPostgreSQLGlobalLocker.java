@@ -20,31 +20,24 @@ package org.killbill.commons.locker.postgresql;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.killbill.commons.embeddeddb.postgresql.PostgreSQLEmbeddedDB;
+import org.killbill.commons.locker.GlobalLock;
+import org.killbill.commons.locker.GlobalLocker;
+import org.killbill.commons.locker.LockFailedException;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import org.killbill.commons.embeddeddb.postgresql.PostgreSQLStandaloneDB;
-import org.killbill.commons.locker.GlobalLock;
-import org.killbill.commons.locker.GlobalLocker;
-import org.killbill.commons.locker.LockFailedException;
-
 public class TestPostgreSQLGlobalLocker {
 
-    private PostgreSQLStandaloneDB embeddedDB;
+    private PostgreSQLEmbeddedDB embeddedDB;
 
     @BeforeClass(groups = "postgresql")
     public void setUp() throws Exception {
-
-        final String databaseName = System.getProperty("org.killbill.billing.dbi.test.localDb.database", "postgres");
-        final String username = System.getProperty("org.killbill.billing.dbi.test.localDb.username", "postgres");
-        final String password = System.getProperty("org.killbill.billing.dbi.test.localDb.password", "postgres");
-
-        embeddedDB = new PostgreSQLStandaloneDB(databaseName, username, password);
+        embeddedDB = new PostgreSQLEmbeddedDB();
         embeddedDB.initialize();
         embeddedDB.start();
-
     }
 
     @AfterClass(groups = "postgresql")
