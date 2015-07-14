@@ -19,6 +19,7 @@
 package org.killbill.commons.embeddeddb.postgresql;
 
 import java.io.IOException;
+import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -32,6 +33,8 @@ import org.postgresql.ds.PGSimpleDataSource;
  */
 public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
 
+    private final int port;
+
     protected PGSimpleDataSource dataSource;
 
     public PostgreSQLStandaloneDB(final String databaseName, final String username, final String password) {
@@ -40,6 +43,7 @@ public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
 
     public PostgreSQLStandaloneDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
         super(databaseName, username, password, jdbcConnectionString);
+        this.port = URI.create(jdbcConnectionString.substring(5)).getPort();
     }
 
     @Override
@@ -80,4 +84,8 @@ public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
         return dataSource;
     }
 
+    @Override
+    public String getCmdLineConnectionString() {
+        return String.format("PGPASSWORD=%s psql -U%s -p%s %s", password, username, port, databaseName);
+    }
 }
