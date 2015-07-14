@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -19,15 +21,14 @@ package org.killbill.commons.locker.mysql;
 import java.io.IOException;
 import java.util.UUID;
 
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.LockFailedException;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 public class TestMysqlGlobalLocker {
 
@@ -57,7 +58,7 @@ public class TestMysqlGlobalLocker {
         boolean gotException = false;
         try {
             locker.lockWithNumberOfTries(serviceLock, lockName, 1);
-        } catch (LockFailedException e) {
+        } catch (final LockFailedException e) {
             gotException = true;
         }
         Assert.assertTrue(gotException);

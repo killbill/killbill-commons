@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -22,12 +24,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.LockFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MySqlGlobalLocker implements GlobalLocker {
 
@@ -72,14 +73,14 @@ public class MySqlGlobalLocker implements GlobalLocker {
         try {
             connection = dataSource.getConnection();
             return mysqlGlobalLockDao.isLockFree(connection, lockName);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             logger.warn("Unable to check if lock is free", e);
             return false;
         } finally {
             if (connection != null) {
                 try {
                     connection.close();
-                } catch (SQLException e) {
+                } catch (final SQLException e) {
                     logger.warn("Unable to close connection", e);
                 }
             }
@@ -95,14 +96,14 @@ public class MySqlGlobalLocker implements GlobalLocker {
             if (obtained) {
                 return new MysqlGlobalLock(connection, lockName);
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             logger.warn("Unable to obtain lock for " + lockName, e);
         } finally {
             if (!obtained) {
                 if (connection != null) {
                     try {
                         connection.close();
-                    } catch (SQLException e) {
+                    } catch (final SQLException e) {
                         logger.warn("Unable to close connection", e);
                     }
                 }

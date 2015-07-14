@@ -75,7 +75,7 @@ public class DataSourceProvider implements Provider<DataSource> {
      *
      * @param metricRegistry the Dropwizard MetricRegistry to set
      */
-    @com.google.inject.Inject(optional = true)
+    @Inject(optional = true)
     public void setMetricRegistry(final MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
@@ -85,7 +85,7 @@ public class DataSourceProvider implements Provider<DataSource> {
      *
      * @param healthCheckRegistry the Dropwizard HealthCheckRegistry to set
      */
-    @com.google.inject.Inject(optional = true)
+    @Inject(optional = true)
     public void setHealthCheckRegistry(final HealthCheckRegistry healthCheckRegistry) {
         this.healthCheckRegistry = healthCheckRegistry;
     }

@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -25,12 +26,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.LockFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PostgreSQLGlobalLocker implements GlobalLocker {
 
@@ -63,7 +63,7 @@ public class PostgreSQLGlobalLocker implements GlobalLocker {
             } else if (tries_left > 0) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(timeout));
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
 
                 }
             }
@@ -81,14 +81,14 @@ public class PostgreSQLGlobalLocker implements GlobalLocker {
         try {
             connection = dataSource.getConnection();
             return lockDao.isLockFree(connection, lockName);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             logger.warn("Unable to check if lock is free", e);
             return false;
         } finally {
             if (connection != null) {
                 try {
                     connection.close();
-                } catch (SQLException e) {
+                } catch (final SQLException e) {
                     logger.warn("Unable to close connection", e);
                 }
             }
@@ -104,14 +104,14 @@ public class PostgreSQLGlobalLocker implements GlobalLocker {
             if (obtained) {
                 return new PostgreSQLGlobalLock(connection, lockName);
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             logger.warn("Unable to obtain lock for " + lockName, e);
         } finally {
             if (!obtained) {
                 if (connection != null) {
                     try {
                         connection.close();
-                    } catch (SQLException e) {
+                    } catch (final SQLException e) {
                         logger.warn("Unable to close connection", e);
                     }
                 }
@@ -121,14 +121,14 @@ public class PostgreSQLGlobalLocker implements GlobalLocker {
     }
 
     private String getLockName(final String service, final String lockKey) {
-        String lockName = service + "-" + lockKey;
+        final String lockName = service + "-" + lockKey;
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-            byte[] bytes = messageDigest.digest(lockName.getBytes());
+            final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            final byte[] bytes = messageDigest.digest(lockName.getBytes());
             return String.valueOf(ByteBuffer.wrap(bytes).getLong());
-       } catch (NoSuchAlgorithmException e) {
-           logger.warn("Unable to allocate MessageDigest", e);
-           return String.valueOf(lockName.hashCode());
-       }
+        } catch (final NoSuchAlgorithmException e) {
+            logger.warn("Unable to allocate MessageDigest", e);
+            return String.valueOf(lockName.hashCode());
+        }
     }
 }

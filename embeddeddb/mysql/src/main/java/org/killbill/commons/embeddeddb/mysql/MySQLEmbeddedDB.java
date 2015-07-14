@@ -106,7 +106,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
                     }
                 }
             });
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new IOException(e);
         }
     }
@@ -194,13 +194,13 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (mysqldResource != null) {
             try {
                 mysqldResource.shutdown();
-            } catch (NullPointerException npe) {
+            } catch (final NullPointerException npe) {
                 logger.warn("Failed to shutdown mysql properly ", npe);
             }
             try {
                 deleteRecursive(dataDir);
                 deleteRecursive(dbDir);
-            } catch (FileNotFoundException e) {
+            } catch (final FileNotFoundException e) {
                 throw new IOException(e);
             }
 
@@ -237,7 +237,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             if (socket != null) {
                 try {
                     socket.close();
-                } catch (IOException ignored) {
+                } catch (final IOException ignored) {
                 }
             }
         }

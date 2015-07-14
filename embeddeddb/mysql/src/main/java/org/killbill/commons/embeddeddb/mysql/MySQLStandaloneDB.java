@@ -35,10 +35,10 @@ import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
  */
 public class MySQLStandaloneDB extends GenericStandaloneDB {
 
-    protected DataSource dataSource;
-
     private final int port;
     private final boolean useMariaDB;
+
+    protected DataSource dataSource;
 
     public MySQLStandaloneDB(final String databaseName) {
         this(databaseName, "root", null);

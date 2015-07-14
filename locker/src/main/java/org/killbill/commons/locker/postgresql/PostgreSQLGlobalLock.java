@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -19,10 +20,9 @@ package org.killbill.commons.locker.postgresql;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.killbill.commons.locker.GlobalLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.killbill.commons.locker.GlobalLock;
 
 public class PostgreSQLGlobalLock implements GlobalLock {
 
@@ -42,12 +42,12 @@ public class PostgreSQLGlobalLock implements GlobalLock {
     public void release() {
         try {
             lockDao.releaseLock(connection, lockName);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             logger.warn("Unable to release lock for " + lockName, e);
         } finally {
             try {
                 connection.close();
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
                 logger.warn("Unable to close connection", e);
             }
         }
