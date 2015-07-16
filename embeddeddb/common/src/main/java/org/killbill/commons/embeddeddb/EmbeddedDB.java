@@ -19,6 +19,7 @@
 package org.killbill.commons.embeddeddb;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -179,5 +180,23 @@ public abstract class EmbeddedDB {
     protected static class ResultSetJob {
 
         public void work(final ResultSet resultSet) throws SQLException {}
+    }
+
+    protected int getPort() {
+        // New socket on any free port
+        ServerSocket socket = null;
+        try {
+            socket = new ServerSocket(0);
+            return socket.getLocalPort();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (final IOException ignored) {
+                }
+            }
+        }
     }
 }

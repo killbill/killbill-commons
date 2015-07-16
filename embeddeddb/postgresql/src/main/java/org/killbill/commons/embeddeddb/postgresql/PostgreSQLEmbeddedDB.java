@@ -28,8 +28,6 @@ import javax.sql.DataSource;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.postgresql.ds.PGSimpleDataSource;
 
-import io.airlift.testing.postgresql.TestingPostgreSqlServer;
-
 public class PostgreSQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
@@ -37,7 +35,7 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
     protected PGSimpleDataSource dataSource;
     protected int port;
 
-    private TestingPostgreSqlServer testingPostgreSqlServer;
+    private KillBillTestingPostgreSqlServer testingPostgreSqlServer;
 
     public PostgreSQLEmbeddedDB() {
         // Avoid dashes - PostgreSQL doesn't like them
@@ -47,6 +45,8 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
 
     public PostgreSQLEmbeddedDB(final String databaseName, final String username) {
         super(databaseName, username, null, null);
+        this.port = getPort();
+        this.jdbcConnectionString = String.format("jdbc:postgresql://localhost:%s/%s?user=%s", port, databaseName, username);
     }
 
     @Override
@@ -118,9 +118,7 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
 
     private void startPostgreSql() throws IOException {
         try {
-            this.testingPostgreSqlServer = new TestingPostgreSqlServer(username, databaseName);
-            this.port = testingPostgreSqlServer.getPort();
-            this.jdbcConnectionString = testingPostgreSqlServer.getJdbcUrl();
+            this.testingPostgreSqlServer = new KillBillTestingPostgreSqlServer(username, port, databaseName);
         } catch (final Exception e) {
             throw new IOException(e);
         }
