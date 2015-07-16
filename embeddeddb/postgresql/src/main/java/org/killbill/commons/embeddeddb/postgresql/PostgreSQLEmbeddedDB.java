@@ -72,7 +72,7 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
 
     @Override
     public void refreshTableNames() throws IOException {
-        final String query = String.format("select table_name from information_schema.tables where table_schema = '%s' and table_type = 'BASE TABLE';", databaseName);
+        final String query = "select table_name from information_schema.tables where table_schema = current_schema() and table_type = 'BASE TABLE';";
         try {
             executeQuery(query, new ResultSetJob() {
                 @Override
