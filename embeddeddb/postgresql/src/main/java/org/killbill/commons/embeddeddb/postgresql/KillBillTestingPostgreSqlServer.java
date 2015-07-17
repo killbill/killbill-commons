@@ -25,7 +25,8 @@ import java.sql.Statement;
 
 import javax.annotation.Nullable;
 
-import io.airlift.log.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -34,7 +35,7 @@ import static java.lang.String.format;
 // Added Java 6 support and ability to configure the port
 class KillBillTestingPostgreSqlServer implements Closeable {
 
-    private static final Logger log = Logger.get(KillBillTestingPostgreSqlServer.class);
+    private static final Logger log = LoggerFactory.getLogger(KillBillTestingPostgreSqlServer.class);
 
     private final String user;
     private final String database;
@@ -77,11 +78,11 @@ class KillBillTestingPostgreSqlServer implements Closeable {
             throw e;
         }
 
-        log.info("PostgreSQL server ready: %s", getJdbcUrl());
+        log.info("PostgreSQL server ready: {}", getJdbcUrl());
     }
 
     private static void execute(final Statement statement, final String sql) throws SQLException {
-        log.debug("Executing: %s", sql);
+        log.debug("Executing: {}", sql);
         statement.execute(sql);
     }
 

@@ -37,13 +37,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 
 import io.airlift.command.Command;
 import io.airlift.command.CommandFailedException;
-import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 
 import static com.google.common.base.StandardSystemProperty.OS_ARCH;
@@ -60,7 +62,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 // Added Java 6 support and ability to configure the port
 class KillBillEmbeddedPostgreSql implements Closeable {
 
-    private static final Logger log = Logger.get(KillBillEmbeddedPostgreSql.class);
+    private static final Logger log = LoggerFactory.getLogger(KillBillEmbeddedPostgreSql.class);
 
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
 
@@ -147,7 +149,7 @@ class KillBillEmbeddedPostgreSql implements Closeable {
         try {
             pgStop();
         } catch (final Exception e) {
-            log.error("could not stop postmaster in %s" + serverDirectory.toString(), e);
+            log.error("could not stop postmaster in " + serverDirectory.toString(), e);
             if (postmaster != null) {
                 postmaster.destroy();
             }
@@ -192,7 +194,7 @@ class KillBillEmbeddedPostgreSql implements Closeable {
                 .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                 .start();
 
-        log.info("postmaster started on port %s. Waiting up to %s for startup to finish.", port, PG_STARTUP_WAIT);
+        log.info("postmaster started on port {}. Waiting up to {} for startup to finish.", port, PG_STARTUP_WAIT);
 
         waitForServerStartup(process);
 
@@ -299,7 +301,7 @@ class KillBillEmbeddedPostgreSql implements Closeable {
             system("tar", "-xzf", archive.getPath(), "-C", target.toString());
         } finally {
             if (!archive.delete()) {
-                log.warn("failed to delete %s", archive);
+                log.warn("failed to delete {}", archive);
             }
         }
     }
