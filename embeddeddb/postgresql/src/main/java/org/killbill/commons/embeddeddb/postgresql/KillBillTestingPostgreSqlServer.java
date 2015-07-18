@@ -47,6 +47,9 @@ class KillBillTestingPostgreSqlServer implements Closeable {
     }
 
     public KillBillTestingPostgreSqlServer(final String user, @Nullable final Integer portOrNull, final String database) throws Exception {
+        // Make sure the driver is registered
+        Class.forName("org.postgresql.Driver");
+
         this.user = checkNotNull(user, "user is null");
         this.database = checkNotNull(database, "database is null");
 
