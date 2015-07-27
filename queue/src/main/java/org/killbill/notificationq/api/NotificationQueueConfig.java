@@ -29,7 +29,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.notificationq.${instanceName}.inMemory")
     @Default("false")
-    @Description("Whether the implementation should be an in memory")
+    @Description("Whether the implementation should be an in memory (set to false, not available for NotificationQueue)")
     public abstract boolean isInMemory();
 
     @Override
@@ -46,13 +46,13 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.claimed")
-    @Default("7")
+    @Default("10")
     @Description("Number of notifications to fetch at once")
     public abstract int getMaxEntriesClaimed();
 
     @Override
-    @Config("org.killbill.notificationq.${instanceName}.inflight.claimed")
-    @Default("7")
+    @Config("org.killbill.notificationq.${instanceName}.inflight.claimed (set to -1, not available for NotificationQueue)")
+    @Default("-1")
     @Description("Number of notifications to fetch at once")
     public abstract int getMaxInflightQEntriesClaimed();
 
@@ -76,19 +76,19 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.notification.nbThreads")
-    @Default("1")
+    @Default("10")
     @Description("Number of threads to use")
     public abstract int getNbThreads();
 
     @Override
-    @Config("org.killbill.notificationq.${instanceName}.useInflightQ")
+    @Config("org.killbill.notificationq.${instanceName}.useInflightQ (set to false, not available for NotificationQueue)")
     @Default("false")
     @Description("Whether to use the inflight queue")
     public abstract boolean isUsingInflightQueue();
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
-    @Default("10000")
+    @Default("30000")
     @Description("Capacity for the worker queue")
     public abstract int getQueueCapacity();
 
