@@ -1,6 +1,7 @@
 0.4
     PostgreSQL support
-    Update to killbill-oss-parent 0.28
+    Update to killbill-oss-parent 0.29
+    Update default queue properties
 
 0.3
     Remove BoneCP support
