@@ -58,7 +58,7 @@ import static org.testng.Assert.assertNotNull;
 
 public class TestSetup {
 
-    private MySQLEmbeddedDBWithDataSource embeddedDB;
+    protected MySQLEmbeddedDBWithDataSource embeddedDB;
 
     protected DBI dbi;
     protected PersistentBusConfig persistentBusConfig;

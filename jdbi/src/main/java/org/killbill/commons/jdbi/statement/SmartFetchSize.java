@@ -82,6 +82,9 @@ public @interface SmartFetchSize {
 
     public static final class SmartFetchSizeCustomizer extends BaseStatementCustomizer {
 
+        // Shared name across drivers, see org.mariadb.jdbc.MySQLDatabaseMetaData and com.mysql.jdbc.DatabaseMetaData
+        private static final String MYSQL = "MySQL";
+
         private final int fetchSize;
         private final boolean shouldStream;
 
@@ -94,12 +97,20 @@ public @interface SmartFetchSize {
         public void beforeExecution(final PreparedStatement stmt, final StatementContext ctx) throws SQLException {
             stmt.setFetchSize(fetchSize);
             if (shouldStream) {
-                try {
-                    // Magic value to force MySQL to stream from the database
-                    // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-implementation-notes.html (ResultSet)
-                    stmt.setFetchSize(Integer.MIN_VALUE);
-                } catch (final SQLException e) {
-                    // Other engines, e.g. H2
+                if (ctx != null &&
+                    ctx.getConnection() != null &&
+                    ctx.getConnection().getMetaData() != null &&
+                    MYSQL.equalsIgnoreCase(ctx.getConnection().getMetaData().getDatabaseProductName())) {
+                    try {
+                        // Magic value to force MySQL to stream from the database
+                        // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-implementation-notes.html (ResultSet)
+                        stmt.setFetchSize(Integer.MIN_VALUE);
+                    } catch (final SQLException e) {
+                        // Shouldn't happen? The exception will be logged by log4jdbc
+                        stmt.setFetchSize(0);
+                    }
+                } else {
+                    // Other engines (H2, PostgreSQL, etc.)
                     stmt.setFetchSize(0);
                 }
             } else {

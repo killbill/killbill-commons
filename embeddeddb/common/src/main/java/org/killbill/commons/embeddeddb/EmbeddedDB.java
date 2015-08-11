@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2015 Groupon, Inc
+ * Copyright 2014-2015 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -17,6 +19,7 @@
 package org.killbill.commons.embeddeddb;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -96,17 +99,10 @@ public abstract class EmbeddedDB {
     private static final Pattern WHITESPACE_ONLY = Pattern.compile("^\\s*$");
 
     public void executeScript(final String script) throws IOException {
-        final String[] rawStatements = script.replaceAll("\n", " ").replaceAll("\r", "").split(";");
-        for (final String statement : rawStatements) {
-            if (!WHITESPACE_ONLY.matcher(statement).matches()) {
-                try {
-                    // TODO consider batch approach
-                    execute(statement);
-                } catch (SQLException e) {
-                    throw new IOException(e);
-                }
-
-            }
+        try {
+            execute(script);
+        } catch (final SQLException e) {
+            throw new IOException(e);
         }
     }
 
@@ -184,5 +180,23 @@ public abstract class EmbeddedDB {
     protected static class ResultSetJob {
 
         public void work(final ResultSet resultSet) throws SQLException {}
+    }
+
+    protected int getPort() {
+        // New socket on any free port
+        ServerSocket socket = null;
+        try {
+            socket = new ServerSocket(0);
+            return socket.getLocalPort();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (final IOException ignored) {
+                }
+            }
+        }
     }
 }

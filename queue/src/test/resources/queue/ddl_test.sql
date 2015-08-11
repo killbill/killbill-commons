@@ -2,7 +2,7 @@
 
 DROP TABLE IF EXISTS dummy;
 CREATE TABLE dummy (
-    dkey varchar(256) NOT NULL,
-    dvalue int(11) unsigned default null,
+    dkey varchar(255) NOT NULL,
+    dvalue int /*! unsigned */ default null,
     PRIMARY KEY(dkey)
-);
+) /*! CHARACTER SET utf8 COLLATE utf8_bin */;

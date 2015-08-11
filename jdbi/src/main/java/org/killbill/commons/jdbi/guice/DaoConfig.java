@@ -44,12 +44,12 @@ public interface DaoConfig {
 
     @Description("The minimum allowed number of idle connections to the database")
     @Config("org.killbill.dao.minIdle")
-    @Default("0")
+    @Default("1")
     int getMinIdle();
 
     @Description("The maximum allowed number of active connections to the database")
     @Config("org.killbill.dao.maxActive")
-    @Default("30")
+    @Default("100")
     int getMaxActive();
 
     @Description("How long to wait before a connection attempt to the database is considered timed out")

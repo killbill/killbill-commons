@@ -1,7 +1,6 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -16,7 +15,7 @@
  * under the License.
  */
 
-package org.killbill.commons.locker.mysql;
+package org.killbill.commons.locker.postgresql;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -25,16 +24,16 @@ import org.killbill.commons.locker.GlobalLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MysqlGlobalLock implements GlobalLock {
+public class PostgreSQLGlobalLock implements GlobalLock {
 
-    private static final Logger logger = LoggerFactory.getLogger(GlobalLock.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgreSQLGlobalLock.class);
 
-    private final MysqlGlobalLockDao mysqlGlobalLockDao = new MysqlGlobalLockDao();
+    private final PostgreSQLGlobalLockDao lockDao = new PostgreSQLGlobalLockDao();
 
     private final Connection connection;
     private final String lockName;
 
-    public MysqlGlobalLock(final Connection connection, final String lockName) {
+    public PostgreSQLGlobalLock(final Connection connection, final String lockName) {
         this.connection = connection;
         this.lockName = lockName;
     }
@@ -42,7 +41,7 @@ public class MysqlGlobalLock implements GlobalLock {
     @Override
     public void release() {
         try {
-            mysqlGlobalLockDao.releaseLock(connection, lockName);
+            lockDao.releaseLock(connection, lockName);
         } catch (final SQLException e) {
             logger.warn("Unable to release lock for " + lockName, e);
         } finally {
