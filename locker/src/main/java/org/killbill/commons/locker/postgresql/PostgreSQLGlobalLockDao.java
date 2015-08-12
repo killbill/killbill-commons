@@ -1,7 +1,6 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -16,28 +15,28 @@
  * under the License.
  */
 
-package org.killbill.commons.locker.mysql;
+package org.killbill.commons.locker.postgresql;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-// Note: the MySQL lock is connection specific (closing the connection releases the lock)
-public class MysqlGlobalLockDao {
+// Note: the lock is connection specific (closing the connection releases the lock)
+public class PostgreSQLGlobalLockDao {
 
-    public boolean lock(final Connection connection, final String lockName, final long timeout) throws SQLException {
-        final String sql = String.format("select GET_LOCK('%s', %d);", lockName.replace("'", "\'"), timeout);
+    public boolean lock(final Connection connection, final String lockName) throws SQLException {
+        final String sql = String.format("SELECT pg_try_advisory_lock(%s);", lockName);
         return executeLockQuery(connection, sql);
     }
 
     public boolean releaseLock(final Connection connection, final String lockName) throws SQLException {
-        final String sql = String.format("select RELEASE_LOCK('%s');", lockName.replace("'", "\'"));
+        final String sql = String.format("SELECT pg_advisory_unlock(%s);", lockName);
         return executeLockQuery(connection, sql);
     }
 
     public boolean isLockFree(final Connection connection, final String lockName) throws SQLException {
-        final String sql = String.format("select IS_FREE_LOCK('%s');", lockName.replace("'", "\'"));
+        final String sql = String.format("SELECT CASE WHEN pg_try_advisory_lock(%s) THEN pg_advisory_unlock(%s) ELSE FALSE END;", lockName, lockName);
         return executeLockQuery(connection, sql);
     }
 
@@ -46,7 +45,7 @@ public class MysqlGlobalLockDao {
         try {
             statement = connection.createStatement();
             final ResultSet rs = statement.executeQuery(query);
-            return rs.next() && (rs.getByte(1) == 1);
+            return rs.next() && (rs.getBoolean(1));
         } finally {
             if (statement != null) {
                 statement.close();

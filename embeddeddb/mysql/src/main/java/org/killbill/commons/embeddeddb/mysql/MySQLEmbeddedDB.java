@@ -62,7 +62,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     public MySQLEmbeddedDB(final String databaseName, final String username, final String password, final boolean useMariaDB) {
         super(databaseName, username, password, null);
-        setPort();
+        this.port = getPort();
         this.jdbcConnectionString = "jdbc:mysql://localhost:" + port + "/" + databaseName + "?createDatabaseIfNotExist=true&allowMultiQueries=true";
         this.useMariaDB = useMariaDB;
     }
@@ -106,7 +106,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
                     }
                 }
             });
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new IOException(e);
         }
     }
@@ -194,13 +194,13 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (mysqldResource != null) {
             try {
                 mysqldResource.shutdown();
-            } catch (NullPointerException npe) {
+            } catch (final NullPointerException npe) {
                 logger.warn("Failed to shutdown mysql properly ", npe);
             }
             try {
                 deleteRecursive(dataDir);
                 deleteRecursive(dbDir);
-            } catch (FileNotFoundException e) {
+            } catch (final FileNotFoundException e) {
                 throw new IOException(e);
             }
 
@@ -223,23 +223,5 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             }
         }
         return ret && path.delete();
-    }
-
-    private void setPort() {
-        // New socket on any free port
-        ServerSocket socket = null;
-        try {
-            socket = new ServerSocket(0);
-            port = socket.getLocalPort();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
     }
 }

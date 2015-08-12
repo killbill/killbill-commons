@@ -1,7 +1,6 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2015 Groupon, Inc
+ * Copyright 2015 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -16,8 +15,11 @@
  * under the License.
  */
 
-package org.killbill.commons.locker.mysql;
+package org.killbill.commons.locker.postgresql;
 
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
@@ -30,21 +32,21 @@ import org.killbill.commons.locker.LockFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MySqlGlobalLocker implements GlobalLocker {
+public class PostgreSQLGlobalLocker implements GlobalLocker {
 
-    private static final Logger logger = LoggerFactory.getLogger(MySqlGlobalLocker.class);
-    private static final long DEFAULT_TIMEOUT_SECONDS = 10L;
+    private static final Logger logger = LoggerFactory.getLogger(PostgreSQLGlobalLocker.class);
+    private static final long DEFAULT_TIMEOUT_SECONDS = 1L;
 
-    private final MysqlGlobalLockDao mysqlGlobalLockDao = new MysqlGlobalLockDao();
+    private final PostgreSQLGlobalLockDao lockDao = new PostgreSQLGlobalLockDao();
 
     private final DataSource dataSource;
     private final long timeout;
 
-    public MySqlGlobalLocker(final DataSource dataSource) {
+    public PostgreSQLGlobalLocker(final DataSource dataSource) {
         this(dataSource, DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
-    public MySqlGlobalLocker(final DataSource dataSource, final long timeout, final TimeUnit timeUnit) {
+    public PostgreSQLGlobalLocker(final DataSource dataSource, final long timeout, final TimeUnit timeUnit) {
         this.dataSource = dataSource;
         this.timeout = TimeUnit.SECONDS.convert(timeout, timeUnit);
     }
@@ -58,6 +60,12 @@ public class MySqlGlobalLocker implements GlobalLocker {
             final GlobalLock lock = lock(lockName);
             if (lock != null) {
                 return lock;
+            } else if (tries_left > 0) {
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(timeout));
+                } catch (final InterruptedException e) {
+
+                }
             }
         }
 
@@ -72,7 +80,7 @@ public class MySqlGlobalLocker implements GlobalLocker {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            return mysqlGlobalLockDao.isLockFree(connection, lockName);
+            return lockDao.isLockFree(connection, lockName);
         } catch (final SQLException e) {
             logger.warn("Unable to check if lock is free", e);
             return false;
@@ -92,9 +100,9 @@ public class MySqlGlobalLocker implements GlobalLocker {
         boolean obtained = false;
         try {
             connection = dataSource.getConnection();
-            obtained = mysqlGlobalLockDao.lock(connection, lockName, timeout);
+            obtained = lockDao.lock(connection, lockName);
             if (obtained) {
-                return new MysqlGlobalLock(connection, lockName);
+                return new PostgreSQLGlobalLock(connection, lockName);
             }
         } catch (final SQLException e) {
             logger.warn("Unable to obtain lock for " + lockName, e);
@@ -109,10 +117,18 @@ public class MySqlGlobalLocker implements GlobalLocker {
                 }
             }
         }
-        throw new LockFailedException();
+        return null;
     }
 
     private String getLockName(final String service, final String lockKey) {
-        return service + "-" + lockKey;
+        final String lockName = service + "-" + lockKey;
+        try {
+            final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            final byte[] bytes = messageDigest.digest(lockName.getBytes());
+            return String.valueOf(ByteBuffer.wrap(bytes).getLong());
+        } catch (final NoSuchAlgorithmException e) {
+            logger.warn("Unable to allocate MessageDigest", e);
+            return String.valueOf(lockName.hashCode());
+        }
     }
 }
