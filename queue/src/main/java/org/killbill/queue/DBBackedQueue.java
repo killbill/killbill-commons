@@ -109,8 +109,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final Counter totalProcessedSuccess;
     private final Counter totalProcessedAborted;
 
-    private boolean isQueueOpenForWrite;
-    private boolean isQueueOpenForRead;
+    private volatile boolean isQueueOpenForWrite;
+    private volatile boolean isQueueOpenForRead;
+
     private long lastPollingOrphanTime;
     private long lowestOrphanEntry;
 
@@ -256,16 +257,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         totalInsert.inc();
     }
 
+    // In polling mode, we want to avoid concurrent threads making the same query to the database
+    // and returning the same entries (which only one of them would be able to claim). Note that when `isSticky` is false, this still leaves
+    // the possibility for concurrent threads running in another JVM to run that query at the same time, wasting cycles.
     //
-    // The `synchronized` statement here serves two different purposes:
-    // 1. When the `isUsingInflightQueue` is false (polling mode), we want to avoid concurrent threads making the same query to the database
-    //    and returning the same entries (which only one of them would be able to claim). Note that when `isSticky` is false, this still leaves
-    //    the possibility for concurrent threads running in another JVM to run that query at the same time, wasting cycles.
-    // 2. In the optimized `isSticky` and `isUsingInflightQueue` scenario, the call `batchClaimEntries` requires some synchronization
-    //    (to make ensure concurrent threads would not succeed to claim the same entries); so by grabbing the lock at this level this also
-    //    serves that purpose.
-    //
-
     public List<T> getReadyEntries() {
         if (useInflightQueue) {
             return getReadyEntriesUsingInflightQueue();
@@ -275,14 +270,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     private synchronized List<T> getReadyEntriesUsingPollingMode() {
-        List<T> candidates = ImmutableList.<T>of();
 
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
         totalFetched.inc(entriesToClaim.size());
         if (entriesToClaim.size() > 0) {
-            candidates = claimEntries(entriesToClaim);
+            return claimEntries(entriesToClaim);
         }
-        return candidates;
+        return ImmutableList.<T>of();
     }
 
     private List<T> getReadyEntriesUsingInflightQueue() {
@@ -297,7 +291,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             if (candidates.size() > 0) {
                 totalInflightFetched.inc(candidates.size());
                 totalFetched.inc(candidates.size());
-
+                // There is no need to claim entries in the mode as the thread holding the records is the only one which had access to the ids
                 return candidates;
             }
 
