@@ -220,7 +220,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         totalProcessedFirstFailures.dec(totalProcessedFirstFailures.getCount());
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
-        log.info(DB_QUEUE_LOG_ID + "Initialized with useInflightQueue = " + useInflightQueue +
+        log.info(DB_QUEUE_LOG_ID + " ( *** EXP ***)Initialized with useInflightQueue = " + useInflightQueue +
                 ", queueId = " + queueId +
                 ", isSticky = " + config.isSticky() +
                 ", isQueueOpenForWrite = " + isQueueOpenForWrite +
@@ -265,19 +265,29 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     //    (to make ensure concurrent threads would not succeed to claim the same entries); so by grabbing the lock at this level this also
     //    serves that purpose.
     //
-    public synchronized List<T> getReadyEntries() {
 
+    public List<T> getReadyEntries() {
+        if (useInflightQueue) {
+            return getReadyEntriesUsingInflightQueue();
+        } else {
+            return getReadyEntriesUsingPollingMode();
+        }
+    }
+
+    private synchronized List<T> getReadyEntriesUsingPollingMode() {
         List<T> candidates = ImmutableList.<T>of();
 
-        if (!useInflightQueue) {
-            final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
-            totalFetched.inc(entriesToClaim.size());
-            if (entriesToClaim.size() > 0) {
-                candidates = claimEntries(entriesToClaim);
-            }
-            return candidates;
+        final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
+        totalFetched.inc(entriesToClaim.size());
+        if (entriesToClaim.size() > 0) {
+            candidates = claimEntries(entriesToClaim);
         }
+        return candidates;
+    }
 
+    private List<T> getReadyEntriesUsingInflightQueue() {
+
+        List<T> candidates;
         if (isQueueOpenForRead) {
 
             checkForOrphanEntries();
@@ -288,7 +298,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 totalInflightFetched.inc(candidates.size());
                 totalFetched.inc(candidates.size());
 
-                return claimEntries(candidates);
+                return candidates;
             }
 
             // There are no more entries in the Q but the Q is not open for write so either there is nothing to be read, or
@@ -528,17 +538,21 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     private List<T> claimEntries(final List<T> candidates) {
+        return sequentialClaimEntries(candidates);
+/*
         if (config.isSticky()) {
             return batchClaimEntries(candidates);
         } else {
             return sequentialClaimEntries(candidates);
         }
+*/
     }
 
     //
     // In sticky mode, we can batch claim update; however we want to avoid two concurrent threads to run the same query
     // at the same time because they would both succeed to claim the entries -- see synchronized statement in getReadyEntries
     private List<T> batchClaimEntries(List<T> candidates) {
+
         if (candidates.size() == 0) {
             return ImmutableList.of();
         }
@@ -558,6 +572,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         } else if (resultCount == 0) {
             return ImmutableList.of();
         } else {
+
             final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
             final Iterable claimed = Iterables.filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
@@ -565,7 +580,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(CreatorName.get());
                 }
             });
+
             final List<T> result = ImmutableList.copyOf(claimed);
+
+            log.info(DB_QUEUE_LOG_ID + "batchClaimEntries only claimed partial entries " + candidates.size() + "/" + result.size());
+
             totalClaimed.inc(result.size());
             return result;
         }

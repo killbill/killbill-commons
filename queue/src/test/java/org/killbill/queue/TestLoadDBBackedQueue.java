@@ -114,7 +114,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
     public void testInflightQLoad() throws InterruptedException {
 
         final int nbEntries = 10000;
-        final PersistentBusConfig config = createConfig(1, nbEntries, true, true);
+        final PersistentBusConfig config = createConfig(10, nbEntries, true, true);
         queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
         for (int i = 0; i < nbEntries; i++) {
