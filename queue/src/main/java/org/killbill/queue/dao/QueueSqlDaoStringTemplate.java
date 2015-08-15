@@ -45,11 +45,11 @@ import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface QueueSqlDaoStringTemplate {
-    static final String DEFAULT_VALUE = " ~ ";
+    String DEFAULT_VALUE = " ~ ";
 
     String value() default DEFAULT_VALUE;
 
-    public static class QueueSqlDaoStringTemplateFactory extends UseStringTemplate3StatementLocator.LocatorFactory {
+    class QueueSqlDaoStringTemplateFactory extends UseStringTemplate3StatementLocator.LocatorFactory {
 
         final static boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
 

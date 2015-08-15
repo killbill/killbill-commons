@@ -36,67 +36,67 @@ import java.util.List;
 public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
 
     @SqlQuery
-    public Long getMaxRecordId(@Define("tableName") final String tableName);
+    Long getMaxRecordId(@Define("tableName") final String tableName);
 
     @SqlQuery
-    public Long resetLastInsertId();
+    Long resetLastInsertId();
 
     @SqlQuery
-    public Long getLastInsertId();
+    Long getLastInsertId();
 
     @SqlQuery
-    public T getByRecordId(@Bind("recordId") Long id,
-                           @Define("tableName") final String tableName);
+    T getByRecordId(@Bind("recordId") Long id,
+                    @Define("tableName") final String tableName);
 
     @SqlQuery
-    public List<T> getEntriesFromIds(@RecordIdCollectionBinder final List<Long> recordIds,
-                                     @Define("tableName") final String tableName);
-
-    @SqlQuery
-    public List<T> getReadyEntries(@Bind("now") Date now,
-                                   @Bind("max") int max,
-                                   // This is somewhat a hack, should really be a @Bind parameter but we also use it
-                                   // for StringTemplate to modify the query based whether value is null or not.
-                                   @Nullable @Define("owner") String owner,
-                                   @Define("tableName") final String tableName);
-
-    @SqlQuery
-    public List<T> getInProcessingEntries(@Define("tableName") final String tableName);
-
-    @SqlUpdate
-    public int claimEntry(@Bind("recordId") Long id,
-                          @Bind("now") Date now,
-                          @Bind("owner") String owner,
-                          @Bind("nextAvailable") Date nextAvailable,
-                          @Define("tableName") final String tableName);
-
-    @SqlUpdate
-    public int claimEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
-                            @Bind("now") Date now,
-                            @Bind("owner") String owner,
-                            @Bind("nextAvailable") Date nextAvailable,
-                            @Define("tableName") final String tableName);
-
-    @SqlUpdate
-    public int updateOnError(@Bind("recordId") Long id,
-                             @Bind("now") Date now,
-                             @Bind("errorCount") Long errorCount,
-                             @Define("tableName") final String tableName);
-
-    @SqlUpdate
-    public void removeEntry(@Bind("recordId") Long id,
-                            @Define("tableName") final String tableName);
-
-    @SqlUpdate
-    public void removeEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+    List<T> getEntriesFromIds(@RecordIdCollectionBinder final List<Long> recordIds,
                               @Define("tableName") final String tableName);
 
-    @SqlUpdate
-    public void insertEntry(@BindBean T evt,
+    @SqlQuery
+    List<T> getReadyEntries(@Bind("now") Date now,
+                            @Bind("max") int max,
+                            // This is somewhat a hack, should really be a @Bind parameter but we also use it
+                            // for StringTemplate to modify the query based whether value is null or not.
+                            @Nullable @Define("owner") String owner,
                             @Define("tableName") final String tableName);
+
+    @SqlQuery
+    List<T> getInProcessingEntries(@Define("tableName") final String tableName);
+
+    @SqlUpdate
+    int claimEntry(@Bind("recordId") Long id,
+                   @Bind("now") Date now,
+                   @Bind("owner") String owner,
+                   @Bind("nextAvailable") Date nextAvailable,
+                   @Define("tableName") final String tableName);
+
+    @SqlUpdate
+    int claimEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+                     @Bind("now") Date now,
+                     @Bind("owner") String owner,
+                     @Bind("nextAvailable") Date nextAvailable,
+                     @Define("tableName") final String tableName);
+
+    @SqlUpdate
+    int updateOnError(@Bind("recordId") Long id,
+                      @Bind("now") Date now,
+                      @Bind("errorCount") Long errorCount,
+                      @Define("tableName") final String tableName);
+
+    @SqlUpdate
+    void removeEntry(@Bind("recordId") Long id,
+                     @Define("tableName") final String tableName);
+
+    @SqlUpdate
+    void removeEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+                       @Define("tableName") final String tableName);
+
+    @SqlUpdate
+    void insertEntry(@BindBean T evt,
+                     @Define("tableName") final String tableName);
 
 
     @SqlBatch
-    public void insertEntries(@BindBean Iterable<T> evts,
-                              @Define("tableName") final String tableName);
+    void insertEntries(@BindBean Iterable<T> evts,
+                       @Define("tableName") final String tableName);
 }

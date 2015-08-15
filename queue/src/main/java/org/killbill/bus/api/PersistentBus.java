@@ -25,13 +25,13 @@ import org.killbill.queue.api.QueueLifecycle;
 
 public interface PersistentBus extends QueueLifecycle {
 
-    public static final String EVENT_BUS_GROUP_NAME = "bus-grp";
+    String EVENT_BUS_GROUP_NAME = "bus-grp";
 
-    public static final String EVENT_BUS_SERVICE = "bus-service";
-    public static final String EVENT_BUS_IDENTIFIER = EVENT_BUS_SERVICE;
+    String EVENT_BUS_SERVICE = "bus-service";
+    String EVENT_BUS_IDENTIFIER = EVENT_BUS_SERVICE;
 
 
-    public class EventBusException extends Exception {
+    class EventBusException extends Exception {
 
         private static final long serialVersionUID = 12355236L;
 
@@ -51,12 +51,12 @@ public interface PersistentBus extends QueueLifecycle {
     /**
      * Start accepting events and dispatching them
      */
-    public void start();
+    void start();
 
     /**
      * Stop accepting events and flush event queue before it returns.
      */
-    public void stop();
+    void stop();
 
     /**
      * Registers all handler methods on {@code object} to receive events.
@@ -65,7 +65,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param handlerInstance handler to register
      * @throws EventBusException if bus not been started yet
      */
-    public void register(Object handlerInstance) throws EventBusException;
+    void register(Object handlerInstance) throws EventBusException;
 
     /**
      * Unregister the handler for a particular type of event
@@ -73,7 +73,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param handlerInstance handler to unregister
      * @throws EventBusException
      */
-    public void unregister(Object handlerInstance) throws EventBusException;
+    void unregister(Object handlerInstance) throws EventBusException;
 
     /**
      * Post an event asynchronously
@@ -81,7 +81,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param event to be posted
      * @throws EventBusException if bus not been started yet
      */
-    public void post(BusEvent event) throws EventBusException;
+    void post(BusEvent event) throws EventBusException;
 
     /**
      * Post an event from within a transaction.
@@ -91,7 +91,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection current connection
      * @throws EventBusException if bus not been started yet
      */
-    public void postFromTransaction(BusEvent event, Connection connection) throws EventBusException;
+    void postFromTransaction(BusEvent event, Connection connection) throws EventBusException;
 
     /**
      * Retrieve all available bus events matching that search key
@@ -100,7 +100,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
 
     /**
      * Retrieve all available bus events matching that search key
@@ -110,7 +110,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
 
     /**
      * Retrieve all available bus events matching that search key
@@ -118,7 +118,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(Long searchKey2);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(Long searchKey2);
 
     /**
      * Retrieve all available bus events matching that search key
@@ -127,12 +127,12 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
 
     /**
      * @return the bus events that have been claimed and are being processed
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getInProcessingBusEvents();
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getInProcessingBusEvents();
 
     /**
      * Retrieve all available or in processing bus events matching that search key
@@ -141,7 +141,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
 
     /**
      * Retrieve all available or in processing bus events matching that search key
@@ -151,7 +151,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
 
     /**
      * Retrieve all available or in processing bus events matching that search key
@@ -159,7 +159,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(Long searchKey2);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(Long searchKey2);
 
     /**
      * Retrieve all available or in processing bus events matching that search key
@@ -168,5 +168,5 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
+    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
 }

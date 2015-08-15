@@ -18,19 +18,10 @@
 
 package org.killbill.notificationq;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
@@ -47,11 +38,18 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
@@ -69,10 +67,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     private final LinkedBlockingQueue<NotificationEventModelDao> pendingNotificationsQ;
 
-    //
-    // Metrics
-    //
-    private final Gauge pendingNotifications;
     private final Counter processedNotificationsSinceStart;
     private final Map<String, Histogram> perQueueProcessingTime;
 
@@ -108,13 +102,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.pendingNotificationsQ = new LinkedBlockingQueue<NotificationEventModelDao>(config.getQueueCapacity());
 
         this.metricRegistry = metricRegistry;
-        this.pendingNotifications = metricRegistry.register(MetricRegistry.name(NotificationQueueDispatcher.class, "pending-notifications"),
-                                                            new Gauge<Integer>() {
-                                                                @Override
-                                                                public Integer getValue() {
-                                                                    return pendingNotificationsQ.size();
-                                                                }
-                                                            });
 
         this.runners = new NotificationRunner[config.getNbThreads()];
         for (int i = 0; i < config.getNbThreads(); i++) {

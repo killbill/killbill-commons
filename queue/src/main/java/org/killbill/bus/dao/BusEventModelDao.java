@@ -30,7 +30,7 @@ public class BusEventModelDao implements EventEntryModelDao {
     private String className;
     private String eventJson;
     private UUID userToken;
-    private DateTime createdDate; //XX
+    private DateTime createdDate;
     private String creatingOwner;
     private String processingOwner;
     private DateTime processingAvailableDate;
@@ -73,10 +73,6 @@ public class BusEventModelDao implements EventEntryModelDao {
 
     public DateTime getCreatedDate() {
         return createdDate;
-    }
-
-    public DateTime getProcessingAvailableDate() {
-        return processingAvailableDate;
     }
 
     @Override

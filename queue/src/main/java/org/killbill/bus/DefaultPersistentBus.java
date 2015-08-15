@@ -58,7 +58,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.eventbus.EventBusThatThrowsException;
 
-public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
+public class  DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
     private final EventBusDelegate eventBusDelegate;
@@ -158,8 +158,9 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 }
             }
         }
-        dao.moveEntriesToHistory(historyEvents);
-
+        if (historyEvents.size() > 0) {
+            dao.moveEntriesToHistory(historyEvents);
+        }
         return result;
     }
 

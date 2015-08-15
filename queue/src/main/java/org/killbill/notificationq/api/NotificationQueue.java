@@ -48,11 +48,11 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2             a key that can be used for search
      * @throws IOException if the serialization of the event fails
      */
-    public void recordFutureNotification(final DateTime futureNotificationTime,
-                                         final NotificationEvent eventJson,
-                                         final UUID userToken,
-                                         final Long searchKey1,
-                                         final Long searchKey2)
+    void recordFutureNotification(final DateTime futureNotificationTime,
+                                  final NotificationEvent eventJson,
+                                  final UUID userToken,
+                                  final Long searchKey1,
+                                  final Long searchKey2)
             throws IOException;
 
     /**
@@ -64,12 +64,12 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2             a key that can be used for search
      * @throws IOException if the serialization of the event fails
      */
-    public void recordFutureNotificationFromTransaction(final Connection connection,
-                                                        final DateTime futureNotificationTime,
-                                                        final NotificationEvent eventJson,
-                                                        final UUID userToken,
-                                                        final Long searchKey1,
-                                                        final Long searchKey2)
+    void recordFutureNotificationFromTransaction(final Connection connection,
+                                                 final DateTime futureNotificationTime,
+                                                 final NotificationEvent eventJson,
+                                                 final UUID userToken,
+                                                 final Long searchKey1,
+                                                 final Long searchKey2)
             throws IOException;
 
     /**
@@ -79,7 +79,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
@@ -89,7 +89,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
@@ -97,7 +97,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Long searchKey2);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Long searchKey2);
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
@@ -106,12 +106,12 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
 
     /**
      * @return the notifications that have been claimed and are being processed
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getInProcessingNotifications();
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getInProcessingNotifications();
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
@@ -120,7 +120,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
@@ -130,7 +130,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
@@ -138,7 +138,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final Long searchKey2);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final Long searchKey2);
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
@@ -147,35 +147,35 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
 
     /**
      * Move the notification to history table and mark it as 'removed'
      *
      * @param recordId the recordId
      */
-    public void removeNotification(final Long recordId);
+    void removeNotification(final Long recordId);
 
-    public void removeNotificationFromTransaction(final Connection connection,
-                                                  final Long recordId);
+    void removeNotificationFromTransaction(final Connection connection,
+                                           final Long recordId);
 
     /**
      * @return the name of that queue
      */
-    public String getFullQName();
+    String getFullQName();
 
     /**
      * @return the service name associated to that queue
      */
-    public String getServiceName();
+    String getServiceName();
 
     /**
      * @return the queue name associated
      */
-    public String getQueueName();
+    String getQueueName();
 
     /**
      * @return the handler associated with that notification queue
      */
-    public NotificationQueueHandler getHandler();
+    NotificationQueueHandler getHandler();
 }

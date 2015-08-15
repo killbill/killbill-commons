@@ -19,12 +19,12 @@ public interface QueueLifecycle {
     /**
      * Starts the queue
      */
-    public boolean startQueue();
+    boolean startQueue();
 
     /**
      * Stop the queue
      */
-    public void stopQueue();
+    void stopQueue();
 
-    public boolean isStarted();
+    boolean isStarted();
 }

@@ -20,29 +20,29 @@ import org.skife.config.TimeSpan;
 
 public interface PersistentQueueConfig {
 
-    public boolean isInMemory();
+    boolean isInMemory();
 
-    public boolean isSticky();
+    boolean isSticky();
 
-    public int getMaxFailureRetries();
+    int getMaxFailureRetries();
 
-    public boolean isUsingInflightQueue();
+    boolean isUsingInflightQueue();
 
-    public int getMaxEntriesClaimed();
+    int getMaxEntriesClaimed();
 
-    public int getMaxInflightQEntriesClaimed();
+    int getMaxInflightQEntriesClaimed();
 
-    public TimeSpan getClaimedTime();
+    TimeSpan getClaimedTime();
 
-    public long getSleepTimeMs();
+    long getSleepTimeMs();
 
-    public boolean isProcessingOff();
+    boolean isProcessingOff();
 
-    public int getQueueCapacity();
+    int getQueueCapacity();
 
-    public String getTableName();
+    String getTableName();
 
-    public String getHistoryTableName();
+    String getHistoryTableName();
 
-    public abstract int getNbThreads();
+    int getNbThreads();
 }

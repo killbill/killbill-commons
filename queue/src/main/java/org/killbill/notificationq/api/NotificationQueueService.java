@@ -29,7 +29,7 @@ import org.killbill.queue.api.QueueLifecycle;
  */
 public interface NotificationQueueService extends QueueLifecycle {
 
-    public interface NotificationQueueHandler {
+    interface NotificationQueueHandler {
 
         /**
          * Called for each notification ready
@@ -39,10 +39,10 @@ public interface NotificationQueueService extends QueueLifecycle {
          * @param searchKey1 the searchKey1 associated with that notification entry
          * @param searchKey2 the searchKey2 associated with that notification entry
          */
-        public void handleReadyNotification(NotificationEvent eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
+        void handleReadyNotification(NotificationEvent eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2);
     }
 
-    public static final class NotificationQueueAlreadyExists extends Exception {
+    final class NotificationQueueAlreadyExists extends Exception {
 
         private static final long serialVersionUID = 1541281L;
 
@@ -51,9 +51,9 @@ public interface NotificationQueueService extends QueueLifecycle {
         }
     }
 
-    public static final class NoSuchNotificationQueue extends Exception {
+    final class NoSuchNotificationQueue extends Exception {
 
-        private static final long serialVersionUID = 1541281L;
+        private static final long serialVersionUID = 1561283L;
 
         public NoSuchNotificationQueue(final String msg) {
             super(msg);
@@ -69,7 +69,7 @@ public interface NotificationQueueService extends QueueLifecycle {
      * @return a new NotificationQueue
      * @throws NotificationQueueAlreadyExists is the queue associated with that service and name already exits
      */
-    public NotificationQueue createNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler)
+    NotificationQueue createNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler)
             throws NotificationQueueAlreadyExists;
 
     /**
@@ -80,7 +80,7 @@ public interface NotificationQueueService extends QueueLifecycle {
      * @return a new NotificationQueue
      * @throws NoSuchNotificationQueue if queue does not exist
      */
-    public NotificationQueue getNotificationQueue(final String svcName, final String queueName)
+    NotificationQueue getNotificationQueue(final String svcName, final String queueName)
             throws NoSuchNotificationQueue;
 
     /**
@@ -91,7 +91,7 @@ public interface NotificationQueueService extends QueueLifecycle {
      * @return a new NotificationQueue
      * @throws NoSuchNotificationQueue if queue does not exist
      */
-    public void deleteNotificationQueue(final String svcName, final String queueName)
+    void deleteNotificationQueue(final String svcName, final String queueName)
             throws NoSuchNotificationQueue;
 
     /**
@@ -99,5 +99,5 @@ public interface NotificationQueueService extends QueueLifecycle {
      *
      * @return
      */
-    public List<NotificationQueue> getNotificationQueues();
+    List<NotificationQueue> getNotificationQueues();
 }
