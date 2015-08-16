@@ -115,7 +115,10 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingState;
     }
 
-
+    // Required for serialization
+    public DateTime getProcessingAvailableDate() {
+        return processingAvailableDate;
+    }
 
     @Override
     public boolean isAvailableForProcessing(final DateTime now) {

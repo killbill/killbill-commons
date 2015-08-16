@@ -37,6 +37,7 @@ import org.killbill.notificationq.api.NotificationQueueService.NotificationQueue
 import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,7 +153,7 @@ public class MockNotificationQueue implements NotificationQueue {
                 if (notification.getSearchKey1().equals(searchKey1) &&
                     type.getName().equals(notification.getClassName()) &&
                     notification.getEffectiveDate().isAfter(clock.getUTCNow())) {
-                    final T event = (T) DefaultQueueLifecycle.deserializeEvent(notification.getClassName(), objectMapper, notification.getEventJson());
+                    final T event = (T) CallableCallbackBase.deserializeEvent(notification, objectMapper);
                     final NotificationEventWithMetadata<T> foo = new NotificationEventWithMetadata<T>(notification.getRecordId(), notification.getUserToken(), notification.getCreatedDate(), notification.getSearchKey1(), notification.getSearchKey2(), event,
                                                                                                       notification.getFutureUserToken(), notification.getEffectiveDate(), notification.getQueueName());
                     result.add(foo);

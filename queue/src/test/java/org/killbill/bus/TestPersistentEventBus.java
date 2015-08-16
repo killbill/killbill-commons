@@ -35,14 +35,15 @@ public class TestPersistentEventBus extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry, databaseTransactionNotificationApi);
-        testEventBusBase = new TestEventBusBase(busService);
     }
 
     @Override
     @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
+        // Reinitialize to restart the pool
+        busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry, databaseTransactionNotificationApi);
+        testEventBusBase = new TestEventBusBase(busService);
         busService.start();
     }
 

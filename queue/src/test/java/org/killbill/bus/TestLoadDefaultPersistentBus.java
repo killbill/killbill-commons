@@ -50,7 +50,7 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
 
     PersistentBus eventBus;
 
-    @BeforeClass(groups = "slow")
+    @BeforeClass(groups = "load")
     public void beforeClass() throws Exception {
         super.beforeClass();
 
@@ -68,7 +68,7 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
         eventBus = new DefaultPersistentBus(dbi, clock, busConfig, metricRegistry, databaseTransactionNotificationApi);
     }
 
-    @BeforeMethod(groups = "slow")
+    @BeforeMethod(groups = "load")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         eventBus.start();

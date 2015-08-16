@@ -45,6 +45,7 @@ import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
+import org.killbill.queue.dispatching.CallableCallbackBase;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
@@ -191,7 +192,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> toNotificationEventWithMetadataList(final List<NotificationEventModelDao> entries) {
         final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
         for (final NotificationEventModelDao cur : entries) {
-            final T event = (T) DefaultQueueLifecycle.deserializeEvent(cur.getClassName(), objectMapper, cur.getEventJson());
+            final T event = (T) CallableCallbackBase.deserializeEvent(cur, objectMapper);
             final NotificationEventWithMetadata<T> eventWithMetadata = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
                                                                                                             cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
             result.add(eventWithMetadata);
