@@ -257,10 +257,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         totalInsert.inc();
     }
 
-    // In polling mode, we want to avoid concurrent threads making the same query to the database
-    // and returning the same entries (which only one of them would be able to claim). Note that when `isSticky` is false, this still leaves
-    // the possibility for concurrent threads running in another JVM to run that query at the same time, wasting cycles.
-    //
     public List<T> getReadyEntries() {
         if (useInflightQueue) {
             return getReadyEntriesUsingInflightQueue();
@@ -269,7 +265,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         }
     }
 
-    private synchronized List<T> getReadyEntriesUsingPollingMode() {
+    private List<T> getReadyEntriesUsingPollingMode() {
 
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
         totalFetched.inc(entriesToClaim.size());
