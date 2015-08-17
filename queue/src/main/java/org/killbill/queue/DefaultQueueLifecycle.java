@@ -35,7 +35,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private final static long ONE_MILLION = 1000L * 1000L;
 
-    private final ExecutorService executor;
     private final String svcQName;
 
     protected final ObjectMapper objectMapper;
@@ -44,13 +43,14 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private volatile boolean isProcessingEvents;
 
+    private ExecutorService executor;
+
 
     public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config) {
         this(svcQName, config, QueueObjectMapper.get());
     }
 
     private DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final ObjectMapper objectMapper) {
-        this.executor = Executors.newFixedThreadPool(1, config.getTableName() + "-lifecycle-th");
         this.svcQName = svcQName;
         this.config = config;
         this.isProcessingEvents = false;
@@ -59,6 +59,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     @Override
     public boolean startQueue() {
+        this.executor = Executors.newFixedThreadPool(1, config.getTableName() + "-lifecycle-th");
         if (config.isProcessingOff() || !isStarted.compareAndSet(false, true)) {
             return false;
         }

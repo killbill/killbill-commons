@@ -73,7 +73,6 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private AtomicBoolean isStarted;
 
     private static final class EventBusDelegate extends EventBusThatThrowsException {
-
         public EventBusDelegate(final String busName) {
             super(busName);
         }
@@ -120,6 +119,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         if (isStarted.compareAndSet(false, true)) {
             dao.initialize();
             startQueue();
+            dispatcher.start();
         }
     }
 
@@ -127,6 +127,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public void stop() {
         if (isStarted.compareAndSet(true, false)) {
             stopQueue();
+            dispatcher.stop();
         }
     }
 

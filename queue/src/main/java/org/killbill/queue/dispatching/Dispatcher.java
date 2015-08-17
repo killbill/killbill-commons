@@ -20,6 +20,8 @@ package org.killbill.queue.dispatching;
 import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.BlockingQueue;
@@ -32,17 +34,51 @@ import java.util.concurrent.TimeUnit;
 public class Dispatcher<M extends EventEntryModelDao> {
 
 
-    private final ExecutorService executor;
+    private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
 
-    public Dispatcher(int corePoolSize,
-                      int maximumPoolSize,
-                      long keepAliveTime,
-                      TimeUnit unit,
-                      BlockingQueue<Runnable> workQueue,
+    private final int corePoolSize;
+    private final int maximumPoolSize;
+    private final long keepAliveTime;
+    private final TimeUnit keepAliveTimeUnit;
+    private final BlockingQueue<Runnable> workQueue;
+    private final ThreadFactory threadFactory;
+    private final RejectedExecutionHandler rejectionHandler;
+
+
+    private ExecutorService executor;
+
+    // STEPH http://stackoverflow.com/questions/19528304/how-to-get-the-threadpoolexecutor-to-increase-threads-to-max-before-queueing/19538899#19538899
+    public Dispatcher(final int corePoolSize,
+                      final int maximumPoolSize,
+                      final long keepAliveTime,
+                      final TimeUnit keepAliveTimeUnit,
+                      final BlockingQueue<Runnable> workQueue,
                       final ThreadFactory threadFactory,
-                      RejectedExecutionHandler rejectionHandler) {
-        this.executor = Executors.newCachedThreadPool(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, rejectionHandler);
+                      final RejectedExecutionHandler rejectionHandler) {
+        this.corePoolSize = corePoolSize;
+        this.maximumPoolSize = maximumPoolSize;
+        this.keepAliveTime = keepAliveTime;
+        this.keepAliveTimeUnit = keepAliveTimeUnit;
+        this.workQueue = workQueue;
+        this.threadFactory = threadFactory;
+        this.rejectionHandler = rejectionHandler;
     }
+
+
+    public void start() {
+        this.executor = Executors.newCachedThreadPool(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
+    }
+
+    public void stop() {
+        executor.shutdown();
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.info(String.format("Stop sequence has been interrupted"));
+        }
+    }
+
+
 
     public <E extends QueueEvent> void dispatch(final M modelDao, final CallableCallback<E, M> callback) {
         final CallableQueue<E, M> entry = new CallableQueue<E, M>(modelDao, callback);

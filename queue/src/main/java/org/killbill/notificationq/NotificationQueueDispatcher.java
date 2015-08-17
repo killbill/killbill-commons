@@ -116,6 +116,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     @Override
     public boolean startQueue() {
         if (super.startQueue()) {
+            dispatcher.start();
             return true;
         }
         return false;
@@ -126,6 +127,9 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         if (config.isProcessingOff() || !isStarted()) {
             return;
         }
+
+
+        dispatcher.stop();
 
         // If there are no active queues left, stop the processing for the queues
         // (This is not intended to be robust against a system that would stop and start queues at the same time,
