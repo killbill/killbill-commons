@@ -60,6 +60,14 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                             @Nullable @Define("owner") String owner,
                             @Define("tableName") final String tableName);
 
+
+    @SqlQuery
+    long getNbReadyEntries(@Bind("now") Date now,
+                            // This is somewhat a hack, should really be a @Bind parameter but we also use it
+                            // for StringTemplate to modify the query based whether value is null or not.
+                            @Nullable @Define("owner") String owner,
+                            @Define("tableName") final String tableName);
+
     @SqlQuery
     List<T> getInProcessingEntries(@Define("tableName") final String tableName);
 

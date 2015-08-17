@@ -149,6 +149,15 @@ getReadyEntries(owner, tableName) ::= <<
     ;
 >>
 
+getNbReadyEntries(owner, tableName) ::= <<
+    select
+      count(*)
+    from <tableName>
+    where
+      <readyWhereClause(owner)>
+    ;
+>>
+
 getInProcessingEntries(tableName) ::= <<
     select
       <allTableFields()>

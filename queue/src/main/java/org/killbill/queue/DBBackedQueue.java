@@ -302,15 +302,16 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
         if (!isQueueOpenForRead) {
             candidates = fetchReadyEntries(config.getMaxEntriesClaimed());
+            //
             // There is a small number so we re-enable adding entries in the Q
-            if (candidates.size() < config.getMaxEntriesClaimed() &&
-                    candidates.size() < thresholdToReopenQForWrite &&
-                    !isQueueOpenForWrite) {
+            // We optimize by first checking if the number of entries is smaller than config.getMaxEntriesClaimed()
+            // and if not then we perform the query (we could even optimize more by only performing that query with less frequency)
+            //
+            if (!isQueueOpenForWrite &&
+                    (candidates.size() < config.getMaxEntriesClaimed() ||
+                            (getNbReadyEntries() < thresholdToReopenQForWrite))) {
                 isQueueOpenForWrite = true;
                 log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
-            }
-            if (candidates.size() > config.getMaxEntriesClaimed()) {
-                candidates = candidates.subList(0, config.getMaxEntriesClaimed());
             }
 
             //
@@ -514,6 +515,14 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final List<T> entries = sqlDao.getReadyEntries(now, size, owner, config.getTableName());
         return entries;
     }
+
+
+    private long getNbReadyEntries() {
+        final Date now = clock.getUTCNow().toDate();
+        final String owner = CreatorName.get();
+        return sqlDao.getNbReadyEntries(now, owner, config.getTableName());
+    }
+
 
     private List<T> claimEntries(final List<T> candidates) {
         switch (config.getPersistentQueueMode()) {

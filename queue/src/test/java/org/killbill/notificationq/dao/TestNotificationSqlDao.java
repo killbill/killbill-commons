@@ -73,6 +73,9 @@ public class TestNotificationSqlDao extends TestSetup {
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);
 
+        final long nbEntries = dao.getNbReadyEntries(now.toDate(), hostname, notificationQueueConfig.getTableName());
+        assertEquals(nbEntries, 1);
+
         NotificationEventModelDao notification = notifications.get(0);
         assertEquals(notification.getEventJson(), eventJson);
         validateDate(notification.getEffectiveDate(), effDt);
