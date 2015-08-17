@@ -103,7 +103,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         };
 
         this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
-        this.dispatcher = new Dispatcher(1, config.getNbThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(/* fixed bounds, threads,...*/), busThreadFactory, rejectedExecutionHandler);
+        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(/* fixed bounds, threads,...*/), busThreadFactory, rejectedExecutionHandler);
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);

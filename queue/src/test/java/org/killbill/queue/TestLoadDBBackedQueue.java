@@ -24,6 +24,7 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.killbill.queue.api.PersistentQueueConfig.*;
 import static org.testng.Assert.assertEquals;
 
 public class TestLoadDBBackedQueue extends TestSetup {
@@ -69,7 +71,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
         final int NB_EVENTS = 1000;
         final int CLAIMED_EVENTS = 10;
 
-        final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, false, false);
+        final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, PersistentQueueMode.POLLING);
         queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "perf-bus_event", metricRegistry, null);
         queue.initialize();
 
@@ -114,7 +116,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
     public void testInflightQLoad() throws InterruptedException {
 
         final int nbEntries = 10000;
-        final PersistentBusConfig config = createConfig(10, nbEntries, true, true);
+        final PersistentBusConfig config = createConfig(10, nbEntries, PersistentQueueMode.SITCKY_EVENTS);
         queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
         for (int i = 0; i < nbEntries; i++) {
@@ -206,17 +208,13 @@ public class TestLoadDBBackedQueue extends TestSetup {
         return createEntry(searchKey1, OWNER);
     }
 
-    private PersistentBusConfig createConfig(final int claimed, final int qCapacity, final boolean isSticky, final boolean isUsingInflightQ) {
+    private PersistentBusConfig createConfig(final int claimed, final int qCapacity, final PersistentQueueMode mode) {
         return new PersistentBusConfig() {
             @Override
             public boolean isInMemory() {
                 return false;
             }
 
-            @Override
-            public boolean isSticky() {
-                return isSticky;
-            }
 
             @Override
             public int getMaxFailureRetries() {
@@ -229,8 +227,8 @@ public class TestLoadDBBackedQueue extends TestSetup {
             }
 
             @Override
-            public int getMaxInflightQEntriesClaimed() {
-                return claimed;
+            public PersistentQueueMode getPersistentQueueMode() {
+                return mode;
             }
 
             @Override
@@ -239,7 +237,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
             }
 
             @Override
-            public long getSleepTimeMs() {
+            public long getPollingSleepTimeMs() {
                 return 100;
             }
 
@@ -249,17 +247,12 @@ public class TestLoadDBBackedQueue extends TestSetup {
             }
 
             @Override
-            public int getNbThreads() {
+            public int geMaxDispatchThreads() {
                 return 0;
             }
 
             @Override
-            public boolean isUsingInflightQueue() {
-                return isUsingInflightQ;
-            }
-
-            @Override
-            public int getQueueCapacity() {
+            public int getEventQueueCapacity() {
                 return qCapacity;
             }
 

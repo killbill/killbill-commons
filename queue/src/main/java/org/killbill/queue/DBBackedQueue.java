@@ -36,6 +36,7 @@ import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.queue.api.PersistentQueueConfig;
+import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dao.QueueSqlDao;
@@ -79,8 +80,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     //
     private final static int RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE = 10;
 
-    //
-    private final static long INFLIGHT_POLLING_TIMEOUT_MSEC = 50;
+    private static final int MAX_FETCHED_ENTRIES = 100;
+
+    private final static long INFLIGHT_POLLING_TIMEOUT_MSEC = 100;
 
 
     //
@@ -130,10 +132,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                          final MetricRegistry metricRegistry,
                          @Nullable final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         this.queueId = QUEUE_ID_CNT.incrementAndGet();
-        this.useInflightQueue = config.isUsingInflightQueue();
+        this.useInflightQueue = config.getPersistentQueueMode() == PersistentQueueMode.SITCKY_EVENTS;
         this.sqlDao = sqlDao;
         this.config = config;
-        this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getQueueCapacity()) : null;
+        this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getEventQueueCapacity()) : null;
         this.isQueueOpenForWrite = false;
         this.isQueueOpenForRead = false;
         this.clock = clock;
@@ -186,7 +188,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         });
 
-        this.thresholdToReopenQForWrite = config.getQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
+        this.thresholdToReopenQForWrite = config.getEventQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
         this.lastPollingOrphanTime = clock.getUTCNow().getMillis();
         this.lowestOrphanEntry = -1L;
         this.transientInflightQRowIdCache = useInflightQueue ? new TransientInflightQRowIdCache(queueId) : null;
@@ -221,9 +223,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         totalProcessedFirstFailures.dec(totalProcessedFirstFailures.getCount());
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
-        log.info(DB_QUEUE_LOG_ID + " ( *** EXP ***)Initialized with useInflightQueue = " + useInflightQueue +
-                ", queueId = " + queueId +
-                ", isSticky = " + config.isSticky() +
+        log.info(DB_QUEUE_LOG_ID + "Initialized with queueId = " + queueId +
+                ", mode = " + config.getPersistentQueueMode() +
                 ", isQueueOpenForWrite = " + isQueueOpenForWrite +
                 ", isQueueOpenForRead = " + isQueueOpenForRead);
     }
@@ -300,11 +301,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         }
 
         if (!isQueueOpenForRead) {
-            final int fetchedSize = thresholdToReopenQForWrite > config.getMaxEntriesClaimed() ? thresholdToReopenQForWrite : config.getMaxEntriesClaimed();
-            candidates = fetchReadyEntries(fetchedSize);
-
+            candidates = fetchReadyEntries(config.getMaxEntriesClaimed());
             // There is a small number so we re-enable adding entries in the Q
-            if (candidates.size() < thresholdToReopenQForWrite && !isQueueOpenForWrite) {
+            if (candidates.size() < config.getMaxEntriesClaimed() &&
+                    candidates.size() < thresholdToReopenQForWrite &&
+                    !isQueueOpenForWrite) {
                 isQueueOpenForWrite = true;
                 log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
             }
@@ -317,7 +318,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             // Failure to remove the entries  would NOT trigger a bug, but might waste cycles where getReadyEntries() would return less
             // elements as expected, because entries have already been processed.
             //
-            if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates) && !isQueueOpenForRead) {
+            if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
                 isQueueOpenForRead = true;
                 log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
             }
@@ -350,11 +351,17 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             return true;
         }
 
-        boolean foundEntryInInflightEvents = false;
+        boolean foundAllEntriesInInflightEvents = true;
+
+        final List<Long> entries = new ArrayList<Long>(candidates.size());
         for (T entry : candidates) {
-            foundEntryInInflightEvents = inflightEvents.remove(entry.getRecordId());
+            entries.add(entry.getRecordId());
+            final boolean found = inflightEvents.remove(entry.getRecordId());
+            if (!found) {
+                foundAllEntriesInInflightEvents = false;
+            }
         }
-        return foundEntryInInflightEvents;
+        return foundAllEntriesInInflightEvents;
     }
 
 
@@ -474,24 +481,17 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
 
     private List<T> fetchReadyEntriesFromIds() {
-        //
-        // We want to fetch no more than max requested (getMaxInflightQEntriesClaimed) OR size of the queue
-        // However if there is nothing we also want to block the thread so it is awoken on the very first ready event instead or retuning
-        // and polling (sleeping).
-        //
-        final int size = config.getMaxInflightQEntriesClaimed() < inflightEvents.size() ? config.getMaxInflightQEntriesClaimed() : inflightEvents.size();
-        final int nonZeroSize = size == 0 ? 1 : size;
-        final List<Long> recordIds = new ArrayList<Long>(nonZeroSize);
-        for (int i = 0; i < nonZeroSize; i++) {
-            final Long entryId;
+
+        // Drain the inflightEvents queue up to a maximum (MAX_FETCHED_ENTRIES)
+        final List<Long> recordIds = new ArrayList<Long>(MAX_FETCHED_ENTRIES);
+        inflightEvents.drainTo(recordIds, MAX_FETCHED_ENTRIES);
+        if (recordIds.size() == 0) {
             try {
-                entryId = size == 0 ?
-                        inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS) : // There seems be nothing in the Q so we block
-                        inflightEvents.poll(); // The queue does not seem empty so we don't want to block for no reason if there is less entries than detected.
-                if (entryId == null) {
-                    break;
+                // We block until we see the first entry or reach the timeout (in which case we will rerun the doProcessEvents() loop and come back here).
+                final Long entryId = inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
+                if (entryId != null) {
+                    recordIds.add(entryId);
                 }
-                recordIds.add(entryId);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn(DB_QUEUE_LOG_ID + "Got interrupted ");
@@ -499,48 +499,37 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         }
 
-        // Before we return we filter on AVAILABLE entries for precaution; the case could potentially happen
-        // at the time when we switch from !isQueueOpenForRead -> isQueueOpenForRead with two thread in parallel.
-        //
-        List<T> result = ImmutableList.<T>of();
         if (recordIds.size() > 0) {
-
             if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + nonZeroSize + ", ids = " + Joiner.on(", ").join(recordIds));
+                log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + recordIds.size() + ", ids = " + Joiner.on(", ").join(recordIds));
             }
-
-            final List<T> entriesFromIds = sqlDao.getEntriesFromIds(recordIds, config.getTableName());
-            result = ImmutableList.<T>copyOf(Collections2.filter(entriesFromIds, new Predicate<T>() {
-                @Override
-                public boolean apply(final T input) {
-                    return (input.getProcessingState() == PersistentQueueEntryLifecycleState.AVAILABLE);
-                }
-            }));
+            return sqlDao.getEntriesFromIds(recordIds, config.getTableName());
         }
-        return result;
+        return ImmutableList.<T>of();
     }
 
     private List<T> fetchReadyEntries(int size) {
         final Date now = clock.getUTCNow().toDate();
-        final String owner = config.isSticky() ? CreatorName.get() : null;
+        final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
         final List<T> entries = sqlDao.getReadyEntries(now, size, owner, config.getTableName());
         return entries;
     }
 
     private List<T> claimEntries(final List<T> candidates) {
-        return sequentialClaimEntries(candidates);
-/*
-        if (config.isSticky()) {
-            return batchClaimEntries(candidates);
-        } else {
-            return sequentialClaimEntries(candidates);
+        switch (config.getPersistentQueueMode()) {
+            case POLLING:
+                return sequentialClaimEntries(candidates);
+
+            case STICKY_POLLING:
+                // There is no claiming in SITCKY_EVENTS mode except when the inflightQ overflow and we revert to STICKY_POLLING
+            case SITCKY_EVENTS:
+                return batchClaimEntries(candidates);
+
+            default:
+                throw new IllegalStateException("Unsupported PersistentQueueMode " + config.getPersistentQueueMode());
         }
-*/
     }
 
-    //
-    // In sticky mode, we can batch claim update; however we want to avoid two concurrent threads to run the same query
-    // at the same time because they would both succeed to claim the entries -- see synchronized statement in getReadyEntries
     private List<T> batchClaimEntries(List<T> candidates) {
 
         if (candidates.size() == 0) {
@@ -554,12 +543,14 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         });
         final int resultCount = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
-        // Same number, we got them all, we can optimize
+        // We should ALWAYS see the same number since we are in STICKY_POLLING mode and there is only one thread claiming entries.
+        // We keep the 2 cases below for safety (code was written when this was MT-threaded), and we log with warn (will eventually remove it in the future)
         if (resultCount == candidates.size()) {
             totalClaimed.inc(resultCount);
             return candidates;
             // Nothing... the synchronized block let go another concurrent thread
         } else if (resultCount == 0) {
+            log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries see 0 entries ");
             return ImmutableList.of();
         } else {
 
@@ -573,7 +564,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             final List<T> result = ImmutableList.copyOf(claimed);
 
-            log.info(DB_QUEUE_LOG_ID + "batchClaimEntries only claimed partial entries " + candidates.size() + "/" + result.size());
+            log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries only claimed partial entries " + candidates.size() + "/" + result.size());
 
             totalClaimed.inc(result.size());
             return result;

@@ -20,29 +20,35 @@ import org.skife.config.TimeSpan;
 
 public interface PersistentQueueConfig {
 
-    boolean isInMemory();
+    // We support 3 different modes to the queue
+    enum PersistentQueueMode {
+        // Entries written from a given node (server) will also be dispatched to that same node; the code will poll for new entries
+        STICKY_POLLING,
+        // Entries written from a given node (server) will also be dispatched to that same node; the code will react to database commit/abort events to fetch new entries
+        SITCKY_EVENTS,
+        // Entries written from a given node (server) will may be dispatched to any nodes by polling for all available entries
+        POLLING
+    }
 
-    boolean isSticky();
+    boolean isInMemory();
 
     int getMaxFailureRetries();
 
-    boolean isUsingInflightQueue();
+    PersistentQueueMode getPersistentQueueMode();
 
     int getMaxEntriesClaimed();
 
-    int getMaxInflightQEntriesClaimed();
-
     TimeSpan getClaimedTime();
 
-    long getSleepTimeMs();
+    long getPollingSleepTimeMs();
 
     boolean isProcessingOff();
 
-    int getQueueCapacity();
+    int getEventQueueCapacity();
+
+    int geMaxDispatchThreads();
 
     String getTableName();
 
     String getHistoryTableName();
-
-    int getNbThreads();
 }

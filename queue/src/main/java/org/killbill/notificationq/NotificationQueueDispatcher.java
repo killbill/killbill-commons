@@ -96,7 +96,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             }
         };
 
-        this.dispatcher = new Dispatcher(1, config.getNbThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(/* fixed bounds, threads,...*/), notificationQThreadFactory, rejectedExecutionHandler);
+        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(/* fixed bounds, threads,...*/), notificationQThreadFactory, rejectedExecutionHandler);
 
         this.clock = clock;
         this.config = config;

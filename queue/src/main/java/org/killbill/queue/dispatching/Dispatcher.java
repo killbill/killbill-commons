@@ -47,7 +47,6 @@ public class Dispatcher<M extends EventEntryModelDao> {
     // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
     private ExecutorService executor;
 
-    // STEPH http://stackoverflow.com/questions/19528304/how-to-get-the-threadpoolexecutor-to-increase-threads-to-max-before-queueing/19538899#19538899
     public Dispatcher(final int corePoolSize,
                       final int maximumPoolSize,
                       final long keepAliveTime,

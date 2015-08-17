@@ -106,7 +106,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
             }
 
             private void sleepALittle(long loopTimeMsec) throws InterruptedException {
-                final long remainingSleepTime = config.getSleepTimeMs() - loopTimeMsec;
+                final long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
                 if (remainingSleepTime > 0) {
                     Thread.sleep(remainingSleepTime);
                 }

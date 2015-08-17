@@ -34,12 +34,6 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract boolean isInMemory();
 
     @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.sticky (required in 'blocking queue mode')")
-    @Default("false")
-    @Description("Whether a node should only pick entries it inserted")
-    public abstract boolean isSticky();
-
-    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.max.failure.retry")
     @Default("3")
     @Description("Number of retries for a given event when an exception occurs")
@@ -52,10 +46,10 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract int getMaxEntriesClaimed();
 
     @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.inflight.claimed  (only valid in 'blocking queue mode')")
-    @Default("30")
+    @Config("org.killbill.persistent.bus.${instanceName}.queue.mode")
+    @Default("POLLING")
     @Description("Number of bus events to dispatch from the inflightQ at once")
-    public abstract int getMaxInflightQEntriesClaimed();
+    public abstract PersistentQueueMode getPersistentQueueMode();
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.claim.time")
@@ -66,8 +60,8 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.sleep")
     @Default("3000")
-    @Description("Time in milliseconds to sleep between runs (only valid in 'polling mode')")
-    public abstract long getSleepTimeMs();
+    @Description("Time in milliseconds to sleep between runs (only valid in STICKY_POLLING, POLLING)")
+    public abstract long getPollingSleepTimeMs();
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.off")
@@ -78,20 +72,14 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.nbThreads")
     @Default("30")
-    @Description("Number of threads to use")
-    public abstract int getNbThreads();
+    @Description("Max number of dispatch threads to use")
+    public abstract int geMaxDispatchThreads();
 
     @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.useInflightQ")
-    @Default("false")
-    @Description("Whether to use the inflight queue (when set to false, referred to as 'polling mode' and when set to true as 'blocking queue mode')")
-    public abstract boolean isUsingInflightQueue();
-
-    @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity (only valid in 'blocking queue mode')")
+    @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity (only valid in SITCKY_EVENTS mode)")
     @Default("30000")
     @Description("Size of the inflight queue")
-    public abstract int getQueueCapacity();
+    public abstract int getEventQueueCapacity();
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.tableName")

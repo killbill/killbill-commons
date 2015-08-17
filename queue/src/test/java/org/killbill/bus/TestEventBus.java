@@ -17,6 +17,7 @@
 package org.killbill.bus;
 
 import org.killbill.bus.api.PersistentBusConfig;
+import org.killbill.queue.api.PersistentQueueConfig;
 import org.skife.config.TimeSpan;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -39,10 +40,6 @@ public class TestEventBus {
                 return false;
             }
             @Override
-            public boolean isSticky() {
-                return false;
-            }
-            @Override
             public int getMaxFailureRetries() {
                 return 0;
             }
@@ -50,16 +47,18 @@ public class TestEventBus {
             public int getMaxEntriesClaimed() {
                 return 0;
             }
+
             @Override
-            public int getMaxInflightQEntriesClaimed() {
-                return 0;
+            public PersistentQueueMode getPersistentQueueMode() {
+                return PersistentQueueMode.POLLING;
             }
+
             @Override
             public TimeSpan getClaimedTime() {
                 return null;
             }
             @Override
-            public long getSleepTimeMs() {
+            public long getPollingSleepTimeMs() {
                 return 0;
             }
             @Override
@@ -67,15 +66,11 @@ public class TestEventBus {
                 return false;
             }
             @Override
-            public int getNbThreads() {
+            public int geMaxDispatchThreads() {
                 return 0;
             }
             @Override
-            public boolean isUsingInflightQueue() {
-                return false;
-            }
-            @Override
-            public int getQueueCapacity() {
+            public int getEventQueueCapacity() {
                 return 0;
             }
             @Override

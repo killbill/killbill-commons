@@ -33,12 +33,6 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     public abstract boolean isInMemory();
 
     @Override
-    @Config("org.killbill.notificationq.${instanceName}.sticky")
-    @Default("false")
-    @Description("Whether a node should only pick entries it inserted")
-    public abstract boolean isSticky();
-
-    @Override
     @Config("org.killbill.notificationq.${instanceName}.max.failure.retry")
     @Default("3")
     @Description("Number retry for a given event when an exception occurs")
@@ -51,10 +45,10 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     public abstract int getMaxEntriesClaimed();
 
     @Override
-    @Config("org.killbill.notificationq.${instanceName}.inflight.claimed (set to -1, not available for NotificationQueue)")
-    @Default("-1")
-    @Description("Number of notifications to fetch at once")
-    public abstract int getMaxInflightQEntriesClaimed();
+    @Config("org.killbill.persistent.bus.${instanceName}.queue.mode")
+    @Default("POLLING")
+    @Description("Number of bus events to dispatch from the inflightQ at once")
+    public abstract PersistentQueueMode getPersistentQueueMode();
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.claim.time")
@@ -66,7 +60,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Config("org.killbill.notificationq.${instanceName}.sleep")
     @Default("3000")
     @Description("Time in milliseconds to sleep between runs")
-    public abstract long getSleepTimeMs();
+    public abstract long getPollingSleepTimeMs();
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.notification.off")
@@ -78,19 +72,13 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Config("org.killbill.notificationq.${instanceName}.notification.nbThreads")
     @Default("10")
     @Description("Number of threads to use")
-    public abstract int getNbThreads();
-
-    @Override
-    @Config("org.killbill.notificationq.${instanceName}.useInflightQ (set to false, not available for NotificationQueue)")
-    @Default("false")
-    @Description("Whether to use the inflight queue")
-    public abstract boolean isUsingInflightQueue();
+    public abstract int geMaxDispatchThreads();
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
     @Default("30000")
     @Description("Capacity for the worker queue")
-    public abstract int getQueueCapacity();
+    public abstract int getEventQueueCapacity();
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.tableName")
