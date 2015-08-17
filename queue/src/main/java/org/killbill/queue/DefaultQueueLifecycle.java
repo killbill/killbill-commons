@@ -43,6 +43,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private volatile boolean isProcessingEvents;
 
+    // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
     private ExecutorService executor;
 
 

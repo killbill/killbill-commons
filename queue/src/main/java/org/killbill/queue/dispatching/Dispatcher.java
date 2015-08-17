@@ -17,7 +17,7 @@
 
 package org.killbill.queue.dispatching;
 
-import org.killbill.commons.concurrent.Executors;
+import org.killbill.commons.concurrent.DynamicThreadPoolExecutorWithLoggingOnExceptions;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ public class Dispatcher<M extends EventEntryModelDao> {
     private final ThreadFactory threadFactory;
     private final RejectedExecutionHandler rejectionHandler;
 
-
+    // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
     private ExecutorService executor;
 
     // STEPH http://stackoverflow.com/questions/19528304/how-to-get-the-threadpoolexecutor-to-increase-threads-to-max-before-queueing/19538899#19538899
@@ -64,9 +64,8 @@ public class Dispatcher<M extends EventEntryModelDao> {
         this.rejectionHandler = rejectionHandler;
     }
 
-
     public void start() {
-        this.executor = Executors.newCachedThreadPool(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
+        this.executor = new DynamicThreadPoolExecutorWithLoggingOnExceptions(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
     }
 
     public void stop() {
@@ -77,7 +76,6 @@ public class Dispatcher<M extends EventEntryModelDao> {
             log.info(String.format("Stop sequence has been interrupted"));
         }
     }
-
 
 
     public <E extends QueueEvent> void dispatch(final M modelDao, final CallableCallback<E, M> callback) {
