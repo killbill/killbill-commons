@@ -40,6 +40,7 @@ import org.killbill.queue.InTransaction;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
+import org.killbill.queue.dispatching.WarningRejectionExecutionHandler;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
@@ -95,15 +96,9 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                         config.getTableName() + "-th");
             }
         };
-        final RejectedExecutionHandler rejectedExecutionHandler = new RejectedExecutionHandler() {
-            @Override
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-
-            }
-        };
 
         this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
-        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(/* fixed bounds, threads,...*/), busThreadFactory, rejectedExecutionHandler);
+        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new WarningRejectionExecutionHandler(svcQName));
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);

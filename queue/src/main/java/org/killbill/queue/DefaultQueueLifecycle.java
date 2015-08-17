@@ -35,8 +35,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private final static long ONE_MILLION = 1000L * 1000L;
 
-    private final String svcQName;
-
+    protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
     protected final AtomicBoolean isStarted = new AtomicBoolean(false);

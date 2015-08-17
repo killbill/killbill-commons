@@ -33,6 +33,7 @@ import org.killbill.notificationq.dispatching.NotificationCallableCallback;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.dispatching.Dispatcher;
+import org.killbill.queue.dispatching.WarningRejectionExecutionHandler;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,19 +89,11 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                 return th;
             }
         };
-        // STEPH
-        final RejectedExecutionHandler rejectedExecutionHandler = new RejectedExecutionHandler() {
-            @Override
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-
-            }
-        };
-
-        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(/* fixed bounds, threads,...*/), notificationQThreadFactory, rejectedExecutionHandler);
 
         this.clock = clock;
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
+        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new WarningRejectionExecutionHandler(svcQName));
         final NotificationSqlDao sqlDao = dbi.onDemand(NotificationSqlDao.class);
         this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry, null);
 
