@@ -17,8 +17,6 @@
 
 package org.killbill.commons.concurrent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -34,8 +32,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class TestDynamicThreadPoolExecutorWithLoggingOnExceptions {
-
-    private static final Logger log = LoggerFactory.getLogger(TestDynamicThreadPoolExecutorWithLoggingOnExceptions.class);
 
     private BlockingQueue<Runnable> queue;
     private ThreadPoolExecutor executor;
@@ -112,11 +108,8 @@ public class TestDynamicThreadPoolExecutorWithLoggingOnExceptions {
 
         @Override
         public Object call() throws Exception {
-            log.info("Thread " + Thread.currentThread().getId() + " initialized");
             startSignal.await();
-            log.info("Thread " + Thread.currentThread().getId() + " is starting");
             doneSignal.countDown();
-            log.info("Thread " + Thread.currentThread().getId() + " done!");
             return null;
         }
     }
