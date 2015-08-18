@@ -1,3 +1,6 @@
+0.5
+    Rework PersistentBus and NotificationQ dispatching
+
 0.4
     PostgreSQL support
     Update to killbill-oss-parent 0.29
