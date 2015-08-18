@@ -66,15 +66,13 @@ public class TestPersistentBusDemo {
         dataSource = embeddedDB.getDataSource();
         final Properties properties = new Properties();
         properties.setProperty("org.killbill.persistent.bus.main.inMemory", "false");
-        properties.setProperty("org.killbill.persistent.bus.main.sticky", "true");
+        properties.setProperty("org.killbill.persistent.bus.main.queue.mode", "STICKY_POLLING");
         properties.setProperty("org.killbill.persistent.bus.main.max.failure.retry", "3");
         properties.setProperty("org.killbill.persistent.bus.main.claimed", "1");
-        properties.setProperty("org.killbill.persistent.bus.main.inflight.claimed", "1");
         properties.setProperty("org.killbill.persistent.bus.main.claim.time", "5m");
         properties.setProperty("org.killbill.persistent.bus.main.sleep", "100");
         properties.setProperty("org.killbill.persistent.bus.main.off", "false");
         properties.setProperty("org.killbill.persistent.bus.main.nbThreads", "1");
-        properties.setProperty("org.killbill.persistent.bus.main.useInflightQ", "false");
         properties.setProperty("org.killbill.persistent.bus.main.queue.capacity", "3000");
         properties.setProperty("org.killbill.persistent.bus.main.tableName", "bus_events");
         properties.setProperty("org.killbill.persistent.bus.main.historyTableName", "bus_events_history");

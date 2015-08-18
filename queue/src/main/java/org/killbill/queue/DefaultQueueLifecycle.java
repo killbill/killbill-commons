@@ -105,6 +105,10 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
             }
 
             private void sleepALittle(long loopTimeMsec) throws InterruptedException {
+                if (config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS) {
+                    // Disregard config.getPollingSleepTimeMs() in that mode in case this is not correctky configured with 0
+                    return;
+                }
                 final long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
                 if (remainingSleepTime > 0) {
                     Thread.sleep(remainingSleepTime);

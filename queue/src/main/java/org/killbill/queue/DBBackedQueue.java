@@ -132,7 +132,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                          final MetricRegistry metricRegistry,
                          @Nullable final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         this.queueId = QUEUE_ID_CNT.incrementAndGet();
-        this.useInflightQueue = config.getPersistentQueueMode() == PersistentQueueMode.SITCKY_EVENTS;
+        this.useInflightQueue = config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS;
         this.sqlDao = sqlDao;
         this.config = config;
         this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getEventQueueCapacity()) : null;
@@ -530,8 +530,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 return sequentialClaimEntries(candidates);
 
             case STICKY_POLLING:
-                // There is no claiming in SITCKY_EVENTS mode except when the inflightQ overflow and we revert to STICKY_POLLING
-            case SITCKY_EVENTS:
+                // There is no claiming in STICKY_EVENTS mode except when the inflightQ overflow and we revert to STICKY_POLLING
+            case STICKY_EVENTS:
                 return batchClaimEntries(candidates);
 
             default:

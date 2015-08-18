@@ -25,7 +25,7 @@ public interface PersistentQueueConfig {
         // Entries written from a given node (server) will also be dispatched to that same node; the code will poll for new entries
         STICKY_POLLING,
         // Entries written from a given node (server) will also be dispatched to that same node; the code will react to database commit/abort events to fetch new entries
-        SITCKY_EVENTS,
+        STICKY_EVENTS,
         // Entries written from a given node (server) will may be dispatched to any nodes by polling for all available entries
         POLLING
     }

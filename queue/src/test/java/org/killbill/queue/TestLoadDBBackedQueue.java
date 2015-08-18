@@ -24,7 +24,6 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
-import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
@@ -116,7 +115,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
     public void testInflightQLoad() throws InterruptedException {
 
         final int nbEntries = 10000;
-        final PersistentBusConfig config = createConfig(10, nbEntries, PersistentQueueMode.SITCKY_EVENTS);
+        final PersistentBusConfig config = createConfig(10, nbEntries, PersistentQueueMode.STICKY_EVENTS);
         queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
         for (int i = 0; i < nbEntries; i++) {
