@@ -45,10 +45,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
@@ -70,6 +69,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     // We could event have one per queue is required...
     private final Dispatcher<NotificationEventModelDao> dispatcher;
+    private final AtomicBoolean isStarted;
 
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
@@ -103,13 +103,16 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.perQueueProcessingTime = new HashMap<String, Histogram>();
 
         this.metricRegistry = metricRegistry;
+        this.isStarted = new AtomicBoolean(false);
 
     }
 
     @Override
     public boolean startQueue() {
-        if (super.startQueue()) {
+        if (isStarted.compareAndSet(false, true)) {
+            dao.initialize();
             dispatcher.start();
+            super.startQueue();
             return true;
         }
         return false;
@@ -117,12 +120,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     @Override
     public void stopQueue() {
-        if (config.isProcessingOff() || !isStarted()) {
+        if (!isStarted()) {
             return;
         }
 
-
-        dispatcher.stop();
 
         // If there are no active queues left, stop the processing for the queues
         // (This is not intended to be robust against a system that would stop and start queues at the same time,
@@ -137,8 +138,15 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             }
         }
         if (nbQueueStarted == 0) {
+            dispatcher.stop();
             super.stopQueue();
+            isStarted.set(false);
         }
+    }
+
+    @Override
+    public boolean isStarted() {
+        return isStarted.get();
     }
 
 

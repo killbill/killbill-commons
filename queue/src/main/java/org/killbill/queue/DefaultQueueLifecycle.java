@@ -38,7 +38,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
-    protected final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     private volatile boolean isProcessingEvents;
 
@@ -60,9 +59,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     @Override
     public boolean startQueue() {
         this.executor = Executors.newFixedThreadPool(1, config.getTableName() + "-lifecycle-th");
-        if (config.isProcessingOff() || !isStarted.compareAndSet(false, true)) {
-            return false;
-        }
         isProcessingEvents = true;
 
         log.info(String.format("%s: Starting...", svcQName));
@@ -121,9 +117,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     @Override
     public void stopQueue() {
-        if (config.isProcessingOff() || !isStarted.compareAndSet(true, false)) {
-            return;
-        }
         this.isProcessingEvents = false;
 
         executor.shutdown();
@@ -136,9 +129,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     public abstract int doProcessEvents();
 
-    public boolean isStarted() {
-        return isStarted.get();
-    }
 
     public ObjectMapper getObjectMapper() {
         return objectMapper;

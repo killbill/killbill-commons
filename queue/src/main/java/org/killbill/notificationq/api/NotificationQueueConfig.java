@@ -45,8 +45,8 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     public abstract int getMaxEntriesClaimed();
 
     @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.queue.mode")
-    @Default("POLLING")
+    @Config("org.killbill.notificationq.${instanceName}.queue.mode")
+    @Default("STICKY_POLLING")
     @Description("Number of bus events to dispatch from the inflightQ at once")
     public abstract PersistentQueueMode getPersistentQueueMode();
 

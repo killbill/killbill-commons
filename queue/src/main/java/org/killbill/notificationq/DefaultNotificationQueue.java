@@ -244,6 +244,9 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     @Override
     public boolean startQueue() {
+        if (config.isProcessingOff()) {
+            return false;
+        }
         notificationQueueService.startQueue();
         isStarted = true;
         return true;

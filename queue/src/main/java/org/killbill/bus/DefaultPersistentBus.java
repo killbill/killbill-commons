@@ -111,10 +111,16 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public void start() {
+
+        if (config.isProcessingOff()) {
+            log.warn("PersistentBus processing is off, does not start");
+            return;
+        }
+
         if (isStarted.compareAndSet(false, true)) {
             dao.initialize();
-            startQueue();
             dispatcher.start();
+            startQueue();
         }
     }
 
