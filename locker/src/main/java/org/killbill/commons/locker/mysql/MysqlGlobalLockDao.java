@@ -18,24 +18,31 @@
 
 package org.killbill.commons.locker.mysql;
 
+import org.killbill.commons.locker.GlobalLockDao;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.TimeUnit;
 
 // Note: the MySQL lock is connection specific (closing the connection releases the lock)
-public class MysqlGlobalLockDao {
+public class MysqlGlobalLockDao implements GlobalLockDao {
 
-    public boolean lock(final Connection connection, final String lockName, final long timeout) throws SQLException {
-        final String sql = String.format("select GET_LOCK('%s', %d);", lockName.replace("'", "\'"), timeout);
+    @Override
+    public boolean lock(final Connection connection, final String lockName, final long timeout, final TimeUnit timeUnit) throws SQLException {
+        final long timeoutSec = TimeUnit.SECONDS.convert(timeout, timeUnit);
+        final String sql = String.format("select GET_LOCK('%s', %d);", lockName.replace("'", "\'"), timeoutSec);
         return executeLockQuery(connection, sql);
     }
 
+    @Override
     public boolean releaseLock(final Connection connection, final String lockName) throws SQLException {
         final String sql = String.format("select RELEASE_LOCK('%s');", lockName.replace("'", "\'"));
         return executeLockQuery(connection, sql);
     }
 
+    @Override
     public boolean isLockFree(final Connection connection, final String lockName) throws SQLException {
         final String sql = String.format("select IS_FREE_LOCK('%s');", lockName.replace("'", "\'"));
         return executeLockQuery(connection, sql);

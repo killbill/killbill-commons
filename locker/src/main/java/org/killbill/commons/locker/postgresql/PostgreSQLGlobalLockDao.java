@@ -17,24 +17,30 @@
 
 package org.killbill.commons.locker.postgresql;
 
+import org.killbill.commons.locker.GlobalLockDao;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.TimeUnit;
 
 // Note: the lock is connection specific (closing the connection releases the lock)
-public class PostgreSQLGlobalLockDao {
+public class PostgreSQLGlobalLockDao implements GlobalLockDao {
 
-    public boolean lock(final Connection connection, final String lockName) throws SQLException {
+    @Override
+    public boolean lock(final Connection connection, final String lockName, long timeout, final TimeUnit timeUnit) throws SQLException {
         final String sql = String.format("SELECT pg_try_advisory_lock(%s);", lockName);
         return executeLockQuery(connection, sql);
     }
 
+    @Override
     public boolean releaseLock(final Connection connection, final String lockName) throws SQLException {
         final String sql = String.format("SELECT pg_advisory_unlock(%s);", lockName);
         return executeLockQuery(connection, sql);
     }
 
+    @Override
     public boolean isLockFree(final Connection connection, final String lockName) throws SQLException {
         final String sql = String.format("SELECT CASE WHEN pg_try_advisory_lock(%s) THEN pg_advisory_unlock(%s) ELSE FALSE END;", lockName, lockName);
         return executeLockQuery(connection, sql);
