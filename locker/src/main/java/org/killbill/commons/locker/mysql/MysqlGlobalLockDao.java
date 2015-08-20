@@ -31,8 +31,12 @@ public class MysqlGlobalLockDao implements GlobalLockDao {
 
     @Override
     public boolean lock(final Connection connection, final String lockName, final long timeout, final TimeUnit timeUnit) throws SQLException {
-        final long timeoutSec = TimeUnit.SECONDS.convert(timeout, timeUnit);
-        final String sql = String.format("select GET_LOCK('%s', %d);", lockName.replace("'", "\'"), timeoutSec);
+        //
+        // We pass 0 so as to not wait at all.
+        // This is not optimal but mysql only supports seconds and also it make the code more readable/symetrical
+        // by having the same implementation between mysql and postgreSQL (which does not have timeout)
+        //
+        final String sql = String.format("select GET_LOCK('%s', %d);", lockName.replace("'", "\'"), 0);
         return executeLockQuery(connection, sql);
     }
 

@@ -41,19 +41,6 @@ public class PostgreSQLGlobalLocker extends GlobalLockerBase implements GlobalLo
         super(dataSource, new PostgreSQLGlobalLockDao(), timeout, timeUnit);
     }
 
-    protected GlobalLock lock(final String lockName) throws LockFailedException {
-        final GlobalLock result = super.lock(lockName);
-        if (result == null) {
-            try {
-                Thread.sleep(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("PostgreSQLGlobalLocker got interrupted", e);
-            }
-        }
-        return result;
-    }
-
     @Override
     protected GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb) {
         return new PostgreSQLGlobalLock(connection, lockName, globalLockDao, resetCb);

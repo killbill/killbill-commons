@@ -60,11 +60,16 @@ public abstract class GlobalLockerBase implements GlobalLocker {
             if (lock != null) {
                 return lock;
             }
+            if (tries_left > 0) {
+                sleep();
+            }
         }
 
         logger.warn(String.format("Failed to acquire lock %s for service %s after %s retries", lockKey, service, retry));
         throw new LockFailedException();
     }
+
+
 
     @Override
     public boolean isFree(final String service, final String lockKey) {
@@ -141,6 +146,14 @@ public abstract class GlobalLockerBase implements GlobalLocker {
 
     protected abstract String getLockName(final String service, final String lockKey);
 
+    private void sleep() {
+        try {
+            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("GlobalLockerBase got interrupted", e);
+        }
+    }
 }
 
 
