@@ -15,18 +15,8 @@
  * under the License.
  */
 
-package org.killbill.commons.locker.postgresql;
+package org.killbill.commons.locker;
 
-import org.killbill.commons.locker.GlobalLock;
-import org.killbill.commons.locker.GlobalLockBase;
-import org.killbill.commons.locker.GlobalLockDao;
-import org.killbill.commons.locker.ResetReentrantLockCallback;
-
-import java.sql.Connection;
-
-public class PostgreSQLGlobalLock extends GlobalLockBase implements GlobalLock {
-
-    public PostgreSQLGlobalLock(final Connection connection, final String lockName, final GlobalLockDao lockDao, final ResetReentrantLockCallback resetCb) {
-        super(connection, lockName, lockDao, resetCb);
-    }
+public interface ResetReentrantLockCallback {
+    public void reset(String lockName);
 }

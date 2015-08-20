@@ -21,6 +21,7 @@ package org.killbill.commons.locker.mysql;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
+import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -39,8 +40,8 @@ public class MySqlGlobalLocker extends GlobalLockerBase implements GlobalLocker 
     }
 
     @Override
-    protected GlobalLock getGlobalLock(Connection connection, String lockName) {
-        return new MysqlGlobalLock(connection, lockName);
+    protected GlobalLock getGlobalLock(Connection connection, String lockName, final ResetReentrantLockCallback resetCb) {
+        return new MysqlGlobalLock(connection, lockName, globalLockDao, resetCb);
     }
 
     protected String getLockName(final String service, final String lockKey) {

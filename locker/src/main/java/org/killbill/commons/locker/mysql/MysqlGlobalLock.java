@@ -18,39 +18,16 @@
 
 package org.killbill.commons.locker.mysql;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import org.killbill.commons.locker.GlobalLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.killbill.commons.locker.GlobalLockBase;
+import org.killbill.commons.locker.GlobalLockDao;
+import org.killbill.commons.locker.ResetReentrantLockCallback;
 
-public class MysqlGlobalLock implements GlobalLock {
+import java.sql.Connection;
 
-    private static final Logger logger = LoggerFactory.getLogger(GlobalLock.class);
+public class MysqlGlobalLock extends GlobalLockBase implements GlobalLock {
 
-    private final MysqlGlobalLockDao mysqlGlobalLockDao = new MysqlGlobalLockDao();
-
-    private final Connection connection;
-    private final String lockName;
-
-    public MysqlGlobalLock(final Connection connection, final String lockName) {
-        this.connection = connection;
-        this.lockName = lockName;
-    }
-
-    @Override
-    public void release() {
-        try {
-            mysqlGlobalLockDao.releaseLock(connection, lockName);
-        } catch (final SQLException e) {
-            logger.warn("Unable to release lock for " + lockName, e);
-        } finally {
-            try {
-                connection.close();
-            } catch (final SQLException e) {
-                logger.warn("Unable to close connection", e);
-            }
-        }
+    public MysqlGlobalLock(final Connection connection, final String lockName, final GlobalLockDao lockDao, final ResetReentrantLockCallback resetCb) {
+        super(connection, lockName, lockDao, resetCb);
     }
 }

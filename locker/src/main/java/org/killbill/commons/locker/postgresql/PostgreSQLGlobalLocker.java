@@ -21,6 +21,7 @@ import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
 import org.killbill.commons.locker.LockFailedException;
+import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 import javax.sql.DataSource;
 import java.nio.ByteBuffer;
@@ -56,8 +57,8 @@ public class PostgreSQLGlobalLocker extends GlobalLockerBase implements GlobalLo
     }
 
     @Override
-    protected GlobalLock getGlobalLock(final Connection connection, final String lockName) {
-        return new PostgreSQLGlobalLock(connection, lockName);
+    protected GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb) {
+        return new PostgreSQLGlobalLock(connection, lockName, globalLockDao, resetCb);
     }
 
     protected String getLockName(final String service, final String lockKey) {

@@ -17,6 +17,5 @@
 package org.killbill.commons.locker;
 
 public interface GlobalLock {
-
-    public void release();
+    void release();
 }

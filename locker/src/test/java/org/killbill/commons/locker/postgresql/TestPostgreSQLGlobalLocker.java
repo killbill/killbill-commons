@@ -17,21 +17,35 @@
 
 package org.killbill.commons.locker.postgresql;
 
-import java.io.IOException;
-import java.util.UUID;
-
 import org.killbill.commons.embeddeddb.postgresql.PostgreSQLEmbeddedDB;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.LockFailedException;
+import org.killbill.commons.request.Request;
+import org.killbill.commons.request.RequestData;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.util.UUID;
 
 public class TestPostgreSQLGlobalLocker {
 
     private PostgreSQLEmbeddedDB embeddedDB;
+
+    @BeforeMethod(groups = "postgresql")
+    public void beforeMethod() throws Exception {
+        Request.resetPerThreadRequestData();
+    }
+
+    @AfterMethod(groups = "postgresql")
+    public void afterMethod() throws Exception {
+        Request.resetPerThreadRequestData();
+    }
 
     @BeforeClass(groups = "postgresql")
     public void setUp() throws Exception {
@@ -65,4 +79,27 @@ public class TestPostgreSQLGlobalLocker {
         lock.release();
         Assert.assertTrue(locker.isFree(serviceLock, lockName));
     }
+
+    @Test(groups = "mysql")
+    public void testReentrantLock() throws IOException, LockFailedException {
+        final String serviceLock = "MY_SHITTY_LOCK";
+        final String lockName = UUID.randomUUID().toString();
+
+        final String requestId = "12345";
+
+        Request.setPerThreadRequestData(new RequestData(requestId));
+
+        final GlobalLocker locker = new PostgreSQLGlobalLocker(embeddedDB.getDataSource());
+        final GlobalLock lock = locker.lockWithNumberOfTries(serviceLock, lockName, 3);
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+        Assert.assertTrue(lock instanceof PostgreSQLGlobalLock);
+
+        // Re-aquire the lock with the same requestId, should work
+        final GlobalLock reentrantLock = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
+        Assert.assertFalse(reentrantLock instanceof PostgreSQLGlobalLock);
+
+        lock.release();
+        Assert.assertTrue(locker.isFree(serviceLock, lockName));
+    }
+
 }
