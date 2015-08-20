@@ -83,8 +83,8 @@ public class TestMysqlGlobalLocker {
 
 
     @Test(groups = "mysql")
-    public void testReentrantLock() throws IOException, LockFailedException {
-        final String serviceLock = "MY_SHITTY_LOCK";
+    public void testReentrantLockInOrder() throws IOException, LockFailedException {
+        final String serviceLock = "MY_LOCK_2";
         final String lockName = UUID.randomUUID().toString();
 
         final String requestId = "12345";
@@ -96,12 +96,80 @@ public class TestMysqlGlobalLocker {
         Assert.assertFalse(locker.isFree(serviceLock, lockName));
         Assert.assertTrue(lock instanceof MysqlGlobalLock);
 
-        // Re-aquire the lock with the same requestId, should work
+        // Re-aquire the createLock with the same requestId, should work
         final GlobalLock reentrantLock = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
-        Assert.assertFalse(reentrantLock instanceof MysqlGlobalLock);
+        Assert.assertTrue(reentrantLock instanceof MysqlGlobalLock);
+
+        reentrantLock.release();
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
 
         lock.release();
         Assert.assertTrue(locker.isFree(serviceLock, lockName));
     }
 
+
+    @Test(groups = "mysql")
+    public void testReentrantLockOufOfOrder() throws IOException, LockFailedException {
+        final String serviceLock = "MY_LOCK_3";
+        final String lockName = UUID.randomUUID().toString();
+
+        final String requestId = "12345";
+
+        Request.setPerThreadRequestData(new RequestData(requestId));
+
+        final GlobalLocker locker = new MySqlGlobalLocker(embeddedDB.getDataSource());
+        final GlobalLock lock = locker.lockWithNumberOfTries(serviceLock, lockName, 3);
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+        Assert.assertTrue(lock instanceof MysqlGlobalLock);
+
+        // Re-aquire the createLock with the same requestId, should work
+        final GlobalLock reentrantLock = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
+        Assert.assertTrue(reentrantLock instanceof MysqlGlobalLock);
+
+        lock.release();
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+
+        reentrantLock.release();
+        Assert.assertTrue(locker.isFree(serviceLock, lockName));
+    }
+
+
+    @Test(groups = "mysql")
+    public void testReentrantNLevelLock() throws IOException, LockFailedException {
+
+        final String serviceLock = "MY_LOCK_N";
+        final String lockName = UUID.randomUUID().toString();
+
+        final String requestId = "44444";
+
+        Request.setPerThreadRequestData(new RequestData(requestId));
+
+        final GlobalLocker locker = new MySqlGlobalLocker(embeddedDB.getDataSource());
+        final GlobalLock lock = locker.lockWithNumberOfTries(serviceLock, lockName, 3);
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+        Assert.assertTrue(lock instanceof MysqlGlobalLock);
+
+        // Re-aquire the createLock with the same requestId, should work
+        final GlobalLock reentrantLock1 = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
+        Assert.assertTrue(reentrantLock1 instanceof MysqlGlobalLock);
+
+        lock.release();
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+
+        final GlobalLock reentrantLock2 = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
+        Assert.assertTrue(reentrantLock2 instanceof MysqlGlobalLock);
+
+        reentrantLock1.release();
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+
+        final GlobalLock reentrantLock3 = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
+        Assert.assertTrue(reentrantLock3 instanceof MysqlGlobalLock);
+
+        reentrantLock3.release();
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+
+
+        reentrantLock2.release();
+        Assert.assertTrue(locker.isFree(serviceLock, lockName));
+    }
 }

@@ -80,7 +80,7 @@ public class TestPostgreSQLGlobalLocker {
         Assert.assertTrue(locker.isFree(serviceLock, lockName));
     }
 
-    @Test(groups = "mysql")
+    @Test(groups = "postgresql")
     public void testReentrantLock() throws IOException, LockFailedException {
         final String serviceLock = "MY_SHITTY_LOCK";
         final String lockName = UUID.randomUUID().toString();
@@ -94,11 +94,14 @@ public class TestPostgreSQLGlobalLocker {
         Assert.assertFalse(locker.isFree(serviceLock, lockName));
         Assert.assertTrue(lock instanceof PostgreSQLGlobalLock);
 
-        // Re-aquire the lock with the same requestId, should work
+        // Re-aquire the createLock with the same requestId, should work
         final GlobalLock reentrantLock = locker.lockWithNumberOfTries(serviceLock, lockName, 1);
-        Assert.assertFalse(reentrantLock instanceof PostgreSQLGlobalLock);
+        Assert.assertTrue(reentrantLock instanceof PostgreSQLGlobalLock);
 
         lock.release();
+        Assert.assertFalse(locker.isFree(serviceLock, lockName));
+
+        reentrantLock.release();
         Assert.assertTrue(locker.isFree(serviceLock, lockName));
     }
 

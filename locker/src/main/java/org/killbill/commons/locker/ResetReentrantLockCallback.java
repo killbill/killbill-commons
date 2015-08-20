@@ -18,5 +18,5 @@
 package org.killbill.commons.locker;
 
 public interface ResetReentrantLockCallback {
-    public void reset(String lockName);
+    boolean reset(String lockName);
 }

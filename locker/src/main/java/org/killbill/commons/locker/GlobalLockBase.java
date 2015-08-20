@@ -44,10 +44,12 @@ public class GlobalLockBase implements GlobalLock {
 
     @Override
     public void release() {
+        if (resetCallback != null && !resetCallback.reset(lockName)) {
+            // We are not the last one using that lock, bail early (AND don't close the connection)...
+            return;
+        }
+
         try {
-            if (resetCallback != null) {
-                resetCallback.reset(lockName);
-            }
             lockDao.releaseLock(connection, lockName);
         } catch (final SQLException e) {
             logger.warn("Unable to release lock for " + lockName, e);

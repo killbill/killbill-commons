@@ -29,10 +29,9 @@ import java.util.concurrent.TimeUnit;
 
 public class MySqlGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
-    private static final long DEFAULT_TIMEOUT_SECONDS = 10L;
 
     public MySqlGlobalLocker(final DataSource dataSource) {
-        this(dataSource, DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        this(dataSource, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     public MySqlGlobalLocker(final DataSource dataSource, final long timeout, final TimeUnit timeUnit) {

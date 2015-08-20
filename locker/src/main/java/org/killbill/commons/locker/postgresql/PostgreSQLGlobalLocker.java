@@ -32,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 
 public class PostgreSQLGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
-    private static final long DEFAULT_TIMEOUT_MILLIS = 100L;
-
 
     public PostgreSQLGlobalLocker(final DataSource dataSource) {
         this(dataSource, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);

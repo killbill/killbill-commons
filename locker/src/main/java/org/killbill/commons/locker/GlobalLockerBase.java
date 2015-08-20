@@ -17,30 +17,30 @@
 
 package org.killbill.commons.locker;
 
-import org.killbill.commons.request.Request;
-import org.killbill.commons.request.RequestData;
+import org.killbill.commons.locker.ReentrantLock.TryAcquireLockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GlobalLockerBase implements GlobalLocker {
 
+    protected static final long DEFAULT_TIMEOUT_MILLIS = 100L;
+
     protected static final Logger logger = LoggerFactory.getLogger(GlobalLockerBase.class);
 
     protected final GlobalLockDao globalLockDao;
+
 
     private final DataSource dataSource;
 
     protected final long timeout;
     protected final TimeUnit timeUnit;
 
-    private Map<String, String> reentrantLocks;
+    private final ReentrantLock lockTable;
 
 
     public GlobalLockerBase(final DataSource dataSource, final GlobalLockDao globalLockDao, final long timeout, final TimeUnit timeUnit) {
@@ -48,19 +48,12 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         this.timeout = timeout;
         this.timeUnit = timeUnit;
         this.globalLockDao = globalLockDao;
-        this.reentrantLocks = new HashMap<String, String>();
+        this.lockTable = new ReentrantLock();
     }
 
     @Override
     public GlobalLock lockWithNumberOfTries(final String service, final String lockKey, final int retry) throws LockFailedException {
         final String lockName = getLockName(service, lockKey);
-
-        final GlobalLock reentrantlock = getReentrantLock(lockName);
-        if (reentrantlock != null) {
-            logger.info("Global Lock %s already taken for request %s", lockName, Request.getPerThreadRequestData().getRequestId());
-            return reentrantlock;
-        }
-
         int tries_left = retry;
         while (tries_left-- > 0) {
             final GlobalLock lock = lock(lockName);
@@ -69,7 +62,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
             }
         }
 
-        logger.warn(String.format("Failed to acquire lock %s for service %s after %d retries", lockKey, service, retry));
+        logger.warn(String.format("Failed to acquire lock %s for service %s after %s retries", lockKey, service, retry));
         throw new LockFailedException();
     }
 
@@ -98,30 +91,45 @@ public abstract class GlobalLockerBase implements GlobalLocker {
 
     protected GlobalLock lock(final String lockName) throws LockFailedException {
 
+        final TryAcquireLockState lockState = lockTable.tryAcquireLockForExistingOwner(lockName);
+        if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_OWNER) {
+            return lockState.getOriginalLock();
+        }
+
+        if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_NOT_OWNER) {
+            // In that case, we need tp respect the provided timeout value
+            try {
+                Thread.sleep(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("lock got interrupted", e);
+            }
+            return null;
+        }
+
         Connection connection = null;
         boolean obtained = false;
         try {
             connection = dataSource.getConnection();
             obtained = globalLockDao.lock(connection, lockName, timeout, timeUnit);
             if (obtained) {
-                setReentrantLock(lockName);
-                return getGlobalLock(connection, lockName, new ResetReentrantLockCallback() {
+                final GlobalLock lock = getGlobalLock(connection, lockName, new ResetReentrantLockCallback() {
                     @Override
-                    public void reset(String lockName) {
-                        resetReentrantLock(lockName);
+                    public boolean reset(String lockName) {
+                        return lockTable.releaseLock(lockName);
                     }
                 });
+                lockTable.createLock(lockName, lock);
+                return lock;
             }
         } catch (final SQLException e) {
             logger.warn("Unable to obtain lock for " + lockName, e);
         } finally {
-            if (!obtained) {
-                if (connection != null) {
-                    try {
-                        connection.close();
-                    } catch (final SQLException e) {
-                        logger.warn("Unable to close connection", e);
-                    }
+            if (!obtained && connection != null) {
+                try {
+                    connection.close();
+                } catch (final SQLException e) {
+                    logger.warn("Unable to close connection", e);
                 }
             }
         }
@@ -133,44 +141,6 @@ public abstract class GlobalLockerBase implements GlobalLocker {
 
     protected abstract String getLockName(final String service, final String lockKey);
 
-    private void setReentrantLock(final String lockName) {
-        final RequestData requestData = Request.getPerThreadRequestData();
-        if (requestData == null || requestData.getRequestId() == null) {
-            return;
-        }
-        reentrantLocks.put(lockName, requestData.getRequestId());
-    }
-
-    private GlobalLock getReentrantLock(final String lockName) {
-        // Check if we have a requestId set
-        final RequestData requestData = Request.getPerThreadRequestData();
-        if (requestData == null || requestData.getRequestId() == null) {
-            return null;
-        }
-
-        // If we do and we already have locked it for the same requestId we return a dummy GlobalLock
-        final String currentHolder = reentrantLocks.get(lockName);
-        if (currentHolder != null && currentHolder.equals(requestData.getRequestId())) {
-            return new GlobalLock() {
-                @Override
-                public void release() {
-                }
-            };
-        }
-        // If not, return null
-        return null;
-    }
-
-    private void resetReentrantLock(final String lockName) {
-        final RequestData requestData = Request.getPerThreadRequestData();
-        if (requestData == null || requestData.getRequestId() == null) {
-            return;
-        }
-        final String currentHolder = reentrantLocks.get(lockName);
-        if (currentHolder != null && currentHolder.equals(requestData.getRequestId())) {
-            reentrantLocks.remove(lockName);
-        }
-    }
 }
 
 
