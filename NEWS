@@ -1,3 +1,6 @@
+0.6
+    Add ability for GlobalLock to be reentrant
+
 0.5
     Rework PersistentBus and NotificationQ dispatching
 
