@@ -1,3 +1,6 @@
+0.7
+    Fix issue with notification error count computation
+
 0.6
     Add ability for GlobalLock to be reentrant
 
