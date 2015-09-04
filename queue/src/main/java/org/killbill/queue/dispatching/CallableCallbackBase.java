@@ -82,7 +82,7 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
     }
 
     private void moveSuccessfulEventToHistory(final M input) {
-        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED, -1);
+        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED, input.getErrorCount());
         dao.moveEntryToHistory(newEntry);
     }
 
@@ -93,7 +93,7 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
 
 
     private void moveFailedEventToHistory(final M input) {
-        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, -1);
+        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, input.getErrorCount());
         dao.moveEntryToHistory(newEntry);
     }
 }
