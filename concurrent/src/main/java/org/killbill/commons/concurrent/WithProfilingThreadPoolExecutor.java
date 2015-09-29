@@ -27,24 +27,34 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
-public class WithProfilingThreadPoolExecutor  extends ThreadPoolExecutor {
+public class WithProfilingThreadPoolExecutor  extends DynamicThreadPoolExecutorWithLoggingOnExceptions {
 
-    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+
+    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit) {
+        super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit);
     }
 
-    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory) {
+    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, threadFactory);
+    }
+
+    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+        super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit, workQueue);
+    }
+
+    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
     }
 
-    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final RejectedExecutionHandler handler) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
+    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
+        super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit, workQueue, handler);
     }
 
-    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory, final RejectedExecutionHandler handler) {
+    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
     }
 
+    
     protected void beforeExecute(final Thread t, final Runnable runnable) {
         // Allocate the thread local data
         Profiling.setPerThreadProfilingData();
