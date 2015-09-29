@@ -18,14 +18,10 @@
 
 package org.killbill.notificationq;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import org.joda.time.DateTime;
 import org.killbill.TestSetup;
 import org.killbill.clock.ClockMock;
@@ -38,6 +34,8 @@ import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
+import org.skife.jdbi.v2.tweak.HandleCallback;
+import org.skife.jdbi.v2.util.IntegerMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -45,10 +43,13 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -64,7 +65,7 @@ public class TestNotificationQueue extends TestSetup {
 
     private NotificationQueueService queueService;
 
-    private int eventsReceived;
+    private volatile int eventsReceived;
 
     private static final class TestNotificationKey implements NotificationEvent, Comparable<TestNotificationKey> {
 
@@ -142,18 +143,18 @@ public class TestNotificationQueue extends TestSetup {
         final Map<NotificationEvent, Boolean> expectedNotifications = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queue = queueService.createNotificationQueue("test-svc",
-                                                                             "foo",
-                                                                             new NotificationQueueHandler() {
-                                                                                 @Override
-                                                                                 public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
-                                                                                     synchronized (expectedNotifications) {
-                                                                                         log.info("Handler received key: " + eventJson);
+                "foo",
+                new NotificationQueueHandler() {
+                    @Override
+                    public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+                        synchronized (expectedNotifications) {
+                            log.info("Handler received key: " + eventJson);
 
-                                                                                         expectedNotifications.put(eventJson, Boolean.TRUE);
-                                                                                         expectedNotifications.notify();
-                                                                                     }
-                                                                                 }
-                                                                             });
+                            expectedNotifications.put(eventJson, Boolean.TRUE);
+                            expectedNotifications.notify();
+                        }
+                    }
+                });
 
         queue.startQueue();
 
@@ -220,7 +221,7 @@ public class TestNotificationQueue extends TestSetup {
         int found = 0;
         for (int i = 0; i < 2; i++) {
             if (futuresAll.get(i).getEvent().getValue().equals(key3.toString()) ||
-                futuresAll.get(i).getEvent().getValue().equals(key4.toString())) {
+                    futuresAll.get(i).getEvent().getValue().equals(key4.toString())) {
                 found++;
             }
         }
@@ -232,8 +233,8 @@ public class TestNotificationQueue extends TestSetup {
         found = 0;
         for (int i = 0; i < 3; i++) {
             if (futures2.get(i).getEvent().getValue().equals(key3.toString()) ||
-                futures2.get(i).getEvent().getValue().equals(key4.toString()) ||
-                futures2.get(i).getEvent().getValue().equals(key1.toString())) {
+                    futures2.get(i).getEvent().getValue().equals(key4.toString()) ||
+                    futures2.get(i).getEvent().getValue().equals(key1.toString())) {
                 found++;
             }
         }
@@ -245,17 +246,17 @@ public class TestNotificationQueue extends TestSetup {
 
         // Notification should have kicked but give it at least a sec' for thread scheduling
         await().atMost(1, MINUTES)
-               .until(new Callable<Boolean>() {
-                          @Override
-                          public Boolean call() throws
-                                                Exception {
-                              return expectedNotifications.get(eventJson1) &&
-                                     expectedNotifications.get(eventJson2) &&
-                                     expectedNotifications.get(eventJson3) &&
-                                     expectedNotifications.get(eventJson4);
-                          }
-                      }
-                     );
+                .until(new Callable<Boolean>() {
+                           @Override
+                           public Boolean call() throws
+                                   Exception {
+                               return expectedNotifications.get(eventJson1) &&
+                                       expectedNotifications.get(eventJson2) &&
+                                       expectedNotifications.get(eventJson3) &&
+                                       expectedNotifications.get(eventJson4);
+                           }
+                       }
+                );
         queue.stopQueue();
     }
 
@@ -264,18 +265,18 @@ public class TestNotificationQueue extends TestSetup {
         final Map<NotificationEvent, Boolean> expectedNotifications = new TreeMap<NotificationEvent, Boolean>();
 
         final NotificationQueue queue = queueService.createNotificationQueue("test-svc",
-                                                                             "many",
-                                                                             new NotificationQueueHandler() {
-                                                                                 @Override
-                                                                                 public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
-                                                                                     synchronized (expectedNotifications) {
-                                                                                         log.info("Handler received key: " + eventJson.toString());
+                "many",
+                new NotificationQueueHandler() {
+                    @Override
+                    public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+                        synchronized (expectedNotifications) {
+                            log.info("Handler received key: " + eventJson.toString());
 
-                                                                                         expectedNotifications.put(eventJson, Boolean.TRUE);
-                                                                                         expectedNotifications.notify();
-                                                                                     }
-                                                                                 }
-                                                                             });
+                            expectedNotifications.put(eventJson, Boolean.TRUE);
+                            expectedNotifications.notify();
+                        }
+                    }
+                });
         queue.startQueue();
 
         final DateTime now = clock.getUTCNow();
@@ -295,7 +296,7 @@ public class TestNotificationQueue extends TestSetup {
                 @Override
                 public Object inTransaction(final Handle conn, final TransactionStatus status) throws Exception {
                     queue.recordFutureNotificationFromTransaction(conn.getConnection(), now.plus((currentIteration + 1) * nextReadyTimeIncrementMs),
-                                                                  eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+                            eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
                     return null;
                 }
             });
@@ -413,4 +414,98 @@ public class TestNotificationQueue extends TestSetup {
         Assert.assertTrue(expectedNotificationsFred.get(eventJsonFred));
         Assert.assertFalse(expectedNotificationsFred.get(eventJsonBarney));
     }
+
+    private class NotificationQueueHandlerWithExceptions implements NotificationQueueHandler {
+
+        private final int nbTotalExceptionsToThrow;
+        private int nbExceptionsThrown;
+
+        public NotificationQueueHandlerWithExceptions(int nbTotalExceptionsToThrow) {
+            this.nbTotalExceptionsToThrow = nbTotalExceptionsToThrow;
+            this.nbExceptionsThrown = 0;
+        }
+
+
+        @Override
+        public void handleReadyNotification(NotificationEvent eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2) {
+
+            //Assert.assertEquals(((DefaultNotificationQueueService) queueService).getDao().getSqlDao().getInProcessingEntries(notificationQueueConfig.getTableName()).size(), 1);
+
+            if (nbExceptionsThrown < nbTotalExceptionsToThrow) {
+                nbExceptionsThrown++;
+                throw new NullPointerException();
+            }
+            eventsReceived++;
+        }
+    }
+
+    @Test(groups = "slow")
+    public void testWithExceptionAndRetrySuccess() throws Exception {
+
+        final NotificationQueue queueWithExceptionAndRetrySuccess = queueService.createNotificationQueue("ExceptionAndRetrySuccess", "svc", new NotificationQueueHandlerWithExceptions(1));
+        try {
+            queueWithExceptionAndRetrySuccess.startQueue();
+
+            final DateTime now = new DateTime();
+            final DateTime readyTime = now.plusMillis(2000);
+            final NotificationEvent eventJson = new TestNotificationKey("Foo");
+
+            queueWithExceptionAndRetrySuccess.recordFutureNotification(readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+
+            // Move time in the future after the notification effectiveDate
+            ((ClockMock) clock).setDeltaFromReality(3000);
+
+            await().atMost(5, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+
+                    final Integer retryCount = dbi.withHandle(new HandleCallback<Integer>() {
+                        @Override
+                        public Integer withHandle(Handle handle) throws Exception {
+                            return handle.createQuery(String.format("select error_count from %s", notificationQueueConfig.getHistoryTableName())).map(IntegerMapper.FIRST).first();
+                        }
+                    });
+                    return retryCount != null && retryCount == 1 && eventsReceived == 1;
+                }
+            });
+        } finally {
+            queueWithExceptionAndRetrySuccess.stopQueue();
+        }
+    }
+
+
+
+    @Test(groups = "slow")
+    public void testWithExceptionAndFailed() throws Exception {
+
+        final NotificationQueue queueWithExceptionAndFailed = queueService.createNotificationQueue("ExceptionAndRetrySuccess", "svc", new NotificationQueueHandlerWithExceptions(3));
+        try {
+            queueWithExceptionAndFailed.startQueue();
+
+            final DateTime now = new DateTime();
+            final DateTime readyTime = now.plusMillis(2000);
+            final NotificationEvent eventJson = new TestNotificationKey("Foo");
+
+            queueWithExceptionAndFailed.recordFutureNotification(readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+
+            // Move time in the future after the notification effectiveDate
+            ((ClockMock) clock).setDeltaFromReality(3000);
+
+            await().atMost(5, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+
+                    final Integer retryCount = dbi.withHandle(new HandleCallback<Integer>() {
+                        @Override
+                        public Integer withHandle(Handle handle) throws Exception {
+                            return handle.createQuery(String.format("select error_count from %s", notificationQueueConfig.getHistoryTableName())).map(IntegerMapper.FIRST).first();
+                        }
+                    });
+                    return retryCount != null && retryCount == 3;
+                }
+            });
+        } finally {
+            queueWithExceptionAndFailed.stopQueue();;
+        }
+   }
 }
