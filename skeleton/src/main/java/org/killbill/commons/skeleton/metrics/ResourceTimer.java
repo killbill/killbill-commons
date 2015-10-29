@@ -30,17 +30,17 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-public class TimedResourceMetric {
+public class ResourceTimer {
 
-    private static final Logger log = LoggerFactory.getLogger(TimedResourceMetric.class);
+    private static final Logger log = LoggerFactory.getLogger(ResourceTimer.class);
 
     private final int defaultStatusCode;
     private final LoadingCache<Integer, Timer> metrics;
 
-    public TimedResourceMetric(final Future<MetricRegistry> metricsRegistryFuture,
-                               final Class<?> klass,
-                               final String name,
-                               final int defaultStatusCode) {
+    public ResourceTimer(final Future<MetricRegistry> metricsRegistryFuture,
+                         final Class<?> klass,
+                         final String name,
+                         final int defaultStatusCode) {
         this.defaultStatusCode = defaultStatusCode;
         this.metrics = CacheBuilder.newBuilder()
                                    .build(new CacheLoader<Integer, Timer>() {
