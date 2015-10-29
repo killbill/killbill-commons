@@ -16,41 +16,71 @@
 
 package org.killbill.commons.skeleton.metrics;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
+import javax.inject.Provider;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.Path;
+
+import org.killbill.commons.metrics.TimedResource;
+
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.inject.Inject;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 /**
  * A listener which adds method interceptors to timed resource methods.
  */
 public class TimedResourceListener implements TypeListener {
 
-    private final SettableFuture<MetricRegistry> metricsRegistryFuture = SettableFuture.create();
+    private final Provider<GuiceContainer> guiceContainer;
 
-    @Inject
-    public void setMetricsRegistry(final MetricRegistry metricsRegistry) {
-        metricsRegistryFuture.set(metricsRegistry);
+    private final Provider<MetricRegistry> metricRegistry;
+
+    public TimedResourceListener(Provider<GuiceContainer> guiceContainer,
+                                     Provider<MetricRegistry> metricRegistry) {
+        this.guiceContainer = guiceContainer;
+        this.metricRegistry = metricRegistry;
     }
 
     @Override
     public <T> void hear(final TypeLiteral<T> literal,
                          final TypeEncounter<T> encounter) {
-        for (Method method : literal.getRawType().getMethods()) {
-            final TimedResource annotation = method.getAnnotation(TimedResource.class);
-            if (annotation != null) {
-                final String name = annotation.name().isEmpty() ? method.getName() : annotation.name();
-                final TimedResourceMetric timer = new TimedResourceMetric(metricsRegistryFuture,
-                                                                          literal.getRawType(),
-                                                                          name,
-                                                                          annotation.defaultStatusCode());
-                encounter.bindInterceptor(Matchers.only(method), new TimedResourceInterceptor(timer));
+        final Path pathAnnotation = literal.getRawType().getAnnotation(Path.class);
+        if (pathAnnotation != null) {
+            final String resourcePath = pathAnnotation.value();
+
+            for (Method method : literal.getRawType().getMethods()) {
+                final TimedResource annotation = method.getAnnotation(TimedResource.class);
+                if (annotation != null) {
+                    final HttpMethod httpMethod = resourceHttpMethod(method);
+                    if (httpMethod != null) {
+                        final String metricName;
+                        if (!annotation.name().trim().isEmpty()) {
+                            metricName = annotation.name();
+                        } else {
+                            metricName = method.getName();
+                        }
+                        final TimedResourceInterceptor timedResourceInterceptor = new TimedResourceInterceptor(
+                                guiceContainer, metricRegistry, resourcePath, metricName, httpMethod.value());
+                        encounter.bindInterceptor(Matchers.only(method), timedResourceInterceptor);
+                    }
+                }
             }
         }
+    }
+
+    private HttpMethod resourceHttpMethod(Method method) {
+        for (Annotation annotation: method.getAnnotations()) {
+            HttpMethod httpMethod = annotation.annotationType().getAnnotation(HttpMethod.class);
+            if (httpMethod != null) {
+                return httpMethod;
+            }
+        }
+        return null;
     }
 }

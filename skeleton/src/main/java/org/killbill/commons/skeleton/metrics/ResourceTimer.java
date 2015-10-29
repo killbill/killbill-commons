@@ -16,11 +16,13 @@
 
 package org.killbill.commons.skeleton.metrics;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,39 +34,39 @@ import com.google.common.cache.LoadingCache;
 
 public class ResourceTimer {
 
-    private static final Logger log = LoggerFactory.getLogger(ResourceTimer.class);
+    private static final Joiner METRIC_NAME_JOINER = Joiner.on('.');
 
-    private final int defaultStatusCode;
-    private final LoadingCache<Integer, Timer> metrics;
+    private String resourcePath;
+    private String name;
+    private String httpMethod;
 
-    public ResourceTimer(final Future<MetricRegistry> metricsRegistryFuture,
-                         final Class<?> klass,
-                         final String name,
-                         final int defaultStatusCode) {
-        this.defaultStatusCode = defaultStatusCode;
-        this.metrics = CacheBuilder.newBuilder()
-                                   .build(new CacheLoader<Integer, Timer>() {
-                                       @Override
-                                       public Timer load(final Integer input) {
-                                           try {
-                                               return metricsRegistryFuture.get(1, TimeUnit.SECONDS).timer(MetricRegistry.name(klass, name + "-" + input));
-                                           } catch (final InterruptedException ex) {
-                                               Thread.currentThread().interrupt();
-                                               return null;
-                                           } catch (final TimeoutException ex) {
-                                               throw new IllegalStateException("Received requests during guice initialization", ex);
-                                           } catch (final ExecutionException ex) {
-                                               throw new IllegalStateException(ex);
-                                           }
-                                       }
-                                   });
+    private Map<String, Object> tags;
+    private MetricRegistry registry;
+
+    public ResourceTimer(String resourcePath, String name, String httpMethod, Map<String, Object> tags, MetricRegistry registry) {
+        this.resourcePath = resourcePath;
+        this.name = name;
+        this.httpMethod = httpMethod;
+        this.tags = tags;
+        this.registry = registry;
     }
 
-    public void update(final Integer statusCode, final long duration, final TimeUnit unit) {
-        try {
-            metrics.get(statusCode == null ? defaultStatusCode : statusCode).update(duration, unit);
-        } catch (final ExecutionException e) {
-            log.warn("Error while updating time", e);
+    public void update(int responseStatus, long duration, TimeUnit unit) {
+        final String metricName;
+        if (tags != null && !tags.isEmpty()) {
+            final String tags = METRIC_NAME_JOINER.join(this.tags.values());
+            metricName = METRIC_NAME_JOINER.join(
+                    "kb_resource", resourcePath, name, httpMethod, tags, responseStatusGroup(responseStatus), responseStatus);
+        } else {
+            metricName = METRIC_NAME_JOINER.join(
+                    "kb_resource", resourcePath, name, httpMethod, responseStatusGroup(responseStatus), responseStatus);
         }
+        // Letting metric registry deal with unique metric creation
+        final Timer timer = registry.timer(metricName);
+        timer.update(duration, unit);
+    }
+
+    private String responseStatusGroup(int responseStatus) {
+        return String.format("%sxx", responseStatus / 100);
     }
 }
