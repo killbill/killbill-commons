@@ -47,6 +47,7 @@
         <module>skeleton</module>
         <module>xmlloader</module>
         <module>automaton</module>
+        <module>metrics</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
@@ -112,6 +113,11 @@
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-locker</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
