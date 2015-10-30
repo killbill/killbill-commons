@@ -78,6 +78,24 @@ public class TimedResourceInterceptorTest {
         Assert.assertEquals(1, timer.getCount());
     }
 
+    public void testResourceNullTag() {
+        final Response response = interceptedResource.createOk((String) null);
+        Assert.assertEquals(200, response.getStatus());
+
+        final Timer timer = registry.getTimers().get("kb_resource.path.createOk.POST.null.2xx.200");
+        Assert.assertNotNull(timer);
+        Assert.assertEquals(1, timer.getCount());
+    }
+
+    public void testResourceNullPropertyTag() {
+        final Response response = interceptedResource.createOk((Payment) null);
+        Assert.assertEquals(201, response.getStatus());
+
+        final Timer timer = registry.getTimers().get("kb_resource.path.createOk.POST.null.2xx.201");
+        Assert.assertNotNull(timer);
+        Assert.assertEquals(1, timer.getCount());
+    }
+
     public void testResourceWithNullResponse() {
         final Response response = interceptedResource.createNullResponse();
         Assert.assertNull(response);

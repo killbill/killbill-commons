@@ -16,21 +16,14 @@
 
 package org.killbill.commons.skeleton.metrics;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import com.google.common.base.Joiner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.google.common.base.Joiner;
 
 public class ResourceTimer {
 
@@ -54,7 +47,7 @@ public class ResourceTimer {
     public void update(int responseStatus, long duration, TimeUnit unit) {
         final String metricName;
         if (tags != null && !tags.isEmpty()) {
-            final String tags = METRIC_NAME_JOINER.join(this.tags.values());
+            final String tags = METRIC_NAME_JOINER.join(getTagsValues());
             metricName = METRIC_NAME_JOINER.join(
                     "kb_resource", resourcePath, name, httpMethod, tags, responseStatusGroup(responseStatus), responseStatus);
         } else {
@@ -64,6 +57,18 @@ public class ResourceTimer {
         // Letting metric registry deal with unique metric creation
         final Timer timer = registry.timer(metricName);
         timer.update(duration, unit);
+    }
+
+    private List<Object> getTagsValues() {
+        final List<Object> values = new ArrayList<Object>(tags.values().size());
+        for (Object value : tags.values()) {
+            if (value != null) {
+                values.add(value);
+            } else {
+                values.add("null");
+            }
+        }
+        return values;
     }
 
     private String responseStatusGroup(int responseStatus) {
