@@ -1,3 +1,6 @@
+0.9
+    Metrics work (Enhance @TimedResource annotation to include more info)
+
 0.8
     Change WithProfilingThreadPoolExecutor to extend DynamicThreadPoolExecutorWithLoggingOnExceptions instead of raw ThreadPoolExecutor
 
