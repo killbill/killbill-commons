@@ -19,7 +19,6 @@ package org.killbill.commons.metrics;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 
