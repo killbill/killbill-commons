@@ -31,6 +31,7 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
 import com.palominolabs.metrics.guice.servlet.AdminServletModule;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class StatsModule extends AbstractModule {
 
@@ -80,9 +81,9 @@ public class StatsModule extends AbstractModule {
         install(new AdminServletModule(healthCheckUri, metricsUri, pingUri, threadsUri));
 
         // Metrics/Jersey integration
-        final TimedResourceListener listener = new TimedResourceListener();
-        requestInjection(listener);
-        bindListener(Matchers.any(), listener);
+        final TimedResourceListener timedResourceTypeListener =
+                new TimedResourceListener(getProvider(GuiceContainer.class), getProvider(MetricRegistry.class));
+        bindListener(Matchers.any(), timedResourceTypeListener);
     }
 
     @Provides

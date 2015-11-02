@@ -16,11 +16,23 @@
 
 package org.killbill.commons.skeleton.metrics;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Provider;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
 
+import org.killbill.commons.metrics.MetricTag;
+
+import com.codahale.metrics.MetricRegistry;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
+import com.sun.jersey.spi.container.ExceptionMapperContext;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
@@ -29,33 +41,133 @@ import org.aopalliance.intercept.MethodInvocation;
  */
 public class TimedResourceInterceptor implements MethodInterceptor {
 
-    private final TimedResourceMetric timer;
+    private final Provider<GuiceContainer> jerseyContainer;
+    private final Provider<MetricRegistry> metricRegistry;
+    private final String resourcePath;
+    private final String metricName;
+    private String httpMethod;
 
-    public TimedResourceInterceptor(final TimedResourceMetric timer) {
-        this.timer = timer;
+    public TimedResourceInterceptor(Provider<GuiceContainer> jerseyContainer,
+                                    Provider<MetricRegistry> metricRegistry,
+                                    String resourcePath,
+                                    String metricName,
+                                    String httpMethod) {
+        this.jerseyContainer = jerseyContainer;
+        this.metricRegistry = metricRegistry;
+        this.resourcePath = resourcePath;
+        this.metricName = metricName;
+        this.httpMethod = httpMethod;
     }
 
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         final long startTime = System.nanoTime();
-        // two ways to get the response code:
-        // * response object is returned
-        // * exception is thrown
-        // * default response code (not sure how to get that ...)
-        Integer status = null;
+        int responseStatus = 0;
+        try {
+            final Object response = invocation.proceed();
+            if (response instanceof Response) {
+                responseStatus = ((Response) response).getStatus();
+            } else if (response == null || response instanceof Void) {
+                responseStatus = Response.Status.NO_CONTENT.getStatusCode();
+            } else {
+                responseStatus = Response.Status.OK.getStatusCode();
+            }
+
+            return response;
+        } catch (WebApplicationException e) {
+            responseStatus = e.getResponse().getStatus();
+
+            throw e;
+        } catch (final Throwable e) {
+            responseStatus = mapException(e);
+
+            throw e;
+        } finally {
+            final long endTime = System.nanoTime();
+
+            final ResourceTimer timer = timer(invocation);
+            timer.update(responseStatus, endTime - startTime, TimeUnit.NANOSECONDS);
+        }
+    }
+
+    private int mapException(final Throwable e) throws Exception {
+        final ExceptionMapperContext exceptionMapperContext = jerseyContainer.get().getWebApplication().getExceptionMapperContext();
+        final ExceptionMapper exceptionMapper = exceptionMapperContext.find(e.getClass());
+
+        if (exceptionMapper != null) {
+            return exceptionMapper.toResponse(e).getStatus();
+        }
+        // If there's no mapping for it, assume 500
+        return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+    }
+
+    private ResourceTimer timer(MethodInvocation invocation) {
+        final Map<String, Object> metricTags = metricTags(invocation);
+
+        return new ResourceTimer(resourcePath, metricName, httpMethod, metricTags, metricRegistry.get());
+    }
+
+    private static Map<String, Object> metricTags(MethodInvocation invocation) {
+        final LinkedHashMap<String, Object> metricTags = new LinkedHashMap<String, Object>();
+        final Method method = invocation.getMethod();
+        for (int i = 0; i < method.getParameterAnnotations().length; i++) {
+            final Annotation[] parameterAnnotations = method.getParameterAnnotations()[i];
+
+            final MetricTag metricTag = findMetricTagAnnotations(parameterAnnotations);
+            if (metricTag != null) {
+                final Object currentArgument = invocation.getArguments()[i];
+                final Object tagValue;
+                if (metricTag.property().trim().isEmpty()) {
+                    tagValue = currentArgument;
+                } else {
+                    tagValue = getProperty(currentArgument, metricTag.property());
+                }
+                metricTags.put(metricTag.tag(), tagValue);
+            }
+        }
+
+        return metricTags;
+    }
+
+    private static MetricTag findMetricTagAnnotations(Annotation[] parameterAnnotations) {
+        for (final Annotation parameterAnnotation : parameterAnnotations) {
+            if (parameterAnnotation instanceof MetricTag) {
+                return (MetricTag) parameterAnnotation;
+            }
+        }
+        return null;
+    }
+
+    private static Object getProperty(Object currentArgument, String property) {
+        if (currentArgument == null) {
+            return null;
+        }
 
         try {
-            final Object result = invocation.proceed();
-
-            if (result instanceof Response) {
-                status = ((Response) result).getStatus();
+            final String[] methodNames = new String[] { "get" + capitalize(property), "is" + capitalize(property), property };
+            Method propertyMethod = null;
+            for (String methodName : methodNames) {
+                try {
+                    propertyMethod = currentArgument.getClass().getMethod(methodName);
+                    break;
+                } catch (NoSuchMethodException e) {}
             }
-            return result;
-        } catch (final WebApplicationException ex) {
-            status = ex.getResponse().getStatus();
-            throw ex;
-        } finally {
-            timer.update(status, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+            if (propertyMethod == null) {
+                throw handleReadPropertyError(currentArgument, property, null);
+            }
+            return propertyMethod.invoke(currentArgument);
+        } catch (IllegalAccessException e) {
+            throw handleReadPropertyError(currentArgument, property, e);
+        } catch (InvocationTargetException e) {
+            throw handleReadPropertyError(currentArgument, property, e);
         }
+    }
+
+    private static String capitalize(String property) {
+        return property.substring(0, 1).toUpperCase() + property.substring(1);
+    }
+
+    private static IllegalArgumentException handleReadPropertyError(Object object, String property, Exception e) {
+        return new IllegalArgumentException(String.format("Failed to read tag property \"%s\" value from object of type %s", property, object.getClass()), e);
     }
 }

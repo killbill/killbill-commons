@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.killbill.commons.skeleton.metrics;
+package org.killbill.commons.metrics;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,27 +26,32 @@ import java.lang.annotation.Target;
  * <p/>
  * Given a method like this:
  * <code><pre>
- *     &#64;TimedResource(name = "fancyName", rateUnit = TimeUnit.SECONDS, durationUnit = TimeUnit.MICROSECONDS)
- *     public String getStuff() &#123;
+ *     &#64;TimedResource(name = "fancyName")
+ *     public Response create() &#123;
  *         return "Sir Captain " + name;
  *     &#125;
  * </pre></code>
  * <p/>
- * One timer for each response code for the defining class with the name {@code getStuff-[responseCode]}
- * will be created and each time the {@code #getStuff()} method is invoked, the
- * method's execution will be timed.
+ * A timer metric will be created for each response code returned by the method during runtime. Metrics will also be
+ * grouped be the response code (2xx, 3xx, etc). Both rate and latency metrics will be provided.
+ * <p/>
+ * The generated metric name uses the provided name in the annotation or the method name, if the latter is omitted:
+ * <pre>
+ *     kb_resource./payments.fancyName.2xx.200
+ *     kb_resource./payments.fancyName.2xx.201
+ * </pre>
+ * Note that the metric naming is affected by other factors, like the resource Path annotation and the presence of
+ * MetricTag annotations in the method's parameters
+ *
+ * @see MetricTag
+ * @see javax.ws.rs.Path
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface TimedResource {
 
     /**
-     * The name of the timer.
+     * The name of the timer. If not provided, the name of the method will be used.
      */
     String name() default "";
-
-    /**
-     * The default status code of the method.
-     */
-    int defaultStatusCode() default 200;
 }
