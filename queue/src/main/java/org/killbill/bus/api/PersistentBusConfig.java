@@ -40,9 +40,9 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract int getMaxFailureRetries();
 
     @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.claimed (only valid in 'polling mode')")
+    @Config("org.killbill.persistent.bus.${instanceName}.claimed")
     @Default("10")
-    @Description("Number of bus events to fetch from the database at once")
+    @Description("Number of bus events to fetch from the database at once (only valid in 'polling mode')")
     public abstract int getMaxEntriesClaimed();
 
     @Override
@@ -76,9 +76,9 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract int geMaxDispatchThreads();
 
     @Override
-    @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity (only valid in STICKY_EVENTS mode)")
+    @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity")
     @Default("30000")
-    @Description("Size of the inflight queue")
+    @Description("Size of the inflight queue (only valid in STICKY_EVENTS mode)")
     public abstract int getEventQueueCapacity();
 
     @Override
