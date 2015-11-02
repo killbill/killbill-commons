@@ -39,7 +39,7 @@ import com.google.inject.matcher.Matchers;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 @Test(groups = "fast")
-public class TimedResourceInterceptorTest {
+public class TestTimedResourceInterceptor {
 
     private MetricRegistry registry;
     private TestResource interceptedResource;

@@ -27,7 +27,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @Test(groups = "fast")
-public class ResourceTimerTest {
+public class TestResourceTimer {
 
     private static final String RESOURCE_METRICS_PREFIX = "kb_resource";
 
