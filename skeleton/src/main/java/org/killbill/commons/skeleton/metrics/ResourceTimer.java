@@ -49,14 +49,23 @@ public class ResourceTimer {
         if (tags != null && !tags.isEmpty()) {
             final String tags = METRIC_NAME_JOINER.join(getTagsValues());
             metricName = METRIC_NAME_JOINER.join(
-                    "kb_resource", resourcePath, name, httpMethod, tags, responseStatusGroup(responseStatus), responseStatus);
+                    escapeMetrics("kb_resource", resourcePath, name, httpMethod, tags, responseStatusGroup(responseStatus), responseStatus));
         } else {
             metricName = METRIC_NAME_JOINER.join(
-                    "kb_resource", resourcePath, name, httpMethod, responseStatusGroup(responseStatus), responseStatus);
+                    escapeMetrics("kb_resource", resourcePath, name, httpMethod, responseStatusGroup(responseStatus), responseStatus));
         }
         // Letting metric registry deal with unique metric creation
         final Timer timer = registry.timer(metricName);
         timer.update(duration, unit);
+    }
+
+    private List<String> escapeMetrics(Object... names) {
+        final List<String> result = new ArrayList<String>(names.length);
+        for (Object name : names) {
+            final String metricName = String.valueOf(name);
+            result.add(metricName.replaceAll("\\.", "_"));
+        }
+        return result;
     }
 
     private List<Object> getTagsValues() {
