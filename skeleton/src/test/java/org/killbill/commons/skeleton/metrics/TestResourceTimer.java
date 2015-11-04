@@ -41,13 +41,14 @@ public class TestResourceTimer {
     @Test
     public void testMetricName() {
         final String resourcePath = "/1.0/kb/payments";
+        final String escapedResourcePath = "/1_0/kb/payments";
         final String resourceName = "getPayment";
         final String httpMethod = "GET";
 
         final ResourceTimer resourceTimer = new ResourceTimer(resourcePath, resourceName, httpMethod, null, metricRegistry);
         resourceTimer.update(200, 1, TimeUnit.MILLISECONDS);
 
-        final String expectedMetricName = expectedMetricName(resourcePath, resourceName, httpMethod, null, "2xx", 200);
+        final String expectedMetricName = expectedMetricName(escapedResourcePath, resourceName, httpMethod, null, "2xx", 200);
         final Timer timer = (Timer) metricRegistry.getMetrics().get(expectedMetricName);
         Assert.assertNotNull(timer, "Failed to create metric with expected name");
         Assert.assertEquals(1, timer.getCount());
@@ -63,6 +64,7 @@ public class TestResourceTimer {
     @Test
     public void testMetricNameWithTags() {
         final String resourcePath = "/1.0/kb/payments";
+        final String escapeResourcePath = "/1_0/kb/payments";
         final String resourceName = "create";
         final String httpMethod = "POST";
         final Map<String, Object> tags = (Map) ImmutableMap.builder().put("transactionType", "AUTHORIZE").build();
@@ -70,9 +72,24 @@ public class TestResourceTimer {
         final ResourceTimer resourceTimer = new ResourceTimer(resourcePath, resourceName, httpMethod, tags, metricRegistry);
         resourceTimer.update(501, 1, TimeUnit.MILLISECONDS);
 
-        final String expectedMetricName = expectedMetricName(resourcePath, resourceName, httpMethod, "AUTHORIZE", "5xx", 501);
+        final String expectedMetricName = expectedMetricName(escapeResourcePath, resourceName, httpMethod, "AUTHORIZE", "5xx", 501);
         final Timer timer = (Timer) metricRegistry.getMetrics().get(expectedMetricName);
         Assert.assertNotNull(timer, "Failed to create metric with expected name: " + expectedMetricName);
+        Assert.assertEquals(1, timer.getCount());
+    }
+
+    @Test
+    public void testMetricNameWithNullComponent() {
+        final String resourcePath = null;
+        final String resourceName = null;
+        final String httpMethod = null;
+
+        final ResourceTimer resourceTimer = new ResourceTimer(resourcePath, resourceName, httpMethod, null, metricRegistry);
+        resourceTimer.update(200, 1, TimeUnit.MILLISECONDS);
+
+        final String expectedMetricName = expectedMetricName(resourcePath, resourceName, httpMethod, null, "2xx", 200);
+        final Timer timer = (Timer) metricRegistry.getMetrics().get(expectedMetricName);
+        Assert.assertNotNull(timer, "Failed to create metric with expected name");
         Assert.assertEquals(1, timer.getCount());
     }
 }
