@@ -34,6 +34,8 @@ import org.killbill.bus.dispatching.BusCallableCallback;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.profiling.Profiling;
+import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.InTransaction;
@@ -55,9 +57,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -69,6 +69,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final Clock clock;
     private final PersistentBusConfig config;
     private final Timer dispatchTimer;
+    private final Profiling<List<BusEventModelDao>, RuntimeException> prof;
 
     private final Dispatcher<BusEventModelDao> dispatcher;
     private AtomicBoolean isStarted;
@@ -87,7 +88,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         this.config = config;
         final String dbBackedQId = "bus-" + config.getTableName();
         this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
-
+        this.prof = new  Profiling<List<BusEventModelDao>, RuntimeException>();
         final ThreadFactory busThreadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -301,18 +302,38 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }
     }
 
+
     private <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<BusEventModelDao> entries = searchKey1 != null ?
-                transactionalDao.getReadyQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
-                transactionalDao.getReadyQueueEntriesForSearchKey2(searchKey2, config.getTableName());
+        final List<BusEventModelDao> entries = getReadyQueueEntriesForSearchKeysWithProfiling(transactionalDao, searchKey1, searchKey2);
         return toBusEventWithMetadataList(entries);
     }
 
     private <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<BusEventModelDao> entries = searchKey1 != null ?
-                transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
-                transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(searchKey2, config.getTableName());
+        final List<BusEventModelDao> entries = getReadyOrInProcessingQueueEntriesForSearchKeysWithProfiling(transactionalDao, searchKey1, searchKey2);
         return toBusEventWithMetadataList(entries);
+    }
+
+    private List<BusEventModelDao> getReadyQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable  final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:PersistentBusSqlDao:getReadyQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<BusEventModelDao>, RuntimeException>() {
+            @Override
+            public List<BusEventModelDao> execute() throws RuntimeException {
+                return searchKey1 != null ?
+                        transactionalDao.getReadyQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
+                        transactionalDao.getReadyQueueEntriesForSearchKey2(searchKey2, config.getTableName());
+            }
+        });
+    }
+
+
+    private List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:PersistentBusSqlDao:getReadyOrInProcessingQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<BusEventModelDao>, RuntimeException>() {
+            @Override
+            public List<BusEventModelDao> execute() throws RuntimeException {
+                return searchKey1 != null ?
+                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
+                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(searchKey2, config.getTableName());
+            }
+        });
     }
 
     private <T extends BusEvent> List<BusEventWithMetadata<T>> toBusEventWithMetadataList(final List<BusEventModelDao> entries) {

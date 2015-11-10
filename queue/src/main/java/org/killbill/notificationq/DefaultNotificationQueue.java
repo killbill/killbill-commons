@@ -28,7 +28,10 @@ import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
+import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.clock.Clock;
+import org.killbill.commons.profiling.Profiling;
+import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -57,6 +60,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final NotificationQueueConfig config;
+    private final Profiling<List<NotificationEventModelDao>, RuntimeException> prof;
 
     private volatile boolean isStarted;
 
@@ -77,6 +81,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         this.objectMapper = objectMapper;
         this.clock = clock;
         this.config = config;
+        this.prof = new Profiling<List<NotificationEventModelDao>, RuntimeException>();
     }
 
     @Override
@@ -176,17 +181,37 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<NotificationEventModelDao> entries = searchKey1 != null ?
-                                                        transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
-                                                        transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+        final List<NotificationEventModelDao> entries = getFutureNotificationsInternalWithProfiling(transactionalDao, searchKey1, searchKey2);
         return toNotificationEventWithMetadataList(entries);
     }
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<NotificationEventModelDao> entries = searchKey1 != null ?
-                                                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
-                                                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+        final List<NotificationEventModelDao> entries = getFutureOrInProcessingNotificationsInternalWithProfiling(transactionalDao, searchKey1, searchKey2);
         return toNotificationEventWithMetadataList(entries);
+    }
+
+
+    private List<NotificationEventModelDao> getFutureNotificationsInternalWithProfiling(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getReadyQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<NotificationEventModelDao>, RuntimeException>() {
+            @Override
+            public List<NotificationEventModelDao> execute() throws RuntimeException {
+                return searchKey1 != null ?
+                        transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                        transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+            }
+        });
+    }
+
+
+    private List<NotificationEventModelDao> getFutureOrInProcessingNotificationsInternalWithProfiling(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getReadyOrInProcessingQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<NotificationEventModelDao>, RuntimeException>() {
+            @Override
+            public List<NotificationEventModelDao> execute() throws RuntimeException {
+                return searchKey1 != null ?
+                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+            }
+        });
     }
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> toNotificationEventWithMetadataList(final List<NotificationEventModelDao> entries) {

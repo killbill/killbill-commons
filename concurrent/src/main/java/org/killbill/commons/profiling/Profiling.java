@@ -18,15 +18,15 @@
 package org.killbill.commons.profiling;
 
 
-public class Profiling<ReturnType> {
+public class Profiling<ReturnType, ExceptionType extends Throwable> {
 
     private static final ThreadLocal<ProfilingData> perThreadProfilingData = new ThreadLocal<ProfilingData>();
 
-    public interface WithProfilingCallback<ReturnType> {
-        public <ExceptionType extends Throwable> ReturnType execute() throws ExceptionType;
+    public interface WithProfilingCallback<ReturnType, ExceptionType extends Throwable> {
+        public ReturnType execute() throws ExceptionType;
     }
 
-    public ReturnType executeWithProfiling(final ProfilingFeature.ProfilingFeatureType profilingType, final String profilingId, final WithProfilingCallback<ReturnType> callback) throws Throwable {
+    public ReturnType executeWithProfiling(final ProfilingFeature.ProfilingFeatureType profilingType, final String profilingId, final WithProfilingCallback<ReturnType, ExceptionType> callback) throws ExceptionType {
         // Nothing to do
         final ProfilingData profilingData = Profiling.getPerThreadProfilingData();
         if (profilingData == null) {

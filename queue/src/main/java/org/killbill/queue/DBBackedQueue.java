@@ -35,6 +35,8 @@ import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.profiling.Profiling;
+import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
@@ -111,6 +113,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final Counter totalProcessedSuccess;
     private final Counter totalProcessedAborted;
 
+    private final Profiling<Long, RuntimeException> prof;
+
     private volatile boolean isQueueOpenForWrite;
     private volatile boolean isQueueOpenForRead;
 
@@ -139,6 +143,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         this.isQueueOpenForWrite = false;
         this.isQueueOpenForRead = false;
         this.clock = clock;
+        this.prof = new Profiling<Long, RuntimeException>();
         if (useInflightQueue && databaseTransactionNotificationApi != null) {
             databaseTransactionNotificationApi.registerForNotification(this);
         }
@@ -233,7 +238,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     public void insertEntry(final T entry) {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
-            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) {
                 insertEntryFromTransaction(transactional, entry);
                 return null;
             }
@@ -731,11 +736,17 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     private Long safeInsertEntry(final QueueSqlDao<T> transactional, final T entry) {
-        // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
-        // value that would end up corrupting the inflightQ
-        // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
-        transactional.resetLastInsertId();
-        transactional.insertEntry(entry, config.getTableName());
-        return transactional.getLastInsertId();
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "QueueSqlDao:insert", new Profiling.WithProfilingCallback<Long, RuntimeException>() {
+
+            @Override
+            public Long execute() throws RuntimeException {
+                // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
+                // value that would end up corrupting the inflightQ
+                // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
+                transactional.resetLastInsertId();
+                transactional.insertEntry(entry, config.getTableName());
+                return transactional.getLastInsertId();
+            }
+        });
     }
 }
