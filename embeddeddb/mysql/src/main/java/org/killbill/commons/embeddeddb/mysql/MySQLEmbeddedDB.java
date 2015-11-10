@@ -132,15 +132,18 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, port, dataDir, databaseName);
     }
 
-    protected void createDataSource() {
+    protected void createDataSource() throws IOException {
         if (useMariaDB) {
             final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
+            try {
+                mariaDBDataSource.setURL(jdbcConnectionString);
+            } catch (final SQLException e) {
+                throw new IOException(e);
+            }
             mariaDBDataSource.setDatabaseName(databaseName);
             mariaDBDataSource.setUser(username);
             mariaDBDataSource.setPassword(password);
             mariaDBDataSource.setPort(port);
-            // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-configuration-properties.html
-            mariaDBDataSource.setURL(jdbcConnectionString);
             dataSource = mariaDBDataSource;
         } else {
             final MysqlDataSource mysqlDataSource = new MysqlDataSource();
