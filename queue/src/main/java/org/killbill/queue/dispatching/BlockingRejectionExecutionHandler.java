@@ -20,21 +20,28 @@ package org.killbill.queue.dispatching;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class WarningRejectionExecutionHandler implements RejectedExecutionHandler {
+public class BlockingRejectionExecutionHandler implements RejectedExecutionHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(WarningRejectionExecutionHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(BlockingRejectionExecutionHandler.class);
 
-    private final String svcQName;
-
-    public WarningRejectionExecutionHandler(final String svcQName) {
-        this.svcQName = svcQName;
+    public BlockingRejectionExecutionHandler() {
     }
 
+
     @Override
-    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-        logger.warn("Failed to insert entry for service " + svcQName + "in the dispatch queue. Event will remain undispatched...");
+    public void rejectedExecution(final Runnable r, final ThreadPoolExecutor executor) {
+        try {
+            if (!executor.isShutdown()) {
+                logger.info("BlockingRejectionExecutionHandler will block request");
+                executor.getQueue().put(r);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RejectedExecutionException("Executor was interrupted while the task was waiting to put on work queue", e);
+        }
     }
 }
