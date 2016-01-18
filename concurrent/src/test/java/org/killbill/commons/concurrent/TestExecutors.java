@@ -159,7 +159,7 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("^DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.Exception: Oops!\r?\n"));
+        assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.Exception: Oops!\r?\n"));
         assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.OutOfMemoryError: Uh oh!\r?\n"));
         assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
     }
