@@ -78,6 +78,7 @@ public class Dispatcher<M extends EventEntryModelDao> {
 
 
     public <E extends QueueEvent> void dispatch(final M modelDao, final CallableCallback<E, M> callback) {
+        log.debug("Dispatching entry: recordId={} className={} json={}", modelDao.getRecordId(), modelDao.getClassName(), modelDao.getEventJson());
         final CallableQueue<E, M> entry = new CallableQueue<E, M>(modelDao, callback);
         executor.submit(entry);
     }

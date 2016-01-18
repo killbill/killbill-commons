@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2016 Groupon, Inc
+ * Copyright 2014-2016 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -19,12 +21,10 @@ package org.killbill.notificationq.dao;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
-
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 
 public class NotificationEventModelDao extends BusEventModelDao {
-
 
     private UUID futureUserToken;
     private DateTime effectiveDate;
@@ -64,5 +64,15 @@ public class NotificationEventModelDao extends BusEventModelDao {
 
     public String getQueueName() {
         return queueName;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("NotificationEventModelDao{");
+        sb.append("futureUserToken=").append(futureUserToken);
+        sb.append(", effectiveDate=").append(effectiveDate);
+        sb.append(", queueName='").append(queueName).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }

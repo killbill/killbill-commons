@@ -1,11 +1,13 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2016 Groupon, Inc
+ * Copyright 2014-2016 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -19,10 +21,8 @@ package org.killbill.bus.dao;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
-
-import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-
+import org.killbill.queue.dao.EventEntryModelDao;
 
 public class BusEventModelDao implements EventEntryModelDao {
 
@@ -39,7 +39,7 @@ public class BusEventModelDao implements EventEntryModelDao {
     private Long searchKey1;
     private Long searchKey2;
 
-    public BusEventModelDao() { /* DAO mapper */};
+    public BusEventModelDao() { /* DAO mapper */ }
 
     public BusEventModelDao(final Long recordId, final String createdOwner, final String owner, final DateTime createdDate, final DateTime nextAvailable,
                             final PersistentQueueEntryLifecycleState processingState, final String busEventClass, final String busEventJson, final Long errorCount,
@@ -152,5 +152,24 @@ public class BusEventModelDao implements EventEntryModelDao {
     @Override
     public Long getSearchKey2() {
         return searchKey2;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("BusEventModelDao{");
+        sb.append("recordId=").append(recordId);
+        sb.append(", className='").append(className).append('\'');
+        sb.append(", eventJson='").append(eventJson).append('\'');
+        sb.append(", userToken=").append(userToken);
+        sb.append(", createdDate=").append(createdDate);
+        sb.append(", creatingOwner='").append(creatingOwner).append('\'');
+        sb.append(", processingOwner='").append(processingOwner).append('\'');
+        sb.append(", processingAvailableDate=").append(processingAvailableDate);
+        sb.append(", errorCount=").append(errorCount);
+        sb.append(", processingState=").append(processingState);
+        sb.append(", searchKey1=").append(searchKey1);
+        sb.append(", searchKey2=").append(searchKey2);
+        sb.append('}');
+        return sb.toString();
     }
 }

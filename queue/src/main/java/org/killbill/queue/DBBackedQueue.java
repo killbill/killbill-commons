@@ -272,10 +272,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     private List<T> getReadyEntriesUsingPollingMode() {
-
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
         totalFetched.inc(entriesToClaim.size());
         if (entriesToClaim.size() > 0) {
+            log.debug("Entries to claim: {}", entriesToClaim);
             return claimEntries(entriesToClaim);
         }
         return ImmutableList.<T>of();
@@ -417,7 +417,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Moving entry " + entry.getRecordId() + " into history ");
+                log.debug(DB_QUEUE_LOG_ID + "Moving entry into history: recordId={} className={} json={}", entry.getRecordId(), entry.getClassName(), entry.getEventJson());
             }
 
             transactional.insertEntry(entry, config.getHistoryTableName());
@@ -470,7 +470,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     break;
             }
             if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Moving entry " + cur.getRecordId() + " into history ");
+                log.debug(DB_QUEUE_LOG_ID + "Moving entry into history: recordId={} className={} json={}", cur.getRecordId(), cur.getClassName(), cur.getEventJson());
             }
         }
 
@@ -544,8 +544,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         }
     }
 
-    private List<T> batchClaimEntries(List<T> candidates) {
-
+    private List<T> batchClaimEntries(final List<T> candidates) {
         if (candidates.size() == 0) {
             return ImmutableList.of();
         }
@@ -561,22 +560,22 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         // We keep the 2 cases below for safety (code was written when this was MT-threaded), and we log with warn (will eventually remove it in the future)
         if (resultCount == candidates.size()) {
             totalClaimed.inc(resultCount);
+            log.debug("batchClaimEntries claimed: {}", candidates);
             return candidates;
             // Nothing... the synchronized block let go another concurrent thread
         } else if (resultCount == 0) {
-            log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries see 0 entries ");
+            log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries see 0 entries");
             return ImmutableList.of();
         } else {
-
             final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
-            final Iterable claimed = Iterables.filter(maybeClaimedEntries, new Predicate<T>() {
+            final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
                 public boolean apply(T input) {
                     return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(CreatorName.get());
                 }
             });
 
-            final List<T> result = ImmutableList.copyOf(claimed);
+            final List<T> result = ImmutableList.<T>copyOf(claimed);
 
             log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries only claimed partial entries " + candidates.size() + "/" + result.size());
 
@@ -745,7 +744,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
                 transactional.resetLastInsertId();
                 transactional.insertEntry(entry, config.getTableName());
-                return transactional.getLastInsertId();
+
+                final Long lastInsertId = transactional.getLastInsertId();
+                if (log.isDebugEnabled()) {
+                    log.debug(DB_QUEUE_LOG_ID + "Inserting entry: lastInsertId={} recordId={} className={} json={}", lastInsertId, entry.getRecordId(), entry.getClassName(), entry.getEventJson());
+                }
+
+                return lastInsertId;
             }
         });
     }
