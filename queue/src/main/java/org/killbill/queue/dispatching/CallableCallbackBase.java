@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2015-2016 Groupon, Inc
+ * Copyright 2015-2016 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -70,7 +70,7 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
         if (lastException == null) {
             moveSuccessfulEventToHistory(modelDao);
             if (log.isDebugEnabled()) {
-                log.debug("Done handling notification %s, key = %s", modelDao.getRecordId(), modelDao.getEventJson());
+                log.debug("Done handling notification {}, key = {}", modelDao.getRecordId(), modelDao.getEventJson());
             }
         } else if (errorCount <= config.getMaxFailureRetries()) {
             log.info("Dispatch error, will attempt a retry ", lastException);
