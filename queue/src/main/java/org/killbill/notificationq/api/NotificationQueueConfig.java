@@ -76,7 +76,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
-    @Default("30000")
+    @Default("100")
     @Description("Capacity for the worker queue")
     public abstract int getEventQueueCapacity();
 
