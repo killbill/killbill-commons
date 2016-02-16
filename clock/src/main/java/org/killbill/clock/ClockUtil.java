@@ -19,37 +19,67 @@ package org.killbill.clock;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Interval;
+import org.joda.time.IllegalInstantException;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 
 public class ClockUtil {
 
     /**
-     * The method will convert the provided LocalDate into an instant (DateTime).
-     * The conversion will use a reference time that should be interpreted from a UTC standpoint.
+     * Create a DateTime object using the specified reference time and timezone
      *
-     * The the provided LocalDate overlaps with the present, the current point in time is returned (to make sure we don't
-     * end up with future instant).
-     *
-     * If not, we use both the provide LocalDate and LocalTime to return the DateTime in UTC
-     *
-     * @param inputDateInTargetTimeZone The input LocalDate as interpreted in the specified targetTimeZone
-     * @param inputTimeInUTCTimeZone    The referenceTime in UTC
-     * @param targetTimeZone            The target timeZone
-     * @param clock                     The current clock
-     * @return
+     * @param localDate     LocalDate to convert
+     * @param referenceTime Reference local time
+     * @param dateTimeZone  Target timezone
+     * @return DateTime representing the input localDate at the specified reference time, in UTC
      */
-    public static DateTime computeDateTimeWithUTCReferenceTime(final LocalDate inputDateInTargetTimeZone, final LocalTime inputTimeInUTCTimeZone, final DateTimeZone targetTimeZone, final Clock clock) {
-
-        final Interval interval = inputDateInTargetTimeZone.toInterval(targetTimeZone);
-        // If the input date overlaps with the present, we return NOW.
-        if (interval.contains(clock.getUTCNow())) {
-            return clock.getUTCNow();
+    public static DateTime toUTCDateTime(final LocalDate localDate, final LocalTime referenceTime, final DateTimeZone dateTimeZone) {
+        DateTime targetDateTime;
+        try {
+            targetDateTime = new DateTime(localDate.getYear(),
+                                          localDate.getMonthOfYear(),
+                                          localDate.getDayOfMonth(),
+                                          referenceTime.getHourOfDay(),
+                                          referenceTime.getMinuteOfHour(),
+                                          referenceTime.getSecondOfMinute(),
+                                          dateTimeZone);
+        } catch (final IllegalInstantException e) {
+            // DST gap (shouldn't happen when using fixed offset timezones)
+            targetDateTime = localDate.toDateTimeAtStartOfDay(dateTimeZone);
         }
-        // If not, we convert the inputTimeInUTCTimeZone -> inputTimeInTargetTimeZone, compute the resulting DateTime in targetTimeZone, and convert into a UTC DateTime:
-        final LocalTime inputTimeInTargetTimeZone = inputTimeInUTCTimeZone.plusMillis(targetTimeZone.getOffset(clock.getUTCNow()));
-        final DateTime resultInTargetTimeZone = new DateTime(inputDateInTargetTimeZone.getYear(), inputDateInTargetTimeZone.getMonthOfYear(), inputDateInTargetTimeZone.getDayOfMonth(), inputTimeInTargetTimeZone.getHourOfDay(), inputTimeInTargetTimeZone.getMinuteOfHour(), inputTimeInTargetTimeZone.getSecondOfMinute(), targetTimeZone);
-        return resultInTargetTimeZone.toDateTime(DateTimeZone.UTC);
+
+        return toUTCDateTime(targetDateTime);
+    }
+
+    /**
+     * Create a LocalDate object using the specified timezone
+     *
+     * @param dateTime     DateTime to convert
+     * @param dateTimeZone Target timezone
+     * @return LocalDate representing the input dateTime in the specified timezone
+     */
+    public static LocalDate toLocalDate(final DateTime dateTime, final DateTimeZone dateTimeZone) {
+        return new LocalDate(dateTime, dateTimeZone);
+    }
+
+    /**
+     * Create a DateTime object forcing the timezone to be UTC
+     *
+     * @param dateTime DateTime to convert
+     * @return DateTime representing the input dateTime in UTC
+     */
+    public static DateTime toUTCDateTime(final DateTime dateTime) {
+        return toDateTime(dateTime, DateTimeZone.UTC);
+    }
+
+    /**
+     * Create a DateTime object using the specified timezone
+     *
+     * @param dateTime        DateTime to convert
+     * @param accountTimeZone Target timezone
+     * @return DateTime representing the input dateTime in the specified timezone
+     */
+    public static DateTime toDateTime(final DateTime dateTime, final DateTimeZone accountTimeZone) {
+        return dateTime.toDateTime(accountTimeZone);
     }
 }
