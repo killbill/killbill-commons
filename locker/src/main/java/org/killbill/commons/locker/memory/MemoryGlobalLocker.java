@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2016 Groupon, Inc
+ * Copyright 2014-2016 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,30 +18,24 @@
 
 package org.killbill.commons.locker.memory;
 
+import java.sql.Connection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
+import org.killbill.commons.locker.GlobalLockerBase;
 import org.killbill.commons.locker.LockFailedException;
+import org.killbill.commons.locker.ResetReentrantLockCallback;
 
-public class MemoryGlobalLocker implements GlobalLocker {
+public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
     private final Map<String, AtomicBoolean> locks = new ConcurrentHashMap<String, AtomicBoolean>();
 
-    @Override
-    public GlobalLock lockWithNumberOfTries(final String service, final String lockKey, final int retry) throws LockFailedException {
-        final String lockName = getLockName(service, lockKey);
-
-        int tries_left = retry;
-        while (tries_left-- > 0) {
-            final GlobalLock lock = lock(lockName);
-            if (lock != null) {
-                return lock;
-            }
-        }
-        throw new LockFailedException();
+    public MemoryGlobalLocker() {
+        super(null, null, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -53,7 +49,8 @@ public class MemoryGlobalLocker implements GlobalLocker {
         return lock == null || !lock.get();
     }
 
-    private synchronized GlobalLock lock(final String lockName) throws LockFailedException {
+    @Override
+    protected synchronized GlobalLock lock(final String lockName) throws LockFailedException {
         if (!isFree(lockName)) {
             return null;
         }
@@ -72,7 +69,13 @@ public class MemoryGlobalLocker implements GlobalLocker {
         };
     }
 
-    private String getLockName(final String service, final String lockKey) {
+    @Override
+    protected GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected String getLockName(final String service, final String lockKey) {
         return service + "-" + lockKey;
     }
 }
