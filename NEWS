@@ -1,6 +1,7 @@
 0.13
     Set default value of 100 for notification queue capacity
     Make MemoryGlobalLocker sleep between retries
+    Update to killbill-oss-parent 0.82
 
 0.12
     Implement a BlockingRejectionExecutionHandler for the notificationQ
