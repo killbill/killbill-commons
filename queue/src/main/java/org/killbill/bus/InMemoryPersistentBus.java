@@ -18,15 +18,8 @@
 
 package org.killbill.bus;
 
-import java.sql.Connection;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.inject.Inject;
-
+import com.google.common.eventbus.EventBusException;
+import com.google.common.eventbus.EventBusThatThrowsException;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
@@ -34,7 +27,10 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBus;
+import javax.inject.Inject;
+import java.sql.Connection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -57,9 +53,10 @@ public class InMemoryPersistentBus implements PersistentBus {
         return true;
     }
 
-    public class EventBusDelegate extends EventBus {
+    public class EventBusDelegate extends EventBusThatThrowsException {
 
         public EventBusDelegate() {
+            super("Bus");
         }
 
         public void completeDispatch() {
@@ -79,12 +76,6 @@ public class InMemoryPersistentBus implements PersistentBus {
     public InMemoryPersistentBus(final PersistentBusConfig config) {
 
         final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);
-        final Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
-            @Override
-            public Thread newThread(final Runnable r) {
-                return new Thread(group, r, config.getTableName() + "-th");
-            }
-        });
 
         this.delegate = new EventBusDelegate();
         this.isInitialized = new AtomicBoolean(false);
@@ -105,13 +96,21 @@ public class InMemoryPersistentBus implements PersistentBus {
     @Override
     public void post(final BusEvent event) throws EventBusException {
         checkInitialized("post");
-        delegate.post(event);
+        try {
+            delegate.postWithException(event);
+        } catch (com.google.common.eventbus.EventBusException e) {
+            throw new EventBusException(e.getMessage(), e);
+        }
     }
 
     @Override
     public void postFromTransaction(final BusEvent event, final Connection connection) throws EventBusException {
         checkInitialized("postFromTransaction");
-        delegate.post(event);
+        try {
+            delegate.postWithException(event);
+        } catch (com.google.common.eventbus.EventBusException e) {
+            throw new EventBusException(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -125,7 +124,7 @@ public class InMemoryPersistentBus implements PersistentBus {
     private void checkInitialized(final String operation) throws EventBusException {
         if (!isInitialized.get()) {
             throw new EventBusException(String.format("Attempting operation %s on an non initialized bus",
-                                                      operation));
+                    operation));
         }
     }
 

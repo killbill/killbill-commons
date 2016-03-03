@@ -19,6 +19,7 @@ package org.killbill.bus;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.skife.config.TimeSpan;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -27,7 +28,7 @@ import org.testng.annotations.Test;
 import org.killbill.bus.api.PersistentBus;
 
 
-public class TestEventBus {
+public class TestInMemoryEventBus {
 
     private TestEventBusBase testEventBusBase;
     private PersistentBus busService;
@@ -105,4 +106,15 @@ public class TestEventBus {
     public void testDifferentType() {
         testEventBusBase.testDifferentType();
     }
+
+    @Test(groups = "slow")
+    public void testSimpleWithExceptionAndRetrySuccess() {
+        testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
+    }
+
+    @Test(groups = "slow")
+    public void testSimpleWithExceptionAndFail() {
+        testEventBusBase.testSimpleWithExceptionAndFail();
+    }
+
 }

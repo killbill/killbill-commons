@@ -1,5 +1,13 @@
+0.14
+    Fixed InMemoryPersistentBus implementation to correctly throw errors (instaed of swallowing them into guava)
+
+0.13
+    Set default value of 100 for notification queue capacity
+    Make MemoryGlobalLocker sleep between retries
+    Update to killbill-oss-parent 0.82
+
 0.12
-    mplement a BlockingRejectionExecutionHandler for the notificationQ
+    Implement a BlockingRejectionExecutionHandler for the notificationQ
 
 0.11
     update to latest org.mariadb.jdbc.MySQLDataSource
