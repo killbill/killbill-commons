@@ -1,3 +1,6 @@
+0.14
+    Fixed InMemoryPersistentBus implementation to correctly throw errors (instaed of swallowing them into guava)
+
 0.13
     Set default value of 100 for notification queue capacity
     Make MemoryGlobalLocker sleep between retries
