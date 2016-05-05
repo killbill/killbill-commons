@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,6 @@ public abstract class EmbeddedDB {
         H2,
         POSTGRESQL
     }
-
     // Not final to allow more flexible implementers
     protected String databaseName;
     protected String username;
@@ -59,6 +60,10 @@ public abstract class EmbeddedDB {
         this.jdbcConnectionString = jdbcConnectionString;
     }
 
+    public boolean useConnectionPooling() {
+        return Boolean .getBoolean("killbill.test.use.connection.pool");
+    }
+
     public abstract DBEngine getDBEngine();
 
     public abstract void initialize() throws IOException;
@@ -69,7 +74,12 @@ public abstract class EmbeddedDB {
 
     public abstract DataSource getDataSource() throws IOException;
 
-    public abstract void stop() throws IOException;
+    public void stop() throws IOException {
+        final DataSource dataSource = getDataSource();
+        if (dataSource instanceof HikariDataSource) {
+            ((HikariDataSource) dataSource).shutdown();
+        }
+    }
 
     // Optional - for debugging, how to connect to it?
     public String getCmdLineConnectionString() {
@@ -97,6 +107,49 @@ public abstract class EmbeddedDB {
     }
 
     private static final Pattern WHITESPACE_ONLY = Pattern.compile("^\\s*$");
+
+
+    protected DataSource createHikariDataSource() throws IOException {
+
+        final String dataSourceClassName;
+        switch(getDBEngine()) {
+            case MYSQL:
+                dataSourceClassName = "org.mariadb.jdbc.MySQLDataSource";
+                break;
+            case POSTGRESQL:
+                dataSourceClassName = "org.postgresql.ds.PGSimpleDataSource";
+                break;
+            case H2:
+                dataSourceClassName = "org.h2.jdbcx.JdbcDataSource";
+                break;
+            default:
+                dataSourceClassName = null;
+                break;
+        }
+        final HikariConfig hikariConfig = new HikariConfig();
+
+        if (username != null) {
+            hikariConfig.setUsername(username);
+            hikariConfig.addDataSourceProperty("user", username);
+        }
+        if (password != null) {
+            hikariConfig.setPassword(password);
+            hikariConfig.addDataSourceProperty("password", password);
+        }
+        if (jdbcConnectionString != null) {
+            hikariConfig.addDataSourceProperty("url", jdbcConnectionString);
+        }
+
+        hikariConfig.setMaximumPoolSize(100);
+        hikariConfig.setMinimumIdle(1);
+        hikariConfig.setConnectionTimeout(10 * 000);
+        hikariConfig.setIdleTimeout(60 * 1000 * 1000);
+        hikariConfig.setMaxLifetime(0);
+
+
+        hikariConfig.setDataSourceClassName(dataSourceClassName);
+        return new HikariDataSource(hikariConfig);
+    }
 
     public void executeScript(final String script) throws IOException {
         try {
@@ -199,4 +252,5 @@ public abstract class EmbeddedDB {
             }
         }
     }
+
 }
