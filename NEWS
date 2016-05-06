@@ -1,3 +1,6 @@
+0.15
+    Enhance/simplify EmbeddedDB (testing using connection pooling)
+
 0.14
     Fixed InMemoryPersistentBus implementation to correctly throw errors (instaed of swallowing them into guava)
 

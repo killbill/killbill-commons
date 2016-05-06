@@ -35,7 +35,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     private Server server;
-    private JdbcConnectionPool dataSource;
+    private DataSource dataSource;
 
     static {
         try {
@@ -64,9 +64,6 @@ public class H2EmbeddedDB extends EmbeddedDB {
 
     @Override
     public void initialize() throws IOException {
-        dataSource = JdbcConnectionPool.create(jdbcConnectionString, username, password);
-        // Default is 10, set it to 30 to match the default for org.killbill.dao.maxActive
-        dataSource.setMaxConnections(30);
     }
 
     @Override
@@ -74,6 +71,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (started.get()) {
             throw new IOException("H2 is already running: " + jdbcConnectionString);
         }
+        createDataSource();
 
         try {
             // Start a web server for debugging (http://127.0.0.1:8082/)
@@ -106,6 +104,17 @@ public class H2EmbeddedDB extends EmbeddedDB {
         }
     }
 
+    protected void createDataSource() throws IOException {
+        if (useConnectionPooling()) {
+            dataSource = createHikariDataSource();
+        } else {
+            JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(jdbcConnectionString, username, password);
+            // Default is 10, set it to 30 to match the default for org.killbill.dao.maxActive
+            jdbcConnectionPool.setMaxConnections(30);
+            dataSource = jdbcConnectionPool;
+        }
+    }
+
     @Override
     public DataSource getDataSource() throws IOException {
         if (!started.get()) {
@@ -119,12 +128,14 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("H2 is not running");
         }
+        super.stop();
+
+        if (dataSource instanceof JdbcConnectionPool) {
+            ((JdbcConnectionPool) dataSource).dispose();
+        }
 
         if (server != null) {
             server.stop();
-        }
-        if (dataSource != null) {
-            dataSource.dispose();
         }
         logger.info(String.format("H2 stopped on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                   getJdbcConnectionString(), getUsername(), getPassword()));

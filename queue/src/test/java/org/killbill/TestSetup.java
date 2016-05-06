@@ -73,7 +73,7 @@ public class TestSetup {
         }
 
         public MySQLEmbeddedDBWithDataSource(String databaseName, String username, String password, boolean useMariaDB) {
-            super(databaseName, username, password, useMariaDB);
+            super(databaseName, username, password);
         }
 
         public void overwriteDataSource() {
