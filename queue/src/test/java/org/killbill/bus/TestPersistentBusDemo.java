@@ -50,7 +50,7 @@ public class TestPersistentBusDemo {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
 
-        embeddedDB = new MySQLEmbeddedDB("killbillq", "killbillq", "killbillq", false);
+        embeddedDB = new MySQLEmbeddedDB("killbillq", "killbillq", "killbillq");
         embeddedDB.initialize();
         embeddedDB.start();
 

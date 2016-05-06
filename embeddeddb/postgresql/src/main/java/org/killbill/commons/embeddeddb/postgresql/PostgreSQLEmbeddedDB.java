@@ -17,22 +17,21 @@
 
 package org.killbill.commons.embeddeddb.postgresql;
 
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.postgresql.ds.PGSimpleDataSource;
+
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.sql.DataSource;
-
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.postgresql.ds.PGSimpleDataSource;
-
 public class PostgreSQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    protected PGSimpleDataSource dataSource;
+    protected DataSource dataSource;
     protected int port;
 
     private KillBillTestingPostgreSqlServer testingPostgreSqlServer;
@@ -101,6 +100,7 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("PostgreSQL is not running");
         }
+        super.stop();
         stopPostgreSql();
     }
 
@@ -109,11 +109,16 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
         return String.format("psql -U%s -p%s %s", username, port, databaseName);
     }
 
-    protected void createDataSource() {
-        dataSource = new PGSimpleDataSource();
-        dataSource.setDatabaseName(databaseName);
-        dataSource.setUser(username);
-        dataSource.setUrl(jdbcConnectionString);
+    protected void createDataSource() throws IOException {
+        if (useConnectionPooling()) {
+            dataSource = createHikariDataSource();
+        } else {
+            final PGSimpleDataSource pgSimpleDataSource = new PGSimpleDataSource();
+            pgSimpleDataSource.setDatabaseName(databaseName);
+            pgSimpleDataSource.setUser(username);
+            pgSimpleDataSource.setUrl(jdbcConnectionString);
+            dataSource = pgSimpleDataSource;
+        }
     }
 
     private void startPostgreSql() throws IOException {

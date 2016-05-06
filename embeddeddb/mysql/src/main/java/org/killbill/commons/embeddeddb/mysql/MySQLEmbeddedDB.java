@@ -18,26 +18,23 @@
 
 package org.killbill.commons.embeddeddb.mysql;
 
+import com.mysql.management.HackedMysqldResource;
+import com.mysql.management.MysqldResourceI;
+import com.zaxxer.hikari.HikariDataSource;
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.mariadb.jdbc.MySQLDataSource;
+
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.ServerSocket;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.sql.DataSource;
-
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.mariadb.jdbc.MySQLDataSource;
-
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-import com.mysql.management.HackedMysqldResource;
-import com.mysql.management.MysqldResourceI;
 
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
@@ -50,28 +47,19 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     private File dataDir;
     private HackedMysqldResource mysqldResource;
 
-    private final boolean useMariaDB;
-
     public MySQLEmbeddedDB() {
         // Avoid dashes - MySQL doesn't like them
         this("database" + UUID.randomUUID().toString().substring(0, 8),
              "user" + UUID.randomUUID().toString().substring(0, 8),
-             "pass" + UUID.randomUUID().toString().substring(0, 8),
-             true);
+             "pass" + UUID.randomUUID().toString().substring(0, 8));
     }
 
-    public MySQLEmbeddedDB(final String databaseName, final String username, final String password, final boolean useMariaDB) {
+    public MySQLEmbeddedDB(final String databaseName, final String username, final String password) {
         super(databaseName, username, password, null);
         this.port = getPort();
         this.jdbcConnectionString = "jdbc:mysql://localhost:" + port + "/" + databaseName + "?createDatabaseIfNotExist=true&allowMultiQueries=true";
-        this.useMariaDB = useMariaDB;
     }
 
-    /*
-    public MySQLEmbeddedDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
-        super(databaseName, username, password, jdbcConnectionString);
-    }
-    */
 
     @Override
     public DBEngine getDBEngine() {
@@ -80,7 +68,6 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     @Override
     public void initialize() throws IOException {
-        createDataSource();
     }
 
     @Override
@@ -88,7 +75,10 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (started.get()) {
             throw new IOException("MySQL is already running: " + jdbcConnectionString);
         }
+
         startMysql();
+
+        createDataSource();
 
         refreshTableNames();
     }
@@ -124,6 +114,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("MySQL is not running");
         }
+        super.stop();
         stopMysql();
     }
 
@@ -133,7 +124,9 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     }
 
     protected void createDataSource() throws IOException {
-        if (useMariaDB) {
+        if (useConnectionPooling()) {
+            dataSource = createHikariDataSource();
+        } else {
             final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
             try {
                 mariaDBDataSource.setURL(jdbcConnectionString);
@@ -145,17 +138,9 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             mariaDBDataSource.setPassword(password);
             mariaDBDataSource.setPort(port);
             dataSource = mariaDBDataSource;
-        } else {
-            final MysqlDataSource mysqlDataSource = new MysqlDataSource();
-            mysqlDataSource.setDatabaseName(databaseName);
-            mysqlDataSource.setUser(username);
-            mysqlDataSource.setPassword(password);
-            mysqlDataSource.setPort(port);
-            // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-configuration-properties.html
-            mysqlDataSource.setURL(jdbcConnectionString);
-            dataSource = mysqlDataSource;
         }
     }
+
 
     private void startMysql() throws IOException {
         dbDir = File.createTempFile("mysqldb", "");
