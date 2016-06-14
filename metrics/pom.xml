@@ -4,7 +4,7 @@
     <parent>
         <artifactId>killbill-commons</artifactId>
         <groupId>org.kill-bill.commons</groupId>
-        <version>0.16.seventeen-SNAPSHOT</version>
+        <version>0.16-SNAPSHOT</version>
     </parent>
 
     <artifactId>killbill-metrics</artifactId>
