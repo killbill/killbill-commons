@@ -1,3 +1,6 @@
+0.16
+    Update commons to 0.16 for KB release 0.17
+
 0.15
     Enhance/simplify EmbeddedDB (testing using connection pooling)
 
