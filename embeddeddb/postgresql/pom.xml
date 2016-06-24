@@ -20,7 +20,7 @@
     <parent>
         <artifactId>killbill-embeddeddb</artifactId>
         <groupId>org.kill-bill.commons</groupId>
-        <version>0.15.1</version>
+        <version>0.15.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-postgresql</artifactId>
