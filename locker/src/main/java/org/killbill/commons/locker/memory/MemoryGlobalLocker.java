@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
-import org.killbill.commons.locker.LockFailedException;
 import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker {
@@ -50,7 +49,7 @@ public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker
     }
 
     @Override
-    protected synchronized GlobalLock lock(final String lockName) throws LockFailedException {
+    protected synchronized GlobalLock doLock(final String lockName) {
         if (!isFree(lockName)) {
             return null;
         }
@@ -61,12 +60,18 @@ public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker
             locks.get(lockName).set(true);
         }
 
-        return new GlobalLock() {
+        final GlobalLock lock = new GlobalLock() {
             @Override
             public void release() {
-                locks.get(lockName).set(false);
+                if (lockTable.releaseLock(lockName)) {
+                    locks.get(lockName).set(false);
+                }
             }
         };
+
+        lockTable.createLock(lockName, lock);
+
+        return lock;
     }
 
     @Override

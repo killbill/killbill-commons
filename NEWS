@@ -1,3 +1,14 @@
+0.17
+    0.15.1 merge for 0.17.x
+    Update to killbill-oss-parent 0.103
+
+0.16
+    Update commons to 0.16 for KB release 0.17
+
+0.15.1
+    Make MemoryGlobalLocker re-entrant
+    Update to killbill-oss-parent 0.94.1
+
 0.15
     Enhance/simplify EmbeddedDB (testing using connection pooling)
 

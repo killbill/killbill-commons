@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2015-2016 Groupon, Inc
+ * Copyright 2015-2016 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,14 +17,15 @@
 
 package org.killbill.commons.locker;
 
-import org.killbill.commons.locker.ReentrantLock.TryAcquireLockState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
+
+import org.killbill.commons.locker.ReentrantLock.TryAcquireLockState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class GlobalLockerBase implements GlobalLocker {
 
@@ -33,15 +34,11 @@ public abstract class GlobalLockerBase implements GlobalLocker {
     protected static final Logger logger = LoggerFactory.getLogger(GlobalLockerBase.class);
 
     protected final GlobalLockDao globalLockDao;
-
-
-    private final DataSource dataSource;
-
     protected final long timeout;
     protected final TimeUnit timeUnit;
+    protected final ReentrantLock lockTable;
 
-    private final ReentrantLock lockTable;
-
+    private final DataSource dataSource;
 
     public GlobalLockerBase(final DataSource dataSource, final GlobalLockDao globalLockDao, final long timeout, final TimeUnit timeUnit) {
         this.dataSource = dataSource;
@@ -69,8 +66,6 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         throw new LockFailedException();
     }
 
-
-
     @Override
     public boolean isFree(final String service, final String lockKey) {
         final String lockName = getLockName(service, lockKey);
@@ -93,16 +88,14 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         }
     }
 
-
     protected GlobalLock lock(final String lockName) throws LockFailedException {
-
         final TryAcquireLockState lockState = lockTable.tryAcquireLockForExistingOwner(lockName);
         if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_OWNER) {
             return lockState.getOriginalLock();
         }
 
         if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_NOT_OWNER) {
-            // In that case, we need tp respect the provided timeout value
+            // In that case, we need to respect the provided timeout value
             try {
                 Thread.sleep(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
             } catch (final InterruptedException e) {
@@ -112,6 +105,10 @@ public abstract class GlobalLockerBase implements GlobalLocker {
             return null;
         }
 
+        return doLock(lockName);
+    }
+
+    protected GlobalLock doLock(final String lockName) {
         Connection connection = null;
         boolean obtained = false;
         try {
@@ -120,7 +117,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
             if (obtained) {
                 final GlobalLock lock = getGlobalLock(connection, lockName, new ResetReentrantLockCallback() {
                     @Override
-                    public boolean reset(String lockName) {
+                    public boolean reset(final String lockName) {
                         return lockTable.releaseLock(lockName);
                     }
                 });
@@ -128,7 +125,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
                 return lock;
             }
         } catch (final SQLException e) {
-            logger.warn("Unable to obtain lock for " + lockName, e);
+            logger.warn("Unable to obtain lock for {}", lockName, e);
         } finally {
             if (!obtained && connection != null) {
                 try {
@@ -140,7 +137,6 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         }
         return null;
     }
-
 
     protected abstract GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb);
 
