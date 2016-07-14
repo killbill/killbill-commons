@@ -21,7 +21,7 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.106</version>
+        <version>0.112</version>
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
@@ -104,6 +104,25 @@
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-embeddeddb-mysql</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-embeddeddb-mysql</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-embeddeddb-postgresql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-embeddeddb-postgresql</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
