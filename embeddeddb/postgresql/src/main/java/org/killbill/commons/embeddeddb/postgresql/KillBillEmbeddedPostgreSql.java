@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -41,8 +42,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.airlift.command.Command;
 import io.airlift.command.CommandFailedException;
@@ -51,8 +55,6 @@ import io.airlift.units.Duration;
 import static com.google.common.base.StandardSystemProperty.OS_ARCH;
 import static com.google.common.base.StandardSystemProperty.OS_NAME;
 import static com.google.common.collect.Lists.newArrayList;
-import static io.airlift.concurrent.Threads.daemonThreadsNamed;
-import static io.airlift.testing.FileUtils.deleteRecursively;
 import static java.lang.String.format;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createTempDirectory;
@@ -303,6 +305,79 @@ class KillBillEmbeddedPostgreSql implements Closeable {
             if (!archive.delete()) {
                 log.warn("failed to delete {}", archive);
             }
+        }
+    }
+
+    private static boolean deleteRecursively(final File file) {
+        boolean success = true;
+        if (file.isDirectory()) {
+            success = deleteDirectoryContents(file);
+        }
+
+        return file.delete() && success;
+    }
+
+    private static boolean deleteDirectoryContents(final File directory) {
+        Preconditions.checkArgument(directory.isDirectory(), "Not a directory: %s", directory);
+
+        // Don't delete symbolic link directories
+        if (isSymbolicLink(directory)) {
+            return false;
+        }
+
+        boolean success = true;
+        for (final File file : listFiles(directory)) {
+            success = deleteRecursively(file) && success;
+        }
+        return success;
+    }
+
+    private static boolean isSymbolicLink(final File file) {
+        try {
+            final File canonicalFile = file.getCanonicalFile();
+            final File absoluteFile = file.getAbsoluteFile();
+            // a symbolic link has a different name between the canonical and absolute path
+            return !canonicalFile.getName().equals(absoluteFile.getName()) ||
+                   // or the canonical parent path is not the same as the files parent path
+                   !canonicalFile.getParent().equals(absoluteFile.getParentFile().getCanonicalPath());
+        } catch (final IOException e) {
+            // error on the side of caution
+            return true;
+        }
+    }
+
+    private static ImmutableList<File> listFiles(final File dir) {
+        final File[] files = dir.listFiles();
+        if (files == null) {
+            return ImmutableList.<File>of();
+        }
+        return ImmutableList.<File>copyOf(files);
+    }
+
+    /**
+     * Creates a {@link ThreadFactory} that creates named daemon threads.
+     * using the specified naming format.
+     */
+    private static ThreadFactory daemonThreadsNamed(final String nameFormat) {
+        return new ThreadFactoryBuilder()
+                .setNameFormat(nameFormat)
+                .setDaemon(true)
+                .setThreadFactory(new ContextClassLoaderThreadFactory(Thread.currentThread().getContextClassLoader()))
+                .build();
+    }
+
+    private static class ContextClassLoaderThreadFactory implements ThreadFactory {
+        private final ClassLoader classLoader;
+
+        ContextClassLoaderThreadFactory(final ClassLoader classLoader) {
+            this.classLoader = classLoader;
+        }
+
+        @Override
+        public Thread newThread(final Runnable runnable) {
+            final Thread thread = new Thread(runnable);
+            thread.setContextClassLoader(classLoader);
+            return thread;
         }
     }
 }

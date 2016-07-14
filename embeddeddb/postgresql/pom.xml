@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2015 Groupon, Inc
-  ~ Copyright 2015 The Billing Project, LLC
+  ~ Copyright 2015-2016 Groupon, Inc
+  ~ Copyright 2015-2016 The Billing Project, LLC
   ~
   ~ The Billing Project licenses this file to you under the Apache License, version 2.0
   ~ (the "License"); you may not use this file except in compliance with the
@@ -27,8 +27,31 @@
     <name>Kill Bill library of embedded dbs: PostgreSQL</name>
     <dependencies>
         <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.airlift</groupId>
-            <artifactId>testing-postgresql-server</artifactId>
+            <artifactId>command</artifactId>
+            <version>0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>units</artifactId>
+            <version>0.84</version>
+            <exclusions>
+                <!-- Should be in test scope -->
+                <exclusion>
+                    <artifactId>bval-jsr303</artifactId>
+                    <groupId>org.apache.bval</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
