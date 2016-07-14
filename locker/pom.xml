@@ -30,7 +30,6 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>command</artifactId>
-            <version>0.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -41,7 +40,6 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>units</artifactId>
-            <version>0.94</version>
             <scope>test</scope>
         </dependency>
         <dependency>
