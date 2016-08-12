@@ -58,9 +58,13 @@ public class WithProfilingThreadPoolExecutor  extends DynamicThreadPoolExecutorW
     protected void beforeExecute(final Thread t, final Runnable runnable) {
         // Allocate the thread local data
         Profiling.setPerThreadProfilingData();
+
+        super.beforeExecute(t, runnable);
     }
 
     protected void afterExecute(final Runnable runnable, final Throwable exception) {
+        super.afterExecute(runnable, exception);
+
         // Clear the thread local data
         Profiling.resetPerThreadProfilingData();
     }
