@@ -11,6 +11,9 @@
 0.16
     Update commons to 0.16 for KB release 0.17
 
+0.15.2
+    Fix inheritance bug in WithProfilingThreadPoolExecutor
+
 0.15.1
     Make MemoryGlobalLocker re-entrant
     Update to killbill-oss-parent 0.94.1
