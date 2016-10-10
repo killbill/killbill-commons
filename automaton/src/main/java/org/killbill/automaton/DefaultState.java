@@ -25,10 +25,6 @@ import javax.xml.bind.annotation.XmlID;
 
 import org.killbill.xmlloader.ValidationErrors;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements State {
 
@@ -70,9 +66,23 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
                 initialState = this;
             }
 
-            // If there is no transition from that state we stop right there.
+            // If there is no transition from that state, we stop right there
             if (!((DefaultState) initialState).getStateMachine().hasTransitionsFromStates(initialState.getName())) {
                 throw new MissingEntryException("No transition exists from state " + initialState.getName());
+            }
+
+            // If there is no enteringState transition regardless of the operation outcome, we stop right there
+            boolean hasAtLeastOneEnteringStateTransition = false;
+            for (final OperationResult operationResult : OperationResult.values()) {
+                try {
+                    DefaultTransition.findTransition(initialState, operation, operationResult);
+                    hasAtLeastOneEnteringStateTransition = true;
+                    break;
+                } catch (final MissingEntryException ignored) {
+                }
+            }
+            if (!hasAtLeastOneEnteringStateTransition) {
+                throw new MissingEntryException("No entering state transition exists from state " + initialState.getName() + " for operation " + operation.getName());
             }
 
             leavingStateCallback.leavingState(initialState);
