@@ -1,3 +1,6 @@
+0.20
+    automaton: ensure at least one enteringState transition is available
+
 0.19
     Move embedded DBs to test-jars
 
