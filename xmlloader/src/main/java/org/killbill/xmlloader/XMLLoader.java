@@ -31,12 +31,15 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
+import com.google.common.base.Strings;
 import org.killbill.billing.catalog.api.InvalidConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 public class XMLLoader {
+
+    private static final String DISABLE_VALIDATION_PROP = "org.killbill.xmlloader.disable.validation";
 
     public static Logger log = LoggerFactory.getLogger(XMLLoader.class);
 
@@ -68,7 +71,7 @@ public class XMLLoader {
             @SuppressWarnings("unchecked") final
             T castObject = (T) o;
             try {
-                validate(uri, castObject);
+                initializeAndValidate(uri, castObject);
             } catch (final ValidationException e) {
                 e.getErrors().log(log);
                 throw e;
@@ -91,8 +94,14 @@ public class XMLLoader {
     }
 
 
-    public static <T extends ValidatingConfig<T>> void validate(final URI uri, final T c) throws ValidationException {
+    public static <T extends ValidatingConfig<T>> void initializeAndValidate(final URI uri, final T c) throws ValidationException {
         c.initialize(c, uri);
+
+        if (shouldDisableValidation()) {
+            log.warn("Catalog validation has been disabled using property " + DISABLE_VALIDATION_PROP);
+            return;
+        }
+
         final ValidationErrors errs = c.validate(c, new ValidationErrors());
         log.info("Errors: " + errs.size() + " for " + uri);
         if (errs.size() > 0) {
@@ -110,5 +119,10 @@ public class XMLLoader {
         um.setSchema(schema);
 
         return um;
+    }
+
+    private static boolean shouldDisableValidation() {
+        final String disableValidationProp = System.getProperty(DISABLE_VALIDATION_PROP);
+        return (Strings.isNullOrEmpty(disableValidationProp) || Boolean.valueOf(disableValidationProp) == Boolean.FALSE) ? false : true;
     }
 }
