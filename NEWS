@@ -1,3 +1,6 @@
+0.20.1
+    Add system property to didable XML validation
+
 0.20
     automaton: ensure at least one enteringState transition is available
 
