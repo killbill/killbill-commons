@@ -19,6 +19,7 @@ package org.killbill.notificationq.dao;
 import java.util.Date;
 import java.util.List;
 
+import org.joda.time.DateTime;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -49,6 +50,19 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
     List<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
                                                                                     @Bind("searchKey2") final Long searchKey2,
                                                                                     @Define("tableName") final String tableName);
+
+
+    @SqlQuery
+    List<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
+                                                                           @Bind("searchKey1") final Long searchKey1,
+                                                                           @Bind("searchKey2") final Long searchKey2,
+                                                                           @Define("historyTableName") final String historyTableName);
+
+    @SqlQuery
+    List<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
+                                                                           @Bind("minEffectiveDate") final DateTime minEffectiveDate,
+                                                                           @Bind("searchKey2") final Long searchKey2,
+                                                                           @Define("historyTableName") final String historyTableName);
 
 
     @SqlQuery

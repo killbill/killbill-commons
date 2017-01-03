@@ -150,6 +150,24 @@ public interface NotificationQueue extends QueueLifecycle {
     <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
 
     /**
+     * Retrieve all historical notifications associated with that queue and matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+
+    /**
+     * Retrieve all historical notifications associated with that queue and matching that search key
+     *
+     * @param minEffectiveDate effective_date cutoff, to limit the search
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2);
+
+    /**
      * Move the notification to history table and mark it as 'removed'
      *
      * @param recordId the recordId

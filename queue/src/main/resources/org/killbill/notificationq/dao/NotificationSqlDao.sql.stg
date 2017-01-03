@@ -82,6 +82,32 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
 ;
 >>
 
+getHistoricalQueueEntriesForSearchKeys(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where
+      queue_name = :queueName
+      and search_key1 = :searchKey1
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getHistoricalQueueEntriesForSearchKey2(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where
+          queue_name = :queueName
+      and effective_date >= coalesce(:minEffectiveDate, '1970-01-01')
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
 /** Notifications specific queries **/
 getCountReadyEntries(tableName) ::= <<
     select

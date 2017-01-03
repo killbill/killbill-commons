@@ -20,6 +20,7 @@ package org.killbill.bus.dao;
 
 import java.util.List;
 
+import org.joda.time.DateTime;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -46,4 +47,14 @@ public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
     @SqlQuery
     public List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("searchKey2") final Long searchKey2,
                                                                                   @Define("tableName") final String tableName);
+
+    @SqlQuery
+    public List<BusEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
+                                                                         @Bind("searchKey2") final Long searchKey2,
+                                                                         @Define("historyTableName") final String historyTableName);
+
+    @SqlQuery
+    public List<BusEventModelDao> getHistoricalQueueEntriesForSearchKey2(@Bind("minCreatedDate") final DateTime minCreatedDate,
+                                                                         @Bind("searchKey2") final Long searchKey2,
+                                                                         @Define("historyTableName") final String historyTableName);
 }

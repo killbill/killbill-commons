@@ -68,3 +68,26 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
       <readyOrderByClause()>
 ;
 >>
+
+getHistoricalQueueEntriesForSearchKeys(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where
+          search_key1 = :searchKey1
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getHistoricalQueueEntriesForSearchKey2(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where created_date >= coalesce(:minCreatedDate, '1970-01-01')
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>

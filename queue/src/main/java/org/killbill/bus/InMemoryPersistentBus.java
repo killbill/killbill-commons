@@ -18,8 +18,13 @@
 
 package org.killbill.bus;
 
-import com.google.common.eventbus.EventBusException;
-import com.google.common.eventbus.EventBusThatThrowsException;
+import java.sql.Connection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.inject.Inject;
+
+import org.joda.time.DateTime;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
@@ -27,10 +32,7 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import java.sql.Connection;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.google.common.eventbus.EventBusThatThrowsException;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -180,6 +182,16 @@ public class InMemoryPersistentBus implements PersistentBus {
 
     @Override
     public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
+
+    @Override
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(final DateTime minCreatedDate, final Long searchKey2) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 }
