@@ -19,7 +19,7 @@
     <parent>
         <artifactId>killbill-commons</artifactId>
         <groupId>org.kill-bill.commons</groupId>
-        <version>0.20.2</version>
+        <version>0.20.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb</artifactId>
