@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -156,7 +156,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
 
     /**
      * Retrieve all historical notifications associated with that queue and matching that search key
@@ -165,7 +165,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2);
 
     /**
      * Move the notification to history table and mark it as 'removed'

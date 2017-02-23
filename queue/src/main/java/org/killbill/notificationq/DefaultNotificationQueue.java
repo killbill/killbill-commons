@@ -20,7 +20,7 @@ package org.killbill.notificationq;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +46,10 @@ import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
@@ -58,7 +61,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final NotificationQueueConfig config;
-    private final Profiling<List<NotificationEventModelDao>, RuntimeException> prof;
+    private final Profiling<Iterable<NotificationEventModelDao>, RuntimeException> prof;
 
     private volatile boolean isStarted;
 
@@ -79,7 +82,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         this.objectMapper = objectMapper;
         this.clock = clock;
         this.config = config;
-        this.prof = new Profiling<List<NotificationEventModelDao>, RuntimeException>();
+        this.prof = new Profiling<Iterable<NotificationEventModelDao>, RuntimeException>();
     }
 
     @Override
@@ -179,12 +182,12 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
+    public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return getHistoricalNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), null, searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2) {
+    public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2) {
         return getHistoricalNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), minEffectiveDate, null, searchKey2);
     }
 
@@ -198,53 +201,73 @@ public class DefaultNotificationQueue implements NotificationQueue {
         return toNotificationEventWithMetadataList(entries);
     }
 
-    private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final DateTime minEffectiveDate, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<NotificationEventModelDao> entries = getHistoricalNotificationsInternalWithProfiling(transactionalDao, minEffectiveDate, searchKey1, searchKey2);
-        return toNotificationEventWithMetadataList(entries);
+    private <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationsInternal(final NotificationSqlDao transactionalDao, @Nullable final DateTime minEffectiveDate, @Nullable final Long searchKey1, final Long searchKey2) {
+        final Iterable<NotificationEventModelDao> entries = getHistoricalNotificationsInternalWithProfiling(transactionalDao, minEffectiveDate, searchKey1, searchKey2);
+        return toNotificationEventWithMetadata(entries);
     }
 
     private List<NotificationEventModelDao> getFutureNotificationsInternalWithProfiling(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getReadyQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<NotificationEventModelDao>, RuntimeException>() {
+        return Lists.<NotificationEventModelDao>newArrayList(prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getReadyQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<NotificationEventModelDao>, RuntimeException>() {
             @Override
             public List<NotificationEventModelDao> execute() throws RuntimeException {
                 return searchKey1 != null ?
-                        transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
-                        transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+                       transactionalDao.getReadyQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                       transactionalDao.getReadyQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
             }
-        });
+        }));
     }
 
     private List<NotificationEventModelDao> getFutureOrInProcessingNotificationsInternalWithProfiling(final NotificationSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getReadyOrInProcessingQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<NotificationEventModelDao>, RuntimeException>() {
+        return Lists.<NotificationEventModelDao>newArrayList(prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getReadyOrInProcessingQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<NotificationEventModelDao>, RuntimeException>() {
             @Override
             public List<NotificationEventModelDao> execute() throws RuntimeException {
                 return searchKey1 != null ?
-                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
-                        transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
+                       transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getTableName()) :
+                       transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(getFullQName(), searchKey2, config.getTableName());
             }
-        });
+        }));
     }
 
-    private List<NotificationEventModelDao> getHistoricalNotificationsInternalWithProfiling(final NotificationSqlDao transactionalDao, @Nullable final DateTime minEffectiveDate, @Nullable final Long searchKey1, final Long searchKey2) {
-        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getHistoricalQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<List<NotificationEventModelDao>, RuntimeException>() {
+    private Iterable<NotificationEventModelDao> getHistoricalNotificationsInternalWithProfiling(final NotificationSqlDao transactionalDao, @Nullable final DateTime minEffectiveDate, @Nullable final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:NotificationSqlDao:getHistoricalQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<NotificationEventModelDao>, RuntimeException>() {
             @Override
-            public List<NotificationEventModelDao> execute() throws RuntimeException {
-                return searchKey1 != null ?
-                       transactionalDao.getHistoricalQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getHistoryTableName()) :
-                       transactionalDao.getHistoricalQueueEntriesForSearchKey2(getFullQName(), minEffectiveDate, searchKey2, config.getHistoryTableName());
+            public Iterable<NotificationEventModelDao> execute() throws RuntimeException {
+                return new Iterable<NotificationEventModelDao>() {
+                    @Override
+                    public Iterator<NotificationEventModelDao> iterator() {
+                        return searchKey1 != null ?
+                               transactionalDao.getHistoricalQueueEntriesForSearchKeys(getFullQName(), searchKey1, searchKey2, config.getHistoryTableName()) :
+                               transactionalDao.getHistoricalQueueEntriesForSearchKey2(getFullQName(), minEffectiveDate, searchKey2, config.getHistoryTableName());
+                    }
+                };
             }
         });
     }
 
     private <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> toNotificationEventWithMetadataList(final List<NotificationEventModelDao> entries) {
-        final List<NotificationEventWithMetadata<T>> result = new LinkedList<NotificationEventWithMetadata<T>>();
-        for (final NotificationEventModelDao cur : entries) {
-            final T event = (T) CallableCallbackBase.deserializeEvent(cur, objectMapper);
-            final NotificationEventWithMetadata<T> eventWithMetadata = new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
-                                                                                                            cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
-            result.add(eventWithMetadata);
-        }
-        return result;
+        return Lists.<NotificationEventModelDao,NotificationEventWithMetadata<T> >transform(entries,
+                                                                                            new Function<NotificationEventModelDao, NotificationEventWithMetadata<T>>() {
+                                                                                                @Override
+                                                                                                public NotificationEventWithMetadata<T> apply(final NotificationEventModelDao input) {
+                                                                                                    return toNotificationEventWithMetadata(input);
+                                                                                                }
+                                                                                            });
+    }
+
+    private <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> toNotificationEventWithMetadata(final Iterable<NotificationEventModelDao> entries) {
+        return Iterables.<NotificationEventModelDao, NotificationEventWithMetadata<T>>transform(entries,
+                                                                                                new Function<NotificationEventModelDao, NotificationEventWithMetadata<T>>() {
+                                                                                                    @Override
+                                                                                                    public NotificationEventWithMetadata<T> apply(final NotificationEventModelDao input) {
+                                                                                                        return toNotificationEventWithMetadata(input);
+                                                                                                    }
+                                                                                                });
+    }
+
+    private <T extends NotificationEvent> NotificationEventWithMetadata<T> toNotificationEventWithMetadata(final NotificationEventModelDao cur) {
+        final T event = (T) CallableCallbackBase.deserializeEvent(cur, objectMapper);
+        return new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
+                                                    cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
     }
 
     @Override

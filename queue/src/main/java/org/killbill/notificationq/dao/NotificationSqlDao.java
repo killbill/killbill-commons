@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -17,9 +19,11 @@
 package org.killbill.notificationq.dao;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.joda.time.DateTime;
+import org.killbill.commons.jdbi.statement.SmartFetchSize;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -53,16 +57,18 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
 
 
     @SqlQuery
-    List<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
-                                                                           @Bind("searchKey1") final Long searchKey1,
-                                                                           @Bind("searchKey2") final Long searchKey2,
-                                                                           @Define("historyTableName") final String historyTableName);
+    @SmartFetchSize(shouldStream = true)
+    Iterator<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
+                                                                               @Bind("searchKey1") final Long searchKey1,
+                                                                               @Bind("searchKey2") final Long searchKey2,
+                                                                               @Define("historyTableName") final String historyTableName);
 
     @SqlQuery
-    List<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
-                                                                           @Bind("minEffectiveDate") final DateTime minEffectiveDate,
-                                                                           @Bind("searchKey2") final Long searchKey2,
-                                                                           @Define("historyTableName") final String historyTableName);
+    @SmartFetchSize(shouldStream = true)
+    Iterator<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
+                                                                               @Bind("minEffectiveDate") final DateTime minEffectiveDate,
+                                                                               @Bind("searchKey2") final Long searchKey2,
+                                                                               @Define("historyTableName") final String historyTableName);
 
 
     @SqlQuery

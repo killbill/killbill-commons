@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,9 +18,11 @@
 
 package org.killbill.bus.dao;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.joda.time.DateTime;
+import org.killbill.commons.jdbi.statement.SmartFetchSize;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -49,12 +51,14 @@ public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
                                                                                   @Define("tableName") final String tableName);
 
     @SqlQuery
-    public List<BusEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
-                                                                         @Bind("searchKey2") final Long searchKey2,
-                                                                         @Define("historyTableName") final String historyTableName);
+    @SmartFetchSize(shouldStream = true)
+    public Iterator<BusEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
+                                                                             @Bind("searchKey2") final Long searchKey2,
+                                                                             @Define("historyTableName") final String historyTableName);
 
     @SqlQuery
-    public List<BusEventModelDao> getHistoricalQueueEntriesForSearchKey2(@Bind("minCreatedDate") final DateTime minCreatedDate,
-                                                                         @Bind("searchKey2") final Long searchKey2,
-                                                                         @Define("historyTableName") final String historyTableName);
+    @SmartFetchSize(shouldStream = true)
+    public Iterator<BusEventModelDao> getHistoricalQueueEntriesForSearchKey2(@Bind("minCreatedDate") final DateTime minCreatedDate,
+                                                                             @Bind("searchKey2") final Long searchKey2,
+                                                                             @Define("historyTableName") final String historyTableName);
 }

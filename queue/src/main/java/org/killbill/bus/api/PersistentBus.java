@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -178,7 +178,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
 
     /**
      * Retrieve all historical bus events matching that search key
@@ -187,5 +187,5 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2     the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(DateTime minCreatedDate, Long searchKey2);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(DateTime minCreatedDate, Long searchKey2);
 }
