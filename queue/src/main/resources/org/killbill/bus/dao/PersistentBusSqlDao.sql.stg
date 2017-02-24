@@ -38,6 +38,7 @@ getReadyQueueEntriesForSearchKey2(tableName) ::= <<
     from <tableName>
     where
           processing_state = 'AVAILABLE'
+      and created_date \< coalesce(:maxCreatedDate, '2100-01-01')
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>
@@ -63,6 +64,7 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
     from <tableName>
     where
           processing_state in ('AVAILABLE', 'IN_PROCESSING')
+      and created_date \< coalesce(:maxCreatedDate, '2100-01-01')
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>

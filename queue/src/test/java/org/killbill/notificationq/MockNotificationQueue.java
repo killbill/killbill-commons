@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -112,12 +112,12 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(DateTime maxEffectiveDate, Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(Long searchKey2, Connection connection) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(DateTime maxEffectiveDate, Long searchKey2, Connection connection) {
         return null;
     }
 
@@ -137,12 +137,12 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(DateTime maxEffectiveDate, Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(Long searchKey2, Connection connection) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(DateTime maxEffectiveDate, Long searchKey2, Connection connection) {
         return null;
     }
 

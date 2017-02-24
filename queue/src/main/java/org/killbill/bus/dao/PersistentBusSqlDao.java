@@ -19,7 +19,6 @@
 package org.killbill.bus.dao;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.joda.time.DateTime;
 import org.killbill.commons.jdbi.statement.SmartFetchSize;
@@ -33,22 +32,28 @@ import org.skife.jdbi.v2.sqlobject.customizers.Define;
 public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
 
     @SqlQuery
-    public List<BusEventModelDao> getReadyQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
-                                                                    @Bind("searchKey2") final Long searchKey2,
-                                                                    @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    public Iterator<BusEventModelDao> getReadyQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
+                                                                        @Bind("searchKey2") final Long searchKey2,
+                                                                        @Define("tableName") final String tableName);
 
     @SqlQuery
-    public List<BusEventModelDao> getReadyQueueEntriesForSearchKey2(@Bind("searchKey2") final Long searchKey2,
-                                                                    @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    public Iterator<BusEventModelDao> getReadyQueueEntriesForSearchKey2(@Bind("maxCreatedDate") final DateTime maxCreatedDate,
+                                                                        @Bind("searchKey2") final Long searchKey2,
+                                                                        @Define("tableName") final String tableName);
 
     @SqlQuery
-    public List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
-                                                                                  @Bind("searchKey2") final Long searchKey2,
-                                                                                  @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    public Iterator<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeys(@Bind("searchKey1") final Long searchKey1,
+                                                                                      @Bind("searchKey2") final Long searchKey2,
+                                                                                      @Define("tableName") final String tableName);
 
     @SqlQuery
-    public List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("searchKey2") final Long searchKey2,
-                                                                                  @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    public Iterator<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("maxCreatedDate") final DateTime maxCreatedDate,
+                                                                                      @Bind("searchKey2") final Long searchKey2,
+                                                                                      @Define("tableName") final String tableName);
 
     @SqlQuery
     @SmartFetchSize(shouldStream = true)

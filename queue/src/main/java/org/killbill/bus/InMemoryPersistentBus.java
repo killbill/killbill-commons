@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -151,12 +151,12 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(final Long searchKey2) {
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2, final Connection connection) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 
@@ -176,12 +176,12 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(final Long searchKey2) {
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
+    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2, final Connection connection) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
 

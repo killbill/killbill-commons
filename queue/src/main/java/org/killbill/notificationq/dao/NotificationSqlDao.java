@@ -20,7 +20,6 @@ package org.killbill.notificationq.dao;
 
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 
 import org.joda.time.DateTime;
 import org.killbill.commons.jdbi.statement.SmartFetchSize;
@@ -34,26 +33,32 @@ import org.skife.jdbi.v2.sqlobject.customizers.Define;
 public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDao> {
 
     @SqlQuery
-    List<NotificationEventModelDao> getReadyQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
-                                                                      @Bind("searchKey1") final Long searchKey1,
-                                                                      @Bind("searchKey2") final Long searchKey2,
-                                                                      @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    Iterator<NotificationEventModelDao> getReadyQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
+                                                                          @Bind("searchKey1") final Long searchKey1,
+                                                                          @Bind("searchKey2") final Long searchKey2,
+                                                                          @Define("tableName") final String tableName);
 
     @SqlQuery
-    List<NotificationEventModelDao> getReadyQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
-                                                                      @Bind("searchKey2") final Long searchKey2,
-                                                                      @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    Iterator<NotificationEventModelDao> getReadyQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
+                                                                          @Bind("maxEffectiveDate") final DateTime maxEffectiveDate,
+                                                                          @Bind("searchKey2") final Long searchKey2,
+                                                                          @Define("tableName") final String tableName);
 
     @SqlQuery
-    List<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
-                                                                                    @Bind("searchKey1") final Long searchKey1,
-                                                                                    @Bind("searchKey2") final Long searchKey2,
-                                                                                    @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    Iterator<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
+                                                                                        @Bind("searchKey1") final Long searchKey1,
+                                                                                        @Bind("searchKey2") final Long searchKey2,
+                                                                                        @Define("tableName") final String tableName);
 
     @SqlQuery
-    List<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
-                                                                                    @Bind("searchKey2") final Long searchKey2,
-                                                                                    @Define("tableName") final String tableName);
+    @SmartFetchSize(shouldStream = true)
+    Iterator<NotificationEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKey2(@Bind("queueName") String queueName,
+                                                                                        @Bind("maxEffectiveDate") final DateTime maxEffectiveDate,
+                                                                                        @Bind("searchKey2") final Long searchKey2,
+                                                                                        @Define("tableName") final String tableName);
 
 
     @SqlQuery

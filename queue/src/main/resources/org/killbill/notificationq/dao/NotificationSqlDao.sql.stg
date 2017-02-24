@@ -49,6 +49,7 @@ getReadyQueueEntriesForSearchKey2(tableName) ::= <<
     where
       queue_name = :queueName
       and processing_state = 'AVAILABLE'
+      and effective_date \< coalesce(:maxEffectiveDate, '2100-01-01')
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>
@@ -76,6 +77,7 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
     where
       queue_name = :queueName
       and processing_state in ('AVAILABLE', 'IN_PROCESSING')
+      and effective_date \< coalesce(:maxEffectiveDate, '2100-01-01')
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>

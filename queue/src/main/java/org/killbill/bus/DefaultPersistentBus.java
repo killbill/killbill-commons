@@ -64,7 +64,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBusThatThrowsException;
 
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
@@ -212,11 +211,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(),
                 clock.getUTCNow(),
-                event.getClass().getName(),
-                json,
-                event.getUserToken(),
-                event.getSearchKey1(),
-                event.getSearchKey2());
+                                                            event.getClass().getName(),
+                                                            json,
+                                                            event.getUserToken(),
+                                                            event.getSearchKey1(),
+                                                            event.getSearchKey2());
 
         final InTransaction.InTransactionHandler<PersistentBusSqlDao, Void> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Void>() {
 
@@ -231,69 +230,69 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
-        return getAvailableBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), searchKey1, searchKey2);
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        return getAvailableBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), null, searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
-        final InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>>() {
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public List<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
-                return getAvailableBusEventsForSearchKeysInternal(transactional, searchKey1, searchKey2);
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+                return getAvailableBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
         return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(final Long searchKey2) {
-        return getAvailableBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), null, searchKey2);
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2) {
+        return getAvailableBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), maxCreatedDate, null, searchKey2);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
-        final InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>>() {
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public List<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
-                return getAvailableBusEventsForSearchKeysInternal(transactional, null, searchKey2);
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+                return getAvailableBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
         return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getInProcessingBusEvents() {
-        return toBusEventWithMetadataList(dao.getSqlDao().getInProcessingEntries(config.getTableName()));
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getInProcessingBusEvents() {
+        return toBusEventWithMetadata(dao.getSqlDao().getInProcessingEntries(config.getTableName()));
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
-        return getAvailableOrInProcessingBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), searchKey1, searchKey2);
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        return getAvailableOrInProcessingBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), null, searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
-        final InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>>() {
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public List<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
-                return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, searchKey1, searchKey2);
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+                return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
         return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(final Long searchKey2) {
-        return getAvailableOrInProcessingBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), null, searchKey2);
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2) {
+        return getAvailableOrInProcessingBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), maxCreatedDate, null, searchKey2);
     }
 
     @Override
-    public <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final Long searchKey2, final Connection connection) {
-        final InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, List<BusEventWithMetadata<T>>>() {
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2, final Connection connection) {
+        final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public List<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
-                return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, null, searchKey2);
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+                return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
         return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
@@ -318,14 +317,14 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }
     }
 
-    private <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<BusEventModelDao> entries = getReadyQueueEntriesForSearchKeysWithProfiling(transactionalDao, searchKey1, searchKey2);
-        return toBusEventWithMetadataList(entries);
+    private <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final DateTime maxCreatedDate, @Nullable final Long searchKey1, final Long searchKey2) {
+        final Iterable<BusEventModelDao> entries = getReadyQueueEntriesForSearchKeysWithProfiling(transactionalDao, maxCreatedDate, searchKey1, searchKey2);
+        return toBusEventWithMetadata(entries);
     }
 
-    private <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        final List<BusEventModelDao> entries = getReadyOrInProcessingQueueEntriesForSearchKeysWithProfiling(transactionalDao, searchKey1, searchKey2);
-        return toBusEventWithMetadataList(entries);
+    private <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final DateTime maxCreatedDate, @Nullable final Long searchKey1, final Long searchKey2) {
+        final Iterable<BusEventModelDao> entries = getReadyOrInProcessingQueueEntriesForSearchKeysWithProfiling(transactionalDao, maxCreatedDate, searchKey1, searchKey2);
+        return toBusEventWithMetadata(entries);
     }
 
     private <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeysInternal(final PersistentBusSqlDao transactionalDao, @Nullable final DateTime minCreatedDate, @Nullable final Long searchKey1, final Long searchKey2) {
@@ -333,26 +332,36 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         return toBusEventWithMetadata(entries);
     }
 
-    private List<BusEventModelDao> getReadyQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        return Lists.<BusEventModelDao>newArrayList(prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:PersistentBusSqlDao:getReadyQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<BusEventModelDao>, RuntimeException>() {
+    private Iterable<BusEventModelDao> getReadyQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable final DateTime maxCreatedDate, @Nullable final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:PersistentBusSqlDao:getReadyQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<BusEventModelDao>, RuntimeException>() {
             @Override
             public Iterable<BusEventModelDao> execute() throws RuntimeException {
-                return searchKey1 != null ?
-                       transactionalDao.getReadyQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
-                       transactionalDao.getReadyQueueEntriesForSearchKey2(searchKey2, config.getTableName());
+                return new Iterable<BusEventModelDao>() {
+                    @Override
+                    public Iterator<BusEventModelDao> iterator() {
+                        return searchKey1 != null ?
+                               transactionalDao.getReadyQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
+                               transactionalDao.getReadyQueueEntriesForSearchKey2(maxCreatedDate, searchKey2, config.getTableName());
+                    }
+                };
             }
-        }));
+        });
     }
 
-    private List<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable final Long searchKey1, final Long searchKey2) {
-        return Lists.<BusEventModelDao>newArrayList(prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:PersistentBusSqlDao:getReadyOrInProcessingQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<BusEventModelDao>, RuntimeException>() {
+    private Iterable<BusEventModelDao> getReadyOrInProcessingQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable final DateTime maxCreatedDate, @Nullable final Long searchKey1, final Long searchKey2) {
+        return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "DAO:PersistentBusSqlDao:getReadyOrInProcessingQueueEntriesForSearchKeys", new Profiling.WithProfilingCallback<Iterable<BusEventModelDao>, RuntimeException>() {
             @Override
-            public List<BusEventModelDao> execute() throws RuntimeException {
-                return searchKey1 != null ?
-                       transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
-                       transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(searchKey2, config.getTableName());
+            public Iterable<BusEventModelDao> execute() throws RuntimeException {
+                return new Iterable<BusEventModelDao>() {
+                    @Override
+                    public Iterator<BusEventModelDao> iterator() {
+                        return searchKey1 != null ?
+                               transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKeys(searchKey1, searchKey2, config.getTableName()) :
+                               transactionalDao.getReadyOrInProcessingQueueEntriesForSearchKey2(maxCreatedDate, searchKey2, config.getTableName());
+                    }
+                };
             }
-        }));
+        });
     }
 
     private Iterable<BusEventModelDao> getHistoricalQueueEntriesForSearchKeysWithProfiling(final PersistentBusSqlDao transactionalDao, @Nullable final DateTime minCreatedDate, @Nullable final Long searchKey1, final Long searchKey2) {
@@ -369,16 +378,6 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 };
             }
         });
-    }
-
-    private <T extends BusEvent> List<BusEventWithMetadata<T>> toBusEventWithMetadataList(final List<BusEventModelDao> entries) {
-        return Lists.<BusEventModelDao, BusEventWithMetadata<T>>transform(entries,
-                                                                          new Function<BusEventModelDao, BusEventWithMetadata<T>>() {
-                                                                              @Override
-                                                                              public BusEventWithMetadata<T> apply(final BusEventModelDao input) {
-                                                                                  return toBusEventWithMetadata(input);
-                                                                              }
-                                                                          });
     }
 
     private <T extends BusEvent> Iterable<BusEventWithMetadata<T>> toBusEventWithMetadata(final Iterable<BusEventModelDao> entries) {

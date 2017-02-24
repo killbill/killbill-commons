@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -22,6 +22,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
 import org.joda.time.DateTime;
 import org.killbill.TestSetup;
 import org.killbill.clock.ClockMock;
@@ -214,27 +217,29 @@ public class TestNotificationQueue extends TestSetup {
             }
         });
 
-        Assert.assertEquals(queue.getInProcessingNotifications().size(), 0);
+        Assert.assertEquals(Iterables.<NotificationEventWithMetadata<TestNotificationKey>>size(queue.getInProcessingNotifications()), 0);
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futuresAll = queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2);
+        final List<NotificationEventWithMetadata> futuresAll = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2));
         Assert.assertEquals(futuresAll.size(), 2);
         int found = 0;
         for (int i = 0; i < 2; i++) {
-            if (futuresAll.get(i).getEvent().getValue().equals(key3.toString()) ||
-                    futuresAll.get(i).getEvent().getValue().equals(key4.toString())) {
+            final TestNotificationKey testNotificationKey = (TestNotificationKey) futuresAll.get(i).getEvent();
+            if (testNotificationKey.getValue().equals(key3.toString()) ||
+                testNotificationKey.getValue().equals(key4.toString())) {
                 found++;
             }
         }
         Assert.assertEquals(found, 2);
 
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futures2 = queue.getFutureNotificationForSearchKey2(SEARCH_KEY_2);
+        final List<NotificationEventWithMetadata> futures2 = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKey2(null, SEARCH_KEY_2));
         Assert.assertEquals(futures2.size(), 3);
         found = 0;
         for (int i = 0; i < 3; i++) {
-            if (futures2.get(i).getEvent().getValue().equals(key3.toString()) ||
-                    futures2.get(i).getEvent().getValue().equals(key4.toString()) ||
-                    futures2.get(i).getEvent().getValue().equals(key1.toString())) {
+            final TestNotificationKey testNotificationKey = (TestNotificationKey) futures2.get(i).getEvent();
+            if (testNotificationKey.getValue().equals(key3.toString()) ||
+                testNotificationKey.getValue().equals(key4.toString()) ||
+                testNotificationKey.getValue().equals(key1.toString())) {
                 found++;
             }
         }
