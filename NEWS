@@ -1,3 +1,8 @@
+0.20.3
+    Add indexes for historical queries on queues
+    Switch to streaming APIs for all queues searches
+    MySQL embeddeddb compatibility with recent MariaDB Connector/J client
+
 0.20.2
     Add queue apis for historical entries
 
