@@ -54,8 +54,8 @@ public class HackedInitializeUser {
 
     private PrintStream err;
 
-    public InitializeUser(int port, String userName, String password,
-                          PrintStream err) {
+    public HackedInitializeUser(int port, String userName, String password,
+                                PrintStream err) {
         this.userName = userName;
         this.password = password;
         this.url = "jdbc:mysql://127.0.0.1:" + port + "/mysql";
