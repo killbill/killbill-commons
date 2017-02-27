@@ -23,6 +23,7 @@ import com.mysql.management.MysqldResourceI;
 import com.zaxxer.hikari.HikariDataSource;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.mariadb.jdbc.MySQLDataSource;
+import org.slf4j.event.Level;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -159,8 +160,10 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             throw new IOException("Unable to create " + dataDir.getAbsolutePath());
         }
 
-        final PrintStream out = new PrintStream(new LoggingOutputStream(logger), true);
-        mysqldResource = new HackedMysqldResource(dbDir, dataDir, null, out, out);
+        final PrintStream out = new PrintStream(new LoggingOutputStream(logger, Level.INFO), true);
+        final PrintStream err = new PrintStream(new LoggingOutputStream(logger, Level.WARN), true);
+        final PrintStream debug = new PrintStream(new LoggingOutputStream(logger, Level.DEBUG), true);
+        mysqldResource = new HackedMysqldResource(dbDir, dataDir, null, out, err, debug);
 
         final Map<String, String> dbOpts = new HashMap<String, String>();
         dbOpts.put(MysqldResourceI.PORT, Integer.toString(port));

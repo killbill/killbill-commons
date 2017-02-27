@@ -100,6 +100,8 @@ public final class HackedMysqldResource implements MysqldResourceI {
 
     private PrintStream err;
 
+    private PrintStream debug;
+
     private Exception trace;
 
     private int killDelay;
@@ -132,14 +134,15 @@ public final class HackedMysqldResource implements MysqldResourceI {
     }
 
     public HackedMysqldResource(File baseDir, File dataDir,
-                                String mysqlVersionString, PrintStream out, PrintStream err) {
-        this(baseDir, dataDir, mysqlVersionString, out, err, null);
+                                String mysqlVersionString, PrintStream out, PrintStream err, PrintStream debug) {
+        this(baseDir, dataDir, mysqlVersionString, out, err, debug, null);
     }
 
     HackedMysqldResource(File pBaseDir, File pDataDir, String pMysqlVersionString,
-                         PrintStream pOut, PrintStream pErr, Utils pUtils) {
+                         PrintStream pOut, PrintStream pErr, PrintStream pDebug, Utils pUtils) {
         this.out = (pOut != null) ? pOut : System.out;
         this.err = (pErr != null) ? pErr : System.err;
+        this.debug = (pDebug != null) ? pDebug : this.out;
         this.utils = (pUtils != null) ? pUtils : new Utils();
         this.platformProperties = utils.streams().loadProperties(
                 PLATFORM_MAP_PROPERTIES, pErr);
@@ -224,7 +227,7 @@ public final class HackedMysqldResource implements MysqldResourceI {
                 completionListensers.remove(this);
             }
         });
-        setShell(exec(threadName, mysqldArgs, out, err, true));
+        setShell(exec(threadName, mysqldArgs, out, debug /* err would be a bit noisy */, true));
 
         reportPid();
         utils.files().writeString(portFile, port + utils.str().newLine());
