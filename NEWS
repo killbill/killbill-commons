@@ -1,3 +1,7 @@
+0.20.4
+    queue: add missing setters in ModelDao (performance)
+    Update to killbill-oss-parent 0.140.13
+
 0.20.3
     Add indexes for historical queries on queues
     Switch to streaming APIs for all queues searches
