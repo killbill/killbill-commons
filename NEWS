@@ -1,3 +1,6 @@
+0.20.5
+    Update to killbill-oss-parent 0.140.15
+
 0.20.4
     queue: add missing setters in ModelDao (performance)
     Update to killbill-oss-parent 0.140.13
