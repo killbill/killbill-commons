@@ -1,4 +1,5 @@
 0.20.5
+    xmlloader: expose toURL helpers
     Update to killbill-oss-parent 0.140.15
 
 0.20.4
