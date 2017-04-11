@@ -72,7 +72,7 @@ public class TestDBBackedQueue extends TestSetup {
      * <p/>
      * We will write 100 events, and consume them as we write them.
      */
-    @Test(groups = "slow")
+    @Test(groups = "mysql")
     public void testOnlyInflightQ() {
         final PersistentBusConfig config = createConfig(1, 10, PersistentQueueMode.STICKY_EVENTS);
         queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "onlyInflightQ-bus_event", metricRegistry, databaseTransactionNotificationApi);
@@ -183,7 +183,7 @@ public class TestDBBackedQueue extends TestSetup {
     }
 
 
-    @Test(groups = "slow")
+    @Test(groups = "mysql")
     public void testInflightQWithMultipleEntriesPerTransaction() {
         final PersistentBusConfig config = createConfig(3, 10, PersistentQueueMode.STICKY_EVENTS);
         queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "MultipleEntriesPerTransaction-bus_event", metricRegistry, databaseTransactionNotificationApi);
@@ -223,7 +223,7 @@ public class TestDBBackedQueue extends TestSetup {
      * <p/>
      * We check the logic that turns the Q open for read as soon as we have read the existing items on disk.
      */
-    @Test(groups = "slow")
+    @Test(groups = "mysql")
     public void testInflightQWithSmallExistingEntriesOnStart() {
 
         for (int i = 0; i < 5; i++) {
