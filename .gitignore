@@ -64,6 +64,7 @@ modules.xml
 .idea/kotlinc.xml
 .idea/sbt.xml
 .idea/vcs.xml
+.idea/dbnavigator.xml
 
 #
 # https://github.com/github/gitignore/blob/master/Java.gitignore
