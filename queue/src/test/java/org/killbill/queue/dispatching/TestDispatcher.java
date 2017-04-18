@@ -19,7 +19,7 @@ package org.killbill.queue.dispatching;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.jayway.awaitility.Awaitility;
+import org.awaitility.Awaitility;
 import org.joda.time.DateTime;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.dao.BusEventModelDao;

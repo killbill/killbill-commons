@@ -25,7 +25,7 @@ import org.joda.time.LocalDate;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.jayway.awaitility.Awaitility;
+import org.awaitility.Awaitility;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
