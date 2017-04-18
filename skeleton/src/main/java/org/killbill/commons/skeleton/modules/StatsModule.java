@@ -30,7 +30,6 @@ import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
-import com.palominolabs.metrics.guice.servlet.AdminServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class StatsModule extends AbstractModule {
