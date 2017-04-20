@@ -21,9 +21,8 @@ package com.google.common.eventbus;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.MoreExecutors;
 
 /**
@@ -37,9 +36,11 @@ import com.google.common.util.concurrent.MoreExecutors;
  */
 public class EventBusThatThrowsException extends EventBus {
 
+    @VisibleForTesting
+    final SubscriberExceptionsTrackerHandler exceptionHandler;
+
     private final SubscriberRegistry subscribers;
     private final Dispatcher dispatcher;
-    private final SubscriberExceptionsTrackerHandler exceptionHandler;
 
     public EventBusThatThrowsException(final String identifier) {
         super(identifier,
@@ -64,7 +65,7 @@ public class EventBusThatThrowsException extends EventBus {
             } finally {
                 // This works because we are both using the immediate dispatcher and the direct executor
                 // Note: we always want to dequeue here to avoid any memory leaks
-                subscriberException = exceptionHandler.caught(event);
+                subscriberException = exceptionHandler.caught();
             }
 
             if (guavaException != null) {
@@ -109,26 +110,28 @@ public class EventBusThatThrowsException extends EventBus {
         }
     }
 
-    private static final class SubscriberExceptionsTrackerHandler implements SubscriberExceptionHandler {
+    static final class SubscriberExceptionsTrackerHandler implements SubscriberExceptionHandler {
 
-        private final Map<Object, Exception> eventsWithException = new ConcurrentHashMap<Object, Exception>();
+        @VisibleForTesting
+        final ThreadLocal<Exception> lastException = new ThreadLocal<Exception>() {};
 
         private final SubscriberExceptionHandler loggerHandler = LoggingHandler.INSTANCE;
 
         @Override
         public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
             // By convention, re-throw the very first exception
-            final Object v = eventsWithException.get(context.getEvent());
-            if (v == null) {
+            if (lastException.get() == null) {
                 // Wrapping for legacy reasons
-                eventsWithException.put(context.getEvent(), new InvocationTargetException(exception));
+                lastException.set(new InvocationTargetException(exception));
             }
 
             loggerHandler.handleException(exception, context);
         }
 
-        public Exception caught(final Object event) {
-            return eventsWithException.remove(event);
+        Exception caught() {
+            final Exception exception = lastException.get();
+            lastException.set(null);
+            return exception;
         }
     }
 }
