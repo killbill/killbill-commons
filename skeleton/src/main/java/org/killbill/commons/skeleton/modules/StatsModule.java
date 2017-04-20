@@ -70,7 +70,7 @@ public class StatsModule extends AbstractModule {
         // Dropwizard metrics
         final MetricRegistry metricRegistry = createMetricRegistry();
         bind(MetricRegistry.class).toInstance(metricRegistry);
-        install(new MetricsInstrumentationModule(metricRegistry));
+        install(MetricsInstrumentationModule.builder().withMetricRegistry(metricRegistry).build());
 
         // Dropwizard healthChecks
         final Multibinder<HealthCheck> healthChecksBinder = Multibinder.newSetBinder(binder(), HealthCheck.class);
