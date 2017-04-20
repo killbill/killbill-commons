@@ -474,15 +474,15 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         }
 
-        final Iterable toBeRemovedRecordIds = Iterables.transform(entries, new Function<T, Object>() {
+        final Iterable<Long> toBeRemovedRecordIds = Iterables.<T, Long>transform(entries, new Function<T, Long>() {
             @Override
-            public Object apply(T input) {
+            public Long apply(T input) {
                 return input.getRecordId();
             }
         });
 
         transactional.insertEntries(entries, config.getHistoryTableName());
-        transactional.removeEntries(ImmutableList.copyOf(toBeRemovedRecordIds), config.getTableName());
+        transactional.removeEntries(ImmutableList.<Long>copyOf(toBeRemovedRecordIds), config.getTableName());
     }
 
 

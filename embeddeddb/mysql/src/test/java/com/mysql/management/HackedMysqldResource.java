@@ -66,6 +66,7 @@ import java.util.Properties;
 
 
 // Identical to its copied class MysqldResource, except for STEPH comment below
+@SuppressWarnings("unchecked")
 public final class HackedMysqldResource implements MysqldResourceI {
 
     public static final String MYSQL_C_MXJ = "mysql-c.mxj";

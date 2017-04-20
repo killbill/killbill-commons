@@ -67,7 +67,7 @@ public class TestResourceTimer {
         final String escapeResourcePath = "/1_0/kb/payments";
         final String resourceName = "create";
         final String httpMethod = "POST";
-        final Map<String, Object> tags = (Map) ImmutableMap.builder().put("transactionType", "AUTHORIZE").build();
+        final Map<String, Object> tags = ImmutableMap.<String, Object>builder().put("transactionType", "AUTHORIZE").build();
 
         final ResourceTimer resourceTimer = new ResourceTimer(resourcePath, resourceName, httpMethod, tags, metricRegistry);
         resourceTimer.update(501, 1, TimeUnit.MILLISECONDS);

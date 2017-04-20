@@ -46,7 +46,7 @@ import org.killbill.queue.dispatching.CallableCallbackBase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
 
 public class DefaultNotificationQueue implements NotificationQueue {
@@ -87,7 +87,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
-        final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, new Long(0));
+        final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, new Long(0));
         final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
         dao.insertEntry(notification);
     }
@@ -97,7 +97,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                                                         final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
-        final Long searchKey2WithNull = Objects.firstNonNull(searchKey2, 0L);
+        final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, 0L);
         final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
 
         final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
@@ -263,7 +263,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     private <T extends NotificationEvent> NotificationEventWithMetadata<T> toNotificationEventWithMetadata(final NotificationEventModelDao cur) {
-        final T event = (T) CallableCallbackBase.deserializeEvent(cur, objectMapper);
+        final T event = CallableCallbackBase.deserializeEvent(cur, objectMapper);
         return new NotificationEventWithMetadata<T>(cur.getRecordId(), cur.getUserToken(), cur.getCreatedDate(), cur.getSearchKey1(), cur.getSearchKey2(), event,
                                                     cur.getFutureUserToken(), cur.getEffectiveDate(), cur.getQueueName());
     }

@@ -33,6 +33,7 @@ public class LowerToCamelBeanMapperFactory implements ResultSetMapperFactory {
         return type.equals(modelClazz);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public ResultSetMapper mapperFor(final Class type, final StatementContext ctx) {
         return new LowerToCamelBeanMapper(type);

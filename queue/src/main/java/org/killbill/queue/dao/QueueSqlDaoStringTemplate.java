@@ -87,7 +87,7 @@ public @interface QueueSqlDaoStringTemplate {
             return locator;
         }
 
-
+        @SuppressWarnings("unchecked")
         public SqlStatementCustomizer createForType(final Annotation annotation, final Class sqlObjectType) {
 
             final QueueSqlDaoStringTemplate a = (QueueSqlDaoStringTemplate) annotation;

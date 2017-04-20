@@ -278,7 +278,7 @@ class KillBillEmbeddedPostgreSql implements Closeable {
                     .execute(executor)
                     .getCommandOutput();
         } catch (final CommandFailedException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

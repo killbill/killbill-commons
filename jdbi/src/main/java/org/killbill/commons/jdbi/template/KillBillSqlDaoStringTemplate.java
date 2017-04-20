@@ -89,6 +89,7 @@ public @interface KillBillSqlDaoStringTemplate {
         }
 
 
+        @SuppressWarnings("unchecked")
         public SqlStatementCustomizer createForType(final Annotation annotation, final Class sqlObjectType) {
 
             final KillBillSqlDaoStringTemplate a = (KillBillSqlDaoStringTemplate) annotation;
@@ -117,7 +118,7 @@ public @interface KillBillSqlDaoStringTemplate {
                                         final Type modelType = type.getActualTypeArguments()[j];
                                         if (modelType instanceof Class) {
                                             final Class modelClazz = (Class) modelType;
-                                            final Class modelDaoClass = (Class) parameterizedType.getActualTypeArguments()[1];
+                                            final Class<?> modelDaoClass = (Class) parameterizedType.getActualTypeArguments()[1];
                                             if (modelDaoClass.isAssignableFrom(modelClazz)) {
                                                 query.registerMapper(new LowerToCamelBeanMapperFactory(modelClazz));
                                             }

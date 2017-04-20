@@ -64,6 +64,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public T map(final int row, final ResultSet rs, final StatementContext ctx) throws SQLException {
         final T bean;
         try {
@@ -129,7 +130,6 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                     value = uuidString == null ? null : UUID.fromString(uuidString);
                 } else if (type.isEnum()) {
                     final String enumString = rs.getString(i);
-                    //noinspection unchecked
                     value = enumString == null ? null : Enum.valueOf((Class<Enum>) type, enumString);
                 } else if (type == byte[].class) {
                     value = rs.getBytes(i);

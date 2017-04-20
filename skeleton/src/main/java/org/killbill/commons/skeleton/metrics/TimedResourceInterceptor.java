@@ -92,7 +92,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
 
     private int mapException(final Throwable e) throws Exception {
         final ExceptionMapperContext exceptionMapperContext = jerseyContainer.get().getWebApplication().getExceptionMapperContext();
-        final ExceptionMapper exceptionMapper = exceptionMapperContext.find(e.getClass());
+        @SuppressWarnings("unchecked") final ExceptionMapper<Throwable> exceptionMapper = exceptionMapperContext.find(e.getClass());
 
         if (exceptionMapper != null) {
             return exceptionMapper.toResponse(e).getStatus();

@@ -98,6 +98,7 @@ public class EventBusThatThrowsException extends EventBus {
         return getDeclaredField("exceptionHandler");
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T getDeclaredField(final String fieldName) {
         try {
             final Field f = EventBus.class.getDeclaredField(fieldName);

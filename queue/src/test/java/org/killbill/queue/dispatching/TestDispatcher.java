@@ -43,7 +43,7 @@ public class TestDispatcher {
 
     private final int QUEUE_SIZE = 5;
 
-    private Dispatcher dispatcher;
+    private Dispatcher<BusEventModelDao> dispatcher;
     private TestCallableCallback callback;
 
     @BeforeClass(groups = "fast")
@@ -58,7 +58,7 @@ public class TestDispatcher {
         };
         this.callback = new TestCallableCallback();
 
-        this.dispatcher = new Dispatcher(1, 1, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), testThreadFactory, new TestBlockingRejectionExecutionHandler(callback));
+        this.dispatcher = new Dispatcher<BusEventModelDao>(1, 1, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), testThreadFactory, new TestBlockingRejectionExecutionHandler(callback));
 
         this.dispatcher.start();
     }
@@ -81,7 +81,7 @@ public class TestDispatcher {
     }
 
     private void dispatch(int i, final TestCallableCallback callback) {
-        final EventEntryModelDao e1 = new BusEventModelDao("owner", new DateTime(), String.class.getName(), "e-" + i, UUID.randomUUID(), 1L, 1L);
+        final BusEventModelDao e1 = new BusEventModelDao("owner", new DateTime(), String.class.getName(), "e-" + i, UUID.randomUUID(), 1L, 1L);
         dispatcher.dispatch(e1, callback);
     }
 

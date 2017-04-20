@@ -93,7 +93,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.clock = clock;
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
-        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler());
+        this.dispatcher = new Dispatcher<NotificationEventModelDao>(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler());
         final NotificationSqlDao sqlDao = dbi.onDemand(NotificationSqlDao.class);
         this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry, null);
 

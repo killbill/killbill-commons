@@ -96,7 +96,7 @@ public class TestDynamicThreadPoolExecutorWithLoggingOnExceptions {
 
     }
 
-    public static class TestCallable implements Callable {
+    public static class TestCallable implements Callable<Object> {
 
         private final CountDownLatch startSignal;
         private final CountDownLatch doneSignal;

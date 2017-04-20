@@ -104,7 +104,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         };
 
         this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
-        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new BlockingRejectionExecutionHandler());
+        this.dispatcher = new Dispatcher<BusEventModelDao>(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new BlockingRejectionExecutionHandler());
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
@@ -391,7 +391,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     private <T extends BusEvent> BusEventWithMetadata<T> toBusEventWithMetadata(final BusEventModelDao entry) {
-        final T event = (T) CallableCallbackBase.deserializeEvent(entry, objectMapper);
+        final T event = CallableCallbackBase.deserializeEvent(entry, objectMapper);
         return new BusEventWithMetadata<T>(entry.getRecordId(),
                                            entry.getUserToken(),
                                            entry.getCreatedDate(),

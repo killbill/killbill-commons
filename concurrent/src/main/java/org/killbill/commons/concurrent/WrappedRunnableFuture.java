@@ -33,8 +33,8 @@ public class WrappedRunnableFuture<V> implements Future<V> {
         this.delegate = delegate;
     }
 
-    public static <V> WrappedRunnableFuture wrap(final WrappedRunnable runnable, final Future<V> delegate) {
-        return new WrappedRunnableFuture(runnable, delegate);
+    public static <V> Future<V> wrap(final WrappedRunnable runnable, final Future<V> delegate) {
+        return new WrappedRunnableFuture<V>(runnable, delegate);
     }
 
     @Override

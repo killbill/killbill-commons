@@ -49,6 +49,7 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
         return deserializeEvent(modelDao, objectMapper);
     }
 
+    @SuppressWarnings("unchecked")
     public static <E extends QueueEvent, M extends EventEntryModelDao> E deserializeEvent(final M modelDao, final ObjectMapper objectMapper) {
         try {
             final Class<?> claz = Class.forName(modelDao.getClassName());

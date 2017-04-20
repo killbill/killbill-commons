@@ -18,14 +18,6 @@
 
 package org.killbill.commons.embeddeddb.mysql;
 
-import com.mysql.management.HackedMysqldResource;
-import com.mysql.management.MysqldResourceI;
-import com.zaxxer.hikari.HikariDataSource;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.mariadb.jdbc.MySQLDataSource;
-import org.slf4j.event.Level;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,6 +28,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.sql.DataSource;
+
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.mariadb.jdbc.MariaDbDataSource;
+import org.slf4j.event.Level;
+
+import com.mysql.management.HackedMysqldResource;
+import com.mysql.management.MysqldResourceI;
 
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
@@ -128,9 +129,9 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (useConnectionPooling()) {
             dataSource = createHikariDataSource();
         } else {
-            final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
+            final MariaDbDataSource mariaDBDataSource = new MariaDbDataSource();
             try {
-                mariaDBDataSource.setURL(jdbcConnectionString);
+                mariaDBDataSource.setUrl(jdbcConnectionString);
             } catch (final SQLException e) {
                 throw new IOException(e);
             }

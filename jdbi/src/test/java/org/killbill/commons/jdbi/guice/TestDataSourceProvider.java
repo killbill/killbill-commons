@@ -408,6 +408,7 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
+            @SuppressWarnings("unchecked")
             public <T> T unwrap(final Class<T> iface) throws SQLException {
                 return (T) this;
             }
