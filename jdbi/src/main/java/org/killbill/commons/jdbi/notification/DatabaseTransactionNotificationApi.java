@@ -19,9 +19,6 @@ package org.killbill.commons.jdbi.notification;
 
 import com.google.common.eventbus.EventBus;
 
-import java.util.Observable;
-import java.util.Observer;
-
 public class DatabaseTransactionNotificationApi {
 
 

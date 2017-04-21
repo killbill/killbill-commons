@@ -50,7 +50,7 @@ public @interface KillBillSqlDaoStringTemplate {
 
     public static class KillBillSqlDaoStringTemplateFactory<SqlDao, ModelDao> extends UseStringTemplate3StatementLocator.LocatorFactory {
 
-        static ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
+        static final ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
 
 
         //
@@ -58,7 +58,7 @@ public @interface KillBillSqlDaoStringTemplate {
         //
         // (Similar to what jdbi is doing (StringTemplate3StatementLocator))
         //
-        private final static String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
+        private static final String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
 
         public static String mungify(final Class claz) {
             final String path = "/" + claz.getName();

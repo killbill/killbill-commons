@@ -21,15 +21,15 @@ public class EventBusException extends Exception {
     public EventBusException() {
     }
 
-    public EventBusException(String message) {
+    public EventBusException(final String message) {
         super(message);
     }
 
-    public EventBusException(String message, Throwable cause) {
+    public EventBusException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public EventBusException(Throwable cause) {
+    public EventBusException(final Throwable cause) {
         super(cause);
     }
 }

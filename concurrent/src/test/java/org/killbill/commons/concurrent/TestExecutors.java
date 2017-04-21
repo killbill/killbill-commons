@@ -74,7 +74,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.RuntimeException: Fail!");
         }
 
@@ -94,7 +94,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.RuntimeException: Again!");
         }
 
@@ -145,7 +145,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.Exception: Oops!");
         }
 
@@ -159,7 +159,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.OutOfMemoryError: Uh oh!");
         }
 
@@ -227,7 +227,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.Exception: Pow!");
         }
 

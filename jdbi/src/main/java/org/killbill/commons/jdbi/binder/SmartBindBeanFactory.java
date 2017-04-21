@@ -72,7 +72,7 @@ public class SmartBindBeanFactory extends BinderBase implements BinderFactory {
                             }
                         }
                     }
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     throw new IllegalStateException("unable to bind bean properties", e);
                 }
             }

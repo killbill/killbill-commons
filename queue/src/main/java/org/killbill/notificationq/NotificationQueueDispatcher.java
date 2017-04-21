@@ -158,7 +158,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected int doProcessEventsWithLimit(final int limit) {
         logDebug("ENTER doProcessEvents");
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
-        if (notifications.size() == 0) {
+        if (notifications.isEmpty()) {
             logDebug("EXIT doProcessEvents");
             return 0;
         }

@@ -24,7 +24,6 @@ import org.joda.time.DateTime;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.queue.api.QueueEvent;
-import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
@@ -80,7 +79,7 @@ public class TestDispatcher {
         });
     }
 
-    private void dispatch(int i, final TestCallableCallback callback) {
+    private void dispatch(final int i, final TestCallableCallback callback) {
         final BusEventModelDao e1 = new BusEventModelDao("owner", new DateTime(), String.class.getName(), "e-" + i, UUID.randomUUID(), 1L, 1L);
         dispatcher.dispatch(e1, callback);
     }
@@ -132,12 +131,12 @@ public class TestDispatcher {
         }
 
         @Override
-        public QueueEvent deserialize(BusEventModelDao modelDao) {
+        public QueueEvent deserialize(final BusEventModelDao modelDao) {
             return new TestEvent(modelDao.getEventJson(), modelDao.getSearchKey1(), modelDao.getSearchKey2(), modelDao.getUserToken());
         }
 
         @Override
-        public void dispatch(QueueEvent event, BusEventModelDao modelDao) throws Exception {
+        public void dispatch(final QueueEvent event, final BusEventModelDao modelDao) throws Exception {
             synchronized (this) {
                 while (isBlocked) {
                     logger.info("Thread " + Thread.currentThread().getId() + " blocking...");
@@ -150,7 +149,7 @@ public class TestDispatcher {
         }
 
         @Override
-        public void updateErrorCountOrMoveToHistory(QueueEvent event, BusEventModelDao modelDao, long errorCount, Throwable lastException) {
+        public void updateErrorCountOrMoveToHistory(final QueueEvent event, final BusEventModelDao modelDao, final long errorCount, final Throwable lastException) {
 
         }
     }

@@ -41,7 +41,7 @@ public class XMLLoader {
 
     private static final String DISABLE_VALIDATION_PROP = "org.killbill.xmlloader.disable.validation";
 
-    public static Logger log = LoggerFactory.getLogger(XMLLoader.class);
+    public static final Logger log = LoggerFactory.getLogger(XMLLoader.class);
 
     public static <T extends ValidatingConfig<T>> T getObjectFromString(final String uri, final Class<T> objectType) throws Exception {
         if (uri == null) {
@@ -104,7 +104,7 @@ public class XMLLoader {
 
         final ValidationErrors errs = c.validate(c, new ValidationErrors());
         log.info("Errors: " + errs.size() + " for " + uri);
-        if (errs.size() > 0) {
+        if (!errs.isEmpty()) {
             throw new ValidationException(errs);
         }
     }

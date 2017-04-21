@@ -59,7 +59,7 @@ public class UriAccessor {
         return accessUri(new URI(uri));
     }
 
-    public static InputStream accessUri(URI uri) throws IOException, URISyntaxException {
+    public static InputStream accessUri(final URI uri) throws IOException, URISyntaxException {
         final String scheme = uri.getScheme();
         if (URI_SCHEME_FOR_CLASSPATH.equals(scheme)) {
             if (uri.toString().startsWith(URI_SCHEME_FOR_ARCHIVE_FILE)) {

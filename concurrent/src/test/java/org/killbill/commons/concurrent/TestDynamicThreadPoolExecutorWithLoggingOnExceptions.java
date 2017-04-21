@@ -50,7 +50,7 @@ public class TestDynamicThreadPoolExecutorWithLoggingOnExceptions {
         };
         final RejectedExecutionHandler rejectedExecutionHandler = new RejectedExecutionHandler() {
             @Override
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            public void rejectedExecution(final Runnable r, final ThreadPoolExecutor executor) {
 
             }
         };
@@ -69,8 +69,8 @@ public class TestDynamicThreadPoolExecutorWithLoggingOnExceptions {
     @Test(groups = "fast")
     public void testPoolWitMaximumPoolSize() throws InterruptedException {
 
-        CountDownLatch startSignal = new CountDownLatch(1);
-        CountDownLatch doneSignal = new CountDownLatch(4);
+        final CountDownLatch startSignal = new CountDownLatch(1);
+        final CountDownLatch doneSignal = new CountDownLatch(4);
 
         // Should be handled by corePoolSize ( = 1) thread
         executor.submit(new TestCallable(startSignal, doneSignal));

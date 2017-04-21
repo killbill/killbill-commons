@@ -146,19 +146,19 @@ public class TestNotificationSqlDao extends TestSetup {
         final Collection<Long> entryIds = Collections2.transform(entries, new com.google.common.base.Function<NotificationEventModelDao, Long>() {
             @Nullable
             @Override
-            public Long apply(@Nullable NotificationEventModelDao input) {
+            public Long apply(@Nullable final NotificationEventModelDao input) {
                 return input.getRecordId();
             }
         });
 
         dao.removeEntries(entryIds, notificationQueueConfig.getTableName());
-        for (Long entry : entryIds) {
+        for (final Long entry : entryIds) {
             final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getTableName());
             assertNull(result);
         }
 
         dao.insertEntries(entries, notificationQueueConfig.getHistoryTableName());
-        for (Long entry : entryIds) {
+        for (final Long entry : entryIds) {
             final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getHistoryTableName());
             assertNotNull(result);
         }

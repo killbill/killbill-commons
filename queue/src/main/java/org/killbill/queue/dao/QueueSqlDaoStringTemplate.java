@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 
-import org.killbill.billing.util.entity.Entity;
 import org.skife.jdbi.v2.Query;
 import org.skife.jdbi.v2.SQLStatement;
 import org.skife.jdbi.v2.sqlobject.SqlStatementCustomizer;
@@ -51,16 +50,16 @@ public @interface QueueSqlDaoStringTemplate {
 
     class QueueSqlDaoStringTemplateFactory extends UseStringTemplate3StatementLocator.LocatorFactory {
 
-        final static boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
+        static final boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
 
-        static ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
+        static final ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
 
         //
         // This is only needed to compute the key for the cache -- whether we get a class or a pathname (string)
         //
         // (Similar to what jdbi is doing (StringTemplate3StatementLocator))
         //
-        private final static String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
+        private static final String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
 
         public static String mungify(final Class claz) {
             final String path = "/" + claz.getName();

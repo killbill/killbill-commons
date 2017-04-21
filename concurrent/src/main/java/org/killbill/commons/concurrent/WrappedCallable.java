@@ -40,12 +40,12 @@ class WrappedCallable<T> implements Callable<T> {
 
         try {
             return callable.call();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             // since callables are expected to sometimes throw exceptions, log this at DEBUG instead of ERROR
             log.debug(currentThread + " ended with an exception", e);
 
             throw e;
-        } catch (Error e) {
+        } catch (final Error e) {
             log.error(currentThread + " ended with an exception", e);
 
             throw e;

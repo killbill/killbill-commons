@@ -37,15 +37,15 @@ public @interface RecordIdCollectionBinder {
     class RecordIdCollectionBinderFactory implements BinderFactory {
 
         @Override
-        public Binder build(Annotation annotation) {
+        public Binder build(final Annotation annotation) {
             return new Binder<RecordIdCollectionBinder, Collection<Long>>() {
 
                 @Override
-                public void bind(SQLStatement<?> query, RecordIdCollectionBinder bind, Collection<Long> ids) {
+                public void bind(final SQLStatement<?> query, final RecordIdCollectionBinder bind, final Collection<Long> ids) {
                     query.define("record_ids", ids);
 
                     int idx = 0;
-                    for (Long id : ids) {
+                    for (final Long id : ids) {
                         query.bind("id_" + idx, id);
                         idx++;
                     }

@@ -46,16 +46,16 @@ import com.mysql.management.util.SQLRuntimeException;
 
 public class HackedInitializeUser {
 
-    private String userName;
+    private final String userName;
 
-    private String password;
+    private final String password;
 
-    private String url;
+    private final String url;
 
-    private PrintStream err;
+    private final PrintStream err;
 
-    public HackedInitializeUser(int port, String userName, String password,
-                                PrintStream err) {
+    public HackedInitializeUser(final int port, final String userName, final String password,
+                                final PrintStream err) {
         this.userName = userName;
         this.password = password;
         this.url = "jdbc:mysql://127.0.0.1:" + port + "/mysql";
@@ -63,7 +63,7 @@ public class HackedInitializeUser {
 
         try {
             Class.forName(com.mysql.jdbc.Driver.class.getName());
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
@@ -74,7 +74,7 @@ public class HackedInitializeUser {
         try {
             conn = DriverManager.getConnection(url, userName, password);
             return false;
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             // Okay, current user not initialized;
         } finally {
             close(conn);
@@ -83,22 +83,22 @@ public class HackedInitializeUser {
         try {
             final String NO_PASSWORD = null;
             conn = DriverManager.getConnection(url, "root", NO_PASSWORD);
-        } catch (SQLException e) {
-            String msg = "User initialization error." //
-                         + " Can not connect as " + userName + " with password." //
-                         + " Can not connect as root without password." //
-                         + " URL: " + url;
+        } catch (final SQLException e) {
+            final String msg = "User initialization error." //
+                               + " Can not connect as " + userName + " with password." //
+                               + " Can not connect as root without password." //
+                               + " URL: " + url;
             throw new SQLRuntimeException(msg, e, null, null);
         }
         try {
-            QueryUtil util = new QueryUtil(conn, err);
+            final QueryUtil util = new QueryUtil(conn, err);
             // util.execute("drop user ''");
             // util.execute("drop user 'root'@'localhost'");
             // util.execute("drop user 'root'@'127.0.0.1'");
             util.execute("DELETE from user");
             // Binding parameters won't work with server-side prepared statements
-            String sql = "grant all on *.* to '" + userName + "'@'localhost' identified by '" + password + "' with grant option";
-            final Object[] params = new Object[]{};
+            final String sql = "grant all on *.* to '" + userName + "'@'localhost' identified by '" + password + "' with grant option";
+            final Object[] params = {};
             util.execute(sql, params);
             util.execute("flush privileges");
         } finally {
@@ -107,13 +107,13 @@ public class HackedInitializeUser {
 
         try {
             conn = DriverManager.getConnection(url, userName, password);
-            QueryUtil util = new QueryUtil(conn, err);
+            final QueryUtil util = new QueryUtil(conn, err);
             util.execute("SELECT 1");
-        } catch (SQLException e) {
-            String msg = "User initialization error." //
-                         + " Can not connect as " + userName + " with password" //
-                         + " after creating user and password." //
-                         + " URL: " + url;
+        } catch (final SQLException e) {
+            final String msg = "User initialization error." //
+                               + " Can not connect as " + userName + " with password" //
+                               + " after creating user and password." //
+                               + " URL: " + url;
             throw new SQLRuntimeException(msg, e, null, null);
         } finally {
             close(conn);
@@ -121,11 +121,11 @@ public class HackedInitializeUser {
         return true;
     }
 
-    private void close(Connection conn) {
+    private void close(final Connection conn) {
         if (conn != null) {
             try {
                 conn.close();
-            } catch (Throwable t) {
+            } catch (final Throwable t) {
                 t.printStackTrace(err);
             }
         }

@@ -43,9 +43,9 @@ import static org.testng.Assert.assertEquals;
 
 public class TestLoadDBBackedQueue extends TestSetup {
 
-    private final static Logger log = LoggerFactory.getLogger(TestLoadDBBackedQueue.class);
+    private static final Logger log = LoggerFactory.getLogger(TestLoadDBBackedQueue.class);
 
-    private final static String OWNER = CreatorName.get();
+    private static final String OWNER = CreatorName.get();
 
     private DBBackedQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;
@@ -82,29 +82,29 @@ public class TestLoadDBBackedQueue extends TestSetup {
 
         log.error("Starting load test");
 
-        long ini = System.nanoTime();
+        final long ini = System.nanoTime();
         long cumlGetReadyEntries = 0;
         long cumlMoveEntriesToHistory = 0;
         for (int i = 0; i < NB_EVENTS / CLAIMED_EVENTS; i++) {
 
-            long t1 = System.nanoTime();
+            final long t1 = System.nanoTime();
             final List<BusEventModelDao> ready = queue.getReadyEntries();
             assertEquals(ready.size(), CLAIMED_EVENTS);
-            long t2 = System.nanoTime();
+            final long t2 = System.nanoTime();
             cumlGetReadyEntries += (t2 - t1);
 
             final Iterable<BusEventModelDao> processed = Iterables.transform(ready, new Function<BusEventModelDao, BusEventModelDao>() {
                 @Override
-                public BusEventModelDao apply(@Nullable BusEventModelDao input) {
+                public BusEventModelDao apply(@Nullable final BusEventModelDao input) {
                     return new BusEventModelDao(input, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                 }
             });
-            long t3 = System.nanoTime();
+            final long t3 = System.nanoTime();
             queue.moveEntriesToHistory(processed);
-            long t4 = System.nanoTime();
+            final long t4 = System.nanoTime();
             cumlMoveEntriesToHistory += (t4 - t3);
         }
-        long fini = System.nanoTime();
+        final long fini = System.nanoTime();
 
         log.error("Load test took " + ((fini - ini) / 1000000) + " ms, getReadyEntry = " +
                 (cumlGetReadyEntries / 1000000) + " ms, moveEntriesToHistory = " + (cumlMoveEntriesToHistory / 1000000));
@@ -132,7 +132,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
             readers[i] = new Thread(new ReaderRunnable(consumed, nbEntries, queue));
         }
 
-        long ini = System.currentTimeMillis();
+        final long ini = System.currentTimeMillis();
         for (int i = 0; i < maxThreads; i++) {
             readers[i].start();
         }
@@ -141,12 +141,12 @@ public class TestLoadDBBackedQueue extends TestSetup {
             for (int i = 0; i < maxThreads; i++) {
                 readers[i].join();
             }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             e.printStackTrace();
         }
 
-        long fini = System.currentTimeMillis();
-        long elapsed = fini - ini;
+        final long fini = System.currentTimeMillis();
+        final long elapsed = fini - ini;
 
         log.info(String.format("Processed %s events in %s msec => rate = %s", nbEntries, elapsed,
                 ((double) (nbEntries) / (double) elapsed) * 1000));
@@ -169,7 +169,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
         private final int maxEntries;
         private final List<Long> search1;
 
-        public ReaderRunnable(AtomicLong consumed, final int maxEntries, final DBBackedQueue<BusEventModelDao> queue) {
+        public ReaderRunnable(final AtomicLong consumed, final int maxEntries, final DBBackedQueue<BusEventModelDao> queue) {
             this.queue = queue;
             this.consumed = consumed;
             this.maxEntries = maxEntries;
@@ -179,14 +179,14 @@ public class TestLoadDBBackedQueue extends TestSetup {
         @Override
         public void run() {
             do {
-                List<BusEventModelDao> entries = queue.getReadyEntries();
-                if (entries.size() == 0) {
+                final List<BusEventModelDao> entries = queue.getReadyEntries();
+                if (entries.isEmpty()) {
                     try {
                         Thread.sleep(10);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                     }
                 } else {
-                    for (BusEventModelDao cur : entries) {
+                    for (final BusEventModelDao cur : entries) {
                         search1.add(cur.getSearchKey1());
                         final BusEventModelDao history = new BusEventModelDao(cur, OWNER, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                         queue.moveEntryToHistory(history);
@@ -198,12 +198,12 @@ public class TestLoadDBBackedQueue extends TestSetup {
     }
 
 
-    private BusEventModelDao createEntry(Long searchKey1, String owner) {
+    private BusEventModelDao createEntry(final Long searchKey1, final String owner) {
         final String json = "json";
         return new BusEventModelDao(owner, clock.getUTCNow(), String.class.getName(), json, UUID.randomUUID(), searchKey1, 1L);
     }
 
-    private BusEventModelDao createEntry(Long searchKey1) {
+    private BusEventModelDao createEntry(final Long searchKey1) {
         return createEntry(searchKey1, OWNER);
     }
 

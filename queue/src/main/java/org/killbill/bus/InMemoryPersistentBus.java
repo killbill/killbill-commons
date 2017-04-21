@@ -100,7 +100,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         checkInitialized("post");
         try {
             delegate.postWithException(event);
-        } catch (com.google.common.eventbus.EventBusException e) {
+        } catch (final com.google.common.eventbus.EventBusException e) {
             throw new EventBusException(e.getMessage(), e);
         }
     }
@@ -110,7 +110,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         checkInitialized("postFromTransaction");
         try {
             delegate.postWithException(event);
-        } catch (com.google.common.eventbus.EventBusException e) {
+        } catch (final com.google.common.eventbus.EventBusException e) {
             throw new EventBusException(e.getMessage(), e);
         }
     }

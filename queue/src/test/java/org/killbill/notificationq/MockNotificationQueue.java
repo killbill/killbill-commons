@@ -101,22 +101,22 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(Long searchKey1, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(DateTime maxEffectiveDate, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(DateTime maxEffectiveDate, Long searchKey2, Connection connection) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2, final Connection connection) {
         return null;
     }
 
@@ -126,32 +126,32 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(Long searchKey1, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(DateTime maxEffectiveDate, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(DateTime maxEffectiveDate, Long searchKey2, Connection connection) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2, final Connection connection) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(Long searchKey1, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return null;
     }
 
     @Override
-    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(DateTime minEffectiveDate, Long searchKey2) {
+    public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2) {
         return null;
     }
 

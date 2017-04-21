@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 
 public class NotificationCallableCallback extends CallableCallbackBase<NotificationEvent, NotificationEventModelDao> {
 
-    private static Logger log = LoggerFactory.getLogger(NotificationCallableCallback.class);
+    private static final Logger log = LoggerFactory.getLogger(NotificationCallableCallback.class);
     private final NotificationQueueDispatcher parent;
 
     public NotificationCallableCallback(final NotificationQueueDispatcher parent) {
@@ -52,7 +52,7 @@ public class NotificationCallableCallback extends CallableCallbackBase<Notificat
     }
 
     @Override
-    public NotificationEventModelDao buildEntry(NotificationEventModelDao modelDao, DateTime now, PersistentQueueEntryLifecycleState newState, long newErrorCount) {
+    public NotificationEventModelDao buildEntry(final NotificationEventModelDao modelDao, final DateTime now, final PersistentQueueEntryLifecycleState newState, final long newErrorCount) {
         return new NotificationEventModelDao(modelDao, CreatorName.get(), now, newState, newErrorCount);
     }
 

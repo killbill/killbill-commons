@@ -71,7 +71,7 @@ public class Dispatcher<M extends EventEntryModelDao> {
         executor.shutdown();
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             log.info(String.format("Stop sequence has been interrupted"));
         }
     }
@@ -95,7 +95,7 @@ public class Dispatcher<M extends EventEntryModelDao> {
 
         @Override
         public E call() throws Exception {
-            final E event = (E) callback.deserialize(entry);
+            final E event = callback.deserialize(entry);
             if (event != null) {
                 Throwable lastException = null;
                 long errorCount = entry.getErrorCount();

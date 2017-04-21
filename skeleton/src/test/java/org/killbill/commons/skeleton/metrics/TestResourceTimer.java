@@ -54,7 +54,7 @@ public class TestResourceTimer {
         Assert.assertEquals(1, timer.getCount());
     }
 
-    private String expectedMetricName(String resourcePath, String resourceName, String httpMethod, String tagsValues, String statusGroup, int status) {
+    private String expectedMetricName(final String resourcePath, final String resourceName, final String httpMethod, final String tagsValues, final String statusGroup, final int status) {
         if (tagsValues == null || tagsValues.trim().isEmpty()) {
             return String.format("%s.%s.%s.%s.%s.%s", RESOURCE_METRICS_PREFIX, resourcePath, resourceName, httpMethod, statusGroup, status);
         }

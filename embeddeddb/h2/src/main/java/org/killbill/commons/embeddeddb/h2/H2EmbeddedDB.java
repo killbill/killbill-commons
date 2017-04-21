@@ -79,7 +79,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
             started.set(true);
             logger.info(String.format("H2 started on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                       getJdbcConnectionString(), getUsername(), getPassword()));
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new IOException(e);
         }
 
@@ -99,7 +99,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
                     }
                 }
             });
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new IOException(e);
         }
     }
@@ -108,7 +108,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (useConnectionPooling()) {
             dataSource = createHikariDataSource();
         } else {
-            JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(jdbcConnectionString, username, password);
+            final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(jdbcConnectionString, username, password);
             // Default is 10, set it to 30 to match the default for org.killbill.dao.maxActive
             jdbcConnectionPool.setMaxConnections(30);
             dataSource = jdbcConnectionPool;

@@ -38,10 +38,10 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
 
     @Override
     public void initialize(final DefaultStateMachineConfig root, final URI uri) {
-        for (DefaultStateMachine cur : stateMachines) {
+        for (final DefaultStateMachine cur : stateMachines) {
             cur.initialize(root, uri);
         }
-        for (DefaultLinkStateMachine cur : linkStateMachines) {
+        for (final DefaultLinkStateMachine cur : linkStateMachines) {
             cur.initialize(root, uri);
         }
     }
@@ -70,9 +70,9 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
     }
 
     @Override
-    public StateMachine getStateMachineForState(String stateName) throws MissingEntryException {
-        for (DefaultStateMachine cur : stateMachines) {
-            for (State st : cur.getStates()) {
+    public StateMachine getStateMachineForState(final String stateName) throws MissingEntryException {
+        for (final DefaultStateMachine cur : stateMachines) {
+            for (final State st : cur.getStates()) {
                 if (st.getName().equals(stateName)) {
                     return cur;
                 }
@@ -105,7 +105,7 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
                             input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
                 }
             }).get();
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             throw new MissingEntryException("Missing transition for srcStateMachine " + srcStateMachine.getName() +
                     ", srcState = " + srcState.getName() + ", dstStateMachine = " + dstStateMachine.getName(), e);
         }

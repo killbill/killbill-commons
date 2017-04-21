@@ -43,7 +43,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
     protected DataSource dataSource;
-    protected int port;
+    protected final int port;
 
     private File dbDir;
     private File dataDir;

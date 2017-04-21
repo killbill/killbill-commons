@@ -39,7 +39,7 @@ public class BlockingRejectionExecutionHandler implements RejectedExecutionHandl
                 logger.info("BlockingRejectionExecutionHandler will block request");
                 executor.getQueue().put(r);
             }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RejectedExecutionException("Executor was interrupted while the task was waiting to put on work queue", e);
         }

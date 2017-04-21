@@ -25,42 +25,42 @@ import java.util.concurrent.TimeUnit;
 // See http://stackoverflow.com/questions/19528304/how-to-get-the-threadpoolexecutor-to-increase-threads-to-max-before-queueing/19538899#19538899
 public class DynamicThreadPoolExecutorWithLoggingOnExceptions extends LoggingExecutor {
 
-    private int inputSpecifiedCorePoolSize;
+    private final int inputSpecifiedCorePoolSize;
     private int currentTasks;
 
-    public DynamicThreadPoolExecutorWithLoggingOnExceptions(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit) {
+    public DynamicThreadPoolExecutorWithLoggingOnExceptions(final int corePoolSize, final int maximumPoolSize, final String name, final long keepAliveTime, final TimeUnit unit) {
         super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit);
         this.inputSpecifiedCorePoolSize = corePoolSize;
     }
 
-    public DynamicThreadPoolExecutorWithLoggingOnExceptions(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {
+    public DynamicThreadPoolExecutorWithLoggingOnExceptions(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final ThreadFactory threadFactory) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, threadFactory);
         this.inputSpecifiedCorePoolSize = corePoolSize;
     }
 
-    public DynamicThreadPoolExecutorWithLoggingOnExceptions(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+    public DynamicThreadPoolExecutorWithLoggingOnExceptions(final int corePoolSize, final int maximumPoolSize, final String name, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit, workQueue);
         this.inputSpecifiedCorePoolSize = corePoolSize;
     }
 
-    public DynamicThreadPoolExecutorWithLoggingOnExceptions(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
+    public DynamicThreadPoolExecutorWithLoggingOnExceptions(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
         this.inputSpecifiedCorePoolSize = corePoolSize;
     }
 
-    public DynamicThreadPoolExecutorWithLoggingOnExceptions(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
+    public DynamicThreadPoolExecutorWithLoggingOnExceptions(final int corePoolSize, final int maximumPoolSize, final String name, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit, workQueue, handler);
         this.inputSpecifiedCorePoolSize = corePoolSize;
     }
 
-    public DynamicThreadPoolExecutorWithLoggingOnExceptions(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler) {
+    public DynamicThreadPoolExecutorWithLoggingOnExceptions(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory, final RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
         this.inputSpecifiedCorePoolSize = corePoolSize;
     }
 
 
     @Override
-    public void execute(Runnable runnable) {
+    public void execute(final Runnable runnable) {
         synchronized (this) {
             currentTasks++;
             setCorePoolSizeToTaskCountWithinBounds();
@@ -69,7 +69,7 @@ public class DynamicThreadPoolExecutorWithLoggingOnExceptions extends LoggingExe
     }
 
     @Override
-    protected void afterExecute(Runnable runnable, Throwable throwable) {
+    protected void afterExecute(final Runnable runnable, final Throwable throwable) {
         super.afterExecute(runnable, throwable);
         synchronized (this) {
             currentTasks--;

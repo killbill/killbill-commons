@@ -27,7 +27,7 @@ import com.google.common.io.Resources;
 
 public class TestStateMachine {
 
-    private Logger logger = LoggerFactory.getLogger(TestStateMachine.class);
+    private final Logger logger = LoggerFactory.getLogger(TestStateMachine.class);
 
     @Test(groups = "fast")
     public void testStateMachine() throws Exception {
@@ -171,7 +171,7 @@ public class TestStateMachine {
                                }
                               );
             Assert.fail("Should throw an exception");
-        } catch (OperationException e) {
+        } catch (final OperationException e) {
             Assert.assertTrue(true);
         }
     }

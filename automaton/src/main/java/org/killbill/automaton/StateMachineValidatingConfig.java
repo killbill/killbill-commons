@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 public abstract class StateMachineValidatingConfig<Context> extends ValidatingConfig<Context> {
 
     protected StateMachineEntry getEntry(final StateMachineEntry [] entries, final String entryName) throws MissingEntryException {
-        for (StateMachineEntry cur : entries) {
+        for (final StateMachineEntry cur : entries) {
             if (cur.getName().equals(entryName)) {
                 return cur;
             }

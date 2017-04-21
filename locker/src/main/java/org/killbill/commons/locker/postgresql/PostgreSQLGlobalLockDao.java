@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class PostgreSQLGlobalLockDao implements GlobalLockDao {
 
     @Override
-    public boolean lock(final Connection connection, final String lockName, long timeout, final TimeUnit timeUnit) throws SQLException {
+    public boolean lock(final Connection connection, final String lockName, final long timeout, final TimeUnit timeUnit) throws SQLException {
         final String sql = String.format("SELECT pg_try_advisory_lock(%s);", lockName);
         return executeLockQuery(connection, sql);
     }

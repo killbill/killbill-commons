@@ -21,7 +21,7 @@ public class DatabaseTransactionEvent {
 
     private final DatabaseTransactionEventType type;
 
-    public DatabaseTransactionEvent(DatabaseTransactionEventType type) {
+    public DatabaseTransactionEvent(final DatabaseTransactionEventType type) {
         this.type = type;
     }
 

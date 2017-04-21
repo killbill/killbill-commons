@@ -58,7 +58,7 @@ public class NotificationEventModelDao extends BusEventModelDao {
         return futureUserToken;
     }
 
-    public void setFutureUserToken(UUID futureUserToken) {
+    public void setFutureUserToken(final UUID futureUserToken) {
         this.futureUserToken = futureUserToken;
     }
 
@@ -66,7 +66,7 @@ public class NotificationEventModelDao extends BusEventModelDao {
         return effectiveDate;
     }
 
-    public void setEffectiveDate(DateTime effectiveDate) {
+    public void setEffectiveDate(final DateTime effectiveDate) {
         this.effectiveDate = effectiveDate;
     }
 
@@ -74,7 +74,7 @@ public class NotificationEventModelDao extends BusEventModelDao {
         return queueName;
     }
 
-    public void setQueueName(String queueName) {
+    public void setQueueName(final String queueName) {
         this.queueName = queueName;
     }
 

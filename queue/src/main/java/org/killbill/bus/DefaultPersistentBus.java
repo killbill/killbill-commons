@@ -77,7 +77,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final Profiling<Iterable<BusEventModelDao>, RuntimeException> prof;
 
     private final Dispatcher<BusEventModelDao> dispatcher;
-    private AtomicBoolean isStarted;
+    private final AtomicBoolean isStarted;
 
     private static final class EventBusDelegate extends EventBusThatThrowsException {
         public EventBusDelegate(final String busName) {
@@ -141,7 +141,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Override
     public int doProcessEvents() {
         final List<BusEventModelDao> events = dao.getReadyEntries();
-        if (events.size() == 0) {
+        if (events.isEmpty()) {
             return 0;
         }
 
@@ -299,12 +299,12 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeys(Long searchKey1, Long searchKey2) {
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return getHistoricalBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), null, searchKey1, searchKey2);
     }
 
     @Override
-    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(DateTime minCreatedDate, Long searchKey2) {
+    public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(final DateTime minCreatedDate, final Long searchKey2) {
         return getHistoricalBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), minCreatedDate, null, searchKey2);
     }
 

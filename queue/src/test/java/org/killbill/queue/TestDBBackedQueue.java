@@ -46,7 +46,7 @@ import static org.testng.Assert.assertTrue;
 
 public class TestDBBackedQueue extends TestSetup {
 
-    private final static Logger log = LoggerFactory.getLogger(TestDBBackedQueue.class);
+    private static final Logger log = LoggerFactory.getLogger(TestDBBackedQueue.class);
 
 
     private DBBackedQueue<BusEventModelDao> queue;
@@ -177,7 +177,7 @@ public class TestDBBackedQueue extends TestSetup {
 
         final List<BusEventModelDao> remaining = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
         assertEquals(remaining.size(), 5);
-        for (BusEventModelDao cur : remaining) {
+        for (final BusEventModelDao cur : remaining) {
             sqlDao.removeEntry(cur.getRecordId(), "bus_events");
         }
     }
@@ -255,7 +255,7 @@ public class TestDBBackedQueue extends TestSetup {
             }
             assertTrue(queue.isQueueOpenForWrite());
 
-            List<BusEventModelDao> claimed = queue.getReadyEntries();
+            final List<BusEventModelDao> claimed = queue.getReadyEntries();
             for (int j = 0; j < claimed.size(); j++) {
                 final BusEventModelDao output = claimed.get(j);
                 expectedRecordId = (i == 0 && j == 0) ? output.getRecordId() : (expectedRecordId + 1);
@@ -332,8 +332,7 @@ public class TestDBBackedQueue extends TestSetup {
         List<BusEventModelDao> claimed = queue.getReadyEntries();
         while (true) {
 
-            for (int j = 0; j < claimed.size(); j++) {
-                final BusEventModelDao output = claimed.get(j);
+            for (final BusEventModelDao output : claimed) {
                 expectedRecordId = (expectedRecordId == -1) ? output.getRecordId() : (expectedRecordId + 1);
                 assertEquals(output.getRecordId(), new Long(expectedRecordId));
                 assertEquals(output.getClassName(), String.class.getName());
@@ -369,8 +368,7 @@ public class TestDBBackedQueue extends TestSetup {
         claimed = queue.getReadyEntries();
         while (true) {
 
-            for (int j = 0; j < claimed.size(); j++) {
-                final BusEventModelDao output = claimed.get(j);
+            for (final BusEventModelDao output : claimed) {
                 expectedRecordId = (expectedRecordId + 1);
                 assertEquals(output.getRecordId(), new Long(expectedRecordId));
                 assertEquals(output.getClassName(), String.class.getName());
@@ -385,7 +383,7 @@ public class TestDBBackedQueue extends TestSetup {
                 queue.moveEntryToHistory(historyInput);
             }
             claimed = queue.getReadyEntries();
-            if (claimed.size() == 0) {
+            if (claimed.isEmpty()) {
                 break;
             }
         }
@@ -443,8 +441,8 @@ public class TestDBBackedQueue extends TestSetup {
                 assertFalse(queue.isQueueOpenForRead());
             }
 
-            List<BusEventModelDao> allReady = queue.getReadyEntries();
-            for (BusEventModelDao output : allReady) {
+            final List<BusEventModelDao> allReady = queue.getReadyEntries();
+            for (final BusEventModelDao output : allReady) {
                 expectedRecordId = (i == 0) ? output.getRecordId() : (expectedRecordId + 1);
 
                 assertEquals(output.getRecordId(), new Long(expectedRecordId));
@@ -490,7 +488,7 @@ public class TestDBBackedQueue extends TestSetup {
         queue.initialize();
 
 
-        Thread writer = new Thread(new WriterRunnable(0, 1000, queue));
+        final Thread writer = new Thread(new WriterRunnable(0, 1000, queue));
         final AtomicLong consumed = new AtomicLong(0);
         final ReaderRunnable readerRunnable = new ReaderRunnable(0, consumed, 1000, queue);
         final Thread reader = new Thread(readerRunnable);
@@ -499,7 +497,7 @@ public class TestDBBackedQueue extends TestSetup {
         while (queue.isQueueOpenForWrite()) {
             try {
                 Thread.sleep(10);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
             }
         }
         reader.start();
@@ -507,7 +505,7 @@ public class TestDBBackedQueue extends TestSetup {
         try {
             writer.join();
             reader.join();
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             Assert.fail("InterruptedException ", e);
         }
 
@@ -519,7 +517,7 @@ public class TestDBBackedQueue extends TestSetup {
 
         // Verify ordering
         long expected = 999;
-        for (Long cur : readerRunnable.getSearch1()) {
+        for (final Long cur : readerRunnable.getSearch1()) {
             assertEquals(cur.longValue(), expected);
             expected--;
         }
@@ -550,7 +548,7 @@ public class TestDBBackedQueue extends TestSetup {
         while (queue.isQueueOpenForWrite()) {
             try {
                 Thread.sleep(10);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
             }
         }
         readers[0].start();
@@ -559,7 +557,7 @@ public class TestDBBackedQueue extends TestSetup {
             writers[0].join();
             writers[1].join();
             readers[0].join();
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -578,7 +576,7 @@ public class TestDBBackedQueue extends TestSetup {
         private final int maxEntries;
         private final List<Long> search1;
 
-        public ReaderRunnable(final int readerId, AtomicLong consumed, final int maxEntries, final DBBackedQueue<BusEventModelDao> queue) {
+        public ReaderRunnable(final int readerId, final AtomicLong consumed, final int maxEntries, final DBBackedQueue<BusEventModelDao> queue) {
             this.queue = queue;
             this.consumed = consumed;
             this.maxEntries = maxEntries;
@@ -588,15 +586,15 @@ public class TestDBBackedQueue extends TestSetup {
         @Override
         public void run() {
             do {
-                List<BusEventModelDao> entries = queue.getReadyEntries();
-                if (entries.size() == 0) {
+                final List<BusEventModelDao> entries = queue.getReadyEntries();
+                if (entries.isEmpty()) {
                     try {
                         //log.info("Reader " + readerId + " sleeping for  10 ms got " + consumed.get());
                         Thread.sleep(10);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                     }
                 } else {
-                    for (BusEventModelDao cur : entries) {
+                    for (final BusEventModelDao cur : entries) {
                         search1.add(cur.getSearchKey1());
                         final BusEventModelDao history = new BusEventModelDao(cur, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
                         queue.moveEntryToHistory(history);
@@ -642,19 +640,19 @@ public class TestDBBackedQueue extends TestSetup {
                 try {
                     //log.info("Writer " + writerId + "sleeping for until queue becomes open for write");
                     Thread.sleep(10);
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                 }
             }
         }
     }
 
 
-    private BusEventModelDao createEntry(Long searchKey1, String owner) {
+    private BusEventModelDao createEntry(final Long searchKey1, final String owner) {
         final String json = "json";
         return new BusEventModelDao(owner, clock.getUTCNow(), String.class.getName(), json, UUID.randomUUID(), searchKey1, 1L);
     }
 
-    private BusEventModelDao createEntry(Long searchKey1) {
+    private BusEventModelDao createEntry(final Long searchKey1) {
         return createEntry(searchKey1, CreatorName.get());
     }
 

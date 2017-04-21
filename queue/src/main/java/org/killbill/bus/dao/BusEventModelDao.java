@@ -76,7 +76,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return recordId;
     }
 
-    public void setRecordId(Long recordId) {
+    public void setRecordId(final Long recordId) {
         this.recordId = recordId;
     }
 
@@ -85,7 +85,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return className;
     }
 
-    public void setClassName(String className) {
+    public void setClassName(final String className) {
         this.className = className;
     }
 
@@ -94,7 +94,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return eventJson;
     }
 
-    public void setEventJson(String eventJson) {
+    public void setEventJson(final String eventJson) {
         this.eventJson = eventJson;
     }
 
@@ -103,7 +103,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return userToken;
     }
 
-    public void setUserToken(UUID userToken) {
+    public void setUserToken(final UUID userToken) {
         this.userToken = userToken;
     }
 
@@ -111,7 +111,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return createdDate;
     }
 
-    public void setCreatedDate(DateTime createdDate) {
+    public void setCreatedDate(final DateTime createdDate) {
         this.createdDate = createdDate;
     }
 
@@ -120,7 +120,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return creatingOwner;
     }
 
-    public void setCreatingOwner(String creatingOwner) {
+    public void setCreatingOwner(final String creatingOwner) {
         this.creatingOwner = creatingOwner;
     }
 
@@ -129,7 +129,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingOwner;
     }
 
-    public void setProcessingOwner(String processingOwner) {
+    public void setProcessingOwner(final String processingOwner) {
         this.processingOwner = processingOwner;
     }
 
@@ -143,11 +143,11 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingAvailableDate;
     }
 
-    public void setProcessingAvailableDate(DateTime processingAvailableDate) {
+    public void setProcessingAvailableDate(final DateTime processingAvailableDate) {
         this.processingAvailableDate = processingAvailableDate;
     }
 
-    public void setErrorCount(Long errorCount) {
+    public void setErrorCount(final Long errorCount) {
         this.errorCount = errorCount;
     }
 
@@ -156,15 +156,15 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingState;
     }
 
-    public void setProcessingState(PersistentQueueEntryLifecycleState processingState) {
+    public void setProcessingState(final PersistentQueueEntryLifecycleState processingState) {
         this.processingState = processingState;
     }
 
-    public void setSearchKey1(Long searchKey1) {
+    public void setSearchKey1(final Long searchKey1) {
         this.searchKey1 = searchKey1;
     }
 
-    public void setSearchKey2(Long searchKey2) {
+    public void setSearchKey2(final Long searchKey2) {
         this.searchKey2 = searchKey2;
     }
 

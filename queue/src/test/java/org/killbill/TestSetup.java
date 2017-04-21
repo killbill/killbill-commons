@@ -21,9 +21,6 @@ package org.killbill;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Properties;
-
-import javax.sql.DataSource;
 
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.clock.ClockMock;
@@ -35,8 +32,6 @@ import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
 import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
 import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
 import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
-import org.killbill.commons.jdbi.guice.DaoConfig;
-import org.killbill.commons.jdbi.guice.DataSourceProvider;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
@@ -68,7 +63,7 @@ public class TestSetup {
     protected PersistentBusConfig persistentBusConfig;
     protected NotificationQueueConfig notificationQueueConfig;
     protected ClockMock clock;
-    protected MetricRegistry metricRegistry = new MetricRegistry();
+    protected final MetricRegistry metricRegistry = new MetricRegistry();
     protected DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
 
     @BeforeClass(groups = "slow")

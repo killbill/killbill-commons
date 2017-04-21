@@ -64,7 +64,7 @@ public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateM
         this.name = name;
     }
 
-    public void setStateMachine(DefaultStateMachine stateMachine) {
+    public void setStateMachine(final DefaultStateMachine stateMachine) {
         this.stateMachine = stateMachine;
     }
 }

@@ -17,9 +17,7 @@
 package org.killbill.bus;
 
 import org.killbill.bus.api.PersistentBusConfig;
-import org.killbill.queue.api.PersistentQueueConfig;
 import org.skife.config.TimeSpan;
-import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;

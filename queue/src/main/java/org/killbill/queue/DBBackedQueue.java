@@ -80,11 +80,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     // where we always restart we only a few elements available in the queue so we
     // start right away with the inflightQ open for read/write.
     //
-    private final static int RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE = 10;
+    private static final int RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE = 10;
 
     private static final int MAX_FETCHED_ENTRIES = 100;
 
-    private final static long INFLIGHT_POLLING_TIMEOUT_MSEC = 100;
+    private static final long INFLIGHT_POLLING_TIMEOUT_MSEC = 100;
 
 
     //
@@ -92,7 +92,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     // entries on disk that are old -- and therefore have been missed. This is purely for
     // for peace of mind and verify the system is healthy.
     //
-    private final static long POLLING_ORPHANS_MSEC = (5L * 60L * 1000L);
+    private static final long POLLING_ORPHANS_MSEC = (5L * 60L * 1000L);
 
     private final String DB_QUEUE_LOG_ID;
 
@@ -125,7 +125,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     // Per thread information to keep track or recordId while it is accessible and right before
     // transaction gets committed/rollback
     //
-    private final static AtomicInteger QUEUE_ID_CNT = new AtomicInteger(0);
+    private static final AtomicInteger QUEUE_ID_CNT = new AtomicInteger(0);
     private final int queueId;
     private final TransientInflightQRowIdCache transientInflightQRowIdCache;
 
@@ -206,7 +206,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         if (useInflightQueue) {
             inflightEvents.clear();
             final List<T> entries = fetchReadyEntries(thresholdToReopenQForWrite);
-            if (entries.size() == 0) {
+            if (entries.isEmpty()) {
                 isQueueOpenForRead = true;
                 isQueueOpenForWrite = true;
             } else {
@@ -274,7 +274,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private List<T> getReadyEntriesUsingPollingMode() {
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
         totalFetched.inc(entriesToClaim.size());
-        if (entriesToClaim.size() > 0) {
+        if (!entriesToClaim.isEmpty()) {
             log.debug("Entries to claim: {}", entriesToClaim);
             return claimEntries(entriesToClaim);
         }
@@ -290,7 +290,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             candidates = fetchReadyEntriesFromIds();
             // There are entries in the Q, we just return those
-            if (candidates.size() > 0) {
+            if (!candidates.isEmpty()) {
                 totalInflightFetched.inc(candidates.size());
                 totalFetched.inc(candidates.size());
                 // There is no need to claim entries in the mode as the thread holding the records is the only one which had access to the ids
@@ -341,7 +341,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             final List<T> entriesToClaim = fetchReadyEntries(1);
             final Long previousLowestOrphanEntry = lowestOrphanEntry;
-            lowestOrphanEntry = (entriesToClaim.size() == 0) ? -1L : entriesToClaim.get(0).getRecordId();
+            lowestOrphanEntry = (entriesToClaim.isEmpty()) ? -1L : entriesToClaim.get(0).getRecordId();
             if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry) {
                 log.warn(DB_QUEUE_LOG_ID + "Detected unprocessed bus event {}, may need to restart server...", previousLowestOrphanEntry);
             }
@@ -353,14 +353,14 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private boolean removeInflightEventsWhenSwitchingToQueueOpenForRead(final List<T> candidates) {
 
         // There is no entry and yet Q is open for write so we can safely start reading from Q
-        if (candidates.size() == 0) {
+        if (candidates.isEmpty()) {
             return true;
         }
 
         boolean foundAllEntriesInInflightEvents = true;
 
         final List<Long> entries = new ArrayList<Long>(candidates.size());
-        for (T entry : candidates) {
+        for (final T entry : candidates) {
             entries.add(entry.getRecordId());
             final boolean found = inflightEvents.remove(entry.getRecordId());
             if (!found) {
@@ -440,7 +440,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             final Iterable<Long> recordIds = Iterables.transform(entries, new Function<T, Long>() {
                 @Nullable
                 @Override
-                public Long apply(@Nullable T input) {
+                public Long apply(@Nullable final T input) {
                     return input.getRecordId();
                 }
             });
@@ -454,7 +454,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             return;
         }
 
-        for (T cur : entries) {
+        for (final T cur : entries) {
             switch (cur.getProcessingState()) {
                 case FAILED:
                     totalProcessedAborted.inc();
@@ -476,7 +476,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
         final Iterable<Long> toBeRemovedRecordIds = Iterables.<T, Long>transform(entries, new Function<T, Long>() {
             @Override
-            public Long apply(T input) {
+            public Long apply(final T input) {
                 return input.getRecordId();
             }
         });
@@ -491,21 +491,21 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         // Drain the inflightEvents queue up to a maximum (MAX_FETCHED_ENTRIES)
         final List<Long> recordIds = new ArrayList<Long>(MAX_FETCHED_ENTRIES);
         inflightEvents.drainTo(recordIds, MAX_FETCHED_ENTRIES);
-        if (recordIds.size() == 0) {
+        if (recordIds.isEmpty()) {
             try {
                 // We block until we see the first entry or reach the timeout (in which case we will rerun the doProcessEvents() loop and come back here).
                 final Long entryId = inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
                 if (entryId != null) {
                     recordIds.add(entryId);
                 }
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn(DB_QUEUE_LOG_ID + "Got interrupted ");
                 return ImmutableList.of();
             }
         }
 
-        if (recordIds.size() > 0) {
+        if (!recordIds.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + recordIds.size() + ", ids = " + Joiner.on(", ").join(recordIds));
             }
@@ -514,7 +514,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         return ImmutableList.<T>of();
     }
 
-    private List<T> fetchReadyEntries(int size) {
+    private List<T> fetchReadyEntries(final int size) {
         final Date now = clock.getUTCNow().toDate();
         final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
         final List<T> entries = sqlDao.getReadyEntries(now, size, owner, config.getTableName());
@@ -545,13 +545,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     private List<T> batchClaimEntries(final List<T> candidates) {
-        if (candidates.size() == 0) {
+        if (candidates.isEmpty()) {
             return ImmutableList.of();
         }
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
         final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
             @Override
-            public Long apply(T input) {
+            public Long apply(final T input) {
                 return input.getRecordId();
             }
         });
@@ -570,7 +570,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
             final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
-                public boolean apply(T input) {
+                public boolean apply(final T input) {
                     return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(CreatorName.get());
                 }
             });
@@ -588,7 +588,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     // In non sticky mode, we don't optimize claim update because we can't synchronize easily -- we could rely on global lock,
     // but we are looking for performance and that does not the right choice.
     //
-    private List<T> sequentialClaimEntries(List<T> candidates) {
+    private List<T> sequentialClaimEntries(final List<T> candidates) {
         return ImmutableList.<T>copyOf(Collections2.filter(candidates, new Predicate<T>() {
             @Override
             public boolean apply(final T input) {
@@ -597,7 +597,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         }));
     }
 
-    private boolean claimEntry(T entry) {
+    private boolean claimEntry(final T entry) {
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
         final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName()) == 1);
 
@@ -684,7 +684,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         private final ThreadLocal<RowRef> rowRefThreadLocal = new ThreadLocal<RowRef>();
         private final int queueId;
 
-        private TransientInflightQRowIdCache(int queueId) {
+        private TransientInflightQRowIdCache(final int queueId) {
             this.queueId = queueId;
         }
 
@@ -719,12 +719,12 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             private final int queueId;
             private final List<Long> rowIds;
 
-            public RowRef(int queueId) {
+            public RowRef(final int queueId) {
                 this.queueId = queueId;
                 this.rowIds = new ArrayList<Long>();
             }
 
-            public void addRowId(long rowId) {
+            public void addRowId(final long rowId) {
                 rowIds.add(rowId);
             }
 

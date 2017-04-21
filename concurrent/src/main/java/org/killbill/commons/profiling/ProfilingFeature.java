@@ -38,12 +38,12 @@ public class ProfilingFeature {
         DAO_DETAILS(DAO_MASK, DAO_DETAILS_MASK),
         PLUGIN(PLUGIN_MASK);
 
-        private int mask;
+        private final int mask;
 
-        ProfilingFeatureType(int... masks) {
+        ProfilingFeatureType(final int... masks) {
             int tmp = 0;
-            for (int i = 0; i < masks.length; i++) {
-                tmp |= masks[i];
+            for (final int mask1 : masks) {
+                tmp |= mask1;
             }
             this.mask = tmp;
         }
@@ -68,7 +68,7 @@ public class ProfilingFeature {
 
     public ProfilingFeature() {
         int tmp = 0;
-        for (ProfilingFeatureType cur : ProfilingFeatureType.values()) {
+        for (final ProfilingFeatureType cur : ProfilingFeatureType.values()) {
             tmp |= cur.getMask();
         }
         this.profilingBits = tmp;
