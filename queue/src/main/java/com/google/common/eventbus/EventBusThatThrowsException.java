@@ -56,6 +56,9 @@ public class EventBusThatThrowsException extends EventBus {
     public void postWithException(final Object event) throws EventBusException {
         final Iterator<Subscriber> eventSubscribers = subscribers.getSubscribers(event);
         if (eventSubscribers.hasNext()) {
+            // Just in case...
+            exceptionHandler.reset();
+
             RuntimeException guavaException = null;
             final Exception subscriberException;
             try {
@@ -131,8 +134,12 @@ public class EventBusThatThrowsException extends EventBus {
 
         Exception caught() {
             final Exception exception = lastException.get();
-            lastException.set(null);
+            reset();
             return exception;
+        }
+
+        void reset() {
+            lastException.set(null);
         }
     }
 }
