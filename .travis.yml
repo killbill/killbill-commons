@@ -5,6 +5,10 @@ cache:
   directories:
       - $HOME/.m2
 
+dist: trusty
+before_script:
+  - jdk_switcher use $JDK
+
 script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn clean install $PHASE | egrep -v 'Download|Install'; [ ${PIPESTATUS[0]} == 0 ]; fi
 # Remove --quiet to avoid timeouts
 install: mvn -U install -DskipTests=true | egrep -v 'Download|Install'
@@ -18,19 +22,13 @@ env:
     - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
 
 matrix:
-  allow_failures:
-    - jdk: oraclejdk8
   include:
-    - env: PHASE="-Ptravis-nodb"
-      jdk: openjdk7
-    - env: PHASE="-Ptravis-nodb"
-      jdk: oraclejdk7
-    - env: PHASE="-Ptravis-nodb,jdk17"
-      jdk: openjdk7
-    - env: PHASE="-Ptravis-nodb,jdk17"
-      jdk: oraclejdk7
-    - env: PHASE="-Ptravis-nodb,jdk18"
-      jdk: oraclejdk8
+    - env: PHASE="-Ptravis-nodb,jdk16" JDK=oraclejdk8
+    - env: PHASE="-Ptravis-nodb,jdk16" JDK=openjdk8
+    - env: PHASE="-Ptravis-nodb,jdk17" JDK=oraclejdk8
+    - env: PHASE="-Ptravis-nodb,jdk17" JDK=openjdk8
+    - env: PHASE="-Ptravis-nodb,jdk18" JDK=oraclejdk8
+    - env: PHASE="-Ptravis-nodb,jdk18" JDK=openjdk8
   fast_finish: true
 
 after_success:
