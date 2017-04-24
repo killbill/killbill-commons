@@ -23,7 +23,7 @@ notifications:
 
 env:
   global:
-    - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m -Dmaven.repo.remote=http://jcenter.bintray.com"
+    - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
 
 matrix:
   include:
