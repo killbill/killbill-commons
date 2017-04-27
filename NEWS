@@ -1,3 +1,6 @@
+0.20.7
+    make sure to store the clock internally as UTC
+
 0.20.6
     Fix PostgreSQL compatibility
     Update various third-party dependencies
