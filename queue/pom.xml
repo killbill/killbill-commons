@@ -112,10 +112,6 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.jdbi</groupId>
-            <artifactId>jdbi</artifactId>
-        </dependency>
         <!-- Just need killbill-api for the BusEvent interface -->
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
