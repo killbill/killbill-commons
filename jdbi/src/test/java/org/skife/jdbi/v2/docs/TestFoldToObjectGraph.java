@@ -18,10 +18,12 @@ package org.skife.jdbi.v2.docs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.FoldController;
 import org.skife.jdbi.v2.Folder3;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.helpers.MapResultAsBean;
@@ -39,6 +41,7 @@ import com.google.common.collect.Maps;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+@Category(JDBITests.class)
 public class TestFoldToObjectGraph
 {
     private DBI dbi;

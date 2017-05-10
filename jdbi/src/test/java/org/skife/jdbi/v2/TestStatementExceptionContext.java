@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.StatementException;
 
 import static org.junit.Assert.assertEquals;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestStatementExceptionContext extends DBITestCase
 {
     @Test

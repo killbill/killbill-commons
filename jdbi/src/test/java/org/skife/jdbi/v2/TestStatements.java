@@ -16,12 +16,14 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestStatements extends DBITestCase
 {
     private BasicHandle h;

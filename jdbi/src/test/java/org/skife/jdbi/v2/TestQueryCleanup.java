@@ -25,11 +25,13 @@ import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.skife.jdbi.v2.util.IntegerMapper;
 
 import com.google.common.collect.Iterators;
 
+@Category(JDBITests.class)
 public class TestQueryCleanup
 {
     private static final int COUNT = 100;

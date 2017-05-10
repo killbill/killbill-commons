@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.tweak.Argument;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
 
+@Category(JDBITests.class)
 public class TestMapArguments
 {
 

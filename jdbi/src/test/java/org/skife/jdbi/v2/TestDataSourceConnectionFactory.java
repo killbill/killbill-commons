@@ -19,12 +19,14 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.derby.DerbyHelper;
 
 import java.sql.Connection;
 
 import static org.junit.Assert.assertFalse;
 
+@Category(JDBITests.class)
 public class TestDataSourceConnectionFactory
 {
     private static final DerbyHelper DERBY_HELPER = new DerbyHelper();

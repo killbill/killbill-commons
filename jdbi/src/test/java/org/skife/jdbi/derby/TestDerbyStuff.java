@@ -16,6 +16,8 @@
 package org.skife.jdbi.derby;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.skife.jdbi.v2.JDBITests;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -23,6 +25,7 @@ import java.sql.Statement;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category(JDBITests.class)
 public class TestDerbyStuff
 {
     private final DerbyHelper derbyHelper = new DerbyHelper();

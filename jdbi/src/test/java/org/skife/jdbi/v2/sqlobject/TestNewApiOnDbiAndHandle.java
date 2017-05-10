@@ -18,8 +18,10 @@ package org.skife.jdbi.v2.sqlobject;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.sqlobject.mixins.GetHandle;
 
@@ -29,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
+@Category(JDBITests.class)
 public class TestNewApiOnDbiAndHandle
 {
     private DBI    dbi;

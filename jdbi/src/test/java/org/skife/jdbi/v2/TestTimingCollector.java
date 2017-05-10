@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.logging.NoOpLog;
 
 import java.sql.Connection;
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestTimingCollector extends DBITestCase
 {
     private BasicHandle h;

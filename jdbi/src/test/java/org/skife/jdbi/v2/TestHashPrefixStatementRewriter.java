@@ -18,6 +18,7 @@ package org.skife.jdbi.v2;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.tweak.RewrittenStatement;
 
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestHashPrefixStatementRewriter
 {
     private HashPrefixStatementRewriter rw;

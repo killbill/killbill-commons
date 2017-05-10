@@ -17,10 +17,12 @@ package org.skife.jdbi.v2;
 
 import org.easymock.EasyMock;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.tweak.Argument;
 
 import java.sql.PreparedStatement;
 
+@Category(JDBITests.class)
 public class TestBooleanIntegerArgument {
 
     @Test

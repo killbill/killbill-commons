@@ -18,7 +18,9 @@ package org.skife.jdbi.v2.unstable.grammar;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.Lexer;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.rewriter.colon.ColonStatementLexer;
+import org.skife.jdbi.v2.JDBITests;
 
 import static org.skife.jdbi.rewriter.colon.ColonStatementLexer.EOF;
 import static org.skife.jdbi.rewriter.colon.ColonStatementLexer.ESCAPED_TEXT;
@@ -31,6 +33,7 @@ import static org.skife.jdbi.rewriter.colon.ColonStatementLexer.QUOTED_TEXT;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestColonGrammar extends GrammarTestCase
 {
     @Test

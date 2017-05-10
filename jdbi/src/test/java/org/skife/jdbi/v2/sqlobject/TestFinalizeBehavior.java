@@ -18,7 +18,9 @@ package org.skife.jdbi.v2.sqlobject;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.JDBITests;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -29,6 +31,7 @@ import java.sql.SQLException;
  * open a {@link Connection} just to satisfy a (no-op) finalizer.
  * <a href="https://github.com/brianm/jdbi/issues/82">Issue #82</a>.
  */
+@Category(JDBITests.class)
 public class TestFinalizeBehavior
 {
     private DBI    dbi;

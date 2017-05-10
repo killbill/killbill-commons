@@ -18,6 +18,7 @@ package org.skife.jdbi.v2;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.BindBean;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -37,6 +38,7 @@ import com.google.common.collect.ImmutableSet;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+@Category(JDBITests.class)
 public class TestContainerFactory
 {
     private DBI    dbi;

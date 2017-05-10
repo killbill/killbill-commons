@@ -18,10 +18,13 @@ package org.skife.jdbi.v2.sqlobject.stringtemplate;
 import org.antlr.stringtemplate.StringTemplateGroup;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 
 import java.util.HashMap;
 
+@Category(JDBITests.class)
 public class TestStringTemplate3StatementLocatorWithSuperGroupAndCache
 {
     @Test

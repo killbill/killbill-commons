@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.StatementException;
 import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 
@@ -36,6 +37,7 @@ import static org.junit.Assert.fail;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestClasspathStatementLocator extends DBITestCase
 {
     @Test

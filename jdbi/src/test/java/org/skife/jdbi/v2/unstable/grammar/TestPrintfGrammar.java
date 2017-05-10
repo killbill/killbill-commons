@@ -18,7 +18,9 @@ package org.skife.jdbi.v2.unstable.grammar;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.Lexer;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.rewriter.printf.FormatterStatementLexer;
+import org.skife.jdbi.v2.JDBITests;
 
 import static org.skife.jdbi.rewriter.printf.FormatterStatementLexer.EOF;
 import static org.skife.jdbi.rewriter.printf.FormatterStatementLexer.INTEGER;
@@ -29,6 +31,7 @@ import static org.skife.jdbi.rewriter.printf.FormatterStatementLexer.STRING;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestPrintfGrammar extends GrammarTestCase
 {
     @Test

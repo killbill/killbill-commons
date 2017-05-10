@@ -18,6 +18,7 @@ package org.skife.jdbi.v2;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.sqlobject.SomethingMapper;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 
@@ -26,6 +27,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 
 
+@Category(JDBITests.class)
 public class TestRegisteredMappers
 {
     private DBI dbi;

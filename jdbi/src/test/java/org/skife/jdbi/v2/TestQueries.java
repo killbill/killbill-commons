@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.HandyMapThing;
 import org.skife.jdbi.v2.exceptions.NoResultsException;
 import org.skife.jdbi.v2.exceptions.StatementException;
@@ -38,6 +39,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category(JDBITests.class)
 public class TestQueries extends DBITestCase
 {
     private BasicHandle h;

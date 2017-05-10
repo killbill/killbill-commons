@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@Category(JDBITests.class)
 public class TestEnums extends DBITestCase
 {
     public static class SomethingElse

@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 
 import static org.junit.Assert.assertEquals;
@@ -25,6 +26,7 @@ import static org.junit.Assert.fail;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestPositionalParameterBinding extends DBITestCase
 {
     private BasicHandle h;

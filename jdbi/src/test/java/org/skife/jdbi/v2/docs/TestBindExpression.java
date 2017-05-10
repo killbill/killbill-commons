@@ -21,8 +21,10 @@ import org.apache.commons.jexl2.MapContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.SQLStatement;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.StatementContext;
@@ -51,6 +53,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
 
+@Category(JDBITests.class)
 public class TestBindExpression
 {
     private DBI    dbi;

@@ -18,8 +18,10 @@ package org.skife.jdbi.v2.sqlobject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 
 import java.util.UUID;
@@ -29,6 +31,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+@Category(JDBITests.class)
 public class TestCreateSqlObjectAnnotation
 {
     private DBI dbi;

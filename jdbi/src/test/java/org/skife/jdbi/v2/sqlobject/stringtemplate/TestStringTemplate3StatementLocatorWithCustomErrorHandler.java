@@ -22,14 +22,17 @@ import org.antlr.stringtemplate.StringTemplateErrorListener;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.unstable.BindIn;
 
 import com.google.common.collect.Lists;
 
+@Category(JDBITests.class)
 public class TestStringTemplate3StatementLocatorWithCustomErrorHandler {
 
   private DBI dbi;
@@ -43,40 +46,40 @@ public class TestStringTemplate3StatementLocatorWithCustomErrorHandler {
     handle.createStatement("create table foo (id int, bar varchar(100) default null);").execute();
     dao = dbi.onDemand(MyDAO.class);
   }
-  
+
   @After
   public void tearDown() throws Exception {
     handle.execute("drop table foo");
     handle.close();
   }
-  
+
   @Test(expected=UnableToCreateStatementException.class)
   public void testBrokenSyntax() {
     dao.broken();
   }
-  
+
   @Test
   public void testWorks() {
     dao.works(Lists.newArrayList(1L, 2L));
   }
-  
+
   @Test
   public void testIds() {
     dao.ids(Lists.newArrayList(1, 2));
   }
-  
+
   @UseStringTemplate3StatementLocator(errorListener=MyTestCustomErrorHandler.class)
   public interface MyDAO {
     @SqlQuery("select * from foo where bar < 12 and id in (<ids>)")
     Object broken();
-    
+
     @SqlQuery("select * from foo where bar \\< 12 and id in (<ids>)")
     Object works(@BindIn("ids") List<Long> ids);
-    
+
     @SqlQuery("select * from foo where id in (<ids>)")
     Object ids(@BindIn("ids") List<Integer> ids);
   }
-  
+
   public static class MyTestCustomErrorHandler implements StringTemplateErrorListener {
 
     @Override
@@ -91,7 +94,7 @@ public class TestStringTemplate3StatementLocatorWithCustomErrorHandler {
     public void warning(String msg) {
       throw new RuntimeException("warning:" + msg);
     }
-    
+
   }
-  
+
 }

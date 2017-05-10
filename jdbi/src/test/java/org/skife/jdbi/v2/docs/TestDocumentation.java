@@ -20,9 +20,11 @@ import static java.util.Arrays.asList;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Folder2;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Query;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.StatementContext;
@@ -50,6 +52,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.skife.jdbi.v2.ExtraMatchers.equalsOneOf;
 
+@Category(JDBITests.class)
 public class TestDocumentation
 {
 

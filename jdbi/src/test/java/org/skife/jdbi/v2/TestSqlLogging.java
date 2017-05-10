@@ -21,6 +21,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.TransactionFailedException;
 import org.skife.jdbi.v2.logging.Log4JLog;
 import org.skife.jdbi.v2.logging.PrintStreamLog;
@@ -39,6 +40,7 @@ import static org.junit.Assert.fail;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestSqlLogging extends DBITestCase
 {
     private Handle h;

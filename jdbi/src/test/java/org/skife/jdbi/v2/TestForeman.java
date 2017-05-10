@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.tweak.Argument;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;
 
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertSame;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+@Category(JDBITests.class)
 public class TestForeman
 {
     @Test

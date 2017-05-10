@@ -19,8 +19,11 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBIQuarantineTests;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.sqlobject.customizers.FetchSize;
@@ -64,6 +67,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testFetchSizeAsArgOnlyUsefulWhenSteppingThroughDebuggerSadly() throws Exception
     {
         Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
@@ -76,6 +80,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testFetchSizeOnMethodOnlyUsefulWhenSteppingThroughDebuggerSadly() throws Exception
     {
         Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
@@ -88,6 +93,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testMaxSizeOnMethod() throws Exception
     {
         Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
@@ -100,6 +106,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testMaxSizeOnParam() throws Exception
     {
         Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
@@ -112,6 +119,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testQueryTimeOutOnMethodOnlyUsefulWhenSteppingThroughDebuggerSadly() throws Exception
     {
         Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
@@ -124,6 +132,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testQueryTimeOutOnParamOnlyUsefulWhenSteppingThroughDebuggerSadly() throws Exception
     {
         Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
@@ -137,6 +146,7 @@ public class TestModifiers
 
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Behavior changed with H2 1.4
     public void testIsolationLevelOnMethod() throws Exception
     {
         Spiffy spiffy = dbi.open(Spiffy.class);
@@ -158,6 +168,7 @@ public class TestModifiers
     }
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Behavior changed with H2 1.4
     public void testIsolationLevelOnParam() throws Exception
     {
         Spiffy spiffy = dbi.open(Spiffy.class);

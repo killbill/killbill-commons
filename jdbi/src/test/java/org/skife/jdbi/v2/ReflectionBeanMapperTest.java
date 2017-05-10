@@ -19,6 +19,7 @@ package org.skife.jdbi.v2;
 import org.easymock.EasyMockRunner;
 import org.easymock.Mock;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
@@ -31,6 +32,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(EasyMockRunner.class)
+@Category(JDBITests.class)
 public class ReflectionBeanMapperTest {
 
     @Mock

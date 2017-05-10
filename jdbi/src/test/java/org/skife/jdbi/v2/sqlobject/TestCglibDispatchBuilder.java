@@ -16,6 +16,8 @@
 package org.skife.jdbi.v2.sqlobject;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.skife.jdbi.v2.JDBITests;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.Factory;
@@ -25,6 +27,7 @@ import net.sf.cglib.proxy.NoOp;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+@Category(JDBITests.class)
 public class TestCglibDispatchBuilder
 {
     /**

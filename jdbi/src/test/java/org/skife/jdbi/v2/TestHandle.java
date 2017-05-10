@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
@@ -27,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestHandle extends DBITestCase
 {
     @Test

@@ -18,10 +18,12 @@ package org.skife.jdbi.v2.sqlobject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.derby.DerbyHelper;
 import org.skife.jdbi.v2.Binding;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.Update;
 
@@ -29,6 +31,7 @@ import java.lang.annotation.Annotation;
 
 import static org.junit.Assert.assertEquals;
 
+@Category(JDBITests.class)
 public class TestBindBeanFactory
 {
     private static final DerbyHelper DERBY_HELPER = new DerbyHelper();

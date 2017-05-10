@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestBatch extends DBITestCase
 {
     @Test

@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.derby.DerbyHelper;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import org.skife.jdbi.v2.util.StringMapper;
@@ -29,6 +30,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 
+@Category(JDBITests.class)
 public class TestPreparedBatch extends DBITestCase
 {
     @Test

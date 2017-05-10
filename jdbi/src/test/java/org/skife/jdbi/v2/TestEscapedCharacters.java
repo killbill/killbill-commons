@@ -17,10 +17,12 @@ package org.skife.jdbi.v2;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  *
  */
+@Category(JDBITests.class)
 public class TestEscapedCharacters
 {
     private final ColonPrefixNamedParamStatementRewriter rewriter = new ColonPrefixNamedParamStatementRewriter();

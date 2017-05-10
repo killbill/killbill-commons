@@ -17,8 +17,10 @@ package org.skife.jdbi.v2.tweak.transactions;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBITestCase;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
@@ -28,6 +30,7 @@ import org.skife.jdbi.v2.tweak.TransactionHandler;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Category(JDBITests.class)
 public class TestSerializableTransactionRunner extends DBITestCase
 {
     @Override

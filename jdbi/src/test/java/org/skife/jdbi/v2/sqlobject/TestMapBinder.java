@@ -21,14 +21,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.customizers.Mapper;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import junit.framework.TestCase;
 
+@Category(JDBITests.class)
 public class TestMapBinder extends TestCase
 {
     private DBI    dbi;

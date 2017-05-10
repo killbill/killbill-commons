@@ -16,6 +16,7 @@
 package org.skife.jdbi.v2;
 
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 
@@ -41,6 +42,7 @@ import static org.junit.Assert.fail;
  * Oracle was getting angry about too many open cursors because of the large number
  * of prepared statements being created and cached indefinitely.
  */
+@Category(JDBITests.class)
 public class TestTooManyCursors extends DBITestCase
 {
     @Test
