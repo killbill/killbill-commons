@@ -443,7 +443,8 @@ class BasicHandle implements Handle
     @Override
     public void registerArgumentFactory(ArgumentFactory argumentFactory)
     {
-        this.foreman.register(argumentFactory);
+        //this.foreman.register(argumentFactory);
+        throw new UnsupportedOperationException("[OPTIMIZATION] Registering a custom ArgumentFactory on a Handle is disabled");
     }
 
     @Override

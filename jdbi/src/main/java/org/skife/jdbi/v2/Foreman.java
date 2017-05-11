@@ -28,11 +28,12 @@ import java.sql.Timestamp;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class Foreman
 {
-
+    private final Map<Class<?>, ArgumentFactory> cache = new ConcurrentHashMap<Class<?>, ArgumentFactory>();
     private final List<ArgumentFactory> factories = new CopyOnWriteArrayList<ArgumentFactory>();
 
     public Foreman()
@@ -47,11 +48,17 @@ class Foreman
 
     Argument waffle(Class expectedType, Object it, StatementContext ctx)
     {
+        if (cache.containsKey(expectedType)) {
+            return cache.get(expectedType).build(expectedType, it, ctx);
+        }
+
         ArgumentFactory candidate = null;
 
         for (int i = factories.size() - 1; i >= 0; i--) {
             ArgumentFactory factory = factories.get(i);
             if (factory.accepts(expectedType, it, ctx)) {
+                // Note! Cache assumes all ArgumentFactory#accepts implementations don't care about the Object it itself
+                cache.put(expectedType, factory);
                 return factory.build(expectedType, it, ctx);
             }
             // Fall back to any factory accepting Object if necessary but
@@ -61,6 +68,7 @@ class Foreman
             }
         }
         if (candidate != null) {
+            cache.put(Object.class, candidate);
             return candidate.build(Object.class, it, ctx);
         }
 
@@ -71,12 +79,15 @@ class Foreman
 
     public void register(ArgumentFactory<?> argumentFactory)
     {
+        // [OPTIMIZATION] Only allowed at a global level (DBI)
         factories.add(argumentFactory);
     }
 
     public Foreman createChild()
     {
-        return new Foreman(factories);
+        // [OPTIMIZATION] See above
+        //return new Foreman(factories);
+        return this;
     }
 
 

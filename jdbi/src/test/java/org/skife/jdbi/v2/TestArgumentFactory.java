@@ -30,7 +30,6 @@ import java.util.UUID;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-@Category(JDBITests.class)
 public class TestArgumentFactory
 {
     private DBI    dbi;
@@ -56,6 +55,7 @@ public class TestArgumentFactory
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testRegisterOnDBI() throws Exception
     {
         dbi.registerArgumentFactory(new NameAF());
@@ -72,6 +72,7 @@ public class TestArgumentFactory
     }
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Feature disabled
     public void testRegisterOnHandle() throws Exception
     {
         h.registerArgumentFactory(new NameAF());
@@ -86,6 +87,7 @@ public class TestArgumentFactory
     }
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Feature disabled
     public void testRegisterOnStatement() throws Exception
     {
         h.createStatement("insert into something (id, name) values (:id, :name)")
@@ -96,6 +98,7 @@ public class TestArgumentFactory
     }
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Feature disabled
     public void testOnPreparedBatch() throws Exception
     {
         PreparedBatch batch = h.prepareBatch("insert into something (id, name) values (:id, :name)");
