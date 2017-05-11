@@ -38,7 +38,7 @@ import com.google.common.collect.ImmutableSet;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-@Category(JDBITests.class)
+@Category(JDBIQuarantineTests.class) // Feature disabled
 public class TestContainerFactory
 {
     private DBI    dbi;

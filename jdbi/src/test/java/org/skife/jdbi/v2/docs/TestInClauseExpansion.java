@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.ContainerBuilder;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.JDBITests;
+import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.logging.PrintStreamLog;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterContainerMapper;
@@ -40,7 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-@Category(JDBITests.class)
+@Category(JDBIQuarantineTests.class) // Feature disabled
 public class TestInClauseExpansion
 {
     private DBI    dbi;
