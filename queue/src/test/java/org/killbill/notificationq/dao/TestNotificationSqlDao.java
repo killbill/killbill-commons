@@ -16,24 +16,28 @@
 
 package org.killbill.notificationq.dao;
 
-import com.google.common.collect.Collections2;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+
+import javax.annotation.Nullable;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
+import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
+import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import com.google.common.collect.Collections2;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -50,7 +54,9 @@ public class TestNotificationSqlDao extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        dao = getDBI().onDemand(NotificationSqlDao.class);
+        final DBI dbi = getDBI();
+        dbi.registerMapper(new LowerToCamelBeanMapperFactory(NotificationEventModelDao.class));
+        dao = dbi.onDemand(NotificationSqlDao.class);
     }
 
     @Test(groups = "slow")

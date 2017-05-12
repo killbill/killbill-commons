@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.JDBITests;
+import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.ResultSetMapperFactory;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.TestRegisterMapperFactory.Foo.FooMapper;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.UUID;
 
 
-@Category(JDBITests.class)
+@Category(JDBIQuarantineTests.class) // Feature disabled
 public class TestRegisterMapperFactory
 {
     private Handle handle;

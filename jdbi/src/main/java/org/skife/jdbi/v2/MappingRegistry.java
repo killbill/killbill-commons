@@ -32,7 +32,7 @@ class MappingRegistry
     /**
      * Copy Constructor
      */
-    public MappingRegistry(MappingRegistry parent)
+    MappingRegistry(MappingRegistry parent)
     {
         factories.addAll(parent.factories);
         cache.putAll(parent.cache);
@@ -76,5 +76,12 @@ class MappingRegistry
         }
 
         throw new DBIException("No mapper registered for " + type.getName()) {};
+    }
+
+    public MappingRegistry createChild()
+    {
+        // [OPTIMIZATION] See above
+        //return new MappingRegistry(this);
+        return this;
     }
 }

@@ -50,7 +50,11 @@ public class TestPostgresBugs
         assumeThat(url, notNullValue());
 
         org.postgresql.Driver.getVersion();
-        return new DBI(url, user, pass);
+
+        final DBI dbi = new DBI(url, user, pass);
+        dbi.registerMapper(new SomethingMapper());
+
+        return dbi;
     }
 
     @BeforeClass
@@ -117,7 +121,6 @@ public class TestPostgresBugs
     }
 
 
-    @RegisterMapper(SomethingMapper.class)
     public static abstract class Dao implements Transactional<Dao>
     {
         @SqlUpdate("insert into something (id, name) values (:id, :name)")

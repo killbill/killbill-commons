@@ -46,6 +46,7 @@ public class TestOverrideStatementLocatorWith
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:" + UUID.randomUUID());
         DBI dbi = new DBI(ds);
+        dbi.registerMapper(new SomethingMapper());
         handle = dbi.open();
 
         handle.execute("create table something (id int primary key, name varchar(100))");
@@ -101,7 +102,6 @@ public class TestOverrideStatementLocatorWith
 
 
     @OverrideStatementLocatorWith(StringTemplate3StatementLocator.class)
-    @RegisterMapper(SomethingMapper.class)
     static interface Kangaroo
     {
         @SqlUpdate

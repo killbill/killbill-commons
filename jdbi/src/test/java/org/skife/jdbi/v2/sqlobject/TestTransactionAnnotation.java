@@ -50,6 +50,7 @@ public class TestTransactionAnnotation
     public void setUp() throws Exception
     {
         dbi = new DBI("jdbc:h2:mem:" + UUID.randomUUID());
+        dbi.registerMapper(new SomethingMapper());
         handle = dbi.open();
 
         handle.execute("create table something (id int primary key, name varchar(100))");
@@ -166,7 +167,6 @@ public class TestTransactionAnnotation
         es.shutdown();
     }
 
-    @RegisterMapper(SomethingMapper.class)
     public static abstract class Other
     {
         @Transaction
@@ -183,7 +183,6 @@ public class TestTransactionAnnotation
         public abstract Something find(@Bind("id") int id);
     }
 
-    @RegisterMapper(SomethingMapper.class)
     public static abstract class Dao
     {
         @SqlUpdate("insert into something (id, name) values (:id, :name)")

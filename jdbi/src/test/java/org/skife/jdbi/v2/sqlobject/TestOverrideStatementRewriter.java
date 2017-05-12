@@ -45,6 +45,7 @@ public class TestOverrideStatementRewriter
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:" + UUID.randomUUID());
         DBI dbi = new DBI(ds);
+        dbi.registerMapper(new SomethingMapper());
 
         // this is the default, but be explicit for sake of clarity in test
         dbi.setStatementRewriter(new ColonPrefixNamedParamStatementRewriter());
@@ -73,7 +74,6 @@ public class TestOverrideStatementRewriter
 
 
     @OverrideStatementRewriterWith(HashPrefixStatementRewriter.class)
-    @RegisterMapper(SomethingMapper.class)
     static interface Hashed
     {
         @SqlUpdate("insert into something (id, name) values (#id, #name)")

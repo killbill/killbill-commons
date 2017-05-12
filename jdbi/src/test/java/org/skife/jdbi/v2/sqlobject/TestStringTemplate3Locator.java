@@ -43,6 +43,7 @@ public class TestStringTemplate3Locator
     public void setUp() throws Exception
     {
         DBI dbi = new DBI("jdbc:h2:mem:" + UUID.randomUUID());
+        dbi.registerMapper(new SomethingMapper());
         handle = dbi.open();
 
         handle.execute("create table something (id int primary key, name varchar(100))");
@@ -118,7 +119,6 @@ public class TestStringTemplate3Locator
     }
 
     @UseStringTemplate3StatementLocator
-    @RegisterMapper(SomethingMapper.class)
     static interface HoneyBadger
     {
         @SqlUpdate("insert into <table> (id, name) values (:id, :name)")
@@ -129,7 +129,6 @@ public class TestStringTemplate3Locator
     }
 
     @ExternalizedSqlViaStringTemplate3
-    @RegisterMapper(SomethingMapper.class)
     static interface Wombat
     {
         @SqlUpdate

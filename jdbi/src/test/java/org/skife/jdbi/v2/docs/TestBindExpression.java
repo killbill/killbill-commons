@@ -63,6 +63,7 @@ public class TestBindExpression
     public void setUp() throws Exception
     {
         dbi = new DBI("jdbc:h2:mem:" + UUID.randomUUID());
+        dbi.registerMapper(new SomethingMapper());
         handle = dbi.open();
         handle.execute("create table something( id integer primary key, name varchar(100) )");
     }
@@ -73,7 +74,6 @@ public class TestBindExpression
         handle.close();
     }
 
-    @RegisterMapper(SomethingMapper.class)
     public static interface DB
     {
         @SqlBatch("insert into something (id, name) values(:id, :name)")

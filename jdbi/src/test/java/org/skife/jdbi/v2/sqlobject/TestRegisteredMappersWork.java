@@ -22,11 +22,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.exceptions.DBIException;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 import org.skife.jdbi.v2.sqlobject.helpers.MapResultAsBean;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
@@ -43,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-@Category(JDBITests.class)
 public class TestRegisteredMappersWork
 {
     private DBI    dbi;
@@ -55,6 +54,7 @@ public class TestRegisteredMappersWork
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:" + UUID.randomUUID());
         dbi = new DBI(ds);
+        dbi.registerMapper(new MySomethingMapper());
         handle = dbi.open();
 
         handle.execute("create table something (id int primary key, name varchar(100))");
@@ -74,6 +74,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testFoo() throws Exception
     {
         boolean world_is_right = handle.attach(BooleanDao.class).fetchABoolean();
@@ -120,6 +121,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Feature disabled
     public void testBeanMapperFactory() throws Exception
     {
         BeanMappingDao db = handle.attach(BeanMappingDao.class);
@@ -137,6 +139,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test
+    @Category(JDBIQuarantineTests.class) // Feature disabled
     public void testRegistered() throws Exception
     {
         handle.registerMapper(new SomethingMapper());
@@ -151,6 +154,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testBuiltIn() throws Exception
     {
 
@@ -162,6 +166,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testRegisterMapperAnnotationWorks() throws Exception
     {
         Kabob bob = dbi.onDemand(Kabob.class);
@@ -173,6 +178,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test(expected = DBIException.class)
+    @Category(JDBIQuarantineTests.class) // Feature disabled
     public void testNoRootRegistrations() throws Exception
     {
         Handle h = dbi.open();
@@ -189,6 +195,7 @@ public class TestRegisteredMappersWork
     }
 
     @Test
+    @Category(JDBITests.class)
     public void testNoErrorOnNoData() throws Exception
     {
         Kabob bob = dbi.onDemand(Kabob.class);
@@ -217,7 +224,6 @@ public class TestRegisteredMappersWork
     }
 
 
-    @RegisterMapper(MySomethingMapper.class)
     public static interface Kabob
     {
         @SqlUpdate("insert into something (id, name) values (:id, :name)")

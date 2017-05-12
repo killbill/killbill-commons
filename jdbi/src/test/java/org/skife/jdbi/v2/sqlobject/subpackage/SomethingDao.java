@@ -22,7 +22,6 @@ import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 
-@RegisterMapper(SomethingMapper.class)
 public abstract class SomethingDao
 {
     @SqlUpdate("insert into something (id, name) values (:id, :name)")

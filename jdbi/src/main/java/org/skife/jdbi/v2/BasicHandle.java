@@ -94,7 +94,7 @@ class BasicHandle implements Handle
                                               log,
                                               timingCollector,
                                               Collections.<StatementCustomizer>emptyList(),
-                                              new MappingRegistry(mappingRegistry),
+                                              mappingRegistry.createChild(),
                                               foreman.createChild(),
                                               containerFactoryRegistry.createChild());
     }
@@ -393,13 +393,15 @@ class BasicHandle implements Handle
     @Override
     public void registerMapper(ResultSetMapper mapper)
     {
-        mappingRegistry.add(mapper);
+        //mappingRegistry.add(mapper);
+        throw new UnsupportedOperationException("[OPTIMIZATION] Registering a custom ResultSetMapper on a Handle is disabled");
     }
 
     @Override
     public void registerMapper(ResultSetMapperFactory factory)
     {
-        mappingRegistry.add(factory);
+        //mappingRegistry.add(factory);
+        throw new UnsupportedOperationException("[OPTIMIZATION] Registering a custom ResultSetMapperFactory on a Handle is disabled");
     }
 
     @Override

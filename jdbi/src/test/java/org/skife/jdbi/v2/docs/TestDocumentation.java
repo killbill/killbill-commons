@@ -301,7 +301,6 @@ public class TestDocumentation
         h.close();
     }
 
-    @RegisterMapper(SomethingMapper.class)
     public static interface AnotherQuery
     {
         @SqlQuery("select id, name from something where id = :id")
@@ -325,6 +324,7 @@ public class TestDocumentation
     public void testAnotherCoupleInterfaces() throws Exception
     {
         DBI dbi = new DBI("jdbc:h2:mem:" + UUID.randomUUID());
+        dbi.registerMapper(new SomethingMapper());
         Handle h = dbi.open();
 
         h.execute("create table something (id int primary key, name varchar(32))");

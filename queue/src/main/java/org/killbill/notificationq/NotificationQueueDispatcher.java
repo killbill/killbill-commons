@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2012 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -23,6 +23,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import org.joda.time.DateTime;
 import org.killbill.clock.Clock;
+import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
@@ -34,6 +35,7 @@ import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
+import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +76,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
         super("NotificationQ", config);
+
+        ((DBI) dbi).registerMapper(new LowerToCamelBeanMapperFactory(NotificationEventModelDao.class));
 
         final ThreadFactory notificationQThreadFactory = new ThreadFactory() {
             @Override

@@ -40,6 +40,7 @@ public class TestClasspathStatementLocator {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:" + UUID.randomUUID());
         DBI dbi = new DBI(ds);
+        dbi.registerMapper(new SomethingMapper());
         handle = dbi.open();
 
         handle.execute("create table something (id int primary key, name varchar(100))");
@@ -59,7 +60,6 @@ public class TestClasspathStatementLocator {
         assertThat(s.getName(), equalTo("Martin"));
     }
 
-    @RegisterMapper(SomethingMapper.class)
     static interface Cromulence {
         @SqlQuery
         public Something findById(@Bind("id") Long id);

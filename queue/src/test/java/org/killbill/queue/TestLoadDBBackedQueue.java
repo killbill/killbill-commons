@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2015-2017 Groupon, Inc
+ * Copyright 2015-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -24,8 +24,10 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
+import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
@@ -53,7 +55,9 @@ public class TestLoadDBBackedQueue extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
+        final DBI dbi = getDBI();
+        dbi.registerMapper(new LowerToCamelBeanMapperFactory(BusEventModelDao.class));
+        sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
     }
 
     @BeforeMethod(groups = "slow")

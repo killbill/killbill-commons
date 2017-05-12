@@ -27,6 +27,7 @@ import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.helpers.MapResultAsBean;
+import org.skife.jdbi.v2.tweak.BeanMapperFactory;
 
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -52,6 +53,7 @@ public class TestFoldToObjectGraph
     public void setUp() throws Exception
     {
         dbi = new DBI("jdbc:h2:mem:" + UUID.randomUUID());
+        dbi.registerMapper(new BeanMapperFactory());
         handle = dbi.open();
         handle.execute("create table team ( name varchar(100), " +
                        "                    mascot varchar(100)," +
@@ -142,7 +144,6 @@ public class TestFoldToObjectGraph
                   "       p.name as personName, " +
                   "       p.role as role " +
                   "from team t inner join person p on (t.name = p.team)")
-        @MapResultAsBean
         public abstract Iterator<TeamPersonJoinRow> findAllTeamsAndPeople();
 
         public Map<String, Team> findAllTeams()

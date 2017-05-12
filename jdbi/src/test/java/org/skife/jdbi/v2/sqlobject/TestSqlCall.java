@@ -44,6 +44,7 @@ public class TestSqlCall
     public void setUp() throws Exception
     {
         dbi = new DBI("jdbc:h2:mem:" + UUID.randomUUID());
+        dbi.registerMapper(new SomethingMapper());
 
         dbi.setSQLLog(new PrintStreamLog(System.out));
         handle = dbi.open();
@@ -77,7 +78,6 @@ public class TestSqlCall
         public void insert(@Bind("id") int id, @Bind("name") String name);
 
         @SqlQuery("select id, name from something where id = :id")
-        @RegisterMapper(SomethingMapper.class)
         Something findById(@Bind("id") int id);
     }
 

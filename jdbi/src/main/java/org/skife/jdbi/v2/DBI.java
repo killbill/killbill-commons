@@ -218,7 +218,7 @@ public class DBI implements IDBI
                                        globalStatementAttributes,
                                        log.get(),
                                        timingCollector.get(),
-                                       new MappingRegistry(mappingRegistry),
+                                       mappingRegistry.createChild(),
                                        foreman.createChild(),
                                        containerFactoryRegistry.createChild());
             log.get().logObtainHandle((stop - start) / 1000000L, h);
