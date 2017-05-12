@@ -17,30 +17,30 @@
 
 package org.killbill.queue;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.annotation.Nullable;
+
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
-import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
-import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 
-import static org.killbill.queue.api.PersistentQueueConfig.*;
+import static org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import static org.testng.Assert.assertEquals;
 
 public class TestLoadDBBackedQueue extends TestSetup {
@@ -55,9 +55,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        final DBI dbi = getDBI();
-        dbi.registerMapper(new LowerToCamelBeanMapperFactory(BusEventModelDao.class));
-        sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
+        sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
     }
 
     @BeforeMethod(groups = "slow")

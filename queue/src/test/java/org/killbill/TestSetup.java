@@ -28,14 +28,10 @@ import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
 import org.killbill.commons.embeddeddb.postgresql.PostgreSQLEmbeddedDB;
-import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
-import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
-import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
-import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
-import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.notificationq.api.NotificationQueueConfig;
+import org.killbill.queue.InTransaction;
 import org.skife.config.ConfigSource;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
@@ -108,11 +104,7 @@ public class TestSetup {
 
         databaseTransactionNotificationApi = new DatabaseTransactionNotificationApi();
         dbi = new DBI(embeddedDB.getDataSource());
-        dbi.registerArgumentFactory(new UUIDArgumentFactory());
-        dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
-        dbi.registerArgumentFactory(new DateTimeArgumentFactory());
-        dbi.registerArgumentFactory(new LocalDateArgumentFactory());
-        dbi.registerMapper(new UUIDMapper());
+        InTransaction.setupDBI(dbi);
         dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());

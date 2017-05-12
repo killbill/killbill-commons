@@ -24,15 +24,20 @@ import java.sql.SQLFeatureNotSupportedException;
 
 import javax.sql.DataSource;
 
+import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
 import org.killbill.commons.jdbi.argument.DateTimeZoneArgumentFactory;
 import org.killbill.commons.jdbi.argument.LocalDateArgumentFactory;
 import org.killbill.commons.jdbi.argument.UUIDArgumentFactory;
+import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.commons.jdbi.mapper.UUIDMapper;
+import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
 
 public class InTransaction {
 
@@ -61,12 +66,19 @@ public class InTransaction {
 
     public static DBI buildDDBI(final DataSource dataSource) {
         final DBI dbi = new DBI(dataSource);
+        setupDBI(dbi);
+        return dbi;
+    }
+
+    @VisibleForTesting
+    public static void setupDBI(final DBI dbi) {
         dbi.registerArgumentFactory(new UUIDArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeZoneArgumentFactory());
         dbi.registerArgumentFactory(new DateTimeArgumentFactory());
         dbi.registerArgumentFactory(new LocalDateArgumentFactory());
         dbi.registerMapper(new UUIDMapper());
-        return dbi;
+        dbi.registerMapper(new LowerToCamelBeanMapperFactory(BusEventModelDao.class));
+        dbi.registerMapper(new LowerToCamelBeanMapperFactory(NotificationEventModelDao.class));
     }
 
     public static interface InTransactionHandler<K, R> {

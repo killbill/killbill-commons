@@ -43,7 +43,6 @@ import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.bus.dispatching.BusCallableCallback;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
-import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
@@ -55,7 +54,6 @@ import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.skife.config.ConfigurationObjectFactory;
-import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,9 +88,6 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Inject
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super("Bus", config);
-
-        ((DBI) dbi).registerMapper(new LowerToCamelBeanMapperFactory(BusEventModelDao.class));
-
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
         this.config = config;

@@ -18,17 +18,21 @@
 
 package org.killbill.queue;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
-import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.config.TimeSpan;
-import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
@@ -37,12 +41,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -59,9 +57,7 @@ public class TestDBBackedQueue extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        final DBI dbi = getDBI();
-        dbi.registerMapper(new LowerToCamelBeanMapperFactory(BusEventModelDao.class));
-        sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
+        sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
     }
 
     @BeforeMethod(groups = "slow")

@@ -18,28 +18,6 @@
 
 package org.killbill.notificationq;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import org.joda.time.DateTime;
-import org.killbill.clock.Clock;
-import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
-import org.killbill.notificationq.api.NotificationEvent;
-import org.killbill.notificationq.api.NotificationQueue;
-import org.killbill.notificationq.api.NotificationQueueConfig;
-import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import org.killbill.notificationq.dao.NotificationEventModelDao;
-import org.killbill.notificationq.dao.NotificationSqlDao;
-import org.killbill.notificationq.dispatching.NotificationCallableCallback;
-import org.killbill.queue.DBBackedQueue;
-import org.killbill.queue.DefaultQueueLifecycle;
-import org.killbill.queue.dispatching.Dispatcher;
-import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
-import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.IDBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +29,27 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.joda.time.DateTime;
+import org.killbill.clock.Clock;
+import org.killbill.notificationq.api.NotificationEvent;
+import org.killbill.notificationq.api.NotificationQueue;
+import org.killbill.notificationq.api.NotificationQueueConfig;
+import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import org.killbill.notificationq.dao.NotificationEventModelDao;
+import org.killbill.notificationq.dao.NotificationSqlDao;
+import org.killbill.notificationq.dispatching.NotificationCallableCallback;
+import org.killbill.queue.DBBackedQueue;
+import org.killbill.queue.DefaultQueueLifecycle;
+import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
+import org.killbill.queue.dispatching.Dispatcher;
+import org.skife.jdbi.v2.IDBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
@@ -76,9 +75,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
         super("NotificationQ", config);
-
-        ((DBI) dbi).registerMapper(new LowerToCamelBeanMapperFactory(NotificationEventModelDao.class));
-
         final ThreadFactory notificationQThreadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {

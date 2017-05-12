@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -27,10 +29,8 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
-import org.killbill.commons.jdbi.mapper.LowerToCamelBeanMapperFactory;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
-import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
 import org.testng.Assert;
@@ -54,9 +54,7 @@ public class TestNotificationSqlDao extends TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
         super.beforeClass();
-        final DBI dbi = getDBI();
-        dbi.registerMapper(new LowerToCamelBeanMapperFactory(NotificationEventModelDao.class));
-        dao = dbi.onDemand(NotificationSqlDao.class);
+        dao = getDBI().onDemand(NotificationSqlDao.class);
     }
 
     @Test(groups = "slow")
