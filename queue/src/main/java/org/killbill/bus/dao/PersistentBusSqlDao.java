@@ -22,13 +22,13 @@ import java.util.Iterator;
 
 import org.joda.time.DateTime;
 import org.killbill.commons.jdbi.statement.SmartFetchSize;
+import org.killbill.commons.jdbi.template.KillBillSqlDaoStringTemplate;
 import org.killbill.queue.dao.QueueSqlDao;
-import org.killbill.queue.dao.QueueSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 
-@QueueSqlDaoStringTemplate
+@KillBillSqlDaoStringTemplate
 public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
 
     @SqlQuery
