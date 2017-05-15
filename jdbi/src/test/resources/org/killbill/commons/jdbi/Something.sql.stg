@@ -1,0 +1,25 @@
+group SomethingSqlDao;
+
+tableName() ::= "something"
+
+tableFields(prefix) ::= <<
+  <prefix>id
+, <prefix>a
+>>
+
+tableValues() ::= <<
+  :id
+, :a
+>>
+
+create() ::= <<
+insert into <tableName()> (<tableFields()>) values (<tableValues()>);
+>>
+
+getSomething() ::= <<
+select <tableFields()> from <tableName()> where id = :id;
+>>
+
+doMath(val) ::= <<
+select 1 + <val> from dual;
+>>

@@ -16,11 +16,11 @@
 
 package org.killbill.commons.jdbi;
 
+import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.skife.jdbi.v2.DBI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-
-import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
+import org.testng.annotations.BeforeMethod;
 
 public abstract class JDBITestBase {
 
@@ -34,15 +34,17 @@ public abstract class JDBITestBase {
         embeddedDB.start();
     }
 
+    @BeforeMethod(groups = "slow")
+    public void setUpMethod() throws Exception {
+        dbi = new DBI(embeddedDB.getDataSource());
+    }
+
     public void cleanupDb(final String ddl) throws Exception {
         embeddedDB.executeScript(ddl);
-
-        dbi = new DBI(embeddedDB.getDataSource());
     }
 
     @AfterClass(groups = "slow")
     public void tearDown() throws Exception {
         embeddedDB.stop();
     }
-
 }
