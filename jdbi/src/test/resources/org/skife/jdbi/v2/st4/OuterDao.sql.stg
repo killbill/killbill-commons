@@ -1,0 +1,14 @@
+
+import "lib/shared.stg"
+
+createSomething2() ::= <%
+    create table something (id int primary key, name text)
+%>
+
+insert2(table) ::= <%
+    insert into <table> (id, name) values (:id, :name)
+%>
+
+findById2() ::= <%
+    select <something_fields()> from something where id = :id
+%>

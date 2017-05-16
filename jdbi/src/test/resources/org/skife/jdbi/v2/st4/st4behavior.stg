@@ -1,0 +1,6 @@
+
+import "lib/shared.stg"
+
+foo(name ) ::=<<
+hello <fancy(name)>
+>>

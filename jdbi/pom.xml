@@ -102,6 +102,11 @@
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
+            <artifactId>ST4</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
             <artifactId>stringtemplate</artifactId>
             <optional>true</optional>
         </dependency>
@@ -111,8 +116,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -139,6 +154,11 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
