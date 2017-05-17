@@ -22,6 +22,7 @@ import org.skife.jdbi.v2.StatementContext;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -108,6 +109,12 @@ public class TestingStatementContext implements StatementContext
 
     @Override
     public void addCleanable(final Cleanable cleanable)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Collection<Cleanable> getCleanables()
     {
         throw new UnsupportedOperationException();
     }

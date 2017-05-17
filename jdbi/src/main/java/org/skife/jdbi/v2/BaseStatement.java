@@ -28,6 +28,8 @@ import java.util.List;
 
 abstract class BaseStatement
 {
+    private static final StatementCleaningCustomizer STATEMENT_CLEANING_CUSTOMIZER = new StatementCleaningCustomizer();
+
     private final Collection<StatementCustomizer> customizers = new ArrayList<StatementCustomizer>();
     private final ConcreteStatementContext context;
     private final Foreman                  foreman;
@@ -36,7 +38,7 @@ abstract class BaseStatement
     {
         this.context = context;
         this.foreman = foreman.createChild();
-        addCustomizer(new StatementCleaningCustomizer());
+        addCustomizer(STATEMENT_CLEANING_CUSTOMIZER);
     }
 
     protected final Foreman getForeman() {
@@ -112,10 +114,10 @@ abstract class BaseStatement
         this.context.getCleanables().add(cleanable);
     }
 
-    class StatementCleaningCustomizer extends BaseStatementCustomizer
+    static class StatementCleaningCustomizer extends BaseStatementCustomizer
     {
         @Override
-        public final void cleanup(final StatementContext ctx)
+        public final void cleanup(final StatementContext context)
             throws SQLException
         {
             final List<SQLException> exceptions = new ArrayList<SQLException>();

@@ -18,6 +18,7 @@ package org.skife.jdbi.v2;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -110,4 +111,5 @@ public interface StatementContext
 
     void addCleanable(Cleanable cleanable);
 
+    Collection<Cleanable> getCleanables();
 }

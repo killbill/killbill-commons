@@ -219,6 +219,7 @@ public final class ConcreteStatementContext implements StatementContext
         this.cleanables.add(cleanable);
     }
 
+    @Override
     public Collection<Cleanable> getCleanables()
     {
         return cleanables;
