@@ -22,7 +22,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.ParameterizedType;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
@@ -30,8 +29,9 @@ import java.util.regex.Matcher;
 import org.skife.jdbi.v2.SQLStatement;
 import org.skife.jdbi.v2.sqlobject.SqlStatementCustomizer;
 import org.skife.jdbi.v2.sqlobject.SqlStatementCustomizingAnnotation;
-import org.skife.jdbi.v2.sqlobject.stringtemplate.StringTemplate3StatementLocator;
-import org.skife.jdbi.v2.sqlobject.stringtemplate.UseStringTemplate3StatementLocator;
+import org.skife.jdbi.v2.sqlobject.stringtemplate.ST4StatementLocator;
+import org.skife.jdbi.v2.sqlobject.stringtemplate.ST4StatementLocator.UseSTGroupCache;
+import org.skife.jdbi.v2.sqlobject.stringtemplate.UseST4StatementLocator;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 
 @SqlStatementCustomizingAnnotation(KillBillSqlDaoStringTemplate.KillBillSqlDaoStringTemplateFactory.class)
@@ -43,7 +43,7 @@ public @interface KillBillSqlDaoStringTemplate {
 
     String value() default DEFAULT_VALUE;
 
-    class KillBillSqlDaoStringTemplateFactory extends UseStringTemplate3StatementLocator.LocatorFactory {
+    class KillBillSqlDaoStringTemplateFactory extends UseST4StatementLocator.LocatorFactory {
 
         static final boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("org.killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
 
@@ -61,38 +61,16 @@ public @interface KillBillSqlDaoStringTemplate {
             return path.replaceAll("\\.", Matcher.quoteReplacement(sep)) + ".sql.stg";
         }
 
-        private StatementLocator getLocator(final String locatorPath, final Class sqlObjectType) {
-
+        private StatementLocator getLocator(final String locatorPath) {
             if (enableGroupTemplateCaching && locatorCache.containsKey(locatorPath)) {
                 return locatorCache.get(locatorPath);
             }
 
-            final Class parent;
-            if (sqlObjectType.getInterfaces().length > 0) {
-                parent = sqlObjectType.getInterfaces()[0];
-            } else {
-                parent = sqlObjectType;
-            }
-
-            final Class superGroup;
-            if (parent.getGenericSuperclass() instanceof ParameterizedType) {
-                // A bit of java magic to extract parameterizedType
-                final ParameterizedType parameterizedType = (ParameterizedType) parent.getGenericSuperclass();
-                superGroup = (Class) parameterizedType.getActualTypeArguments()[0];
-            } else {
-                superGroup = parent;
-            }
-
-            final StringTemplate3StatementLocator.Builder builder = StringTemplate3StatementLocator.builder(locatorPath)
-                                                                                                   .shouldCache()
-                                                                                                   .withSuperGroup(superGroup)
-                                                                                                   .allowImplicitTemplateGroup()
-                                                                                                   .treatLiteralsAsTemplates();
-
-            final StatementLocator locator = builder.build();
+            final StatementLocator locator = ST4StatementLocator.fromClasspath(UseSTGroupCache.YES, locatorPath);
             if (enableGroupTemplateCaching) {
                 locatorCache.put(locatorPath, locator);
             }
+
             return locator;
         }
 
@@ -102,7 +80,7 @@ public @interface KillBillSqlDaoStringTemplate {
 
             final String locatorPath = DEFAULT_VALUE.equals(a.value()) ? mungify(sqlObjectType) : a.value();
 
-            final StatementLocator l = getLocator(locatorPath, sqlObjectType);
+            final StatementLocator l = getLocator(locatorPath);
             return new SqlStatementCustomizer() {
                 @Override
                 public void apply(final SQLStatement statement) {

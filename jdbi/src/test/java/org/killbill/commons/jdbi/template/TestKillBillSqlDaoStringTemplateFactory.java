@@ -48,11 +48,29 @@ public class TestKillBillSqlDaoStringTemplateFactory extends JDBITestBase {
         Assert.assertEquals(computed, 2);
     }
 
+    @Test(groups = "slow")
+    public void testSimpleInheritance() throws Exception {
+        final ChildSomethingSqlDao childSomethingSqlDao = dbi.onDemand(ChildSomethingSqlDao.class);
+
+        int computed = childSomethingSqlDao.odMath(1);
+        Assert.assertEquals(computed, -2);
+
+        computed = childSomethingSqlDao.doMath(1);
+        Assert.assertEquals(computed, 2);
+    }
+
     @KillBillSqlDaoStringTemplate("/org/killbill/commons/jdbi/Something.sql.stg")
     private interface SomethingSqlDao {
 
         @SqlQuery
         public int doMath(@Define("val") final int val);
+    }
+
+    @KillBillSqlDaoStringTemplate("/org/killbill/commons/jdbi/ChildSomething.sql.stg")
+    private interface ChildSomethingSqlDao extends SomethingSqlDao {
+
+        @SqlQuery
+        public int odMath(@Define("val") final int val);
     }
 
     private class SomethingProxy implements InvocationHandler {

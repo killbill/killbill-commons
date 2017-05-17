@@ -1,4 +1,4 @@
-group PersistentBusSqlDao: BaseSqlDao;
+import "org/killbill/queue/dao/QueueSqlDao.sql.stg"
 
 extraFieldsWithComma() ::= <<
 >>

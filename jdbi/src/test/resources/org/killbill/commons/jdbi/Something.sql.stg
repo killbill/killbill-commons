@@ -13,11 +13,11 @@ tableValues() ::= <<
 >>
 
 create() ::= <<
-insert into <tableName()> (<tableFields()>) values (<tableValues()>);
+insert into <tableName()> (<tableFields("")>) values (<tableValues()>);
 >>
 
 getSomething() ::= <<
-select <tableFields()> from <tableName()> where id = :id;
+select <tableFields("t.")> from <tableName()> t where id = :id;
 >>
 
 doMath(val) ::= <<

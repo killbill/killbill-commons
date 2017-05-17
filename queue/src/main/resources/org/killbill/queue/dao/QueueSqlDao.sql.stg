@@ -1,5 +1,3 @@
-group BaseSqlDao;
-
 /** TO BE OVERWRITTEN IN CHILD TEMPLATE **/
 
 

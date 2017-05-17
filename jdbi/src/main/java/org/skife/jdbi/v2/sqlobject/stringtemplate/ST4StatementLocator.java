@@ -24,13 +24,23 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.StatementLocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STErrorListener;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
+import org.stringtemplate.v4.compiler.CompiledST;
+import org.stringtemplate.v4.misc.ErrorManager;
+import org.stringtemplate.v4.misc.STMessage;
 
 import com.google.common.base.Function;
 
 public class ST4StatementLocator implements StatementLocator {
+
+    private static final Logger logger = LoggerFactory.getLogger(ST4StatementLocator.class);
+
+    private static final ErrorManager ERROR_MANAGER = new ErrorManager(new SLF4JSTErrorListener());
 
     private static final Map<String, STGroup> CACHE = new ConcurrentHashMap<String, STGroup>();
 
@@ -96,7 +106,9 @@ public class ST4StatementLocator implements StatementLocator {
         if (useCache == UseSTGroupCache.YES) {
             stg = computeIfAbsent(CACHE, url.toString(), new Function<String, STGroup>() {
                 @Override
-                public STGroup apply(final String u) {return urlToSTGroup(u);}
+                public STGroup apply(final String u) {
+                    return urlToSTGroup(u);
+                }
             });
         } else {
             stg = urlToSTGroup(url.toString());
@@ -196,8 +208,7 @@ public class ST4StatementLocator implements StatementLocator {
     }
 
     private static STGroup urlToSTGroup(final URL u) {
-        return new STGroupFile(u, "UTF-8", '<', '>');
-
+        return new STGroupFileWithThreadSafeLoading(u, "UTF-8", '<', '>');
     }
 
     private static <K, V> V computeIfAbsent(final Map<K, V> map, final K key, final Function<K, V> mappingFunction) {
@@ -236,6 +247,8 @@ public class ST4StatementLocator implements StatementLocator {
         // but works. -brianm
         st.impl.hasFormalArgs = false;
 
+        st.impl.nativeGroup.errMgr = ERROR_MANAGER;
+
         for (final Map.Entry<String, Object> attr : ctx.getAttributes().entrySet()) {
             st.add(attr.getKey(), attr.getValue());
         }
@@ -245,5 +258,86 @@ public class ST4StatementLocator implements StatementLocator {
 
     public enum UseSTGroupCache {
         YES, NO
+    }
+
+    // See https://github.com/antlr/stringtemplate4/issues/61 and https://groups.google.com/forum/#!topic/stringtemplate-discussion/4WrHlleVDFg
+    private static final class STGroupFileWithThreadSafeLoading extends STGroupFile {
+
+        public STGroupFileWithThreadSafeLoading(final URL url, final String encoding, final char delimiterStartChar, final char delimiterStopChar) {
+            super(url, encoding, delimiterStartChar, delimiterStopChar);
+        }
+
+        @Override
+        public CompiledST lookupTemplate(String name) {
+            if (name.charAt(0) != '/') {
+                name = "/" + name;
+            }
+            logger.debug(getName() + ".lookupTemplate(" + name + ")");
+
+            CompiledST code = rawGetTemplate(name);
+            if (code == NOT_FOUND_ST) {
+                logger.debug(name + " previously seen as not found");
+                return null;
+            }
+
+            // Try to load from disk and look up again
+            if (code == null) {
+                synchronized (this) {
+                    code = rawGetTemplate(name);
+                    if (code == null) {
+                        code = load(name);
+                    }
+                }
+            }
+            if (code == null) {
+                synchronized (this) {
+                    code = rawGetTemplate(name);
+                    if (code == null) {
+                        // Note: we could do a bit better if we were to overwrite this method as well
+                        code = lookupImportedTemplate(name);
+                    }
+                }
+            }
+
+            if (code == null) {
+                logger.debug(name + " recorded not found");
+                templates.put(name, NOT_FOUND_ST);
+            }
+            if (code != null) {
+                logger.debug(getName() + ".lookupTemplate(" + name + ") found");
+            }
+            return code;
+        }
+    }
+
+    private static final class SLF4JSTErrorListener implements STErrorListener {
+
+        @Override
+        public void compileTimeError(final STMessage msg) {
+            if (msg != null) {
+                logger.warn(msg.toString());
+            }
+        }
+
+        @Override
+        public void runTimeError(final STMessage msg) {
+            if (msg != null) {
+                logger.warn(msg.toString());
+            }
+        }
+
+        @Override
+        public void IOError(final STMessage msg) {
+            if (msg != null) {
+                logger.warn(msg.toString());
+            }
+        }
+
+        @Override
+        public void internalError(final STMessage msg) {
+            if (msg != null) {
+                logger.warn(msg.toString());
+            }
+        }
     }
 }
