@@ -83,7 +83,8 @@ public abstract class SQLStatement<SelfType extends SQLStatement<SelfType>> exte
                  ContainerFactoryRegistry containerFactoryRegistry)
     {
         super(ctx, foreman);
-        assert verifyOurNastyDowncastIsOkay();
+        // [OPTIMIZATION] Costly check
+        //assert verifyOurNastyDowncastIsOkay();
 
         addCustomizers(statementCustomizers);
 
