@@ -37,6 +37,7 @@ import java.util.Map;
 
 class BasicHandle implements Handle
 {
+    private static final DefaultMapper DEFAULT_MAPPER = new DefaultMapper();
 
     private StatementRewriter statementRewriter;
     private StatementLocator  statementLocator;
@@ -84,7 +85,7 @@ class BasicHandle implements Handle
     public Query<Map<String, Object>> createQuery(String sql)
     {
         return new Query<Map<String, Object>>(new Binding(),
-                                              new DefaultMapper(),
+                                              DEFAULT_MAPPER,
                                               statementLocator,
                                               statementRewriter,
                                               this,
