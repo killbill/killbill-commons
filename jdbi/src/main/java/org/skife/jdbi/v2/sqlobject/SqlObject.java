@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 class SqlObject
 {
@@ -154,6 +155,8 @@ class SqlObject
     private final Map<Method, Handler> handlers;
     private final HandleDing           ding;
 
+    private static final AtomicLong RETAINER = new AtomicLong();
+
     public SqlObject(Map<Method, Handler> handlers, HandleDing ding)
     {
         this.handlers = handlers;
@@ -170,8 +173,10 @@ class SqlObject
         }
 
         Throwable doNotMask = null;
+        // [OPTIMIZATION] method.toString() is expensive
+        final String retainName = String.valueOf(RETAINER.getAndIncrement());
         try {
-            ding.retain(method.toString());
+            ding.retain(retainName);
             return handler.invoke(ding, proxy, args, mp);
         }
         catch (Throwable e) {
@@ -180,7 +185,7 @@ class SqlObject
         }
         finally {
             try {
-                ding.release(method.toString());
+                ding.release(retainName);
             }
             catch (Throwable e) {
                 if (doNotMask==null) {
