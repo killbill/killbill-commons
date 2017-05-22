@@ -48,6 +48,7 @@ public @interface KillBillSqlDaoStringTemplate {
         static final boolean enableGroupTemplateCaching = Boolean.parseBoolean(System.getProperty("org.killbill.jdbi.allow.stringTemplateGroupCaching", "true"));
 
         static final ConcurrentMap<String, StatementLocator> locatorCache = new ConcurrentHashMap<String, StatementLocator>();
+        static final ConcurrentMap<Class, String> locatorPathCache = new ConcurrentHashMap<Class, String>();
 
         //
         // This is only needed to compute the key for the cache -- whether we get a class or a pathname (string)
@@ -55,10 +56,20 @@ public @interface KillBillSqlDaoStringTemplate {
         // (Similar to what jdbi is doing (StringTemplate3StatementLocator))
         //
         private static final String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
+        private static final String QUOTE_REPLACEMENT_SEP = Matcher.quoteReplacement(sep);
 
         static String mungify(final Class claz) {
+            if (enableGroupTemplateCaching && locatorPathCache.containsKey(claz)) {
+                return locatorPathCache.get(claz);
+            }
+
             final String path = "/" + claz.getName();
-            return path.replaceAll("\\.", Matcher.quoteReplacement(sep)) + ".sql.stg";
+            final String locatorPath = path.replaceAll("\\.", QUOTE_REPLACEMENT_SEP) + ".sql.stg";
+            if (enableGroupTemplateCaching) {
+                locatorPathCache.put(claz, locatorPath);
+            }
+
+            return locatorPath;
         }
 
         private StatementLocator getLocator(final String locatorPath) {
