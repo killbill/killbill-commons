@@ -272,11 +272,14 @@ public class ST4StatementLocator implements StatementLocator {
             if (name.charAt(0) != '/') {
                 name = "/" + name;
             }
-            logger.debug(getName() + ".lookupTemplate(" + name + ")");
+            if (logger.isDebugEnabled()) {
+                // getName() is expensive
+                logger.debug("{}.lookupTemplate({})", getName(), name);
+            }
 
             CompiledST code = rawGetTemplate(name);
             if (code == NOT_FOUND_ST) {
-                logger.debug(name + " previously seen as not found");
+                logger.debug("{} previously seen as not found", name);
                 return null;
             }
 
@@ -300,11 +303,14 @@ public class ST4StatementLocator implements StatementLocator {
             }
 
             if (code == null) {
-                logger.debug(name + " recorded not found");
+                logger.debug("{} recorded not found", name);
                 templates.put(name, NOT_FOUND_ST);
             }
             if (code != null) {
-                logger.debug(getName() + ".lookupTemplate(" + name + ") found");
+                if (logger.isDebugEnabled()) {
+                    // getName() is expensive
+                    logger.debug("{}.lookupTemplate({}) found", getName(), name);
+                }
             }
             return code;
         }
