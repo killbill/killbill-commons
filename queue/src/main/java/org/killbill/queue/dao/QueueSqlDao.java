@@ -18,20 +18,21 @@
 
 package org.killbill.queue.dao;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.killbill.commons.jdbi.binder.SmartBindBean;
 import org.killbill.commons.jdbi.template.KillBillSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
-import org.skife.jdbi.v2.sqlobject.BindBean;
 import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
-
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
 
 @KillBillSqlDaoStringTemplate
 public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
@@ -101,11 +102,11 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                        @Define("tableName") final String tableName);
 
     @SqlUpdate
-    void insertEntry(@BindBean T evt,
+    void insertEntry(@SmartBindBean T evt,
                      @Define("tableName") final String tableName);
 
 
     @SqlBatch
-    void insertEntries(@BindBean Iterable<T> evts,
+    void insertEntries(@SmartBindBean Iterable<T> evts,
                        @Define("tableName") final String tableName);
 }
