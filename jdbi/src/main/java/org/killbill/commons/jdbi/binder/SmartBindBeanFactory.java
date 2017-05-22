@@ -37,7 +37,7 @@ public class SmartBindBeanFactory implements BinderFactory {
         public void bind(final SQLStatement q, final SmartBindBean bind, final Object arg) {
             final String prefix;
             if (BindBean.BARE_BINDING.equals(bind.value())) {
-                prefix = "";
+                prefix = null;
             } else {
                 prefix = bind.value() + ".";
             }
@@ -48,7 +48,9 @@ public class SmartBindBeanFactory implements BinderFactory {
                 for (final PropertyDescriptor prop : props) {
                     final Method readMethod = prop.getReadMethod();
                     if (readMethod != null) {
-                        q.dynamicBind(readMethod.getReturnType(), prefix + prop.getName(), readMethod.invoke(arg));
+                        // [OPTIMIZATION] Avoid implicit creation of StringBuilder (concatenation) when no custom annotation value is specified
+                        final String name = prefix == null ? prop.getName() : prefix + prop.getName();
+                        q.dynamicBind(readMethod.getReturnType(), name, readMethod.invoke(arg));
                     }
                 }
             } catch (final Exception e) {
