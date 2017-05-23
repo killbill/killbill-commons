@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
@@ -41,6 +42,7 @@ import org.aopalliance.intercept.MethodInvocation;
  */
 public class TimedResourceInterceptor implements MethodInterceptor {
 
+    private final Map<String, Map<String, Object>> metricTagsByMethod = new ConcurrentHashMap<String, Map<String, Object>>();
     private final Provider<GuiceContainer> jerseyContainer;
     private final Provider<MetricRegistry> metricRegistry;
     private final String resourcePath;
@@ -107,11 +109,20 @@ public class TimedResourceInterceptor implements MethodInterceptor {
         return new ResourceTimer(resourcePath, metricName, httpMethod, metricTags, metricRegistry.get());
     }
 
-    private static Map<String, Object> metricTags(final MethodInvocation invocation) {
-        final LinkedHashMap<String, Object> metricTags = new LinkedHashMap<String, Object>();
+    private Map<String, Object> metricTags(final MethodInvocation invocation) {
         final Method method = invocation.getMethod();
-        for (int i = 0; i < method.getParameterAnnotations().length; i++) {
-            final Annotation[] parameterAnnotations = method.getParameterAnnotations()[i];
+        // Expensive to compute
+        final String methodString = method.toString();
+
+        // Cache metric tags as Method.getParameterAnnotations() generates lots of garbage objects
+        if (metricTagsByMethod.get(methodString) != null) {
+            return metricTagsByMethod.get(methodString);
+        }
+
+        final Map<String, Object> metricTags = new LinkedHashMap<String, Object>();
+        final Annotation[][] parametersAnnotations = method.getParameterAnnotations();
+        for (int i = 0; i < parametersAnnotations.length; i++) {
+            final Annotation[] parameterAnnotations = parametersAnnotations[i];
 
             final MetricTag metricTag = findMetricTagAnnotations(parameterAnnotations);
             if (metricTag != null) {
@@ -125,6 +136,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
                 metricTags.put(metricTag.tag(), tagValue);
             }
         }
+        metricTagsByMethod.put(methodString, metricTags);
 
         return metricTags;
     }
