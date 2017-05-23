@@ -44,17 +44,12 @@ public class ST4StatementLocator implements StatementLocator {
 
     private static final Map<String, STGroup> CACHE = new ConcurrentHashMap<String, STGroup>();
 
-    private final Function<StatementContext, STGroup> group;
+    private final Map<String, String> locatedSqlCache = new ConcurrentHashMap<String, String>();
+
+    private final STGroup group;
 
     public ST4StatementLocator(final STGroup group) {
-        this(new Function<StatementContext, STGroup>() {
-            @Override
-            public STGroup apply(final StatementContext _ctx) {return group;}
-        });
-    }
-
-    public ST4StatementLocator(final Function<StatementContext, STGroup> groupProvider) {
-        this.group = groupProvider;
+        this.group = group;
     }
 
     /**
@@ -236,7 +231,23 @@ public class ST4StatementLocator implements StatementLocator {
 
     @Override
     public String locate(final String name, final StatementContext ctx) throws Exception {
-        ST st = this.group.apply(ctx).getInstanceOf(name);
+        if (ctx.getAttributes().isEmpty()) {
+            String locatedSql = locatedSqlCache.get(name);
+            if (locatedSql != null) {
+                return locatedSql;
+            } else {
+                locatedSql = locateAndRender(name, ctx);
+                locatedSqlCache.put(name, locatedSql);
+                return locatedSql;
+            }
+        } else {
+            // If attributes are defined, we cannot cache it
+            return locateAndRender(name, ctx);
+        }
+    }
+
+    private String locateAndRender(final String name, final StatementContext ctx) {
+        ST st = this.group.getInstanceOf(name);
         if (st == null) {
             // if there is no template by this name in the group, treat it as a template literal.
             st = new ST(name);

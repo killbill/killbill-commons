@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.stringtemplate.ST4StatementLocator;
@@ -40,9 +41,10 @@ public class DynamicLookupTest {
     public H2Rule h2 = new H2Rule();
 
     @Test
-    @Category(JDBITests.class)
+    @Category(JDBIQuarantineTests.class)
     public void testFancyDynamicTemplateLookups() throws Exception {
         final DBI dbi = new DBI(h2);
+        /* [OPTIMIZATION] Disabled to optimization
         dbi.setStatementLocator(new ST4StatementLocator(new Function<StatementContext, STGroup>() {
             @Nullable
             @Override
@@ -51,6 +53,7 @@ public class DynamicLookupTest {
                                             .toString());
             }
         }));
+        */
 
         Handle h = dbi.open();
         try {
