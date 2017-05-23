@@ -115,11 +115,12 @@ public class TimedResourceInterceptor implements MethodInterceptor {
         final String methodString = method.toString();
 
         // Cache metric tags as Method.getParameterAnnotations() generates lots of garbage objects
-        if (metricTagsByMethod.get(methodString) != null) {
-            return metricTagsByMethod.get(methodString);
+        Map<String, Object> metricTags = metricTagsByMethod.get(methodString);
+        if (metricTags != null) {
+            return metricTags;
         }
 
-        final Map<String, Object> metricTags = new LinkedHashMap<String, Object>();
+        metricTags = new LinkedHashMap<String, Object>();
         final Annotation[][] parametersAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < parametersAnnotations.length; i++) {
             final Annotation[] parameterAnnotations = parametersAnnotations[i];

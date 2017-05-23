@@ -59,12 +59,13 @@ public @interface KillBillSqlDaoStringTemplate {
         private static final String QUOTE_REPLACEMENT_SEP = Matcher.quoteReplacement(sep);
 
         static String mungify(final Class claz) {
-            if (enableGroupTemplateCaching && locatorPathCache.containsKey(claz)) {
-                return locatorPathCache.get(claz);
+            String locatorPath = locatorPathCache.get(claz);
+            if (locatorPath != null) {
+                return locatorPath;
             }
 
             final String path = "/" + claz.getName();
-            final String locatorPath = path.replaceAll("\\.", QUOTE_REPLACEMENT_SEP) + ".sql.stg";
+            locatorPath = path.replaceAll("\\.", QUOTE_REPLACEMENT_SEP) + ".sql.stg";
             if (enableGroupTemplateCaching) {
                 locatorPathCache.put(claz, locatorPath);
             }
@@ -73,11 +74,12 @@ public @interface KillBillSqlDaoStringTemplate {
         }
 
         private StatementLocator getLocator(final String locatorPath) {
-            if (enableGroupTemplateCaching && locatorCache.containsKey(locatorPath)) {
-                return locatorCache.get(locatorPath);
+            StatementLocator locator = locatorCache.get(locatorPath);
+            if (locator != null) {
+                return locator;
             }
 
-            final StatementLocator locator = ST4StatementLocator.fromClasspath(UseSTGroupCache.YES, locatorPath);
+            locator = ST4StatementLocator.fromClasspath(UseSTGroupCache.YES, locatorPath);
             if (enableGroupTemplateCaching) {
                 locatorCache.put(locatorPath, locator);
             }
