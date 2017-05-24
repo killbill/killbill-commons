@@ -1,0 +1,3 @@
+get(ids) ::= <<
+select * from foo where id in (<ids>)
+>>

@@ -33,6 +33,7 @@ import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
+import org.skife.jdbi.v2.unstable.BindIn;
 
 @KillBillSqlDaoStringTemplate
 public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
@@ -51,7 +52,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                     @Define("tableName") final String tableName);
 
     @SqlQuery
-    List<T> getEntriesFromIds(@RecordIdCollectionBinder final List<Long> recordIds,
+    List<T> getEntriesFromIds(@BindIn("record_ids") final List<Long> recordIds,
                               @Define("tableName") final String tableName);
 
     @SqlQuery
@@ -81,7 +82,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                    @Define("tableName") final String tableName);
 
     @SqlUpdate
-    int claimEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+    int claimEntries(@BindIn("record_ids") final Collection<Long> recordIds,
                      @Bind("now") Date now,
                      @Bind("owner") String owner,
                      @Bind("nextAvailable") Date nextAvailable,
@@ -98,7 +99,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                      @Define("tableName") final String tableName);
 
     @SqlUpdate
-    void removeEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+    void removeEntries(@BindIn("record_ids") final Collection<Long> recordIds,
                        @Define("tableName") final String tableName);
 
     @SqlUpdate

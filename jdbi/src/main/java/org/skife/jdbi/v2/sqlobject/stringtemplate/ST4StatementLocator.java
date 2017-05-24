@@ -19,7 +19,9 @@ package org.skife.jdbi.v2.sqlobject.stringtemplate;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.skife.jdbi.v2.StatementContext;
@@ -34,6 +36,7 @@ import org.stringtemplate.v4.compiler.CompiledST;
 import org.stringtemplate.v4.misc.ErrorManager;
 import org.stringtemplate.v4.misc.STMessage;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 
 public class ST4StatementLocator implements StatementLocator {
@@ -43,8 +46,10 @@ public class ST4StatementLocator implements StatementLocator {
     private static final ErrorManager ERROR_MANAGER = new ErrorManager(new SLF4JSTErrorListener());
 
     private static final Map<String, STGroup> CACHE = new ConcurrentHashMap<String, STGroup>();
+    private static final String COMPOSITE_KEY_SEPARATOR = "___#___";
 
-    private final Map<String, String> locatedSqlCache = new ConcurrentHashMap<String, String>();
+    @VisibleForTesting
+    final Map<String, String> locatedSqlCache = new ConcurrentHashMap<String, String>();
 
     private final STGroup group;
 
@@ -231,18 +236,54 @@ public class ST4StatementLocator implements StatementLocator {
 
     @Override
     public String locate(final String name, final StatementContext ctx) throws Exception {
-        if (ctx.getAttributes().isEmpty()) {
-            String locatedSql = locatedSqlCache.get(name);
-            if (locatedSql != null) {
-                return locatedSql;
-            } else {
-                locatedSql = locateAndRender(name, ctx);
-                locatedSqlCache.put(name, locatedSql);
-                return locatedSql;
-            }
+        final Iterator<Entry<String, Object>> entryIterator = ctx.getAttributes().entrySet().iterator();
+        if (!entryIterator.hasNext()) {
+            // Easiest: no attribute defined, always the same SQL
+            return locateFromCache(name, name, ctx);
         } else {
-            // If attributes are defined, we cannot cache it
-            return locateAndRender(name, ctx);
+            final Entry<String, Object> attribute1 = entryIterator.next();
+            if (!entryIterator.hasNext()) {
+                final String compositeKey = buildCompositeCacheKey(name, attribute1);
+                return locateFromCache(compositeKey, name, ctx);
+            } else {
+                final Entry<String, Object> attribute2 = entryIterator.next();
+                if (!entryIterator.hasNext()) {
+                    // 2 attributes defined -- worth optimizing as it is heavily used for queue queries
+                    final String compositeKey = buildCompositeCacheKey(name, attribute1, attribute2);
+                    return locateFromCache(compositeKey, name, ctx);
+                } else {
+                    // Too many attributes are defined, don't cache it
+                    return locateAndRender(name, ctx);
+                }
+            }
+        }
+    }
+
+    private String buildCompositeCacheKey(final String name, final Entry<String, Object> attribute) {
+        return name + COMPOSITE_KEY_SEPARATOR + attribute.getKey() + COMPOSITE_KEY_SEPARATOR + attribute.getValue();
+    }
+
+    private String buildCompositeCacheKey(final String name, final Entry<String, Object> attribute1, final Entry<String, Object> attribute2) {
+        if (attribute1.getKey().compareTo(attribute2.getKey()) <= 0) {
+            return name + COMPOSITE_KEY_SEPARATOR + attribute1.getKey() + COMPOSITE_KEY_SEPARATOR + attribute1.getValue() + COMPOSITE_KEY_SEPARATOR + attribute2.getKey() + COMPOSITE_KEY_SEPARATOR + attribute2.getValue();
+        } else {
+            return name + COMPOSITE_KEY_SEPARATOR + attribute2.getKey() + COMPOSITE_KEY_SEPARATOR + attribute2.getValue() + COMPOSITE_KEY_SEPARATOR + attribute1.getKey() + COMPOSITE_KEY_SEPARATOR + attribute1.getValue();
+        }
+    }
+
+    private String locateFromCache(final String cacheKey, final String name, final StatementContext ctx) {
+        String locatedSql = locatedSqlCache.get(cacheKey);
+        if (locatedSql != null) {
+            return locatedSql;
+        } else {
+            locatedSql = locateAndRender(name, ctx);
+            // Make sure the cache is bounded in case of lots of various attributes defined (shouldn't happen in Kill Bill though)
+            // Note that when defining collections for instance, you must define a collection value that is not tied to the
+            // values eventually bound (e.g. query.define("record_ids", ids)), instead define a collection of generic Strings (see @BindIn and TestST4StatementLocator)
+            if (locatedSqlCache.size() < 500) {
+                locatedSqlCache.put(cacheKey, locatedSql);
+            }
+            return locatedSql;
         }
     }
 
