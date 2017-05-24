@@ -50,11 +50,11 @@ public class LocalDateArgumentFactory implements ArgumentFactory<LocalDate> {
 
         @Override
         public void apply(final int position, final PreparedStatement statement, final StatementContext ctx) throws SQLException {
-            if (value != null &&
-                ctx != null &&
-                ctx.getConnection() != null &&
-                ctx.getConnection().getMetaData() != null &&
-                POSTGRESQL.equalsIgnoreCase(ctx.getConnection().getMetaData().getDatabaseProductName())) {
+            final boolean isPostgreSQL = ctx != null &&
+                                         ctx.getConnection() != null &&
+                                         ctx.getConnection().getMetaData() != null &&
+                                         POSTGRESQL.equalsIgnoreCase(ctx.getConnection().getMetaData().getDatabaseProductName());
+            if (value != null && isPostgreSQL) {
                 // This might work on MySQL as well, but let's avoid conversions if we don't have to
                 // See also https://github.com/killbill/killbill/wiki/Date%2C-Datetime%2C-Timezone-and-time-Granularity-in-Kill-Bill
                 statement.setDate(position, new java.sql.Date(value.toDate().getTime()));
@@ -62,7 +62,7 @@ public class LocalDateArgumentFactory implements ArgumentFactory<LocalDate> {
                 // ISO8601 format
                 statement.setString(position, value.toString());
             } else {
-                statement.setNull(position, Types.VARCHAR);
+                statement.setNull(position, isPostgreSQL ? Types.DATE : Types.VARCHAR);
             }
         }
 
