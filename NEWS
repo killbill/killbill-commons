@@ -1,3 +1,7 @@
+0.20.8
+    Fork jdbi-2.62 (performance patches)
+    Update to killbill-oss-parent 0.140.29
+
 0.20.7
     make sure to store the clock internally as UTC
 
