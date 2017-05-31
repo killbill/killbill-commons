@@ -1,3 +1,6 @@
+0.20.9
+    Update to killbill-oss-parent 0.140.30
+
 0.20.8
     Fork jdbi-2.62 (performance patches)
     Update to killbill-oss-parent 0.140.29
