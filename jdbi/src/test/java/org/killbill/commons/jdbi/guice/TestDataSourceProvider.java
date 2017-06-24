@@ -43,6 +43,10 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import org.h2.jdbcx.JdbcConnectionPool;
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.killbill.commons.embeddeddb.GenericStandaloneDB;
+import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -51,6 +55,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 public class TestDataSourceProvider {
@@ -58,6 +63,34 @@ public class TestDataSourceProvider {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(TestDataSourceProvider.class);
 
     private static final String TEST_POOL_PREFIX = "test-pool";
+
+    @Test(groups = "fast")
+    public void testDataSourceProviderNoPooling() throws Exception {
+        DataSourceProvider.DatabaseType databaseType;
+        DaoConfig daoConfig;
+        String poolName;
+        DataSourceProvider dataSourceProvider;
+
+        // H2
+        databaseType = DataSourceProvider.DatabaseType.H2;
+        daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.NONE, databaseType);
+
+        poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
+        dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
+        dataSourceProvider.setEmbeddedDB(new H2EmbeddedDB());
+
+        assertTrue(dataSourceProvider.get() instanceof JdbcConnectionPool);
+
+        // Generic
+        databaseType = DataSourceProvider.DatabaseType.GENERIC;
+        daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.NONE, databaseType);
+
+        poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
+        dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
+        dataSourceProvider.setEmbeddedDB(new GenericStandaloneDB(null, null, null, null));
+
+        assertNull(dataSourceProvider.get());
+    }
 
     @Test(groups = "fast")
     public void testDataSourceProviderHikariCP() throws Exception {

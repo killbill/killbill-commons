@@ -18,6 +18,7 @@
 
 package org.killbill.commons.jdbi.guice;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
+import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.skife.config.TimeSpan;
 
 import com.codahale.metrics.MetricRegistry;
@@ -48,6 +50,8 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     private Object metricRegistry;
     private Object healthCheckRegistry;
+
+    private EmbeddedDB embeddedDB;
 
     @VisibleForTesting
     static enum DatabaseType {
@@ -90,22 +94,36 @@ public class DataSourceProvider implements Provider<DataSource> {
         this.healthCheckRegistry = healthCheckRegistry;
     }
 
+    @Inject(optional = false)
+    public void setEmbeddedDB(final EmbeddedDB embeddedDB) {
+        this.embeddedDB = embeddedDB;
+    }
+
     @Override
     public DataSource get() {
         return buildDataSource();
     }
 
     private DataSource buildDataSource() {
-        if (DataSourceConnectionPoolingType.C3P0.equals(config.getConnectionPoolingType())) {
-            loadDriver();
-            return new C3P0DataSourceBuilder().buildDataSource();
-        }
-
-        if (DataSourceConnectionPoolingType.HIKARICP.equals(config.getConnectionPoolingType())) {
-            if (dataSourceClassName != null) {
+        switch(config.getConnectionPoolingType()) {
+            case C3P0:
                 loadDriver();
-            }
-            return new HikariDataSourceBuilder().buildDataSource();
+                return new C3P0DataSourceBuilder().buildDataSource();
+            case HIKARICP:
+                if (dataSourceClassName != null) {
+                    loadDriver();
+                }
+                return new HikariDataSourceBuilder().buildDataSource();
+            case NONE:
+                try {
+                    embeddedDB.initialize();
+                    embeddedDB.start();
+                    return embeddedDB.getDataSource();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            default:
+                break;
         }
 
         throw new IllegalArgumentException("DataSource " + config.getConnectionPoolingType() + " unsupported");
