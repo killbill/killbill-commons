@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -43,6 +43,7 @@ public class DataSourceProvider implements Provider<DataSource> {
     protected final DaoConfig config;
     protected final String poolName;
     protected final boolean useMariaDB;
+    protected final EmbeddedDB embeddedDB;
 
     private DatabaseType databaseType;
     private String dataSourceClassName;
@@ -50,8 +51,6 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     private Object metricRegistry;
     private Object healthCheckRegistry;
-
-    private EmbeddedDB embeddedDB;
 
     @VisibleForTesting
     static enum DatabaseType {
@@ -67,10 +66,18 @@ public class DataSourceProvider implements Provider<DataSource> {
         this(config, poolName, true);
     }
 
+    public DataSourceProvider(final DaoConfig config, final EmbeddedDB embeddedDB, final String poolName) {
+        this(config, embeddedDB, poolName, true);
+    }
+
     public DataSourceProvider(final DaoConfig config, final String poolName, final boolean useMariaDB) {
+        this(config, null, poolName, useMariaDB);
+    }
+    public DataSourceProvider(final DaoConfig config, final EmbeddedDB embeddedDB, final String poolName, final boolean useMariaDB) {
         this.config = config;
         this.poolName = poolName;
         this.useMariaDB = useMariaDB;
+        this.embeddedDB = embeddedDB;
         parseJDBCUrl();
     }
 
@@ -92,11 +99,6 @@ public class DataSourceProvider implements Provider<DataSource> {
     @Inject(optional = true)
     public void setHealthCheckRegistry(final HealthCheckRegistry healthCheckRegistry) {
         this.healthCheckRegistry = healthCheckRegistry;
-    }
-
-    @Inject(optional = true)
-    public void setEmbeddedDB(final EmbeddedDB embeddedDB) {
-        this.embeddedDB = embeddedDB;
     }
 
     @Override

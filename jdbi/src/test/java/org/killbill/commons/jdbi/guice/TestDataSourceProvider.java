@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -76,9 +76,8 @@ public class TestDataSourceProvider {
         daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.NONE, databaseType);
 
         poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
-        dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
         final H2EmbeddedDB h2EmbeddedDB = new H2EmbeddedDB();
-        dataSourceProvider.setEmbeddedDB(h2EmbeddedDB);
+        dataSourceProvider = new DataSourceProvider(daoConfig, h2EmbeddedDB, poolName);
 
         try {
             assertTrue(dataSourceProvider.get() instanceof JdbcConnectionPool);
@@ -91,8 +90,8 @@ public class TestDataSourceProvider {
         daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.NONE, databaseType);
 
         poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
-        dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
-        dataSourceProvider.setEmbeddedDB(new GenericStandaloneDB(null, null, null, null));
+        final GenericStandaloneDB genericStandaloneDB = new GenericStandaloneDB(null, null, null, null);
+        dataSourceProvider = new DataSourceProvider(daoConfig, genericStandaloneDB, poolName);
 
         assertNull(dataSourceProvider.get());
     }
