@@ -92,7 +92,7 @@
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
-                <artifactId>killbill-embeddeddb-commons</artifactId>
+                <artifactId>killbill-embeddeddb-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

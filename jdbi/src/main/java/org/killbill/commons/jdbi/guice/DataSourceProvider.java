@@ -94,7 +94,7 @@ public class DataSourceProvider implements Provider<DataSource> {
         this.healthCheckRegistry = healthCheckRegistry;
     }
 
-    @Inject(optional = false)
+    @Inject(optional = true)
     public void setEmbeddedDB(final EmbeddedDB embeddedDB) {
         this.embeddedDB = embeddedDB;
     }
@@ -115,12 +115,14 @@ public class DataSourceProvider implements Provider<DataSource> {
                 }
                 return new HikariDataSourceBuilder().buildDataSource();
             case NONE:
-                try {
-                    embeddedDB.initialize();
-                    embeddedDB.start();
-                    return embeddedDB.getDataSource();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (embeddedDB != null) {
+                    try {
+                        embeddedDB.initialize();
+                        embeddedDB.start();
+                        return embeddedDB.getDataSource();
+                    } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             default:
                 break;

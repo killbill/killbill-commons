@@ -77,9 +77,14 @@ public class TestDataSourceProvider {
 
         poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
         dataSourceProvider = new DataSourceProvider(daoConfig, poolName);
-        dataSourceProvider.setEmbeddedDB(new H2EmbeddedDB());
+        final H2EmbeddedDB h2EmbeddedDB = new H2EmbeddedDB();
+        dataSourceProvider.setEmbeddedDB(h2EmbeddedDB);
 
-        assertTrue(dataSourceProvider.get() instanceof JdbcConnectionPool);
+        try {
+            assertTrue(dataSourceProvider.get() instanceof JdbcConnectionPool);
+        } finally {
+            h2EmbeddedDB.stop();
+        }
 
         // Generic
         databaseType = DataSourceProvider.DatabaseType.GENERIC;
