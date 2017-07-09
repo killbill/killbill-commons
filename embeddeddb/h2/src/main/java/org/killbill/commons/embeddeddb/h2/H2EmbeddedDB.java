@@ -21,12 +21,16 @@ package org.killbill.commons.embeddeddb.h2;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
 import org.h2.api.ErrorCode;
+import org.h2.engine.ConnectionInfo;
+import org.h2.engine.Engine;
+import org.h2.engine.Session;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.h2.tools.Server;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
@@ -142,6 +146,16 @@ public class H2EmbeddedDB extends EmbeddedDB {
 
         if (server != null) {
             server.stop();
+
+            // Shutdown the MVStore
+            final Properties info = new Properties();
+            info.setProperty("user", username);
+            info.put("password", password);
+            final ConnectionInfo ci = new ConnectionInfo(jdbcConnectionString, info);
+            final Session session = Engine.getInstance().createSession(ci);
+            if (session.getDatabase() != null && session.getDatabase().getMvStore() != null) {
+                session.getDatabase().getMvStore().close(0);
+            }
         }
         logger.info(String.format("H2 stopped on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                   getJdbcConnectionString(), getUsername(), getPassword()));
