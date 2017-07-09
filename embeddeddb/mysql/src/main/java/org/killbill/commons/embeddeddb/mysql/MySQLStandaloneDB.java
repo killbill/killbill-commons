@@ -38,8 +38,6 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
     private final int port;
     private final boolean useMariaDB;
 
-    protected DataSource dataSource;
-
     public MySQLStandaloneDB(final String databaseName) {
         this(databaseName, "root", null);
     }
@@ -107,11 +105,6 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
         } catch (final SQLException e) {
             throw new IOException(e);
         }
-    }
-
-    @Override
-    public DataSource getDataSource() throws IOException {
-        return dataSource;
     }
 
     @Override

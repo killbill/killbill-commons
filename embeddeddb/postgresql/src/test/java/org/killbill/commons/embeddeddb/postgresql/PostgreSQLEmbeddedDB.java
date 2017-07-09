@@ -31,7 +31,6 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    protected DataSource dataSource;
     protected final int port;
 
     private KillBillTestingPostgreSqlServer testingPostgreSqlServer;
@@ -92,7 +91,7 @@ public class PostgreSQLEmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("PostgreSQL is not running");
         }
-        return dataSource;
+        return super.getDataSource();
     }
 
     @Override

@@ -35,7 +35,6 @@ public class H2EmbeddedDB extends EmbeddedDB {
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     private Server server;
-    private DataSource dataSource;
 
     static {
         try {
@@ -120,7 +119,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("H2 is not running");
         }
-        return dataSource;
+        return super.getDataSource();
     }
 
     @Override

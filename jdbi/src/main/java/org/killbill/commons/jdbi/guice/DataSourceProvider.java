@@ -103,7 +103,11 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     @Override
     public DataSource get() {
-        return buildDataSource();
+        final DataSource dataSource = buildDataSource();
+        if (embeddedDB != null) {
+            embeddedDB.setDataSource(dataSource);
+        }
+        return dataSource;
     }
 
     private DataSource buildDataSource() {
