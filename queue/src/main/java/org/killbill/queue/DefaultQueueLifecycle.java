@@ -117,9 +117,9 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     public void stopQueue() {
         this.isProcessingEvents = false;
 
-        executor.shutdown();
+        executor.shutdownNow();
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            executor.awaitTermination(config.getPollingSleepTimeMs(), TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
             log.info(String.format("%s: Stop sequence has been interrupted", svcQName));
         }
