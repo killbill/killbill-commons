@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
+import org.h2.api.ErrorCode;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.h2.tools.Server;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
@@ -75,12 +76,18 @@ public class H2EmbeddedDB extends EmbeddedDB {
         try {
             // Start a web server for debugging (http://127.0.0.1:8082/)
             server = Server.createWebServer(new String[]{}).start();
-            started.set(true);
             logger.info(String.format("H2 started on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                       getJdbcConnectionString(), getUsername(), getPassword()));
         } catch (final SQLException e) {
-            throw new IOException(e);
+            // H2 most likely already started (e.g. by a different pool) -- ignore
+            // Note: we still want the EmbeddedDB object to be started, for a clean shutdown of the dataSource
+            if (!String.valueOf(ErrorCode.EXCEPTION_OPENING_PORT_2).equals(e.getSQLState())) {
+                throw new IOException(e);
+            }
+
         }
+
+        started.set(true);
 
         refreshTableNames();
     }
