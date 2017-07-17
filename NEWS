@@ -1,3 +1,7 @@
+0.20.11
+    H2 support improvements
+    queue: enhance shutdown sequence
+
 0.20.10
     Support unpooled database connections (mainly for PGBouncer)
     Update to killbill-oss-parent 0.140.32
