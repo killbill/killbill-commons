@@ -12,3 +12,8 @@ target
 pom.xml.releaseBackup
 release.properties
 *.db
+
+# Eclipse metadata
+.classpath
+.project
+.settings/
