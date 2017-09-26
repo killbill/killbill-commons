@@ -112,7 +112,7 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Just need killbill-api for the BusEvent interface -->
+        <!-- Just need killbill-api for the QueueRetryException exception -->
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
             <artifactId>killbill-api</artifactId>
