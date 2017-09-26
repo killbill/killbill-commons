@@ -1,6 +1,6 @@
 /*
- * Copyright 2014 Groupon, Inc
- * Copyright 2014 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -66,6 +66,7 @@ import java.util.Properties;
 
 
 // Identical to its copied class MysqldResource, except for STEPH comment below
+@SuppressWarnings("unchecked")
 public final class HackedMysqldResource implements MysqldResourceI {
 
     public static final String MYSQL_C_MXJ = "mysql-c.mxj";
@@ -100,6 +101,8 @@ public final class HackedMysqldResource implements MysqldResourceI {
 
     private PrintStream err;
 
+    private PrintStream debug;
+
     private Exception trace;
 
     private int killDelay;
@@ -132,14 +135,15 @@ public final class HackedMysqldResource implements MysqldResourceI {
     }
 
     public HackedMysqldResource(File baseDir, File dataDir,
-                                String mysqlVersionString, PrintStream out, PrintStream err) {
-        this(baseDir, dataDir, mysqlVersionString, out, err, null);
+                                String mysqlVersionString, PrintStream out, PrintStream err, PrintStream debug) {
+        this(baseDir, dataDir, mysqlVersionString, out, err, debug, null);
     }
 
     HackedMysqldResource(File pBaseDir, File pDataDir, String pMysqlVersionString,
-                         PrintStream pOut, PrintStream pErr, Utils pUtils) {
+                         PrintStream pOut, PrintStream pErr, PrintStream pDebug, Utils pUtils) {
         this.out = (pOut != null) ? pOut : System.out;
         this.err = (pErr != null) ? pErr : System.err;
+        this.debug = (pDebug != null) ? pDebug : this.out;
         this.utils = (pUtils != null) ? pUtils : new Utils();
         this.platformProperties = utils.streams().loadProperties(
                 PLATFORM_MAP_PROPERTIES, pErr);
@@ -224,7 +228,7 @@ public final class HackedMysqldResource implements MysqldResourceI {
                 completionListensers.remove(this);
             }
         });
-        setShell(exec(threadName, mysqldArgs, out, err, true));
+        setShell(exec(threadName, mysqldArgs, out, debug /* err would be a bit noisy */, true));
 
         reportPid();
         utils.files().writeString(portFile, port + utils.str().newLine());
@@ -234,7 +238,7 @@ public final class HackedMysqldResource implements MysqldResourceI {
 
         if (initUser) {
             try {
-                new InitializeUser(port, user, password, err).initializeUser();
+                new HackedInitializeUser(port, user, password, err).initializeUser();
             } catch (Throwable t) {
                 t.printStackTrace(err);
             }

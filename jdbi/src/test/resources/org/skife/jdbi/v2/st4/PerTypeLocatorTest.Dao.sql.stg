@@ -1,0 +1,4 @@
+
+insertFixtures() ::= <% insert into something (id, name) values (1, 'Francisco'), (2, 'Brian') %>
+
+findById() ::= <% select id, name from something where id = :0 %>

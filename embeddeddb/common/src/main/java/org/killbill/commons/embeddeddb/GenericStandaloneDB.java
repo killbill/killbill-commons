@@ -49,12 +49,8 @@ public class GenericStandaloneDB extends EmbeddedDB {
     }
 
     @Override
-    public DataSource getDataSource() throws IOException {
-        return null;
-    }
-
-    @Override
     public void stop() throws IOException {
         started.set(false);
+        super.stop();
     }
 }

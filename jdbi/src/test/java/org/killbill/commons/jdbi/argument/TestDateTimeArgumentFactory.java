@@ -22,17 +22,14 @@ import java.sql.Timestamp;
 import org.h2.jdbc.JdbcSQLException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.killbill.commons.jdbi.JDBITestBase;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
-import org.skife.jdbi.v2.util.TimestampMapper;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import org.killbill.commons.jdbi.JDBITestBase;
 
 public class TestDateTimeArgumentFactory extends JDBITestBase {
 
@@ -69,7 +66,6 @@ public class TestDateTimeArgumentFactory extends JDBITestBase {
         Assert.assertEquals(dateStephane.getTime(), dateTimeStephane.getMillis());
     }
 
-    @RegisterMapper(TimestampMapper.class)
     private interface SomethingSqlDao {
 
         @SqlUpdate("insert into something (id, name, created_dt) values (:id, :name, :createdDt)")

@@ -21,11 +21,11 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.113</version>
+        <version>0.140.32</version>
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
-    <version>0.21-SNAPSHOT</version>
+    <version>0.20.12-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>
@@ -92,7 +92,7 @@
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
-                <artifactId>killbill-embeddeddb-commons</artifactId>
+                <artifactId>killbill-embeddeddb-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

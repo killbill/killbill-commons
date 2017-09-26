@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2010-2011 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
@@ -24,8 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
@@ -33,7 +31,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultQueueLifecycle.class);
 
-    private final static long ONE_MILLION = 1000L * 1000L;
+    private static final long ONE_MILLION = 1000L * 1000L;
 
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
@@ -81,7 +79,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                         final long beforeLoop = System.nanoTime();
                         try {
                             doProcessEvents();
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             log.warn(String.format("%s: Thread  %s  [%d] got an exception, catching and moving on...",
                                     svcQName,
                                     Thread.currentThread().getName(),
@@ -91,16 +89,16 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                             sleepALittle((afterLoop - beforeLoop) / ONE_MILLION);
                         }
                     }
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                     log.info(String.format("%s: Thread %s got interrupted, exting... ", svcQName, Thread.currentThread().getName()));
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                     log.error(String.format("%s: Thread %s got an exception, exting... ", svcQName, Thread.currentThread().getName()), e);
                 } finally {
                     log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
                 }
             }
 
-            private void sleepALittle(long loopTimeMsec) throws InterruptedException {
+            private void sleepALittle(final long loopTimeMsec) throws InterruptedException {
                 if (config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS) {
                     // Disregard config.getPollingSleepTimeMs() in that mode in case this is not correctky configured with 0
                     return;
@@ -119,10 +117,10 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     public void stopQueue() {
         this.isProcessingEvents = false;
 
-        executor.shutdown();
+        executor.shutdownNow();
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+            executor.awaitTermination(config.getPollingSleepTimeMs(), TimeUnit.SECONDS);
+        } catch (final InterruptedException e) {
             log.info(String.format("%s: Stop sequence has been interrupted", svcQName));
         }
     }

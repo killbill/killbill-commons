@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -43,6 +43,10 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import org.h2.jdbcx.JdbcConnectionPool;
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.killbill.commons.embeddeddb.GenericStandaloneDB;
+import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -51,6 +55,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 public class TestDataSourceProvider {
@@ -58,6 +63,38 @@ public class TestDataSourceProvider {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(TestDataSourceProvider.class);
 
     private static final String TEST_POOL_PREFIX = "test-pool";
+
+    @Test(groups = "fast")
+    public void testDataSourceProviderNoPooling() throws Exception {
+        DataSourceProvider.DatabaseType databaseType;
+        DaoConfig daoConfig;
+        String poolName;
+        DataSourceProvider dataSourceProvider;
+
+        // H2
+        databaseType = DataSourceProvider.DatabaseType.H2;
+        daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.NONE, databaseType);
+
+        poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
+        final H2EmbeddedDB h2EmbeddedDB = new H2EmbeddedDB();
+        dataSourceProvider = new DataSourceProvider(daoConfig, h2EmbeddedDB, poolName);
+
+        try {
+            assertTrue(dataSourceProvider.get() instanceof JdbcConnectionPool);
+        } finally {
+            h2EmbeddedDB.stop();
+        }
+
+        // Generic
+        databaseType = DataSourceProvider.DatabaseType.GENERIC;
+        daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.NONE, databaseType);
+
+        poolName = TEST_POOL_PREFIX + "-nopool-" + databaseType;
+        final GenericStandaloneDB genericStandaloneDB = new GenericStandaloneDB(null, null, null, null);
+        dataSourceProvider = new DataSourceProvider(daoConfig, genericStandaloneDB, poolName);
+
+        assertNull(dataSourceProvider.get());
+    }
 
     @Test(groups = "fast")
     public void testDataSourceProviderHikariCP() throws Exception {
@@ -408,6 +445,7 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
+            @SuppressWarnings("unchecked")
             public <T> T unwrap(final Class<T> iface) throws SQLException {
                 return (T) this;
             }

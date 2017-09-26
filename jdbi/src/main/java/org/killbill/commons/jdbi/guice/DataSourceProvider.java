@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,6 +18,7 @@
 
 package org.killbill.commons.jdbi.guice;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
+import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.skife.config.TimeSpan;
 
 import com.codahale.metrics.MetricRegistry;
@@ -41,6 +43,7 @@ public class DataSourceProvider implements Provider<DataSource> {
     protected final DaoConfig config;
     protected final String poolName;
     protected final boolean useMariaDB;
+    protected final EmbeddedDB embeddedDB;
 
     private DatabaseType databaseType;
     private String dataSourceClassName;
@@ -63,10 +66,18 @@ public class DataSourceProvider implements Provider<DataSource> {
         this(config, poolName, true);
     }
 
+    public DataSourceProvider(final DaoConfig config, final EmbeddedDB embeddedDB, final String poolName) {
+        this(config, embeddedDB, poolName, true);
+    }
+
     public DataSourceProvider(final DaoConfig config, final String poolName, final boolean useMariaDB) {
+        this(config, null, poolName, useMariaDB);
+    }
+    public DataSourceProvider(final DaoConfig config, final EmbeddedDB embeddedDB, final String poolName, final boolean useMariaDB) {
         this.config = config;
         this.poolName = poolName;
         this.useMariaDB = useMariaDB;
+        this.embeddedDB = embeddedDB;
         parseJDBCUrl();
     }
 
@@ -92,20 +103,35 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     @Override
     public DataSource get() {
-        return buildDataSource();
+        final DataSource dataSource = buildDataSource();
+        if (embeddedDB != null) {
+            embeddedDB.setDataSource(dataSource);
+        }
+        return dataSource;
     }
 
     private DataSource buildDataSource() {
-        if (DataSourceConnectionPoolingType.C3P0.equals(config.getConnectionPoolingType())) {
-            loadDriver();
-            return new C3P0DataSourceBuilder().buildDataSource();
-        }
-
-        if (DataSourceConnectionPoolingType.HIKARICP.equals(config.getConnectionPoolingType())) {
-            if (dataSourceClassName != null) {
+        switch(config.getConnectionPoolingType()) {
+            case C3P0:
                 loadDriver();
-            }
-            return new HikariDataSourceBuilder().buildDataSource();
+                return new C3P0DataSourceBuilder().buildDataSource();
+            case HIKARICP:
+                if (dataSourceClassName != null) {
+                    loadDriver();
+                }
+                return new HikariDataSourceBuilder().buildDataSource();
+            case NONE:
+                if (embeddedDB != null) {
+                    try {
+                        embeddedDB.initialize();
+                        embeddedDB.start();
+                        return embeddedDB.getDataSource();
+                    } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            default:
+                break;
         }
 
         throw new IllegalArgumentException("DataSource " + config.getConnectionPoolingType() + " unsupported");

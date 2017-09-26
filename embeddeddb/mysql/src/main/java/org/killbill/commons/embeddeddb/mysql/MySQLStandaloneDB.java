@@ -26,7 +26,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
-import org.mariadb.jdbc.MySQLDataSource;
+import org.mariadb.jdbc.MariaDbDataSource;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
@@ -37,8 +37,6 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
 
     private final int port;
     private final boolean useMariaDB;
-
-    protected DataSource dataSource;
 
     public MySQLStandaloneDB(final String databaseName) {
         this(databaseName, "root", null);
@@ -68,9 +66,9 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
         super.initialize();
 
         if (useMariaDB) {
-            final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
+            final MariaDbDataSource mariaDBDataSource = new MariaDbDataSource();
             try {
-                mariaDBDataSource.setURL(jdbcConnectionString);
+                mariaDBDataSource.setUrl(jdbcConnectionString);
             } catch (final SQLException e) {
                 throw new IOException(e);
             }
@@ -107,11 +105,6 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
         } catch (final SQLException e) {
             throw new IOException(e);
         }
-    }
-
-    @Override
-    public DataSource getDataSource() throws IOException {
-        return dataSource;
     }
 
     @Override

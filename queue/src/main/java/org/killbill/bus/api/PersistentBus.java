@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,10 +19,13 @@
 package org.killbill.bus.api;
 
 import java.sql.Connection;
-import java.util.List;
 
+import org.joda.time.DateTime;
 import org.killbill.queue.api.QueueLifecycle;
 
+/**
+ * When an Iterable is returned, the client must iterate through all results to close the DB connection.
+ */
 public interface PersistentBus extends QueueLifecycle {
 
     String EVENT_BUS_GROUP_NAME = "bus-grp";
@@ -100,7 +103,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
 
     /**
      * Retrieve all available bus events matching that search key
@@ -110,29 +113,31 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
 
     /**
      * Retrieve all available bus events matching that search key
      *
+     * @param maxCreatedDate created_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(Long searchKey2);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsForSearchKey2(DateTime maxCreatedDate, Long searchKey2);
 
     /**
      * Retrieve all available bus events matching that search key
      *
+     * @param maxCreatedDate created_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(DateTime maxCreatedDate, Long searchKey2, Connection connection);
 
     /**
      * @return the bus events that have been claimed and are being processed
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getInProcessingBusEvents();
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getInProcessingBusEvents();
 
     /**
      * Retrieve all available or in processing bus events matching that search key
@@ -141,7 +146,7 @@ public interface PersistentBus extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
 
     /**
      * Retrieve all available or in processing bus events matching that search key
@@ -151,22 +156,42 @@ public interface PersistentBus extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(Long searchKey1, Long searchKey2, Connection connection);
 
     /**
      * Retrieve all available or in processing bus events matching that search key
      *
+     * @param maxCreatedDate created_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(Long searchKey2);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsForSearchKey2(DateTime maxCreatedDate, Long searchKey2);
 
     /**
      * Retrieve all available or in processing bus events matching that search key
      *
+     * @param maxCreatedDate created_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @param connection the transaction that should be used to make that search
      * @return a list of BusEventWithMetadata objects matching the search
      */
-    <T extends BusEvent> List<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(Long searchKey2, Connection connection);
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(DateTime maxCreatedDate, Long searchKey2, Connection connection);
+
+    /**
+     * Retrieve all historical bus events matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKeys(Long searchKey1, Long searchKey2);
+
+    /**
+     * Retrieve all historical bus events matching that search key
+     *
+     * @param minCreatedDate created_date cutoff, to limit the search
+     * @param searchKey2     the value for key2
+     * @return a list of BusEventWithMetadata objects matching the search
+     */
+    <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(DateTime minCreatedDate, Long searchKey2);
 }

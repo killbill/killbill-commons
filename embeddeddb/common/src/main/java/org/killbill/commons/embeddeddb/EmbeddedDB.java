@@ -50,6 +50,7 @@ public abstract class EmbeddedDB {
     protected String username;
     protected String password;
     protected String jdbcConnectionString;
+    protected DataSource dataSource;
 
     protected List<String> allTables = new LinkedList<String>();
 
@@ -72,7 +73,14 @@ public abstract class EmbeddedDB {
 
     public abstract void refreshTableNames() throws IOException;
 
-    public abstract DataSource getDataSource() throws IOException;
+    public DataSource getDataSource() throws IOException {
+        return dataSource;
+    }
+
+    // Delayed initialization for GenericStandaloneDB
+    public void setDataSource(final DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public void stop() throws IOException {
         final DataSource dataSource = getDataSource();
@@ -108,7 +116,7 @@ public abstract class EmbeddedDB {
 
     private static final Pattern WHITESPACE_ONLY = Pattern.compile("^\\s*$");
 
-
+    // Only used in tests (embedded versions)
     protected DataSource createHikariDataSource() throws IOException {
 
         final String dataSourceClassName;

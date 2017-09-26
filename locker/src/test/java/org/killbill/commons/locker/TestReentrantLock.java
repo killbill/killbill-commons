@@ -94,7 +94,7 @@ public class TestReentrantLock {
 
         Request.setPerThreadRequestData(new RequestData("12345"));
 
-        boolean free = lockTable.releaseLock("bar");
+        final boolean free = lockTable.releaseLock("bar");
         Assert.assertTrue(free);
     }
 

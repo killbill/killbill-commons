@@ -30,7 +30,6 @@ import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
-import com.palominolabs.metrics.guice.servlet.AdminServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class StatsModule extends AbstractModule {
@@ -71,7 +70,7 @@ public class StatsModule extends AbstractModule {
         // Dropwizard metrics
         final MetricRegistry metricRegistry = createMetricRegistry();
         bind(MetricRegistry.class).toInstance(metricRegistry);
-        install(new MetricsInstrumentationModule(metricRegistry));
+        install(MetricsInstrumentationModule.builder().withMetricRegistry(metricRegistry).build());
 
         // Dropwizard healthChecks
         final Multibinder<HealthCheck> healthChecksBinder = Multibinder.newSetBinder(binder(), HealthCheck.class);

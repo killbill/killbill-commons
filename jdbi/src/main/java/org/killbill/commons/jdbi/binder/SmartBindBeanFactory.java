@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -21,61 +23,44 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.UUID;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
 import org.skife.jdbi.v2.SQLStatement;
+import org.skife.jdbi.v2.sqlobject.BindBean;
 import org.skife.jdbi.v2.sqlobject.Binder;
 import org.skife.jdbi.v2.sqlobject.BinderFactory;
 
-// Similar to org.skife.jdbi.v2.sqlobject.BindBeanFactory but handles JodaTime, Mockito objects, etc.
-public class SmartBindBeanFactory extends BinderBase implements BinderFactory {
+// Similar to org.skife.jdbi.v2.sqlobject.BindBeanFactory with optimizations
+public class SmartBindBeanFactory implements BinderFactory {
 
-    public Binder build(final Annotation annotation) {
-        return new Binder<SmartBindBean, Object>() {
-            public void bind(final SQLStatement q, final SmartBindBean bind, final Object arg) {
-                final String prefix;
-                if ("___jdbi_bare___".equals(bind.value())) {
-                    prefix = "";
-                } else {
-                    prefix = bind.value() + ".";
-                }
-
-                try {
-                    final BeanInfo infos = Introspector.getBeanInfo(arg.getClass());
-                    final PropertyDescriptor[] props = infos.getPropertyDescriptors();
-                    for (final PropertyDescriptor prop : props) {
-                        final Method readMethod = prop.getReadMethod();
-                        // Null for e.g. proxy objects (Mockito)
-                        if (readMethod != null) {
-                            final String bindingName = prefix + prop.getName();
-
-                            final Object value = readMethod.invoke(arg);
-                            if (value == null) {
-                                // TODO right sql type?
-                                q.bind(bindingName, (Object) null);
-                            } else if (value instanceof DateTime) {
-                                q.bind(bindingName, getDate((DateTime) value));
-                            } else if (value instanceof DateTimeZone) {
-                                q.bind(bindingName, value.toString());
-                            } else if (value instanceof Enum /* Works for Enum inside classes */ || value.getClass().isEnum()) {
-                                q.bind(bindingName, value.toString());
-                            } else if (value instanceof LocalDate) {
-                                // ISO8601 format
-                                q.bind(bindingName, value.toString());
-                            } else if (value instanceof UUID) {
-                                q.bind(bindingName, getUUIDString((UUID) value));
-                            } else {
-                                q.bind(bindingName, value);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    throw new IllegalStateException("unable to bind bean properties", e);
-                }
+    private static final Binder<SmartBindBean, Object> SMART_BINDER = new Binder<SmartBindBean, Object>() {
+        @Override
+        public void bind(final SQLStatement q, final SmartBindBean bind, final Object arg) {
+            final String prefix;
+            if (BindBean.BARE_BINDING.equals(bind.value())) {
+                prefix = null;
+            } else {
+                prefix = bind.value() + ".";
             }
-        };
+
+            try {
+                final BeanInfo infos = Introspector.getBeanInfo(arg.getClass());
+                final PropertyDescriptor[] props = infos.getPropertyDescriptors();
+                for (final PropertyDescriptor prop : props) {
+                    final Method readMethod = prop.getReadMethod();
+                    if (readMethod != null) {
+                        // [OPTIMIZATION] Avoid implicit creation of StringBuilder (concatenation) when no custom annotation value is specified
+                        final String name = prefix == null ? prop.getName() : prefix + prop.getName();
+                        q.dynamicBind(readMethod.getReturnType(), name, readMethod.invoke(arg));
+                    }
+                }
+            } catch (final Exception e) {
+                throw new IllegalStateException("unable to bind bean properties", e);
+            }
+        }
+    };
+
+    @Override
+    public Binder build(final Annotation annotation) {
+        return SMART_BINDER;
     }
 }

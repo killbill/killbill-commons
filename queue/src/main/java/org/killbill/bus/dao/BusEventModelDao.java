@@ -71,13 +71,13 @@ public class BusEventModelDao implements EventEntryModelDao {
         this(in.getRecordId(), in.getCreatingOwner(), owner, in.getCreatedDate(), nextAvailable, state, in.getClassName(), in.getEventJson(), errorCount, in.getUserToken(), in.getSearchKey1(), in.getSearchKey2());
     }
 
-    public DateTime getCreatedDate() {
-        return createdDate;
-    }
-
     @Override
     public Long getRecordId() {
         return recordId;
+    }
+
+    public void setRecordId(final Long recordId) {
+        this.recordId = recordId;
     }
 
     @Override
@@ -85,9 +85,17 @@ public class BusEventModelDao implements EventEntryModelDao {
         return className;
     }
 
+    public void setClassName(final String className) {
+        this.className = className;
+    }
+
     @Override
     public String getEventJson() {
         return eventJson;
+    }
+
+    public void setEventJson(final String eventJson) {
+        this.eventJson = eventJson;
     }
 
     @Override
@@ -95,9 +103,16 @@ public class BusEventModelDao implements EventEntryModelDao {
         return userToken;
     }
 
-    @Override
-    public String getProcessingOwner() {
-        return processingOwner;
+    public void setUserToken(final UUID userToken) {
+        this.userToken = userToken;
+    }
+
+    public DateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(final DateTime createdDate) {
+        this.createdDate = createdDate;
     }
 
     @Override
@@ -105,9 +120,35 @@ public class BusEventModelDao implements EventEntryModelDao {
         return creatingOwner;
     }
 
+    public void setCreatingOwner(final String creatingOwner) {
+        this.creatingOwner = creatingOwner;
+    }
+
+    @Override
+    public String getProcessingOwner() {
+        return processingOwner;
+    }
+
+    public void setProcessingOwner(final String processingOwner) {
+        this.processingOwner = processingOwner;
+    }
+
     @Override
     public DateTime getNextAvailableDate() {
         return processingAvailableDate;
+    }
+
+    // Required for serialization
+    public DateTime getProcessingAvailableDate() {
+        return processingAvailableDate;
+    }
+
+    public void setProcessingAvailableDate(final DateTime processingAvailableDate) {
+        this.processingAvailableDate = processingAvailableDate;
+    }
+
+    public void setErrorCount(final Long errorCount) {
+        this.errorCount = errorCount;
     }
 
     @Override
@@ -115,9 +156,16 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingState;
     }
 
-    // Required for serialization
-    public DateTime getProcessingAvailableDate() {
-        return processingAvailableDate;
+    public void setProcessingState(final PersistentQueueEntryLifecycleState processingState) {
+        this.processingState = processingState;
+    }
+
+    public void setSearchKey1(final Long searchKey1) {
+        this.searchKey1 = searchKey1;
+    }
+
+    public void setSearchKey2(final Long searchKey2) {
+        this.searchKey2 = searchKey2;
     }
 
     @Override

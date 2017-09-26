@@ -68,7 +68,7 @@ public class ReusableStringTemplate3StatementLocator implements StatementLocator
             try {
                 this.group = new StringTemplateGroup(reader, AngleBracketTemplateLexer.class);
                 reader.close();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new IllegalStateException("unable to load string template group " + templateGroupFilePathOnClasspath,
                                                 e);
             }
@@ -109,7 +109,7 @@ public class ReusableStringTemplate3StatementLocator implements StatementLocator
         }
     }
 
-    private final static String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
+    private static final String sep = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
 
     private static String mungify(final String path) {
         return path.replaceAll("\\.", Matcher.quoteReplacement(sep));

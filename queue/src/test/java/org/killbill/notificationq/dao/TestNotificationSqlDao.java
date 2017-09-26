@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,7 +18,13 @@
 
 package org.killbill.notificationq.dao;
 
-import com.google.common.collect.Collections2;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+
+import javax.annotation.Nullable;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.killbill.CreatorName;
@@ -29,11 +37,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import com.google.common.collect.Collections2;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -146,19 +150,19 @@ public class TestNotificationSqlDao extends TestSetup {
         final Collection<Long> entryIds = Collections2.transform(entries, new com.google.common.base.Function<NotificationEventModelDao, Long>() {
             @Nullable
             @Override
-            public Long apply(@Nullable NotificationEventModelDao input) {
+            public Long apply(@Nullable final NotificationEventModelDao input) {
                 return input.getRecordId();
             }
         });
 
         dao.removeEntries(entryIds, notificationQueueConfig.getTableName());
-        for (Long entry : entryIds) {
+        for (final Long entry : entryIds) {
             final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getTableName());
             assertNull(result);
         }
 
         dao.insertEntries(entries, notificationQueueConfig.getHistoryTableName());
-        for (Long entry : entryIds) {
+        for (final Long entry : entryIds) {
             final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getHistoryTableName());
             assertNotNull(result);
         }

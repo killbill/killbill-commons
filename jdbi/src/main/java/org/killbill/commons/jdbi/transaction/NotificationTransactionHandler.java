@@ -41,12 +41,12 @@ public class NotificationTransactionHandler extends DelegatingTransactionHandler
         this.transactionNotificationApi = transactionNotificationApi;
     }
 
-    public void commit(Handle handle) {
+    public void commit(final Handle handle) {
         getDelegate().commit(handle);
         dispatchEvent(new DatabaseTransactionEvent(DatabaseTransactionEventType.COMMIT));
     }
 
-    public void rollback(Handle handle) {
+    public void rollback(final Handle handle) {
         getDelegate().rollback(handle);
         dispatchEvent(new DatabaseTransactionEvent(DatabaseTransactionEventType.ROLLBACK));
     }
@@ -54,7 +54,7 @@ public class NotificationTransactionHandler extends DelegatingTransactionHandler
     private void dispatchEvent(final DatabaseTransactionEvent event) {
         try {
             transactionNotificationApi.dispatchNotification(event);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.warn("Failed to notify for event {}", event);
         }
     }

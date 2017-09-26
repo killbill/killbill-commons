@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -22,6 +22,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
 import org.joda.time.DateTime;
 import org.killbill.TestSetup;
 import org.killbill.clock.ClockMock;
@@ -51,7 +54,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static com.jayway.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.testng.Assert.assertEquals;
 
@@ -59,9 +62,9 @@ public class TestNotificationQueue extends TestSetup {
 
     private final Logger log = LoggerFactory.getLogger(TestNotificationQueue.class);
 
-    private final static UUID TOKEN_ID = UUID.randomUUID();
-    private final static long SEARCH_KEY_1 = 65;
-    private final static long SEARCH_KEY_2 = 34;
+    private static final UUID TOKEN_ID = UUID.randomUUID();
+    private static final long SEARCH_KEY_1 = 65;
+    private static final long SEARCH_KEY_2 = 34;
 
     private NotificationQueueService queueService;
 
@@ -214,34 +217,36 @@ public class TestNotificationQueue extends TestSetup {
             }
         });
 
-        Assert.assertEquals(queue.getInProcessingNotifications().size(), 0);
+        Assert.assertEquals(Iterables.<NotificationEventWithMetadata<TestNotificationKey>>size(queue.getInProcessingNotifications()), 0);
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futuresAll = queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2);
+        final List<NotificationEventWithMetadata> futuresAll = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2));
         Assert.assertEquals(futuresAll.size(), 2);
         int found = 0;
         for (int i = 0; i < 2; i++) {
-            if (futuresAll.get(i).getEvent().getValue().equals(key3.toString()) ||
-                    futuresAll.get(i).getEvent().getValue().equals(key4.toString())) {
+            final TestNotificationKey testNotificationKey = (TestNotificationKey) futuresAll.get(i).getEvent();
+            if (testNotificationKey.getValue().equals(key3.toString()) ||
+                testNotificationKey.getValue().equals(key4.toString())) {
                 found++;
             }
         }
         Assert.assertEquals(found, 2);
 
 
-        final List<NotificationEventWithMetadata<TestNotificationKey>> futures2 = queue.getFutureNotificationForSearchKey2(SEARCH_KEY_2);
+        final List<NotificationEventWithMetadata> futures2 = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKey2(null, SEARCH_KEY_2));
         Assert.assertEquals(futures2.size(), 3);
         found = 0;
         for (int i = 0; i < 3; i++) {
-            if (futures2.get(i).getEvent().getValue().equals(key3.toString()) ||
-                    futures2.get(i).getEvent().getValue().equals(key4.toString()) ||
-                    futures2.get(i).getEvent().getValue().equals(key1.toString())) {
+            final TestNotificationKey testNotificationKey = (TestNotificationKey) futures2.get(i).getEvent();
+            if (testNotificationKey.getValue().equals(key3.toString()) ||
+                testNotificationKey.getValue().equals(key4.toString()) ||
+                testNotificationKey.getValue().equals(key1.toString())) {
                 found++;
             }
         }
         Assert.assertEquals(found, 3);
 
         // Move time in the future after the notification effectiveDate
-        ((ClockMock) clock).setDeltaFromReality(3000);
+        clock.setDeltaFromReality(3000);
 
 
         // Notification should have kicked but give it at least a sec' for thread scheduling
@@ -303,9 +308,9 @@ public class TestNotificationQueue extends TestSetup {
 
             // Move time in the future after the notification effectiveDate
             if (i == 0) {
-                ((ClockMock) clock).setDeltaFromReality(nextReadyTimeIncrementMs);
+                clock.setDeltaFromReality(nextReadyTimeIncrementMs);
             } else {
-                ((ClockMock) clock).addDeltaFromReality(nextReadyTimeIncrementMs);
+                clock.addDeltaFromReality(nextReadyTimeIncrementMs);
             }
         }
 
@@ -394,7 +399,7 @@ public class TestNotificationQueue extends TestSetup {
         });
 
         // Move time in the future after the notification effectiveDate
-        ((ClockMock) clock).setDeltaFromReality(3000);
+        clock.setDeltaFromReality(3000);
 
         // Note the timeout is short on this test, but expected behaviour is that it times out.
         // We are checking that the Fred queue does not pick up the Barney event
@@ -420,14 +425,14 @@ public class TestNotificationQueue extends TestSetup {
         private final int nbTotalExceptionsToThrow;
         private int nbExceptionsThrown;
 
-        public NotificationQueueHandlerWithExceptions(int nbTotalExceptionsToThrow) {
+        public NotificationQueueHandlerWithExceptions(final int nbTotalExceptionsToThrow) {
             this.nbTotalExceptionsToThrow = nbTotalExceptionsToThrow;
             this.nbExceptionsThrown = 0;
         }
 
 
         @Override
-        public void handleReadyNotification(NotificationEvent eventJson, DateTime eventDateTime, UUID userToken, Long searchKey1, Long searchKey2) {
+        public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
 
             //Assert.assertEquals(((DefaultNotificationQueueService) queueService).getDao().getSqlDao().getInProcessingEntries(notificationQueueConfig.getTableName()).size(), 1);
 
@@ -453,7 +458,7 @@ public class TestNotificationQueue extends TestSetup {
             queueWithExceptionAndRetrySuccess.recordFutureNotification(readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
 
             // Move time in the future after the notification effectiveDate
-            ((ClockMock) clock).setDeltaFromReality(3000);
+            clock.setDeltaFromReality(3000);
 
             await().atMost(5, TimeUnit.SECONDS).until(new Callable<Boolean>() {
                 @Override
@@ -461,7 +466,7 @@ public class TestNotificationQueue extends TestSetup {
 
                     final Integer retryCount = dbi.withHandle(new HandleCallback<Integer>() {
                         @Override
-                        public Integer withHandle(Handle handle) throws Exception {
+                        public Integer withHandle(final Handle handle) throws Exception {
                             return handle.createQuery(String.format("select error_count from %s", notificationQueueConfig.getHistoryTableName())).map(IntegerMapper.FIRST).first();
                         }
                     });
@@ -489,7 +494,7 @@ public class TestNotificationQueue extends TestSetup {
             queueWithExceptionAndFailed.recordFutureNotification(readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
 
             // Move time in the future after the notification effectiveDate
-            ((ClockMock) clock).setDeltaFromReality(3000);
+            clock.setDeltaFromReality(3000);
 
             await().atMost(5, TimeUnit.SECONDS).until(new Callable<Boolean>() {
                 @Override
@@ -497,7 +502,7 @@ public class TestNotificationQueue extends TestSetup {
 
                     final Integer retryCount = dbi.withHandle(new HandleCallback<Integer>() {
                         @Override
-                        public Integer withHandle(Handle handle) throws Exception {
+                        public Integer withHandle(final Handle handle) throws Exception {
                             return handle.createQuery(String.format("select error_count from %s", notificationQueueConfig.getHistoryTableName())).map(IntegerMapper.FIRST).first();
                         }
                     });
@@ -505,7 +510,7 @@ public class TestNotificationQueue extends TestSetup {
                 }
             });
         } finally {
-            queueWithExceptionAndFailed.stopQueue();;
+            queueWithExceptionAndFailed.stopQueue();
         }
    }
 }

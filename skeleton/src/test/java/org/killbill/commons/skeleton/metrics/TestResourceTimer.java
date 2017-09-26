@@ -54,7 +54,7 @@ public class TestResourceTimer {
         Assert.assertEquals(1, timer.getCount());
     }
 
-    private String expectedMetricName(String resourcePath, String resourceName, String httpMethod, String tagsValues, String statusGroup, int status) {
+    private String expectedMetricName(final String resourcePath, final String resourceName, final String httpMethod, final String tagsValues, final String statusGroup, final int status) {
         if (tagsValues == null || tagsValues.trim().isEmpty()) {
             return String.format("%s.%s.%s.%s.%s.%s", RESOURCE_METRICS_PREFIX, resourcePath, resourceName, httpMethod, statusGroup, status);
         }
@@ -67,7 +67,7 @@ public class TestResourceTimer {
         final String escapeResourcePath = "/1_0/kb/payments";
         final String resourceName = "create";
         final String httpMethod = "POST";
-        final Map<String, Object> tags = (Map) ImmutableMap.builder().put("transactionType", "AUTHORIZE").build();
+        final Map<String, Object> tags = ImmutableMap.<String, Object>builder().put("transactionType", "AUTHORIZE").build();
 
         final ResourceTimer resourceTimer = new ResourceTimer(resourcePath, resourceName, httpMethod, tags, metricRegistry);
         resourceTimer.update(501, 1, TimeUnit.MILLISECONDS);

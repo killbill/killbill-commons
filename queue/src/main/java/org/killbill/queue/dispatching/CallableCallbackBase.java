@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class CallableCallbackBase<E extends QueueEvent, M extends EventEntryModelDao> implements CallableCallback<E, M> {
 
-    private final static Logger log = LoggerFactory.getLogger(CallableCallbackBase.class);
+    private static final Logger log = LoggerFactory.getLogger(CallableCallbackBase.class);
 
     private final DBBackedQueue<M> dao;
     private final Clock clock;
@@ -49,11 +49,12 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
         return deserializeEvent(modelDao, objectMapper);
     }
 
+    @SuppressWarnings("unchecked")
     public static <E extends QueueEvent, M extends EventEntryModelDao> E deserializeEvent(final M modelDao, final ObjectMapper objectMapper) {
         try {
             final Class<?> claz = Class.forName(modelDao.getClassName());
             return (E) objectMapper.readValue(modelDao.getEventJson(), claz);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error(String.format("Failed to deserialize json object %s for class %s", modelDao.getEventJson(), modelDao.getClassName()), e);
             return null;
         }
@@ -61,9 +62,9 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
 
 
     @Override
-    abstract public void dispatch(final E event, final M modelDao) throws Exception;
+    public abstract void dispatch(final E event, final M modelDao) throws Exception;
 
-    abstract public M buildEntry(final M modelDao, final DateTime now, final PersistentQueueEntryLifecycleState newState, final long newErrorCount);
+    public abstract M buildEntry(final M modelDao, final DateTime now, final PersistentQueueEntryLifecycleState newState, final long newErrorCount);
 
     @Override
     public void updateErrorCountOrMoveToHistory(final E event, final M modelDao, final long errorCount, final Throwable lastException) {

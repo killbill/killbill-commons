@@ -46,7 +46,7 @@ public class ProfilingData {
         rawData.addAll(otherData.getRawData());
         Collections.sort(rawData, new Comparator<ProfilingDataItem>() {
             @Override
-            public int compare(ProfilingDataItem o1, ProfilingDataItem o2) {
+            public int compare(final ProfilingDataItem o1, final ProfilingDataItem o2) {
                 return o1.getTimestampNsec().compareTo(o2.getTimestampNsec());
             }
         });

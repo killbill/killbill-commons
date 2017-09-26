@@ -32,7 +32,7 @@ public class ClockMock implements Clock {
 
     private static final Logger log = LoggerFactory.getLogger(ClockMock.class);
 
-    private DateTime mockDateTime;
+    private DateTime mockDateTimeUTC;
     private long initialDeltaMillis;
 
     public ClockMock() {
@@ -46,7 +46,7 @@ public class ClockMock implements Clock {
 
     @Override
     public synchronized DateTime getUTCNow() {
-        return truncate(mockDateTime.plus(System.currentTimeMillis() - initialDeltaMillis));
+        return truncate(mockDateTimeUTC.plus(System.currentTimeMillis() - initialDeltaMillis));
     }
 
     @Override
@@ -107,14 +107,14 @@ public class ClockMock implements Clock {
         reset(realNow());
     }
 
-    private void reset(final DateTime time) {
-        mockDateTime = time;
+    private void reset(final DateTime timeInAnyTimeZone) {
+        mockDateTimeUTC = timeInAnyTimeZone.toDateTime(DateTimeZone.UTC);
         initialDeltaMillis = System.currentTimeMillis();
     }
 
     private void adjustTo(final ReadablePeriod period) {
         final DateTime prev = getUTCNow();
-        mockDateTime = mockDateTime.plus(period);
+        mockDateTimeUTC = mockDateTimeUTC.plus(period);
         logChange(prev);
     }
 

@@ -57,9 +57,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
         do {
             try {
                 int result = 0;
-                final Iterator<String> it = queues.keySet().iterator();
-                while (it.hasNext()) {
-                    final String queueName = it.next();
+                for (final String queueName : queues.keySet()) {
                     final NotificationQueue cur = queues.get(queueName);
                     if (cur != null) {
                         result += doProcessEventsForQueue((MockNotificationQueue) cur);

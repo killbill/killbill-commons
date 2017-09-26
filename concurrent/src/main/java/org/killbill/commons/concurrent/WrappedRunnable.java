@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -23,13 +25,19 @@ class WrappedRunnable implements Runnable {
     private final Logger log;
     private final Runnable runnable;
 
+    private volatile Throwable exception;
+
     private WrappedRunnable(final Logger log, final Runnable runnable) {
         this.log = log;
         this.runnable = runnable;
     }
 
-    public static Runnable wrap(final Logger log, final Runnable runnable) {
-        return runnable instanceof WrappedRunnable ? runnable : new WrappedRunnable(log, runnable);
+    public static WrappedRunnable wrap(final Logger log, final Runnable runnable) {
+        return runnable instanceof WrappedRunnable ? (WrappedRunnable) runnable : new WrappedRunnable(log, runnable);
+    }
+
+    Throwable getException() {
+        return exception;
     }
 
     @Override
@@ -38,8 +46,9 @@ class WrappedRunnable implements Runnable {
 
         try {
             runnable.run();
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             log.error(currentThread + " ended abnormally with an exception", e);
+            exception = e;
         }
 
         log.debug("{} finished executing", currentThread);

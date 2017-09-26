@@ -16,10 +16,10 @@ Kill Bill reusable Java components:
 Kill Bill compatibility
 -----------------------
 
-| API version | Kill Bill version |
-| ----------: | ----------------: |
-| 0.15.y      | 0.16.z            |
-| 0.20.y      | 0.18.z            |
+| Commons version | Kill Bill version |
+| --------------: | ----------------: |
+| 0.15.y          | 0.16.z            |
+| 0.20.y          | 0.18.z            |
 
 ## License
 

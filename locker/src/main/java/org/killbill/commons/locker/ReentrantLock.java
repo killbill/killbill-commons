@@ -130,7 +130,7 @@ public class ReentrantLock {
         }
 
         synchronized (lockTable) {
-            LockHolder lockHolder = lockTable.get(lockName);
+            final LockHolder lockHolder = lockTable.get(lockName);
             if (lockHolder == null) {
                 throw new IllegalStateException(String.format("ReentrantLock releaseLock %s : cannot find lock in the table, current request = %s", lockName, requestId));
             }

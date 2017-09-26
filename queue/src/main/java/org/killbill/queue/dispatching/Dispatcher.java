@@ -17,12 +17,6 @@
 
 package org.killbill.queue.dispatching;
 
-import org.killbill.commons.concurrent.DynamicThreadPoolExecutorWithLoggingOnExceptions;
-import org.killbill.queue.api.QueueEvent;
-import org.killbill.queue.dao.EventEntryModelDao;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -30,6 +24,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import org.killbill.commons.concurrent.DynamicThreadPoolExecutorWithLoggingOnExceptions;
+import org.killbill.queue.api.QueueEvent;
+import org.killbill.queue.dao.EventEntryModelDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Dispatcher<M extends EventEntryModelDao> {
 
@@ -71,7 +71,7 @@ public class Dispatcher<M extends EventEntryModelDao> {
         executor.shutdown();
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             log.info(String.format("Stop sequence has been interrupted"));
         }
     }
@@ -86,16 +86,16 @@ public class Dispatcher<M extends EventEntryModelDao> {
     public static class CallableQueue<E extends QueueEvent, M extends EventEntryModelDao> implements Callable<E> {
 
         private final M entry;
-        private final CallableCallback callback;
+        private final CallableCallback<E, M> callback;
 
-        public CallableQueue(final M entry, final CallableCallback callback) {
+        public CallableQueue(final M entry, final CallableCallback<E, M> callback) {
             this.entry = entry;
             this.callback = callback;
         }
 
         @Override
         public E call() throws Exception {
-            final E event = (E) callback.deserialize(entry);
+            final E event = callback.deserialize(entry);
             if (event != null) {
                 Throwable lastException = null;
                 long errorCount = entry.getErrorCount();

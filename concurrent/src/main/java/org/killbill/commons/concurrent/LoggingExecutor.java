@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -66,14 +68,18 @@ public class LoggingExecutor extends ThreadPoolExecutor {
 
     @Override
     public <T> Future<T> submit(final Runnable task, final T result) {
-        // HACK: assumes ThreadPoolExecutor will create a callable and call execute()
-        // (can't wrap the runnable here or exception isn't re-thrown when Future.get() is called)
-        return super.submit(task, result);
+        final WrappedRunnable runnable = WrappedRunnable.wrap(LOG, task);
+        final Future<T> future = super.submit(runnable, result);
+
+        return WrappedRunnableFuture.wrap(runnable, future);
     }
 
     @Override
     public Future<?> submit(final Runnable task) {
-        return super.submit(WrappedRunnable.wrap(LOG, task));
+        final WrappedRunnable runnable = WrappedRunnable.wrap(LOG, task);
+        final Future<?> future = super.submit(runnable);
+
+        return WrappedRunnableFuture.wrap(runnable, future);
     }
 
     @Override

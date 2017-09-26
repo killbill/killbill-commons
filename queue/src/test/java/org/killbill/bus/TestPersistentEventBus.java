@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,12 +19,15 @@
 package org.killbill.bus;
 
 import org.killbill.TestSetup;
+import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import com.google.common.collect.Iterables;
 
 public class TestPersistentEventBus extends TestSetup {
 
@@ -54,22 +57,26 @@ public class TestPersistentEventBus extends TestSetup {
 
     @Test(groups = "slow")
     public void testSimple() {
-        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
+        assertNoInProcessingEvent();
         testEventBusBase.testSimple();
-        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
+        assertNoInProcessingEvent();
     }
 
     @Test(groups = "slow")
     public void testSimpleWithExceptionAndRetrySuccess() {
-        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
+        assertNoInProcessingEvent();
         testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
-        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
+        assertNoInProcessingEvent();
     }
 
     @Test(groups = "slow")
     public void testSimpleWithExceptionAndFail() {
-        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
+        assertNoInProcessingEvent();
         testEventBusBase.testSimpleWithExceptionAndFail();
-        Assert.assertEquals(busService.getInProcessingBusEvents().size(), 0);
+        assertNoInProcessingEvent();
+    }
+
+    private void assertNoInProcessingEvent() {
+        Assert.assertEquals(Iterables.<BusEventWithMetadata>size(busService.getInProcessingBusEvents()), 0);
     }
 }

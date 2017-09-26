@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2012 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,26 +18,6 @@
 
 package org.killbill.notificationq;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import org.joda.time.DateTime;
-import org.killbill.clock.Clock;
-import org.killbill.notificationq.api.NotificationEvent;
-import org.killbill.notificationq.api.NotificationQueue;
-import org.killbill.notificationq.api.NotificationQueueConfig;
-import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
-import org.killbill.notificationq.dao.NotificationEventModelDao;
-import org.killbill.notificationq.dao.NotificationSqlDao;
-import org.killbill.notificationq.dispatching.NotificationCallableCallback;
-import org.killbill.queue.DBBackedQueue;
-import org.killbill.queue.DefaultQueueLifecycle;
-import org.killbill.queue.dispatching.Dispatcher;
-import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
-import org.skife.jdbi.v2.IDBI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,6 +29,27 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.joda.time.DateTime;
+import org.killbill.clock.Clock;
+import org.killbill.notificationq.api.NotificationEvent;
+import org.killbill.notificationq.api.NotificationQueue;
+import org.killbill.notificationq.api.NotificationQueueConfig;
+import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import org.killbill.notificationq.dao.NotificationEventModelDao;
+import org.killbill.notificationq.dao.NotificationSqlDao;
+import org.killbill.notificationq.dispatching.NotificationCallableCallback;
+import org.killbill.queue.DBBackedQueue;
+import org.killbill.queue.DefaultQueueLifecycle;
+import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
+import org.killbill.queue.dispatching.Dispatcher;
+import org.skife.jdbi.v2.IDBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
 
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
@@ -74,7 +75,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
         super("NotificationQ", config);
-
         final ThreadFactory notificationQThreadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -93,7 +93,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.clock = clock;
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
-        this.dispatcher = new Dispatcher(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler());
+        this.dispatcher = new Dispatcher<NotificationEventModelDao>(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler());
         final NotificationSqlDao sqlDao = dbi.onDemand(NotificationSqlDao.class);
         this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry, null);
 
@@ -158,7 +158,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected int doProcessEventsWithLimit(final int limit) {
         logDebug("ENTER doProcessEvents");
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
-        if (notifications.size() == 0) {
+        if (notifications.isEmpty()) {
             logDebug("EXIT doProcessEvents");
             return 0;
         }

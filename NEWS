@@ -1,3 +1,45 @@
+0.20.11
+    H2 support improvements
+    queue: enhance shutdown sequence
+
+0.20.10
+    Support unpooled database connections (mainly for PGBouncer)
+    Update to killbill-oss-parent 0.140.32
+
+0.20.9
+    Update to killbill-oss-parent 0.140.30
+
+0.20.8
+    Fork jdbi-2.62 (performance patches)
+    Update to killbill-oss-parent 0.140.29
+
+0.20.7
+    make sure to store the clock internally as UTC
+
+0.20.6
+    Fix PostgreSQL compatibility
+    Update various third-party dependencies
+    Update to killbill-oss-parent 0.140.22
+
+0.20.5
+    xmlloader: expose toURL helpers
+    Update to killbill-oss-parent 0.140.15
+
+0.20.4
+    queue: add missing setters in ModelDao (performance)
+    Update to killbill-oss-parent 0.140.13
+
+0.20.3
+    Add indexes for historical queries on queues
+    Switch to streaming APIs for all queues searches
+    MySQL embeddeddb compatibility with recent MariaDB Connector/J client
+
+0.20.2
+    Add queue apis for historical entries
+
+0.20.1
+    Add system property to didable XML validation
+
 0.20
     automaton: ensure at least one enteringState transition is available
 

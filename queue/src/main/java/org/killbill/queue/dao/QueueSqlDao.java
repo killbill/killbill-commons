@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,21 +18,24 @@
 
 package org.killbill.queue.dao;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.killbill.commons.jdbi.binder.SmartBindBean;
+import org.killbill.commons.jdbi.template.KillBillSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
-import org.skife.jdbi.v2.sqlobject.BindBean;
 import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
+import org.skife.jdbi.v2.unstable.BindIn;
 
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-
-@QueueSqlDaoStringTemplate
+@KillBillSqlDaoStringTemplate
 public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
 
     @SqlQuery
@@ -49,7 +52,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                     @Define("tableName") final String tableName);
 
     @SqlQuery
-    List<T> getEntriesFromIds(@RecordIdCollectionBinder final List<Long> recordIds,
+    List<T> getEntriesFromIds(@BindIn("record_ids") final List<Long> recordIds,
                               @Define("tableName") final String tableName);
 
     @SqlQuery
@@ -79,7 +82,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                    @Define("tableName") final String tableName);
 
     @SqlUpdate
-    int claimEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+    int claimEntries(@BindIn("record_ids") final Collection<Long> recordIds,
                      @Bind("now") Date now,
                      @Bind("owner") String owner,
                      @Bind("nextAvailable") Date nextAvailable,
@@ -96,15 +99,15 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                      @Define("tableName") final String tableName);
 
     @SqlUpdate
-    void removeEntries(@RecordIdCollectionBinder final Collection<Long> recordIds,
+    void removeEntries(@BindIn("record_ids") final Collection<Long> recordIds,
                        @Define("tableName") final String tableName);
 
     @SqlUpdate
-    void insertEntry(@BindBean T evt,
+    void insertEntry(@SmartBindBean T evt,
                      @Define("tableName") final String tableName);
 
 
     @SqlBatch
-    void insertEntries(@BindBean Iterable<T> evts,
+    void insertEntries(@SmartBindBean Iterable<T> evts,
                        @Define("tableName") final String tableName);
 }

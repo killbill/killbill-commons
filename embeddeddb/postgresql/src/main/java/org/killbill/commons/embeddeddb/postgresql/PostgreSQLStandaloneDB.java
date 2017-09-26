@@ -35,8 +35,6 @@ public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
 
     private final int port;
 
-    protected PGSimpleDataSource dataSource;
-
     public PostgreSQLStandaloneDB(final String databaseName, final String username, final String password) {
         this(databaseName, username, password, "jdbc:postgresql://localhost:5432/" + databaseName);
     }
@@ -55,10 +53,10 @@ public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
     public void initialize() throws IOException {
         super.initialize();
         dataSource = new PGSimpleDataSource();
-        dataSource.setDatabaseName(databaseName);
-        dataSource.setUser(username);
-        dataSource.setPassword(password);
-        dataSource.setUrl(jdbcConnectionString);
+        ((PGSimpleDataSource) dataSource).setDatabaseName(databaseName);
+        ((PGSimpleDataSource) dataSource).setUser(username);
+        ((PGSimpleDataSource) dataSource).setPassword(password);
+        ((PGSimpleDataSource) dataSource).setUrl(jdbcConnectionString);
     }
 
     @Override
@@ -77,11 +75,6 @@ public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
         } catch (final SQLException e) {
             throw new IOException(e);
         }
-    }
-
-    @Override
-    public DataSource getDataSource() throws IOException {
-        return dataSource;
     }
 
     @Override

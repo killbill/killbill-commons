@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServlet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -81,7 +81,7 @@ public class JerseyBaseServerModule extends BaseServerModule {
         }
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
-        final String disableEntityLogging = Objects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_DISABLE_ENTITYLOGGING)), "true");
+        final String disableEntityLogging = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_DISABLE_ENTITYLOGGING)), "true");
         this.jerseyParams.put(JERSEY_DISABLE_ENTITYLOGGING, disableEntityLogging)
                          .putAll(jerseyParams);
     }
@@ -97,7 +97,7 @@ public class JerseyBaseServerModule extends BaseServerModule {
         }
 
         // Catch-all resources
-        if (jaxrsResources.size() != 0) {
+        if (!jaxrsResources.isEmpty()) {
             jerseyParams.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
             serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
         }

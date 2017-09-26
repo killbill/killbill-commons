@@ -24,7 +24,6 @@ import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.exceptions.TransactionFailedException;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.skife.jdbi.v2.tweak.transactions.DelegatingTransactionHandler;
-import org.skife.jdbi.v2.tweak.transactions.LocalTransactionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +58,7 @@ public class RestartTransactionRunner extends DelegatingTransactionHandler imple
         while (true) {
             try {
                 return getDelegate().inTransaction(handle, callback);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 if (!isSqlState(configuration.serializationFailureSqlStates, e) || --retriesRemaining <= 0) {
                     if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;

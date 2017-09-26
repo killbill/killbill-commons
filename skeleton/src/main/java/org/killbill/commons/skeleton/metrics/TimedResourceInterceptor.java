@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
@@ -41,17 +42,18 @@ import org.aopalliance.intercept.MethodInvocation;
  */
 public class TimedResourceInterceptor implements MethodInterceptor {
 
+    private final Map<String, Map<String, Object>> metricTagsByMethod = new ConcurrentHashMap<String, Map<String, Object>>();
     private final Provider<GuiceContainer> jerseyContainer;
     private final Provider<MetricRegistry> metricRegistry;
     private final String resourcePath;
     private final String metricName;
-    private String httpMethod;
+    private final String httpMethod;
 
-    public TimedResourceInterceptor(Provider<GuiceContainer> jerseyContainer,
-                                    Provider<MetricRegistry> metricRegistry,
-                                    String resourcePath,
-                                    String metricName,
-                                    String httpMethod) {
+    public TimedResourceInterceptor(final Provider<GuiceContainer> jerseyContainer,
+                                    final Provider<MetricRegistry> metricRegistry,
+                                    final String resourcePath,
+                                    final String metricName,
+                                    final String httpMethod) {
         this.jerseyContainer = jerseyContainer;
         this.metricRegistry = metricRegistry;
         this.resourcePath = resourcePath;
@@ -74,7 +76,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
             }
 
             return response;
-        } catch (WebApplicationException e) {
+        } catch (final WebApplicationException e) {
             responseStatus = e.getResponse().getStatus();
 
             throw e;
@@ -92,7 +94,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
 
     private int mapException(final Throwable e) throws Exception {
         final ExceptionMapperContext exceptionMapperContext = jerseyContainer.get().getWebApplication().getExceptionMapperContext();
-        final ExceptionMapper exceptionMapper = exceptionMapperContext.find(e.getClass());
+        @SuppressWarnings("unchecked") final ExceptionMapper<Throwable> exceptionMapper = exceptionMapperContext.find(e.getClass());
 
         if (exceptionMapper != null) {
             return exceptionMapper.toResponse(e).getStatus();
@@ -101,17 +103,27 @@ public class TimedResourceInterceptor implements MethodInterceptor {
         return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
     }
 
-    private ResourceTimer timer(MethodInvocation invocation) {
+    private ResourceTimer timer(final MethodInvocation invocation) {
         final Map<String, Object> metricTags = metricTags(invocation);
 
         return new ResourceTimer(resourcePath, metricName, httpMethod, metricTags, metricRegistry.get());
     }
 
-    private static Map<String, Object> metricTags(MethodInvocation invocation) {
-        final LinkedHashMap<String, Object> metricTags = new LinkedHashMap<String, Object>();
+    private Map<String, Object> metricTags(final MethodInvocation invocation) {
         final Method method = invocation.getMethod();
-        for (int i = 0; i < method.getParameterAnnotations().length; i++) {
-            final Annotation[] parameterAnnotations = method.getParameterAnnotations()[i];
+        // Expensive to compute
+        final String methodString = method.toString();
+
+        // Cache metric tags as Method.getParameterAnnotations() generates lots of garbage objects
+        Map<String, Object> metricTags = metricTagsByMethod.get(methodString);
+        if (metricTags != null) {
+            return metricTags;
+        }
+
+        metricTags = new LinkedHashMap<String, Object>();
+        final Annotation[][] parametersAnnotations = method.getParameterAnnotations();
+        for (int i = 0; i < parametersAnnotations.length; i++) {
+            final Annotation[] parameterAnnotations = parametersAnnotations[i];
 
             final MetricTag metricTag = findMetricTagAnnotations(parameterAnnotations);
             if (metricTag != null) {
@@ -125,11 +137,12 @@ public class TimedResourceInterceptor implements MethodInterceptor {
                 metricTags.put(metricTag.tag(), tagValue);
             }
         }
+        metricTagsByMethod.put(methodString, metricTags);
 
         return metricTags;
     }
 
-    private static MetricTag findMetricTagAnnotations(Annotation[] parameterAnnotations) {
+    private static MetricTag findMetricTagAnnotations(final Annotation[] parameterAnnotations) {
         for (final Annotation parameterAnnotation : parameterAnnotations) {
             if (parameterAnnotation instanceof MetricTag) {
                 return (MetricTag) parameterAnnotation;
@@ -138,36 +151,36 @@ public class TimedResourceInterceptor implements MethodInterceptor {
         return null;
     }
 
-    private static Object getProperty(Object currentArgument, String property) {
+    private static Object getProperty(final Object currentArgument, final String property) {
         if (currentArgument == null) {
             return null;
         }
 
         try {
-            final String[] methodNames = new String[] { "get" + capitalize(property), "is" + capitalize(property), property };
+            final String[] methodNames = {"get" + capitalize(property), "is" + capitalize(property), property };
             Method propertyMethod = null;
-            for (String methodName : methodNames) {
+            for (final String methodName : methodNames) {
                 try {
                     propertyMethod = currentArgument.getClass().getMethod(methodName);
                     break;
-                } catch (NoSuchMethodException e) {}
+                } catch (final NoSuchMethodException e) {}
             }
             if (propertyMethod == null) {
                 throw handleReadPropertyError(currentArgument, property, null);
             }
             return propertyMethod.invoke(currentArgument);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             throw handleReadPropertyError(currentArgument, property, e);
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             throw handleReadPropertyError(currentArgument, property, e);
         }
     }
 
-    private static String capitalize(String property) {
+    private static String capitalize(final String property) {
         return property.substring(0, 1).toUpperCase() + property.substring(1);
     }
 
-    private static IllegalArgumentException handleReadPropertyError(Object object, String property, Exception e) {
+    private static IllegalArgumentException handleReadPropertyError(final Object object, final String property, final Exception e) {
         return new IllegalArgumentException(String.format("Failed to read tag property \"%s\" value from object of type %s", property, object.getClass()), e);
     }
 }
