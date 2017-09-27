@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 /**
  * Adapted from http://www.mail-archive.com/user@slf4j.org/msg00674.html for slf4j.
@@ -79,6 +80,7 @@ public class LoggingOutputStream extends OutputStream {
      * The category to write to.
      */
     private final Logger logger;
+    private final Level level;
 
     /**
      * Creates the LoggingOutputStream to flush to the given Category.
@@ -86,12 +88,13 @@ public class LoggingOutputStream extends OutputStream {
      * @param log the Logger to write to
      * @throws IllegalArgumentException if log == null
      */
-    public LoggingOutputStream(final Logger log) throws IllegalArgumentException {
+    public LoggingOutputStream(final Logger log, final Level level) throws IllegalArgumentException {
         if (log == null) {
             throw new IllegalArgumentException("log == null");
         }
 
         logger = log;
+        this.level = level;
         bufLength = DEFAULT_BUFFER_LENGTH;
         buf = new byte[DEFAULT_BUFFER_LENGTH];
         count = 0;
@@ -187,7 +190,26 @@ public class LoggingOutputStream extends OutputStream {
 
         final byte[] theBytes = new byte[count];
         System.arraycopy(buf, 0, theBytes, 0, count);
-        logger.debug(new String(theBytes));
+
+        final String msg = new String(theBytes);
+        switch (level) {
+            case ERROR:
+                logger.error(msg);
+                break;
+            case WARN:
+                logger.warn(msg);
+                break;
+            case INFO:
+                logger.info(msg);
+                break;
+            case DEBUG:
+                logger.debug(msg);
+                break;
+            case TRACE:
+                logger.trace(msg);
+                break;
+        }
+
         reset();
     }
 

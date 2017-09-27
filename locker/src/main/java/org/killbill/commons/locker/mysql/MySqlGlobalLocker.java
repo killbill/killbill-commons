@@ -39,7 +39,7 @@ public class MySqlGlobalLocker extends GlobalLockerBase implements GlobalLocker 
     }
 
     @Override
-    protected GlobalLock getGlobalLock(Connection connection, String lockName, final ResetReentrantLockCallback resetCb) {
+    protected GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb) {
         return new MysqlGlobalLock(connection, lockName, globalLockDao, resetCb);
     }
 

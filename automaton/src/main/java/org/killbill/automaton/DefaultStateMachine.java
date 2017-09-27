@@ -18,7 +18,6 @@ package org.killbill.automaton;
 
 import java.net.URI;
 
-import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -56,15 +55,15 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
     @Override
     public void initialize(final DefaultStateMachineConfig root, final URI uri) {
         stateMachineConfig = root;
-        for (DefaultState cur : states) {
+        for (final DefaultState cur : states) {
             cur.initialize(root, uri);
             cur.setStateMachine(this);
         }
-        for (DefaultTransition cur : transitions) {
+        for (final DefaultTransition cur : transitions) {
             cur.initialize(root, uri);
             cur.setStateMachine(this);
         }
-        for (DefaultOperation cur : operations) {
+        for (final DefaultOperation cur : operations) {
             cur.initialize(root, uri);
             cur.setStateMachine(this);
         }
@@ -116,7 +115,7 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
     public boolean hasTransitionsFromStates(final String initState) {
         return Iterables.filter(ImmutableList.copyOf(transitions), new Predicate<Transition>() {
             @Override
-            public boolean apply(Transition input) {
+            public boolean apply(final Transition input) {
                 return input.getInitialState().getName().equals(initState);
             }
         }).iterator().hasNext();
@@ -153,7 +152,7 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
                            input.getOperationResult().equals(operationResult);
                 }
             }).get();
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             throw new MissingEntryException("Missing transition for initialState " + initialState.getName() +
                                             ", operation = " + operation.getName() + ", result = " + operationResult, e);
         }

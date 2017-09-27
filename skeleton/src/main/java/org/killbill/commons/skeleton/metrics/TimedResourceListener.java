@@ -41,8 +41,8 @@ public class TimedResourceListener implements TypeListener {
 
     private final Provider<MetricRegistry> metricRegistry;
 
-    public TimedResourceListener(Provider<GuiceContainer> guiceContainer,
-                                     Provider<MetricRegistry> metricRegistry) {
+    public TimedResourceListener(final Provider<GuiceContainer> guiceContainer,
+                                 final Provider<MetricRegistry> metricRegistry) {
         this.guiceContainer = guiceContainer;
         this.metricRegistry = metricRegistry;
     }
@@ -54,7 +54,7 @@ public class TimedResourceListener implements TypeListener {
         if (pathAnnotation != null) {
             final String resourcePath = pathAnnotation.value();
 
-            for (Method method : literal.getRawType().getMethods()) {
+            for (final Method method : literal.getRawType().getMethods()) {
                 final TimedResource annotation = method.getAnnotation(TimedResource.class);
                 if (annotation != null) {
                     final HttpMethod httpMethod = resourceHttpMethod(method);
@@ -74,9 +74,9 @@ public class TimedResourceListener implements TypeListener {
         }
     }
 
-    private HttpMethod resourceHttpMethod(Method method) {
-        for (Annotation annotation: method.getAnnotations()) {
-            HttpMethod httpMethod = annotation.annotationType().getAnnotation(HttpMethod.class);
+    private HttpMethod resourceHttpMethod(final Method method) {
+        for (final Annotation annotation: method.getAnnotations()) {
+            final HttpMethod httpMethod = annotation.annotationType().getAnnotation(HttpMethod.class);
             if (httpMethod != null) {
                 return httpMethod;
             }

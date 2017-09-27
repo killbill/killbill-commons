@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -69,7 +71,13 @@ public class TestExecutors {
             }
         });
 
-        Assert.assertNull(future.get());
+        try {
+            future.get();
+            Assert.fail("Expected exception");
+        } catch (final ExecutionException e) {
+            Assert.assertEquals(e.getCause().toString(), "java.lang.RuntimeException: Fail!");
+        }
+
         future = executorService.submit(new Runnable() {
             @Override
             public void run() {
@@ -86,7 +94,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.RuntimeException: Again!");
         }
 
@@ -137,7 +145,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.Exception: Oops!");
         }
 
@@ -151,7 +159,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.OutOfMemoryError: Uh oh!");
         }
 
@@ -219,7 +227,7 @@ public class TestExecutors {
         try {
             future.get();
             Assert.fail("Expected exception");
-        } catch (ExecutionException e) {
+        } catch (final ExecutionException e) {
             Assert.assertEquals(e.getCause().toString(), "java.lang.Exception: Pow!");
         }
 

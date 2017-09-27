@@ -117,7 +117,7 @@ public class TestTimedResourceInterceptor {
         try {
             interceptedResource.createWebApplicationException();
             Assert.fail();
-        } catch(WebApplicationException e) {
+        } catch(final WebApplicationException e) {
             final Timer timer = registry.getTimers().get("kb_resource.path.createWebApplicationException.POST.4xx.404");
             Assert.assertNotNull(timer);
             Assert.assertEquals(1, timer.getCount());
@@ -127,7 +127,7 @@ public class TestTimedResourceInterceptor {
     public static class Payment {
         private final String type;
 
-        public Payment(String type) {
+        public Payment(final String type) {
             this.type = type;
         }
 
@@ -147,13 +147,13 @@ public class TestTimedResourceInterceptor {
 
         @TimedResource
         @POST
-        public Response createOk(@MetricTag(tag = "transactionType") String type) {
+        public Response createOk(@MetricTag(tag = "transactionType") final String type) {
             return Response.ok().build();
         }
 
         @TimedResource
         @POST
-        public Response createOk(@MetricTag(tag = "transactionType", property = "type") Payment payment) {
+        public Response createOk(@MetricTag(tag = "transactionType", property = "type") final Payment payment) {
             return Response.created(URI.create("about:blank")).build();
         }
 

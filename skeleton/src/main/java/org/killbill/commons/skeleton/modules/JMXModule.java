@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -20,7 +22,7 @@ import java.lang.management.ManagementFactory;
 
 import javax.management.MBeanServer;
 
-import org.weakref.jmx.guice.ExportBuilder;
+import org.weakref.jmx.guice.ExportBinder;
 import org.weakref.jmx.guice.MBeanModule;
 
 import com.google.common.collect.ImmutableList;
@@ -54,7 +56,7 @@ public class JMXModule extends AbstractModule {
 
         install(new MBeanModule());
 
-        final ExportBuilder builder = MBeanModule.newExporter(binder());
+        final ExportBinder builder = ExportBinder.newExporter(binder());
         for (final Class beanClass : beans) {
             builder.export(beanClass).withGeneratedName();
         }

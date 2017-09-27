@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2015-2017 Groupon, Inc
+ * Copyright 2015-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,9 +19,12 @@ package org.killbill.bus;
 
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.awaitility.Awaitility;
 import org.killbill.TestSetup;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.PersistentBus;
@@ -92,7 +95,7 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
         try {
             final Thread producerThread = new Thread(producer);
             producerThread.start();
-            Assert.assertTrue(consumer.waitForCompletion(nbEvents, testDurationMinutes * 60 * 1000));
+            consumer.waitForCompletion(nbEvents, testDurationMinutes * 60 * 1000);
         } finally {
             producer.stop();
         }
@@ -124,21 +127,15 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
             }
         }
 
-        public boolean waitForCompletion(final Long expectedEvents, final long timeoutMs) {
-            final long ini = System.currentTimeMillis();
-            long remaining = timeoutMs;
-            while (nbEvents.get() < expectedEvents && remaining > 0) {
-                try {
-                    Thread.sleep(600);
-                    if (nbEvents.get() == expectedEvents) {
-                        break;
-                    }
-                    remaining = timeoutMs - (System.currentTimeMillis() - ini);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-            return (nbEvents.get() == expectedEvents);
+        public void waitForCompletion(final Long expectedEvents, final long timeoutMs) {
+            Awaitility.await()
+                      .atMost(timeoutMs, TimeUnit.MILLISECONDS)
+                      .until(new Callable<Boolean>() {
+                          @Override
+                          public Boolean call() throws Exception {
+                              return nbEvents.get() == expectedEvents;
+                          }
+                      });
         }
     }
 

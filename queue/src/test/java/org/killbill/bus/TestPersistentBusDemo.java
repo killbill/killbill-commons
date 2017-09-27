@@ -209,7 +209,7 @@ public class TestPersistentBusDemo {
                         break;
                     }
                     remaining = timeoutMs - (System.currentTimeMillis() - ini);
-                } catch (InterruptedException ignore) {
+                } catch (final InterruptedException ignore) {
                 }
             }
             return (nbEvents == expectedEvents);

@@ -20,7 +20,6 @@ package org.killbill.commons.locker.postgresql;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
-import org.killbill.commons.locker.LockFailedException;
 import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 import javax.sql.DataSource;

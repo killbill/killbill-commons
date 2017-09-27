@@ -21,15 +21,15 @@ public class NotificationQueueException extends Exception {
     public NotificationQueueException() {
     }
 
-    public NotificationQueueException(String message) {
+    public NotificationQueueException(final String message) {
         super(message);
     }
 
-    public NotificationQueueException(String message, Throwable cause) {
+    public NotificationQueueException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public NotificationQueueException(Throwable cause) {
+    public NotificationQueueException(final Throwable cause) {
         super(cause);
     }
 }

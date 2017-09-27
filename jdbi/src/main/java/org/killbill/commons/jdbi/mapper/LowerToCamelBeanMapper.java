@@ -25,16 +25,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.sql.Blob;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
@@ -64,6 +61,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public T map(final int row, final ResultSet rs, final StatementContext ctx) throws SQLException {
         final T bean;
         try {
@@ -129,7 +127,6 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                     value = uuidString == null ? null : UUID.fromString(uuidString);
                 } else if (type.isEnum()) {
                     final String enumString = rs.getString(i);
-                    //noinspection unchecked
                     value = enumString == null ? null : Enum.valueOf((Class<Enum>) type, enumString);
                 } else if (type == byte[].class) {
                     value = rs.getBytes(i);

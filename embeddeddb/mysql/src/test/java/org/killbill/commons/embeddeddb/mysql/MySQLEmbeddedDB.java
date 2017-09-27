@@ -18,13 +18,6 @@
 
 package org.killbill.commons.embeddeddb.mysql;
 
-import com.mysql.management.HackedMysqldResource;
-import com.mysql.management.MysqldResourceI;
-import com.zaxxer.hikari.HikariDataSource;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.mariadb.jdbc.MySQLDataSource;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,12 +29,20 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.sql.DataSource;
+
+import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.mariadb.jdbc.MariaDbDataSource;
+import org.slf4j.event.Level;
+
+import com.mysql.management.HackedMysqldResource;
+import com.mysql.management.MysqldResourceI;
+
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    protected DataSource dataSource;
-    protected int port;
+    protected final int port;
 
     private File dbDir;
     private File dataDir;
@@ -106,7 +107,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("MySQL is not running");
         }
-        return dataSource;
+        return super.getDataSource();
     }
 
     @Override
@@ -127,9 +128,9 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         if (useConnectionPooling()) {
             dataSource = createHikariDataSource();
         } else {
-            final MySQLDataSource mariaDBDataSource = new MySQLDataSource();
+            final MariaDbDataSource mariaDBDataSource = new MariaDbDataSource();
             try {
-                mariaDBDataSource.setURL(jdbcConnectionString);
+                mariaDBDataSource.setUrl(jdbcConnectionString);
             } catch (final SQLException e) {
                 throw new IOException(e);
             }
@@ -159,8 +160,10 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             throw new IOException("Unable to create " + dataDir.getAbsolutePath());
         }
 
-        final PrintStream out = new PrintStream(new LoggingOutputStream(logger), true);
-        mysqldResource = new HackedMysqldResource(dbDir, dataDir, null, out, out);
+        final PrintStream out = new PrintStream(new LoggingOutputStream(logger, Level.INFO), true);
+        final PrintStream err = new PrintStream(new LoggingOutputStream(logger, Level.WARN), true);
+        final PrintStream debug = new PrintStream(new LoggingOutputStream(logger, Level.DEBUG), true);
+        mysqldResource = new HackedMysqldResource(dbDir, dataDir, null, out, err, debug);
 
         final Map<String, String> dbOpts = new HashMap<String, String>();
         dbOpts.put(MysqldResourceI.PORT, Integer.toString(port));

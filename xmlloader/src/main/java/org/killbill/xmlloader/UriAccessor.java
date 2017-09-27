@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
- * Copyright 2014 Groupon, Inc
- * Copyright 2014 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -35,27 +35,41 @@ public class UriAccessor {
     private static final String URI_SCHEME_FOR_CLASSPATH = "jar";
     private static final String URI_SCHEME_FOR_FILE = "file";
 
+    public static URL toURL(final String uri) throws IOException, URISyntaxException {
+        return toURL(new URI(uri));
+    }
+
+    public static URL toURL(final URI inputURI) throws IOException, URISyntaxException {
+        final String scheme = inputURI.getScheme();
+
+        final URI uri;
+        if (scheme == null) {
+            uri = new URI(Resources.getResource(inputURI.toString()).toExternalForm());
+        } else if (scheme.equals(URI_SCHEME_FOR_FILE) &&
+                   !inputURI.getSchemeSpecificPart().startsWith("/")) { // interpret URIs of this form as relative path uris
+            uri = new File(inputURI.getSchemeSpecificPart()).toURI();
+        } else {
+            uri = inputURI;
+        }
+
+        return uri.toURL();
+    }
+
     public static InputStream accessUri(final String uri) throws IOException, URISyntaxException {
         return accessUri(new URI(uri));
     }
 
-    public static InputStream accessUri(URI uri) throws IOException, URISyntaxException {
+    public static InputStream accessUri(final URI uri) throws IOException, URISyntaxException {
         final String scheme = uri.getScheme();
-
-        final URL url;
-        if (scheme == null) {
-            uri = new URI(Resources.getResource(uri.toString()).toExternalForm());
-        } else if (scheme.equals(URI_SCHEME_FOR_CLASSPATH)) {
+        if (URI_SCHEME_FOR_CLASSPATH.equals(scheme)) {
             if (uri.toString().startsWith(URI_SCHEME_FOR_ARCHIVE_FILE)) {
                 return getInputStreamFromJarFile(uri);
             } else {
                 return UriAccessor.class.getResourceAsStream(uri.getPath());
             }
-        } else if (scheme.equals(URI_SCHEME_FOR_FILE) &&
-                   !uri.getSchemeSpecificPart().startsWith("/")) { // interpret URIs of this form as relative path uris
-            uri = new File(uri.getSchemeSpecificPart()).toURI();
         }
-        url = uri.toURL();
+
+        final URL url = toURL(uri);
         return url.openConnection().getInputStream();
     }
 

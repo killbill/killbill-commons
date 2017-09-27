@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -20,7 +20,6 @@ package org.killbill.notificationq.api;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.util.List;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
@@ -29,6 +28,8 @@ import org.killbill.queue.api.QueueLifecycle;
 
 /**
  * A NotificationQueue offers a persistent queue with a set of API to record future notifications along with their callbacks.
+ *
+ * When an Iterable is returned, the client must iterate through all results to close the DB connection.
  */
 public interface NotificationQueue extends QueueLifecycle {
 
@@ -79,7 +80,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
@@ -89,29 +90,31 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
      *
+     * @param maxEffectiveDate effective_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final Long searchKey2);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2);
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
      *
+     * @param maxEffectiveDate effective_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2, final Connection connection);
 
     /**
      * @return the notifications that have been claimed and are being processed
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getInProcessingNotifications();
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getInProcessingNotifications();
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
@@ -120,7 +123,7 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
@@ -130,24 +133,44 @@ public interface NotificationQueue extends QueueLifecycle {
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection);
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
      *
+     * @param maxEffectiveDate effective_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final Long searchKey2);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2);
 
     /**
      * Retrieve all future or in processing notifications associated with that queue and matching that search key
      *
+     * @param maxEffectiveDate effective_date cutoff, to limit the search
      * @param searchKey2 the value for key2
      * @param connection the transaction that should be used to make that search
      * @return a list of NotificationEventWithMetadata objects matching the search
      */
-    <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final Long searchKey2, final Connection connection);
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2, final Connection connection);
+
+    /**
+     * Retrieve all historical notifications associated with that queue and matching that search key
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKeys(final Long searchKey1, final Long searchKey2);
+
+    /**
+     * Retrieve all historical notifications associated with that queue and matching that search key
+     *
+     * @param minEffectiveDate effective_date cutoff, to limit the search
+     * @param searchKey2 the value for key2
+     * @return a list of NotificationEventWithMetadata objects matching the search
+     */
+    <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2);
 
     /**
      * Move the notification to history table and mark it as 'removed'

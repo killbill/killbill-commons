@@ -21,11 +21,16 @@ package org.killbill.commons.embeddeddb.h2;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
+import org.h2.api.ErrorCode;
+import org.h2.engine.ConnectionInfo;
+import org.h2.engine.Engine;
+import org.h2.engine.Session;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.h2.tools.Server;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
@@ -35,7 +40,6 @@ public class H2EmbeddedDB extends EmbeddedDB {
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     private Server server;
-    private DataSource dataSource;
 
     static {
         try {
@@ -76,12 +80,18 @@ public class H2EmbeddedDB extends EmbeddedDB {
         try {
             // Start a web server for debugging (http://127.0.0.1:8082/)
             server = Server.createWebServer(new String[]{}).start();
-            started.set(true);
             logger.info(String.format("H2 started on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                       getJdbcConnectionString(), getUsername(), getPassword()));
-        } catch (SQLException e) {
-            throw new IOException(e);
+        } catch (final SQLException e) {
+            // H2 most likely already started (e.g. by a different pool) -- ignore
+            // Note: we still want the EmbeddedDB object to be started, for a clean shutdown of the dataSource
+            if (!String.valueOf(ErrorCode.EXCEPTION_OPENING_PORT_2).equals(e.getSQLState())) {
+                throw new IOException(e);
+            }
+
         }
+
+        started.set(true);
 
         refreshTableNames();
     }
@@ -99,7 +109,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
                     }
                 }
             });
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new IOException(e);
         }
     }
@@ -108,7 +118,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (useConnectionPooling()) {
             dataSource = createHikariDataSource();
         } else {
-            JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(jdbcConnectionString, username, password);
+            final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(jdbcConnectionString, username, password);
             // Default is 10, set it to 30 to match the default for org.killbill.dao.maxActive
             jdbcConnectionPool.setMaxConnections(30);
             dataSource = jdbcConnectionPool;
@@ -120,7 +130,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (!started.get()) {
             throw new IOException("H2 is not running");
         }
-        return dataSource;
+        return super.getDataSource();
     }
 
     @Override
@@ -136,6 +146,16 @@ public class H2EmbeddedDB extends EmbeddedDB {
 
         if (server != null) {
             server.stop();
+
+            // Shutdown the MVStore
+            final Properties info = new Properties();
+            info.setProperty("user", username);
+            info.put("password", password);
+            final ConnectionInfo ci = new ConnectionInfo(jdbcConnectionString, info);
+            final Session session = Engine.getInstance().createSession(ci);
+            if (session.getDatabase() != null && session.getDatabase().getMvStore() != null) {
+                session.getDatabase().getMvStore().close(0);
+            }
         }
         logger.info(String.format("H2 stopped on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                   getJdbcConnectionString(), getUsername(), getPassword()));

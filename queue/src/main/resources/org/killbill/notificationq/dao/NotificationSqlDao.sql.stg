@@ -1,4 +1,4 @@
-group NotificationSqlDao: BaseSqlDao;
+import "org/killbill/queue/dao/QueueSqlDao.sql.stg"
 
 extraFieldsWithComma() ::= <<
       , future_user_token
@@ -49,6 +49,7 @@ getReadyQueueEntriesForSearchKey2(tableName) ::= <<
     where
       queue_name = :queueName
       and processing_state = 'AVAILABLE'
+      and effective_date \< cast(coalesce(:maxEffectiveDate, '2100-01-01') as datetime)
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>
@@ -76,6 +77,33 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
     where
       queue_name = :queueName
       and processing_state in ('AVAILABLE', 'IN_PROCESSING')
+      and effective_date \< cast(coalesce(:maxEffectiveDate, '2100-01-01') as datetime)
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getHistoricalQueueEntriesForSearchKeys(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where
+      queue_name = :queueName
+      and search_key1 = :searchKey1
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getHistoricalQueueEntriesForSearchKey2(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where
+          queue_name = :queueName
+      and effective_date >= cast(coalesce(:minEffectiveDate, '1970-01-01') as datetime)
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>

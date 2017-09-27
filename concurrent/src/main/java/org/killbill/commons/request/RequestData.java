@@ -20,7 +20,7 @@ package org.killbill.commons.request;
 public class RequestData {
     private final String requestId;
 
-    public RequestData(String requestId) {
+    public RequestData(final String requestId) {
         this.requestId = requestId;
     }
 

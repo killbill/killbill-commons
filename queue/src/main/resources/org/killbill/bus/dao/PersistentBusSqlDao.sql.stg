@@ -1,4 +1,4 @@
-group PersistentBusSqlDao: BaseSqlDao;
+import "org/killbill/queue/dao/QueueSqlDao.sql.stg"
 
 extraFieldsWithComma() ::= <<
 >>
@@ -38,6 +38,7 @@ getReadyQueueEntriesForSearchKey2(tableName) ::= <<
     from <tableName>
     where
           processing_state = 'AVAILABLE'
+      and created_date \< cast(coalesce(:maxCreatedDate, '2100-01-01') as datetime)
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>
@@ -63,6 +64,30 @@ getReadyOrInProcessingQueueEntriesForSearchKey2(tableName) ::= <<
     from <tableName>
     where
           processing_state in ('AVAILABLE', 'IN_PROCESSING')
+      and created_date \< cast(coalesce(:maxCreatedDate, '2100-01-01') as datetime)
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getHistoricalQueueEntriesForSearchKeys(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where
+          search_key1 = :searchKey1
+      and search_key2 = :searchKey2
+    order by
+      <readyOrderByClause()>
+;
+>>
+
+getHistoricalQueueEntriesForSearchKey2(historyTableName) ::= <<
+    select
+      <allTableFields()>
+    from <historyTableName>
+    where created_date >= cast(coalesce(:minCreatedDate, '1970-01-01') as datetime)
       and search_key2 = :searchKey2
     order by
       <readyOrderByClause()>

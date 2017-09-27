@@ -55,6 +55,7 @@ public class ConfigModule extends AbstractModule {
         this.configSource = configSource;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void configure() {
         for (final Class config : configs) {

@@ -1,5 +1,3 @@
-group BaseSqlDao;
-
 /** TO BE OVERWRITTEN IN CHILD TEMPLATE **/
 
 
@@ -131,7 +129,7 @@ getEntriesFromIds(tableName, record_ids) ::= <<
       <allTableFields()>
     from <tableName>
     where
-      record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
+      record_id in (<record_ids>)
     order by
       <readyOrderByClause()>
     ;
@@ -190,7 +188,7 @@ claimEntries(tableName, record_ids) ::= <<
       , processing_available_date = :nextAvailable
       , processing_state = 'IN_PROCESSING'
     where
-      record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
+      record_id in (<record_ids>)
       and processing_state != 'PROCESSED'
       and processing_state != 'REMOVED'
       and (processing_owner IS NULL OR processing_available_date \<= :now)
@@ -219,7 +217,7 @@ removeEntry(tableName) ::= <<
 removeEntries(tableName, record_ids) ::= <<
     delete from <tableName>
     where
-      record_id in (<record_ids: {id | :id_<i0>}; separator="," >)
+      record_id in (<record_ids>)
     ;
 >>
 

@@ -199,7 +199,7 @@ public class TestEventBusBase {
                         break;
                     }
                     remaining = timeoutMs - (System.currentTimeMillis() - ini);
-                } catch (InterruptedException ignore) {
+                } catch (final InterruptedException ignore) {
                 }
             }
             return (gotEvents == expectedEvents);
@@ -214,7 +214,7 @@ public class TestEventBusBase {
             eventBus.post(new MyEvent("my-event", 1L, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
             final boolean completed = handler.waitForCompletion(5000);
             Assert.assertEquals(completed, true);
-        } catch (Exception ignored) {
+        } catch (final Exception ignored) {
         }
     }
 
@@ -226,7 +226,7 @@ public class TestEventBusBase {
             eventBus.post(new MyEvent("my-event", 1L, "MY_EVENT_TYPE", 1L, 2L, UUID.randomUUID()));
             final boolean completed = handler.waitForCompletion(5000);
             Assert.assertEquals(completed, false);
-        } catch (Exception ignored) {
+        } catch (final Exception ignored) {
         }
     }
 
@@ -242,7 +242,7 @@ public class TestEventBusBase {
             }
             final boolean completed = handler.waitForCompletion(10000);
             Assert.assertEquals(completed, true);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Assert.fail("", e);
         }
     }
@@ -259,7 +259,7 @@ public class TestEventBusBase {
 
             final boolean completed = handler.waitForCompletion(10000);
             Assert.assertEquals(completed, true);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Assert.fail("", e);
         }
     }

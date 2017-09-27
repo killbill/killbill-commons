@@ -18,39 +18,37 @@
 package org.killbill.commons.concurrent;
 
 import org.killbill.commons.profiling.Profiling;
-import org.killbill.commons.profiling.ProfilingData;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
 public class WithProfilingThreadPoolExecutor  extends DynamicThreadPoolExecutorWithLoggingOnExceptions {
 
 
-    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit) {
+    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final String name, final long keepAliveTime, final TimeUnit unit) {
         super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit);
     }
 
-    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {
+    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final ThreadFactory threadFactory) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, threadFactory);
     }
 
-    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final String name, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit, workQueue);
     }
 
-    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
+    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
     }
 
-    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
+    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final String name, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, name, keepAliveTime, unit, workQueue, handler);
     }
 
-    public WithProfilingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler) {
+    public WithProfilingThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory, final RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
     }
 
