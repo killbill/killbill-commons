@@ -1,3 +1,6 @@
+0.20.12
+    queue: Retry code logic
+
 0.20.11
     H2 support improvements
     queue: enhance shutdown sequence
