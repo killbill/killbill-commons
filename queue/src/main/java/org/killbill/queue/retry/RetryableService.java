@@ -145,8 +145,8 @@ public abstract class RetryableService {
         }
     }
 
-    private DateTime computeRetryDate(final QueueRetryException invoicePluginApiRetryException, final DateTime initialEventDateTime, final int retryNb) {
-        final List<Period> retrySchedule = invoicePluginApiRetryException.getRetrySchedule();
+    private DateTime computeRetryDate(final QueueRetryException queueRetryException, final DateTime initialEventDateTime, final int retryNb) {
+        final List<Period> retrySchedule = queueRetryException.getRetrySchedule();
         if (retrySchedule == null || retryNb > retrySchedule.size()) {
             return null;
         } else {
