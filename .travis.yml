@@ -8,32 +8,28 @@ cache:
 dist: trusty
 
 before_install:
+  - grep -q -z '<artifactId>killbill-oss-parent</artifactId>[[:space:]]\+<groupId>org.kill-bill.billing</groupId>[[:space:]]\+<version>[0-9\.]*-SNAPSHOT</version>' pom.xml && echo "killbill-oss-parent SNAPSHOT has been found, exiting." && exit 0 || true
   - echo "<settings><profiles><profile><repositories><repository><id>central</id><name>bintray</name><url>http://jcenter.bintray.com</url></repository></repositories><id>bintray</id></profile></profiles><activeProfiles><activeProfile>bintray</activeProfile></activeProfiles></settings>" > /var/tmp/settings.xml
+  - |
+    function keep_alive() {
+      while true; do
+        echo -en "\a"
+        sleep 5
+      done
+    }
+    keep_alive &
 
 before_script:
   - jdk_switcher use $JDK
 
-script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn clean install $PHASE | egrep -v 'Download|Install'; [ ${PIPESTATUS[0]} == 0 ]; fi
-# Remove --quiet to avoid timeouts
-install: mvn -U install -DskipTests=true --settings /var/tmp/settings.xml | egrep -v 'Download|Install'
+script: mvn -q clean install $PHASE
+install: mvn -q -U install -DskipTests=true --settings /var/tmp/settings.xml
 
 notifications:
   email:
     - kill-bill-commits@googlegroups.com
 
-env:
-  global:
-    - MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
-
 matrix:
   include:
-    - env: PHASE="-Ptravis-nodb,jdk16" JDK=oraclejdk8
-    - env: PHASE="-Ptravis-nodb,jdk16" JDK=openjdk8
-    - env: PHASE="-Ptravis-nodb,jdk17" JDK=oraclejdk8
-    - env: PHASE="-Ptravis-nodb,jdk17" JDK=openjdk8
-    - env: PHASE="-Ptravis-nodb,jdk18" JDK=oraclejdk8
     - env: PHASE="-Ptravis-nodb,jdk18" JDK=openjdk8
   fast_finish: true
-
-after_success:
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && echo "<settings><servers><server><id>sonatype-nexus-snapshots</id><username>\${env.OSSRH_USER}</username><password>\${env.OSSRH_PASS}</password></server></servers></settings>" > ~/settings.xml && travis_wait mvn deploy -DskipTests=true --settings ~/settings.xml | egrep -v "Download|Install|Upload" ; rm -f ~/settings.xml'
