@@ -132,4 +132,9 @@ public interface DaoConfig {
     @Config("org.killbill.dao.healthCheckExpected99thPercentile")
     @Default("50ms")
     TimeSpan getHealthCheckExpected99thPercentile();
+
+    @Description("Whether or not initialization should fail on error immediately")
+    @Config("org.killbill.dao.initializationFailFast")
+    @Default("false")
+    boolean isInitializationFailFast();
 }
