@@ -28,6 +28,8 @@ import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.skife.config.TimeSpan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
@@ -37,6 +39,7 @@ import com.google.inject.Provider;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.PoolInitializationException;
 
 public class DataSourceProvider implements Provider<DataSource> {
 
@@ -139,6 +142,8 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     private class HikariDataSourceBuilder {
 
+        private final Logger logger = LoggerFactory.getLogger(HikariDataSourceBuilder.class);
+
         DataSource buildDataSource() {
             final HikariConfig hikariConfig = new HikariConfig();
 
@@ -156,6 +161,7 @@ public class DataSourceProvider implements Provider<DataSource> {
             if (initSQL != null && !initSQL.isEmpty()) {
                 hikariConfig.setConnectionInitSql(initSQL);
             }
+            hikariConfig.setInitializationFailFast(config.isInitializationFailFast());
 
             hikariConfig.setRegisterMbeans(true);
 
@@ -200,7 +206,13 @@ public class DataSourceProvider implements Provider<DataSource> {
                 }
             }
 
-            return new HikariDataSource(hikariConfig);
+            try {
+                return new HikariDataSource(hikariConfig);
+            } catch (final PoolInitializationException e) {
+                // When initializationFailFast=true, log the exception to alert the user (the Guice initialization sequence will continue though)
+                logger.error("Unable to initialize the database pool", e);
+                throw e;
+            }
         }
 
     }
