@@ -1,3 +1,7 @@
+0.20.12
+    jdbi: add new config property org.killbill.dao.initializationFailFast
+    Update to killbill-oss-parent 0.140.43
+
 0.20.11
     H2 support improvements
     queue: enhance shutdown sequence
