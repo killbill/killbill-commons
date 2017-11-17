@@ -1,5 +1,12 @@
-0.20.12
+0.21.0
     queue: Retry code logic
+
+0.20.13
+    jdbi: add new config property org.killbill.dao.initializationFailFast
+    Update to killbill-oss-parent 0.140.43
+
+0.20.12
+    DO NOT USE
 
 0.20.11
     H2 support improvements
