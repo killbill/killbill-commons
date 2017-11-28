@@ -16,14 +16,11 @@
 
 package org.killbill.commons.locker.zookeeper;
 
-import java.io.IOException;
 import java.sql.Connection;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import javax.sql.DataSource;
+
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
@@ -31,32 +28,13 @@ import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 public class ZooKeeperGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
-    final CountDownLatch connectedSignal = new CountDownLatch(1);
-    protected static final String zkPath = "/kb/locks/accounts/";
-
-    public ZooKeeperGlobalLocker() {
-        super(null, null, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    public ZooKeeperGlobalLocker(final DataSource dataSource, final String lockName, final long timeout, final TimeUnit timeUnit) {
+        super(dataSource, new ZooKeeperGlobalLockDao(lockName, timeout), timeout, timeUnit);
     }
 
     @Override
     protected GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb) {
-        try {
-            // TODO jgomez 1: use the same timeout value?
-            ZooKeeper zooKeeper = new ZooKeeper("connectString", Long.valueOf(timeout).intValue(), new Watcher() {
-                @Override
-                public void process(final WatchedEvent event) {
-                    if (event.getState() == Watcher.Event.KeeperState.SyncConnected) {
-                        connectedSignal.countDown();
-                    }
-                }
-            });
-            // TODO jgomez 2: what should be the Lock Name?
-            // TODO jgomez 3: where do I get the accountId from commons?
-            return new ZooKeeperGlobalLock("ZooKeeper Lock", zooKeeper, zkPath + "<account_id>");
-        } catch (IOException e) {
-            // TODO jgomez 4: handle errors and throw corresponding exceptions!
-            return null;
-        }
+        return new ZooKeeperGlobalLock(connection, lockName, globalLockDao, resetCb);
     }
 
     @Override
