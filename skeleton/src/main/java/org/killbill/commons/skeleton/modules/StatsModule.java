@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -19,6 +21,7 @@ package org.killbill.commons.skeleton.modules;
 import java.util.Set;
 
 import org.killbill.commons.skeleton.metrics.TimedResourceListener;
+import org.killbill.commons.skeleton.metrics.health.KillBillHealthCheckRegistry;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheck;
@@ -104,7 +107,7 @@ public class StatsModule extends AbstractModule {
      * @return HealthCheckRegistry instance to bind
      */
     protected HealthCheckRegistry createHealthCheckRegistry() {
-        return new HealthCheckRegistry();
+        return new KillBillHealthCheckRegistry();
     }
 
     /**
