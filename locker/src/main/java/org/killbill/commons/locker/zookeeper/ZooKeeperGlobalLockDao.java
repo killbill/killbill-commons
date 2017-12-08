@@ -16,6 +16,7 @@
 
 package org.killbill.commons.locker.zookeeper;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -37,34 +38,32 @@ public class ZooKeeperGlobalLockDao implements GlobalLockDao {
 
     private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperGlobalLockDao.class);
     private static final List<ACL> DEFAULT_ACL = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
-    // TODO jgomez: we can read this property from the external properties
     private static final String zkPath = "/kb/locks/accounts/";
 
     private final String name;
     private final String path;
-    private final WriteLock writeLock;
+    private final ZooKeeper zooKeeper;
     private final CountDownLatch lockAcquiredSignal = new CountDownLatch(1);
 
-    public ZooKeeperGlobalLockDao(final String lockName, final Long timeout) {
+    public ZooKeeperGlobalLockDao(final String lockName, final Long timeout, final TimeUnit timeUnit) throws IOException, InterruptedException {
         this.name = lockName;
         this.path = zkPath + lockName;
-        ZooKeeper zooKeeper = null;
-        try {
-            // TODO jgomez: what should we use as the connectString value? Using localhost by now
-            zooKeeper = new ZooKeeper("localhost", timeout.intValue(), new Watcher() {
-                @Override
-                public void process(final WatchedEvent event) {
-                    if (event.getState() == Event.KeeperState.SyncConnected) {
-                        lockAcquiredSignal.countDown();
-                    }
+        this.zooKeeper = initializeZooKeeper(timeout.intValue(), timeUnit);
+    }
+
+    private ZooKeeper initializeZooKeeper(final int timeout, final TimeUnit timeUnit) throws IOException, InterruptedException {
+        final CountDownLatch connectedSignal = new CountDownLatch(1);
+        // TODO: what should we use as the connectString value? Using localhost by now
+        ZooKeeper zooKeeper = new ZooKeeper("localhost", timeout, new Watcher() {
+            @Override
+            public void process(final WatchedEvent event) {
+                if (event.getState() == Event.KeeperState.SyncConnected) {
+                    connectedSignal.countDown();
                 }
-            });
-            lockAcquiredSignal.await();
-        } catch (Exception e) {
-            // TODO jgomez catch and throw corresponding exceptions
-        }
-        this.writeLock = new WriteLock(zooKeeper, path, DEFAULT_ACL, new SyncLockListener());
+            }
+        });
+        connectedSignal.await(timeout, timeUnit);
+        return zooKeeper;
     }
 
     class SyncLockListener implements LockListener {
@@ -81,7 +80,8 @@ public class ZooKeeperGlobalLockDao implements GlobalLockDao {
     }
 
     @Override
-    public boolean lock(final Connection connection, final String lockName, final long timeout, final TimeUnit timeUnit) throws SQLException {
+    public boolean lock(final Connection connection, final String lockName, final long timeout, final TimeUnit timeUnit) {
+        WriteLock writeLock = new WriteLock(zooKeeper, path, DEFAULT_ACL, new SyncLockListener());
         try {
             LOG.debug("{} requesting lock on {}...", lockName, path);
             writeLock.lock();
@@ -94,14 +94,13 @@ public class ZooKeeperGlobalLockDao implements GlobalLockDao {
 
     @Override
     public boolean releaseLock(final Connection connection, final String lockName) throws SQLException {
-        // TODO jgomez: implement! Is this the unlock method?
-        writeLock.unlock();
+        // TODO jgomez: implement
         return false;
     }
 
     @Override
     public boolean isLockFree(final Connection connection, final String lockName) throws SQLException {
-        // TODO jgomez: implement! How to check this in the writeLock?
+        // TODO jgomez: implement
         return false;
     }
 }

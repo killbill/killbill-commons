@@ -16,6 +16,7 @@
 
 package org.killbill.commons.locker.zookeeper;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.util.concurrent.TimeUnit;
 
@@ -28,8 +29,8 @@ import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 public class ZooKeeperGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
-    public ZooKeeperGlobalLocker(final DataSource dataSource, final String lockName, final long timeout, final TimeUnit timeUnit) {
-        super(dataSource, new ZooKeeperGlobalLockDao(lockName, timeout), timeout, timeUnit);
+    public ZooKeeperGlobalLocker(final DataSource dataSource, final String lockName, final long timeout, final TimeUnit timeUnit) throws IOException, InterruptedException {
+        super(dataSource, new ZooKeeperGlobalLockDao(lockName, timeout, timeUnit), timeout, timeUnit);
     }
 
     @Override
