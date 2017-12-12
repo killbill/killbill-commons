@@ -172,6 +172,10 @@ public class MockNotificationQueue implements NotificationQueue {
         return result;
     }
 
+    @Override
+    public long getNbReadyEntries(final DateTime maxEffectiveDate) {
+        return 0;
+    }
 
     @Override
     public void removeNotification(final Long recordId) {

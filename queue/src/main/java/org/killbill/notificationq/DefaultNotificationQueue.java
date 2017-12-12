@@ -269,6 +269,11 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    public long getNbReadyEntries(final DateTime maxCreatedDate) {
+        return dao.getNbReadyEntries(maxCreatedDate.toDate());
+    }
+
+    @Override
     public void removeNotification(final Long recordId) {
         final NotificationEventModelDao existing = dao.getSqlDao().getByRecordId(recordId, config.getTableName());
         final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);

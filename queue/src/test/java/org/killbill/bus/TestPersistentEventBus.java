@@ -78,5 +78,6 @@ public class TestPersistentEventBus extends TestSetup {
 
     private void assertNoInProcessingEvent() {
         Assert.assertEquals(Iterables.<BusEventWithMetadata>size(busService.getInProcessingBusEvents()), 0);
+        Assert.assertEquals(busService.getNbReadyEntries(clock.getUTCNow()), 0);
     }
 }

@@ -308,6 +308,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         return getHistoricalBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), minCreatedDate, null, searchKey2);
     }
 
+    @Override
+    public long getNbReadyEntries(final DateTime maxCreatedDate) {
+        return dao.getNbReadyEntries(maxCreatedDate.toDate());
+    }
+
     public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
         final Timer.Context dispatchTimerContext = dispatchTimer.time();
         try {

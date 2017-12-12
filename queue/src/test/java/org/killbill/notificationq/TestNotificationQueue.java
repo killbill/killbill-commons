@@ -218,6 +218,7 @@ public class TestNotificationQueue extends TestSetup {
         });
 
         Assert.assertEquals(Iterables.<NotificationEventWithMetadata<TestNotificationKey>>size(queue.getInProcessingNotifications()), 0);
+        Assert.assertEquals(queue.getNbReadyEntries(readyTime), 4);
 
         final List<NotificationEventWithMetadata> futuresAll = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2));
         Assert.assertEquals(futuresAll.size(), 2);
@@ -262,6 +263,8 @@ public class TestNotificationQueue extends TestSetup {
                            }
                        }
                 );
+        Assert.assertEquals(queue.getNbReadyEntries(readyTime), 0);
+
         queue.stopQueue();
     }
 

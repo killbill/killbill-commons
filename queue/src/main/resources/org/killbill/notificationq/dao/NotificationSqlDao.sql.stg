@@ -109,16 +109,3 @@ getHistoricalQueueEntriesForSearchKey2(historyTableName) ::= <<
       <readyOrderByClause()>
 ;
 >>
-
-/** Notifications specific queries **/
-getCountReadyEntries(tableName) ::= <<
-    select
-     count(*)
-    from <tableName>
-    where
-      processing_state = 'AVAILABLE'
-      and effective_date \<= :now
-      and search_key1 = :searchKey1
-      and search_key2 = :searchKey2
-;
->>
