@@ -41,10 +41,10 @@ import org.testng.annotations.Test;
 import com.google.common.collect.Collections2;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-import static org.testng.AssertJUnit.assertFalse;
 
 public class TestNotificationSqlDao extends TestSetup {
 

@@ -118,6 +118,28 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    public void updateFutureNotificationFromTransaction(final Connection connection,
+                                                 final Long recordId,
+                                                 final NotificationEvent event,
+                                                 final Long searchKey1,
+                                                 final Long searchKey2) throws IOException {
+
+
+        final String eventJson = objectMapper.writeValueAsString(event);
+        final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, 0L);
+        final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
+            @Override
+            public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
+                ((NotificationSqlDao) dao.getSqlDao()).updateEntry(recordId, eventJson, searchKey1, searchKey2WithNull, config.getTableName());
+                return null;
+            }
+        };
+        InTransaction.execute(connection, handler, NotificationSqlDao.class);
+    }
+
+
+
+    @Override
     public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return getFutureNotificationsInternal((NotificationSqlDao) dao.getSqlDao(), null, searchKey1, searchKey2);
     }

@@ -80,6 +80,12 @@ public interface NotificationQueue extends QueueLifecycle {
                                   final Long searchKey1,
                                   final Long searchKey2) throws IOException;
 
+    void updateFutureNotificationFromTransaction(final Connection connection,
+                                                 final Long recordId,
+                                                 final NotificationEvent eventJson,
+                                                 final Long searchKey1,
+                                                 final Long searchKey2) throws IOException;
+
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
      *

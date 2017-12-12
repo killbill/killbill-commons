@@ -106,6 +106,11 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    public void updateFutureNotificationFromTransaction(final Connection connection, final Long recordId, final NotificationEvent eventJson, final Long searchKey1, final Long searchKey2) throws IOException {
+        return;
+    }
+
+    @Override
     public <T extends NotificationEvent> List<NotificationEventWithMetadata<T>> getFutureNotificationForSearchKeys(final Long searchKey1, final Long searchKey2) {
         return null;
     }
