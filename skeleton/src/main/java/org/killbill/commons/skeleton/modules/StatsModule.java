@@ -86,19 +86,8 @@ public class StatsModule extends AbstractModule {
         final TimedResourceListener timedResourceTypeListener =
                 new TimedResourceListener(getProvider(GuiceContainer.class), getProvider(MetricRegistry.class));
         bindListener(Matchers.any(), timedResourceTypeListener);
-    }
 
-    @Provides
-    @Singleton
-    protected HealthCheckRegistry provideHealthCheckRegistry(final Set<HealthCheck> healthChecks) {
-        final HealthCheckRegistry healthCheckRegistry = createHealthCheckRegistry();
-
-        // It used to be done by AdminServletProvider. JavaDoc of AdminServletModule outdated?
-        for (final HealthCheck healthCheck : healthChecks) {
-            healthCheckRegistry.register(healthCheck.getClass().getName(), healthCheck);
-        }
-
-        return healthCheckRegistry;
+        bind(HealthCheckRegistry.class).toInstance(createHealthCheckRegistry());
     }
 
     /**
