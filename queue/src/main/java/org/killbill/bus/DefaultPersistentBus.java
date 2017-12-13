@@ -78,6 +78,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     private final Dispatcher<BusEventModelDao> dispatcher;
     private final AtomicBoolean isStarted;
+    private final String dbBackedQId;
 
     private static final class EventBusDelegate extends EventBusThatThrowsException {
         public EventBusDelegate(final String busName) {
@@ -91,7 +92,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
         this.config = config;
-        final String dbBackedQId = "bus-" + config.getTableName();
+        this.dbBackedQId = "bus-" + config.getTableName();
         this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
         this.prof = new Profiling<Iterable<BusEventModelDao>, RuntimeException>();
         final ThreadFactory busThreadFactory = new ThreadFactory() {
@@ -311,6 +312,14 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Override
     public long getNbReadyEntries(final DateTime maxCreatedDate) {
         return dao.getNbReadyEntries(maxCreatedDate.toDate());
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("DefaultPersistentBus{");
+        sb.append("dbBackedQId='").append(dbBackedQId).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 
     public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {

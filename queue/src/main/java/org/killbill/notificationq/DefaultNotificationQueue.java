@@ -336,4 +336,13 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public boolean isStarted() {
         return isStarted;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("DefaultNotificationQueue{");
+        sb.append("svcName='").append(svcName).append('\'');
+        sb.append(", queueName='").append(queueName).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }
