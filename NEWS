@@ -1,4 +1,5 @@
 0.21.0
+    Initial release against work-for-release-0.19.x -- mostly getting latest code from master
     queue: Retry code logic
 
 0.20.14
