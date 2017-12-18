@@ -26,6 +26,7 @@ import org.killbill.commons.jdbi.template.KillBillSqlDaoStringTemplate;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
+import org.skife.jdbi.v2.sqlobject.SqlUpdate;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 
 @KillBillSqlDaoStringTemplate
@@ -72,4 +73,11 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
                                                                                @Bind("minEffectiveDate") final DateTime minEffectiveDate,
                                                                                @Bind("searchKey2") final Long searchKey2,
                                                                                @Define("historyTableName") final String historyTableName);
+
+    @SqlUpdate
+    void updateEntry(@Bind("recordId") Long id,
+                     @Bind("eventJson") String eventJson,
+                     @Bind("searchKey1") final Long searchKey1,
+                     @Bind("searchKey2") final Long searchKey2,
+                     @Define("tableName") final String tableName);
 }

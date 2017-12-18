@@ -20,6 +20,7 @@ package org.killbill.notificationq.dao;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,8 +41,10 @@ import org.testng.annotations.Test;
 import com.google.common.collect.Collections2;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 public class TestNotificationSqlDao extends TestSetup {
 
@@ -166,6 +169,37 @@ public class TestNotificationSqlDao extends TestSetup {
             final NotificationEventModelDao result = dao.getByRecordId(entry, notificationQueueConfig.getHistoryTableName());
             assertNotNull(result);
         }
+    }
+
+    @Test(groups = "slow")
+    public void testUpdateEvent() throws InterruptedException {
+        final long searchKey1 = 14542L;
+
+        final String eventJsonInitial = "Initial value";
+        final DateTime effDt = new DateTime();
+
+        final NotificationEventModelDao notif = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJsonInitial.getClass().getName(),
+                                                                              eventJsonInitial, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                                                                              UUID.randomUUID(), effDt, "testUpdateEvent");
+
+        dao.insertEntry(notif, notificationQueueConfig.getTableName());
+
+        Iterator<NotificationEventModelDao> notifications = dao.getReadyOrInProcessingQueueEntriesForSearchKeys(notif.getQueueName(), searchKey1, SEARCH_KEY_2, notificationQueueConfig.getTableName());
+        assertTrue(notifications.hasNext());
+
+        final NotificationEventModelDao notification = notifications.next();
+        assertEquals(notification.getEventJson(), eventJsonInitial);
+        assertFalse(notifications.hasNext());
+
+        final String eventJsonUpdated = "Updated value";
+        dao.updateEntry(notification.getRecordId(), eventJsonUpdated, searchKey1, SEARCH_KEY_2, notificationQueueConfig.getTableName());
+
+        notifications = dao.getReadyOrInProcessingQueueEntriesForSearchKeys(notif.getQueueName(), searchKey1, SEARCH_KEY_2, notificationQueueConfig.getTableName());
+        assertTrue(notifications.hasNext());
+
+        final NotificationEventModelDao updatedNotification = notifications.next();
+        assertEquals(updatedNotification.getEventJson(), eventJsonUpdated);
+        assertFalse(notifications.hasNext());
 
     }
 

@@ -109,3 +109,13 @@ getHistoricalQueueEntriesForSearchKey2(historyTableName) ::= <<
       <readyOrderByClause()>
 ;
 >>
+
+updateEntry(tableName) ::= <<
+    update <tableName>
+    set event_json = :eventJson
+    where
+    record_id = :recordId
+    and search_key1 = :searchKey1
+    and search_key2 = :searchKey2
+;
+>>

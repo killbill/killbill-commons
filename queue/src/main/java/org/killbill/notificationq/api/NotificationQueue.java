@@ -26,6 +26,7 @@ import org.joda.time.DateTime;
 import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import org.killbill.queue.api.QueueLifecycle;
 
+
 /**
  * A NotificationQueue offers a persistent queue with a set of API to record future notifications along with their callbacks.
  *
@@ -72,6 +73,18 @@ public interface NotificationQueue extends QueueLifecycle {
                                                  final Long searchKey1,
                                                  final Long searchKey2)
             throws IOException;
+
+
+    void updateFutureNotification(final Long recordId,
+                                  final NotificationEvent eventJson,
+                                  final Long searchKey1,
+                                  final Long searchKey2) throws IOException;
+
+    void updateFutureNotificationFromTransaction(final Connection connection,
+                                                 final Long recordId,
+                                                 final NotificationEvent eventJson,
+                                                 final Long searchKey1,
+                                                 final Long searchKey2) throws IOException;
 
     /**
      * Retrieve all future notifications associated with that queue and matching that search key
