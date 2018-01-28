@@ -5,6 +5,9 @@
     Initial release against work-for-release-0.19.x -- mostly getting latest code from master
     queue: Retry code logic
 
+0.20.15
+    Update to killbill-oss-parent 0.140.47
+
 0.20.14
     Add missing api NotificationQueue#updateFutureNotificationFromTransaction to update json event
 
