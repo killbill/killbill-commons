@@ -52,6 +52,11 @@ public interface DaoConfig {
     @Default("100")
     int getMaxActive();
 
+    @Description("Amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak")
+    @Config("org.killbill.dao.leakDetectionThreshold")
+    @Default("60")
+    long getLeakDetectionThreshold();
+
     @Description("How long to wait before a connection attempt to the database is considered timed out")
     @Config("org.killbill.dao.connectionTimeout")
     @Default("10s")

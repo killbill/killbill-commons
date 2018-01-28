@@ -1,9 +1,15 @@
+0.21.2
+    Configure HikariCP leak detection
+
 0.21.1
     Add new apis to update notifications
 
 0.21.0
     Initial release against work-for-release-0.19.x -- mostly getting latest code from master
     queue: Retry code logic
+
+0.20.16
+    Configure HikariCP leak detection
 
 0.20.15
     Update to killbill-oss-parent 0.140.47
