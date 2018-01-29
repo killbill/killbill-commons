@@ -150,7 +150,7 @@ public class DataSourceProvider implements Provider<DataSource> {
             hikariConfig.setUsername(config.getUsername());
             hikariConfig.setPassword(config.getPassword());
             hikariConfig.setMaximumPoolSize(config.getMaxActive());
-            hikariConfig.setLeakDetectionThreshold(config.getLeakDetectionThreshold());
+            hikariConfig.setLeakDetectionThreshold(config.getLeakDetectionThreshold().getMillis());
             hikariConfig.setMinimumIdle(config.getMinIdle());
             hikariConfig.setConnectionTimeout(toMilliSeconds(config.getConnectionTimeout()));
             hikariConfig.setIdleTimeout(toMilliSeconds(config.getIdleMaxAge()));
