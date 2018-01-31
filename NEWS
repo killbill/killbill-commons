@@ -1,3 +1,6 @@
+0.21.3
+    change org.killbill.dao.leakDetectionThreshold to TimeSpan
+
 0.21.2
     Configure HikariCP leak detection
 
