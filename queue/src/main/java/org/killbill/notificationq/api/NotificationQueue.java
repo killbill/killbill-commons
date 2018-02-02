@@ -186,6 +186,14 @@ public interface NotificationQueue extends QueueLifecycle {
     <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getHistoricalNotificationForSearchKey2(final DateTime minEffectiveDate, final Long searchKey2);
 
     /**
+     * Count the number of notifications ready to be processed
+     *
+     * @param maxEffectiveDate effective_date cutoff (typically now())
+     * @return the number of ready entries
+     */
+    long getNbReadyEntries(final DateTime maxEffectiveDate);
+
+    /**
      * Move the notification to history table and mark it as 'removed'
      *
      * @param recordId the recordId
