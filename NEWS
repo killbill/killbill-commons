@@ -1,5 +1,9 @@
+0.21.4
+    queues: expose getNbReadyEntries API
+    Update to killbill-oss-parent 0.141.27
+
 0.21.3
-    change org.killbill.dao.leakDetectionThreshold to TimeSpan
+    Change org.killbill.dao.leakDetectionThreshold to TimeSpan
 
 0.21.2
     Configure HikariCP leak detection
