@@ -97,7 +97,7 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - build:
+      - build
       - test-h2:
           requires:
             - build
