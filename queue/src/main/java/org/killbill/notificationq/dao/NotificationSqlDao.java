@@ -18,7 +18,6 @@
 
 package org.killbill.notificationq.dao;
 
-import java.util.Date;
 import java.util.Iterator;
 
 import org.joda.time.DateTime;
@@ -61,7 +60,6 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
                                                                                         @Bind("searchKey2") final Long searchKey2,
                                                                                         @Define("tableName") final String tableName);
 
-
     @SqlQuery
     @SmartFetchSize(shouldStream = true)
     Iterator<NotificationEventModelDao> getHistoricalQueueEntriesForSearchKeys(@Bind("queueName") String queueName,
@@ -76,18 +74,10 @@ public interface NotificationSqlDao extends QueueSqlDao<NotificationEventModelDa
                                                                                @Bind("searchKey2") final Long searchKey2,
                                                                                @Define("historyTableName") final String historyTableName);
 
-
     @SqlUpdate
     void updateEntry(@Bind("recordId") Long id,
                      @Bind("eventJson") String eventJson,
                      @Bind("searchKey1") final Long searchKey1,
                      @Bind("searchKey2") final Long searchKey2,
                      @Define("tableName") final String tableName);
-
-
-    @SqlQuery
-    int getCountReadyEntries(@Bind("searchKey1") final Long searchKey1,
-                             @Bind("searchKey2") final Long searchKey2,
-                             @Bind("now") Date now,
-                             @Define("tableName") final String tableName);
 }

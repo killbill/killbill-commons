@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
-// Forked from https://github.com/airlift/testing-postgresql-server (as of 0c18d5aa4e67114d5a3f4eb66e899c2397374157)
+// Forked from https://github.com/airlift/testing-postgresql-server (as of 9.6.3-3)
 // Added Java 6 support and ability to configure the port
 class KillBillTestingPostgreSqlServer implements Closeable {
 
@@ -66,7 +66,7 @@ class KillBillTestingPostgreSqlServer implements Closeable {
             Statement statement = null;
             try {
                 statement = connection.createStatement();
-                execute(statement, format("CREATE ROLE %s WITH LOGIN", user));
+                execute(statement, format("CREATE ROLE %s WITH LOGIN SUPERUSER", user));
                 execute(statement, format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", database, user));
             } finally {
                 if (statement != null) {

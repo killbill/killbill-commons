@@ -521,13 +521,15 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         return entries;
     }
 
-
     private long getNbReadyEntries() {
         final Date now = clock.getUTCNow().toDate();
-        final String owner = CreatorName.get();
-        return sqlDao.getNbReadyEntries(now, owner, config.getTableName());
+        return getNbReadyEntries(now);
     }
 
+    public long getNbReadyEntries(final Date now) {
+        final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
+        return sqlDao.getNbReadyEntries(now, owner, config.getTableName());
+    }
 
     private List<T> claimEntries(final List<T> candidates) {
         switch (config.getPersistentQueueMode()) {
