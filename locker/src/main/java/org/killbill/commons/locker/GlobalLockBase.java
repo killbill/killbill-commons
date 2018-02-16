@@ -36,7 +36,7 @@ public class GlobalLockBase implements GlobalLock {
     private final Connection connection;
     private final String lockName;
     private final ResetReentrantLockCallback resetCallback;
-    private final Profiling<Void, SQLException> prof;
+    private final Profiling<Void, RuntimeException> prof;
 
 
     public GlobalLockBase(final Connection connection, final String lockName, final GlobalLockDao lockDao, final ResetReentrantLockCallback resetCallback) {
@@ -44,33 +44,32 @@ public class GlobalLockBase implements GlobalLock {
         this.connection = connection;
         this.lockName = lockName;
         this.resetCallback = resetCallback;
-        this.prof = new Profiling<Void, SQLException>();
+        this.prof = new Profiling<Void, RuntimeException>();
     }
 
     @Override
     public void release() {
-        try {
-            prof.executeWithProfiling(ProfilingFeatureType.GLOCK, "release", new WithProfilingCallback<Void, SQLException>() {
-                @Override
-                public Void execute() throws SQLException {
+        prof.executeWithProfiling(ProfilingFeatureType.GLOCK, "release", new WithProfilingCallback<Void, RuntimeException>() {
+            @Override
+            public Void execute() throws RuntimeException {
 
-                    if (resetCallback != null && !resetCallback.reset(lockName)) {
-                        // We are not the last one using that lock, bail early (AND don't close the connection)...
-                        return null;
-                    }
-                    lockDao.releaseLock(connection, lockName);
-
+                if (resetCallback != null && !resetCallback.reset(lockName)) {
+                    // We are not the last one using that lock, bail early (AND don't close the connection)...
                     return null;
                 }
-            });
-        } catch (final SQLException e) {
-            logger.warn("Unable to release lock for " + lockName, e);
-        } finally {
-            try {
-                connection.close();
-            } catch (final SQLException e) {
-                logger.warn("Unable to close connection", e);
+                try {
+                    lockDao.releaseLock(connection, lockName);
+                } catch (final SQLException e) {
+                    logger.warn("Unable to release lock for " + lockName, e);
+                } finally {
+                    try {
+                        connection.close();
+                    } catch (final SQLException e) {
+                        logger.warn("Unable to close connection", e);
+                    }
+                }
+                return null;
             }
-        }
+        });
     }
 }
