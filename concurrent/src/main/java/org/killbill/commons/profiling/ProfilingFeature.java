@@ -47,22 +47,12 @@ public class ProfilingFeature {
             }
             this.mask = tmp;
         }
-
         public int getMask() {
             return mask;
         }
     }
 
-    private final ImmutableList<ProfilingFeatureType> featureTypeList = new ImmutableList.Builder<ProfilingFeatureType>()
-            .add(ProfilingFeatureType.JAXRS)
-            .add(ProfilingFeatureType.API)
-            /* DAO_DETAILS needs to come before DAO for regex to work, this is a bit naughty... */
-            .add(ProfilingFeatureType.DAO_DETAILS)
-            .add(ProfilingFeatureType.DAO)
-            .add(ProfilingFeatureType.PLUGIN)
-            .build();
-
-    private final Pattern featurePattern = Pattern.compile("\\s*,?\\s*(" + Joiner.on("|").join(featureTypeList) + ")");
+    private final Pattern featurePattern = Pattern.compile("\\s*,?\\s*((?:[A-Z])+(?:_)?+(?:[A-Z])*)");
 
     private final int profilingBits;
 
@@ -79,8 +69,12 @@ public class ProfilingFeature {
         final Matcher matcher = featurePattern.matcher(features);
         while (matcher.find()) {
             final String cur = matcher.group(1);
-            final ProfilingFeatureType featureType = ProfilingFeatureType.valueOf(cur);
-            tmp |= featureType.getMask();
+            try {
+                final ProfilingFeatureType featureType = ProfilingFeatureType.valueOf(cur);
+                tmp |= featureType.getMask();
+            } catch (final IllegalArgumentException e) {
+                // Ignore bad entry like 'FOO'
+            }
         }
         this.profilingBits = tmp;
     }
