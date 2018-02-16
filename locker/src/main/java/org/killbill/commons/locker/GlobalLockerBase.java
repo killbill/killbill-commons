@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.killbill.commons.locker.ReentrantLock.TryAcquireLockState;
+import org.killbill.commons.profiling.Profiling;
+import org.killbill.commons.profiling.Profiling.WithProfilingCallback;
+import org.killbill.commons.profiling.ProfilingFeature.ProfilingFeatureType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +42,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
     protected final ReentrantLock lockTable;
 
     private final DataSource dataSource;
+    private final Profiling<GlobalLock, LockFailedException> prof;
 
     public GlobalLockerBase(final DataSource dataSource, final GlobalLockDao globalLockDao, final long timeout, final TimeUnit timeUnit) {
         this.dataSource = dataSource;
@@ -46,24 +50,31 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         this.timeUnit = timeUnit;
         this.globalLockDao = globalLockDao;
         this.lockTable = new ReentrantLock();
+        this.prof = new Profiling<GlobalLock, LockFailedException>();
     }
 
     @Override
     public GlobalLock lockWithNumberOfTries(final String service, final String lockKey, final int retry) throws LockFailedException {
-        final String lockName = getLockName(service, lockKey);
-        int tries_left = retry;
-        while (tries_left-- > 0) {
-            final GlobalLock lock = lock(lockName);
-            if (lock != null) {
-                return lock;
-            }
-            if (tries_left > 0) {
-                sleep();
-            }
-        }
 
-        logger.warn(String.format("Failed to acquire lock %s for service %s after %s retries", lockKey, service, retry));
-        throw new LockFailedException();
+         return prof.executeWithProfiling(ProfilingFeatureType.GLOCK, "lock", new WithProfilingCallback<GlobalLock, LockFailedException>() {
+            @Override
+            public GlobalLock execute() throws LockFailedException {
+                final String lockName = getLockName(service, lockKey);
+                int tries_left = retry;
+                while (tries_left-- > 0) {
+                    final GlobalLock lock = lock(lockName);
+                    if (lock != null) {
+                        return lock;
+                    }
+                    if (tries_left > 0) {
+                        sleep();
+                    }
+                }
+
+                logger.warn(String.format("Failed to acquire lock %s for service %s after %s retries", lockKey, service, retry));
+                throw new LockFailedException();
+            }
+        });
     }
 
     @Override

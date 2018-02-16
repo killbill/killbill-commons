@@ -29,13 +29,17 @@ public class ProfilingFeature {
     private static final int API_MASK = 0x2;
     private static final int DAO_MASK = 0x4;
     private static final int DAO_DETAILS_MASK = 0x8;
-    private static final int PLUGIN_MASK = 0x10;
+    private static final int GLOCK_MASK = 0x10;
+    private static final int PLUGIN_MASK = 0x20;
+    private static final int DAO_CONNECTION_MASK = 0x40;
 
     public enum ProfilingFeatureType {
         JAXRS(JAXRS_MASK),
         API(API_MASK),
         DAO(DAO_MASK),
         DAO_DETAILS(DAO_MASK, DAO_DETAILS_MASK),
+        DAO_CONNECTION(DAO_CONNECTION_MASK),
+        GLOCK(GLOCK_MASK),
         PLUGIN(PLUGIN_MASK);
 
         private final int mask;
@@ -102,4 +106,13 @@ public class ProfilingFeature {
     public boolean isProfilingPlugin() {
         return isDefined(ProfilingFeatureType.PLUGIN);
     }
+
+    public boolean isProfilingGlock() {
+        return isDefined(ProfilingFeatureType.GLOCK);
+    }
+
+    public boolean isProfilingDaoConnection() {
+        return isDefined(ProfilingFeatureType.DAO_CONNECTION);
+    }
+
 }

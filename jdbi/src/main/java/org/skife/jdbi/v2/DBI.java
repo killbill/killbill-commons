@@ -15,6 +15,9 @@
  */
 package org.skife.jdbi.v2;
 
+import org.killbill.commons.profiling.Profiling;
+import org.killbill.commons.profiling.Profiling.WithProfilingCallback;
+import org.killbill.commons.profiling.ProfilingFeature.ProfilingFeatureType;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.skife.jdbi.v2.exceptions.UnableToObtainConnectionException;
 import org.skife.jdbi.v2.logging.NoOpLog;
@@ -61,6 +64,9 @@ public class DBI implements IDBI
     private AtomicReference<SQLLog> log = new AtomicReference<SQLLog>(new NoOpLog());
     private AtomicReference<TimingCollector> timingCollector = new AtomicReference<TimingCollector>(TimingCollector.NOP_TIMING_COLLECTOR);
 
+
+    private final Profiling<Connection, SQLException> prof;
+
     /**
      * Constructor for use with a DataSource which will provide
      *
@@ -84,6 +90,7 @@ public class DBI implements IDBI
     {
         assert connectionFactory != null;
         this.connectionFactory = connectionFactory;
+        this.prof = new Profiling<Connection, SQLException>();
     }
 
     /**
@@ -207,7 +214,14 @@ public class DBI implements IDBI
     {
         try {
             final long start = System.nanoTime();
-            Connection conn = connectionFactory.openConnection();
+
+            Connection conn = prof.executeWithProfiling(ProfilingFeatureType.DAO_CONNECTION, "get", new WithProfilingCallback<Connection, SQLException>() {
+                @Override
+                public Connection execute() throws SQLException {
+                    return connectionFactory.openConnection();
+                }
+            });
+
             final long stop = System.nanoTime();
             StatementBuilder cache = statementBuilderFactory.get().createStatementBuilder(conn);
             Handle h = new BasicHandle(transactionhandler.get(),

@@ -17,11 +17,14 @@
 
 package org.killbill.commons.locker;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import org.killbill.commons.profiling.Profiling;
+import org.killbill.commons.profiling.Profiling.WithProfilingCallback;
+import org.killbill.commons.profiling.ProfilingFeature.ProfilingFeatureType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GlobalLockBase implements GlobalLock {
 
@@ -33,6 +36,7 @@ public class GlobalLockBase implements GlobalLock {
     private final Connection connection;
     private final String lockName;
     private final ResetReentrantLockCallback resetCallback;
+    private final Profiling<Void, SQLException> prof;
 
 
     public GlobalLockBase(final Connection connection, final String lockName, final GlobalLockDao lockDao, final ResetReentrantLockCallback resetCallback) {
@@ -40,17 +44,25 @@ public class GlobalLockBase implements GlobalLock {
         this.connection = connection;
         this.lockName = lockName;
         this.resetCallback = resetCallback;
+        this.prof = new Profiling<Void, SQLException>();
     }
 
     @Override
     public void release() {
-        if (resetCallback != null && !resetCallback.reset(lockName)) {
-            // We are not the last one using that lock, bail early (AND don't close the connection)...
-            return;
-        }
-
         try {
-            lockDao.releaseLock(connection, lockName);
+            prof.executeWithProfiling(ProfilingFeatureType.GLOCK, "release", new WithProfilingCallback<Void, SQLException>() {
+                @Override
+                public Void execute() throws SQLException {
+
+                    if (resetCallback != null && !resetCallback.reset(lockName)) {
+                        // We are not the last one using that lock, bail early (AND don't close the connection)...
+                        return null;
+                    }
+                    lockDao.releaseLock(connection, lockName);
+
+                    return null;
+                }
+            });
         } catch (final SQLException e) {
             logger.warn("Unable to release lock for " + lockName, e);
         } finally {
