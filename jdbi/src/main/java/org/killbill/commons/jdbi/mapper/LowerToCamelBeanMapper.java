@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2012 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -47,6 +49,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
 
     private final Class<T> type;
     private final Map<String, PropertyDescriptor> properties = new HashMap<String, PropertyDescriptor>();
+    private final Map<String, PropertyMapper> propertiesMappers = new HashMap<String, PropertyMapper>();
 
     public LowerToCamelBeanMapper(final Class<T> type) {
         this.type = type;
@@ -54,10 +57,179 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
             final BeanInfo info = Introspector.getBeanInfo(type);
 
             for (final PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
-                properties.put(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, descriptor.getName()).toLowerCase(), descriptor);
+                final String key = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, descriptor.getName()).toLowerCase();
+                properties.put(key, descriptor);
+
+                final PropertyMapper propertyMapper;
+                final Class<?> propertyType = descriptor.getPropertyType();
+                if (propertyType.isAssignableFrom(Boolean.class) || propertyType.isAssignableFrom(boolean.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Boolean>() {
+
+                        @Override
+                        public Boolean apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getBoolean(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Byte.class) || propertyType.isAssignableFrom(byte.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Byte>() {
+
+                        @Override
+                        public Byte apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getByte(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Short.class) || propertyType.isAssignableFrom(short.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Short>() {
+
+                        @Override
+                        public Short apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getShort(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Integer.class) || propertyType.isAssignableFrom(int.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Integer>() {
+
+                        @Override
+                        public Integer apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getInt(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Long.class) || propertyType.isAssignableFrom(long.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Long>() {
+
+                        @Override
+                        public Long apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getLong(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Float.class) || propertyType.isAssignableFrom(float.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Float>() {
+
+                        @Override
+                        public Float apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getFloat(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Double.class) || propertyType.isAssignableFrom(double.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Double>() {
+
+                        @Override
+                        public Double apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getDouble(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(BigDecimal.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, BigDecimal>() {
+
+                        @Override
+                        public BigDecimal apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getBigDecimal(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(DateTime.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, DateTime>() {
+
+                        @Override
+                        public DateTime apply(final ResultSet rs, final int i) throws SQLException {
+                            final Timestamp timestamp = rs.getTimestamp(i);
+                            return timestamp == null ? null : new DateTime(timestamp).toDateTime(DateTimeZone.UTC);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(Time.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, Time>() {
+
+                        @Override
+                        public Time apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getTime(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(LocalDate.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, LocalDate>() {
+
+                        @Override
+                        public LocalDate apply(final ResultSet rs, final int i) throws SQLException {
+                            //
+                            // We store the LocalDate into a mysql 'date' as a string
+                            // (See https://github.com/killbill/killbill-commons/blob/master/jdbi/src/main/java/org/killbill/commons/jdbi/argument/LocalDateArgumentFactory.java)
+                            // So we also read it as a String which avoids any kind of transformation
+                            //
+                            // Note that we used previously the getDate(index, Calendar) method, but this is not thread safe as we discovered
+                            // unless maybe -- untested --we pass a new instance of a Calendar each time
+                            //
+                            final String dateString = rs.getString(i);
+                            return dateString == null ? null : new LocalDate(dateString, DateTimeZone.UTC);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(DateTimeZone.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, DateTimeZone>() {
+
+                        @Override
+                        public DateTimeZone apply(final ResultSet rs, final int i) throws SQLException {
+                            final String dateTimeZoneString = rs.getString(i);
+                            return dateTimeZoneString == null ? null : DateTimeZone.forID(dateTimeZoneString);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(String.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, String>() {
+
+                        @Override
+                        public String apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getString(i);
+                        }
+                    };
+                } else if (propertyType.isAssignableFrom(UUID.class)) {
+                    propertyMapper = new PropertyMapper<ResultSet, UUID>() {
+
+                        @Override
+                        public UUID apply(final ResultSet rs, final int i) throws SQLException {
+                            final String uuidString = rs.getString(i);
+                            return uuidString == null ? null : UUID.fromString(uuidString);
+                        }
+                    };
+                } else if (propertyType.isEnum()) {
+                    propertyMapper = new PropertyMapper<ResultSet, Enum>() {
+
+                        @Override
+                        public Enum apply(final ResultSet rs, final int i) throws SQLException {
+                            final String enumString = rs.getString(i);
+                            return enumString == null ? null : Enum.valueOf((Class<Enum>) propertyType, enumString);
+                        }
+                    };
+                } else if (propertyType == byte[].class) {
+                    propertyMapper = new PropertyMapper<ResultSet, byte[]>() {
+
+                        @Override
+                        public byte[] apply(final ResultSet rs, final int i) throws SQLException {
+                            return rs.getBytes(i);
+                        }
+                    };
+                } else {
+                    propertyMapper = new PropertyMapper<ResultSet, Time>() {
+
+                        @Override
+                        public Time apply(final ResultSet rs, final int i) throws SQLException {
+                            return (Time) rs.getObject(i);
+                        }
+                    };
+                }
+                propertiesMappers.put(key, propertyMapper);
             }
         } catch (final IntrospectionException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    private static Field getField(final Class clazz, final String fieldName) throws NoSuchFieldException {
+        try {
+            return clazz.getDeclaredField(fieldName);
+        } catch (final NoSuchFieldException e) {
+            // Go up in the hierarchy
+            final Class superClass = clazz.getSuperclass();
+            if (superClass == null) {
+                throw e;
+            } else {
+                return getField(superClass, fieldName);
+            }
         }
     }
 
@@ -78,61 +250,9 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         for (int i = 1; i <= metadata.getColumnCount(); ++i) {
             final String name = metadata.getColumnLabel(i).toLowerCase();
 
-            final PropertyDescriptor descriptor = properties.get(name);
-
-            if (descriptor != null) {
-                final Class<?> type = descriptor.getPropertyType();
-
-                Object value;
-
-                if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
-                    value = rs.getBoolean(i);
-                } else if (type.isAssignableFrom(Byte.class) || type.isAssignableFrom(byte.class)) {
-                    value = rs.getByte(i);
-                } else if (type.isAssignableFrom(Short.class) || type.isAssignableFrom(short.class)) {
-                    value = rs.getShort(i);
-                } else if (type.isAssignableFrom(Integer.class) || type.isAssignableFrom(int.class)) {
-                    value = rs.getInt(i);
-                } else if (type.isAssignableFrom(Long.class) || type.isAssignableFrom(long.class)) {
-                    value = rs.getLong(i);
-                } else if (type.isAssignableFrom(Float.class) || type.isAssignableFrom(float.class)) {
-                    value = rs.getFloat(i);
-                } else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
-                    value = rs.getDouble(i);
-                } else if (type.isAssignableFrom(BigDecimal.class)) {
-                    value = rs.getBigDecimal(i);
-                } else if (type.isAssignableFrom(DateTime.class)) {
-                    final Timestamp timestamp = rs.getTimestamp(i);
-                    value = timestamp == null ? null : new DateTime(timestamp).toDateTime(DateTimeZone.UTC);
-                } else if (type.isAssignableFrom(Time.class)) {
-                    value = rs.getTime(i);
-                } else if (type.isAssignableFrom(LocalDate.class)) {
-                    //
-                    // We store the LocalDate into a mysql 'date' as a string
-                    // (See https://github.com/killbill/killbill-commons/blob/master/jdbi/src/main/java/org/killbill/commons/jdbi/argument/LocalDateArgumentFactory.java)
-                    // So we also read it as a String which avoids any kind of transformation
-                    //
-                    // Note that we used previously the getDate(index, Calendar) method, but this is not thread safe as we discovered
-                    // unless maybe -- untested --we pass a new instance of a Calendar each time
-                    //
-                    final String dateString = rs.getString(i);
-                    value = dateString == null ? null : new LocalDate(dateString, DateTimeZone.UTC);
-                } else if (type.isAssignableFrom(DateTimeZone.class)) {
-                    final String dateTimeZoneString = rs.getString(i);
-                    value = dateTimeZoneString == null ? null : DateTimeZone.forID(dateTimeZoneString);
-                } else if (type.isAssignableFrom(String.class)) {
-                    value = rs.getString(i);
-                } else if (type.isAssignableFrom(UUID.class)) {
-                    final String uuidString = rs.getString(i);
-                    value = uuidString == null ? null : UUID.fromString(uuidString);
-                } else if (type.isEnum()) {
-                    final String enumString = rs.getString(i);
-                    value = enumString == null ? null : Enum.valueOf((Class<Enum>) type, enumString);
-                } else if (type == byte[].class) {
-                    value = rs.getBytes(i);
-                } else {
-                    value = rs.getObject(i);
-                }
+            final PropertyMapper propertyMapper = propertiesMappers.get(name);
+            if (propertyMapper != null) {
+                Object value = propertyMapper.apply(rs, i);
 
                 // For h2, transform a JdbcBlob into a byte[]
                 if (value instanceof Blob) {
@@ -144,6 +264,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                 }
 
                 try {
+                    final PropertyDescriptor descriptor = properties.get(name);
                     final Method writeMethod = descriptor.getWriteMethod();
                     if (writeMethod != null) {
                         writeMethod.invoke(bean, value);
@@ -172,17 +293,8 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         return bean;
     }
 
-    private static Field getField(final Class clazz, final String fieldName) throws NoSuchFieldException {
-        try {
-            return clazz.getDeclaredField(fieldName);
-        } catch (final NoSuchFieldException e) {
-            // Go up in the hierarchy
-            final Class superClass = clazz.getSuperclass();
-            if (superClass == null) {
-                throw e;
-            } else {
-                return getField(superClass, fieldName);
-            }
-        }
+    protected interface PropertyMapper<ResultSet, T> {
+
+        T apply(ResultSet rs, int i) throws SQLException;
     }
 }
