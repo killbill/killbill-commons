@@ -1,3 +1,7 @@
+0.21.6
+    jdbi: optimize LowerToCamelBeanMapper
+    Update to killbill-oss-parent 0.141.34
+
 0.21.5
     Add additional profiling flags for global locker and database connection.
 
