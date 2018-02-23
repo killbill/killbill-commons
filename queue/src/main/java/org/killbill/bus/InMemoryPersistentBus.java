@@ -194,4 +194,9 @@ public class InMemoryPersistentBus implements PersistentBus {
     public <T extends BusEvent> List<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(final DateTime minCreatedDate, final Long searchKey2) {
         throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
     }
+
+    @Override
+    public long getNbReadyEntries(final DateTime maxCreatedDate) {
+        throw new UnsupportedOperationException("Guava doesn't expose the events to dispatch");
+    }
 }

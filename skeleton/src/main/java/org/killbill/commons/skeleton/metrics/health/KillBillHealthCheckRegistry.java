@@ -19,18 +19,29 @@ package org.killbill.commons.skeleton.metrics.health;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheck.Result;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import com.google.inject.Inject;
 
 public class KillBillHealthCheckRegistry extends HealthCheckRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(KillBillHealthCheckRegistry.class);
+
+    // Lazily register the healthchecks to help Guice with circular dependencies
+    @Inject
+    public void initialize(final Set<HealthCheck> healthChecks) {
+        for (final HealthCheck healthCheck : healthChecks) {
+            register(healthCheck.getClass().getName(), healthCheck);
+        }
+    }
 
     @Override
     public Result runHealthCheck(final String name) throws NoSuchElementException {
