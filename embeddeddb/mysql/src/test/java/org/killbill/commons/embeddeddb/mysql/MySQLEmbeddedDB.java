@@ -72,7 +72,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     }
 
     @Override
-    public void start() throws IOException {
+    public void start() throws IOException, SQLException {
         if (started.get()) {
             throw new IOException("MySQL is already running: " + jdbcConnectionString);
         }
@@ -124,7 +124,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, port, dataDir, databaseName);
     }
 
-    protected void createDataSource() throws IOException {
+    protected void createDataSource() throws IOException, SQLException {
         if (useConnectionPooling()) {
             dataSource = createHikariDataSource();
         } else {
