@@ -34,6 +34,7 @@ import org.killbill.commons.jdbi.mapper.UUIDMapper;
 import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.tweak.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +44,9 @@ public class InTransaction {
 
     private static final Logger logger = LoggerFactory.getLogger(InTransaction.class);
 
-    public static <K, R> R execute(final Connection connection, final InTransactionHandler<K, R> handler, final Class<K> klass) {
-        final DBI dbi = buildDDBI(connection);
-
-        final Handle handle = dbi.open();
+    public static <K, R> R execute(final DBI dbi, final Connection connection, final InTransactionHandler<K, R> handler, final Class<K> klass) {
+        // Make sure to NOT recreate a DBI object as all existing caches would be discarded
+        final Handle handle = dbi.open(new ConnectionFactoryWithDelegate(connection));
         try {
             final K transactional = handle.attach(klass);
             return handler.withSqlDao(transactional);
@@ -128,6 +128,20 @@ public class InTransaction {
 
         public boolean isWrapperFor(final Class<?> iface) throws SQLException {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class ConnectionFactoryWithDelegate implements ConnectionFactory {
+
+        private final Connection connection;
+
+        public ConnectionFactoryWithDelegate(final Connection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public Connection openConnection() throws SQLException {
+            return connection;
         }
     }
 }

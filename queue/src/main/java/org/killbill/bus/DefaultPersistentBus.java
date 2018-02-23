@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -54,6 +54,7 @@ import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.skife.config.ConfigurationObjectFactory;
+import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,8 @@ import com.google.common.eventbus.EventBusThatThrowsException;
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
+
+    private final DBI dbi;
     private final EventBusThatThrowsException eventBusDelegate;
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
@@ -89,6 +92,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Inject
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super("Bus", config);
+        this.dbi = (DBI) dbi;
         final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
         this.config = config;
@@ -227,7 +231,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             }
         };
 
-        InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -243,7 +247,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -259,7 +263,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -280,7 +284,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -296,7 +300,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
