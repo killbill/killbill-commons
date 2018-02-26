@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -44,15 +44,18 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcConnectionPool;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
+import org.killbill.commons.embeddeddb.mysql.KillBillMariaDbDataSource;
+import org.killbill.commons.jdbi.guice.DataSourceProvider.DatabaseType;
+import org.mariadb.jdbc.internal.util.Options;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.HikariPool;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -162,6 +165,31 @@ public class TestDataSourceProvider {
     }
 
     @Test(groups = "fast")
+    public void testDataSourceProviderHikariCPSetsMariDBDefaults() throws SQLException {
+        final DataSourceConnectionPoolingType poolingType = DataSourceConnectionPoolingType.HIKARICP;
+
+        final DataSourceProvider.DatabaseType databaseType = DatabaseType.MYSQL;
+        final boolean shouldUseMariaDB = true;
+
+        final Properties properties = defaultDaoConfigProperties(poolingType, databaseType);
+        final DaoConfig daoConfig = buildDaoConfig(properties);
+
+        final String poolName = TEST_POOL_PREFIX + "-2";
+        final DataSource dataSource = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB).get();
+        assertTrue(dataSource instanceof HikariDataSource);
+
+        final HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
+        final HikariPool hikariPool = new HikariPool(hikariDataSource);
+        final DataSource wrappedDataSource = hikariPool.getDataSource();
+        assertTrue(wrappedDataSource instanceof KillBillMariaDbDataSource);
+
+        final KillBillMariaDbDataSource mariaDbDataSource = (KillBillMariaDbDataSource) wrappedDataSource;
+        final Options options = mariaDbDataSource.initializeAndGetUrlParser().getOptions();
+        assertTrue(options.cachePrepStmts);
+        assertTrue(options.useServerPrepStmts);
+    }
+
+    @Test(groups = "fast")
     public void testDataSourceProviderC3P0() throws Exception {
         for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
             for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
@@ -242,11 +270,11 @@ public class TestDataSourceProvider {
 
         private class ConnectionStub implements Connection {
 
+            private boolean closed;
+
             public boolean isValid(final int timeout) throws SQLException {
                 return !closed;
             }
-
-            private boolean closed;
 
             public void close() throws SQLException {
                 closed = true;
@@ -260,25 +288,25 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setReadOnly(final boolean readOnly) throws SQLException {
-            }
-
             public boolean isReadOnly() throws SQLException {
                 return true;
             }
 
-            public void setCatalog(final String catalog) throws SQLException {
+            public void setReadOnly(final boolean readOnly) throws SQLException {
             }
 
             public String getCatalog() throws SQLException {
                 return null;
             }
 
-            public void setTransactionIsolation(final int level) throws SQLException {
+            public void setCatalog(final String catalog) throws SQLException {
             }
 
             public int getTransactionIsolation() throws SQLException {
                 return 0;
+            }
+
+            public void setTransactionIsolation(final int level) throws SQLException {
             }
 
             public Statement createStatement() throws SQLException {
@@ -297,11 +325,11 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setAutoCommit(final boolean autoCommit) throws SQLException {
-            }
-
             public boolean getAutoCommit() throws SQLException {
                 return false;
+            }
+
+            public void setAutoCommit(final boolean autoCommit) throws SQLException {
             }
 
             public void commit() throws SQLException {
@@ -338,11 +366,11 @@ public class TestDataSourceProvider {
             public void setTypeMap(final Map<String, Class<?>> map) throws SQLException {
             }
 
-            public void setHoldability(final int holdability) throws SQLException {
-            }
-
             public int getHoldability() throws SQLException {
                 return 0;
+            }
+
+            public void setHoldability(final int holdability) throws SQLException {
             }
 
             public Savepoint setSavepoint() throws SQLException {
@@ -405,15 +433,15 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setClientInfo(final Properties properties) throws SQLClientInfoException {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-
             public String getClientInfo(final String name) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
             public Properties getClientInfo() throws SQLException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void setClientInfo(final Properties properties) throws SQLClientInfoException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -425,11 +453,11 @@ public class TestDataSourceProvider {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public void setSchema(final String schema) throws SQLException {
+            public String getSchema() throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
-            public String getSchema() throws SQLException {
+            public void setSchema(final String schema) throws SQLException {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 

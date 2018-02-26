@@ -115,7 +115,7 @@ public interface DaoConfig {
 
     @Description("MySQL server version")
     @Config("org.killbill.dao.mysqlServerVersion")
-    @Default("4.0")
+    @Default("5.1")
     String getMySQLServerVersion();
 
     @Description("Log level for SQL queries")

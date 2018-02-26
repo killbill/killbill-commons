@@ -50,7 +50,7 @@ public class PostgreSQLStandaloneDB extends GenericStandaloneDB {
     }
 
     @Override
-    public void initialize() throws IOException {
+    public void initialize() throws IOException, SQLException {
         super.initialize();
         dataSource = new PGSimpleDataSource();
         ((PGSimpleDataSource) dataSource).setDatabaseName(databaseName);

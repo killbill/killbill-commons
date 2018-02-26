@@ -62,7 +62,7 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
     }
 
     @Override
-    public void initialize() throws IOException {
+    public void initialize() throws IOException, SQLException {
         super.initialize();
 
         if (useMariaDB) {

@@ -20,6 +20,7 @@ package org.killbill.commons.jdbi.guice;
 
 import java.io.IOException;
 import java.net.URI;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -131,6 +132,8 @@ public class DataSourceProvider implements Provider<DataSource> {
                         return embeddedDB.getDataSource();
                     } catch (final IOException e) {
                         throw new RuntimeException(e);
+                    } catch (final SQLException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             default:
@@ -186,14 +189,11 @@ public class DataSourceProvider implements Provider<DataSource> {
             hikariConfig.addDataSourceProperty("password", config.getPassword());
 
             if (DatabaseType.MYSQL.equals(databaseType)) {
-                // NOTE MariaDB's DataSource impl does not support these (nor does HikariCP come with a cache) ...
-                if (!useMariaDB) {
-                    hikariConfig.addDataSourceProperty("cachePrepStmts", config.isPreparedStatementsCacheEnabled());
-                    hikariConfig.addDataSourceProperty("prepStmtCacheSize", config.getPreparedStatementsCacheSize());
-                    hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", config.getPreparedStatementsCacheSqlLimit());
-                    if (Float.valueOf(config.getMySQLServerVersion()) >= 5.1) {
-                        hikariConfig.addDataSourceProperty("useServerPrepStmts", config.isServerSidePreparedStatementsEnabled());
-                    }
+                hikariConfig.addDataSourceProperty("cachePrepStmts", config.isPreparedStatementsCacheEnabled());
+                hikariConfig.addDataSourceProperty("prepStmtCacheSize", config.getPreparedStatementsCacheSize());
+                hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", config.getPreparedStatementsCacheSqlLimit());
+                if (Float.valueOf(config.getMySQLServerVersion()).compareTo(Float.valueOf("5.1")) >= 0) {
+                    hikariConfig.addDataSourceProperty("useServerPrepStmts", config.isServerSidePreparedStatementsEnabled());
                 }
             }
 
@@ -305,7 +305,8 @@ public class DataSourceProvider implements Provider<DataSource> {
             databaseType = DatabaseType.MYSQL;
             if (dataSourceClassName == null) {
                 if (useMariaDB) {
-                    dataSourceClassName = "org.mariadb.jdbc.MySQLDataSource";
+                    //dataSourceClassName = "org.mariadb.jdbc.MySQLDataSource";
+                    dataSourceClassName = "org.killbill.commons.embeddeddb.mysql.KillBillMariaDbDataSource";
                 } else {
                     dataSourceClassName = "com.mysql.jdbc.jdbc2.optional.MysqlDataSource";
                 }
