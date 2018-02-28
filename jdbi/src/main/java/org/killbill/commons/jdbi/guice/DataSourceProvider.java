@@ -167,6 +167,8 @@ public class DataSourceProvider implements Provider<DataSource> {
             }
             hikariConfig.setInitializationFailFast(config.isInitializationFailFast());
 
+            hikariConfig.setTransactionIsolation(config.getTransactionIsolationLevel());
+
             hikariConfig.setRegisterMbeans(true);
 
             if (metricRegistry != null) {

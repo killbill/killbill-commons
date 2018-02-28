@@ -142,4 +142,9 @@ public interface DaoConfig {
     @Config("org.killbill.dao.initializationFailFast")
     @Default("false")
     boolean isInitializationFailFast();
+
+    @Description("Set the default transaction isolation level")
+    @Config("org.killbill.dao.transactionIsolationLevel")
+    @Default("TRANSACTION_READ_COMMITTED")
+    String getTransactionIsolationLevel();
 }
