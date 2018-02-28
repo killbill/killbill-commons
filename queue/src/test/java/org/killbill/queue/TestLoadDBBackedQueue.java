@@ -20,6 +20,7 @@ package org.killbill.queue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
@@ -265,6 +266,16 @@ public class TestLoadDBBackedQueue extends TestSetup {
             @Override
             public String getHistoryTableName() {
                 return "bus_events_history";
+            }
+
+            @Override
+            public TimeSpan getReapThreshold() {
+                return new TimeSpan(5, TimeUnit.MINUTES);
+            }
+
+            @Override
+            public int getMaxReDispatchCount() {
+                return 10;
             }
         };
     }

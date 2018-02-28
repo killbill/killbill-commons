@@ -95,6 +95,13 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                       @Define("tableName") final String tableName);
 
     @SqlUpdate
+    int updateCreatingOwner(@Bind("newCreatingOwner") String newCreatingOwner,
+                            @Bind("max") int max,
+                            @Bind("now") Date now,
+                            @Bind("reapingDate") Date reapingDate,
+                            @Define("tableName") final String tableName);
+
+    @SqlUpdate
     void removeEntry(@Bind("recordId") Long id,
                      @Define("tableName") final String tableName);
 

@@ -92,4 +92,16 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Default("bus_events_history")
     @Description("Bus events history table name")
     public abstract String getHistoryTableName();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.reapThreshold")
+    @Default("5m")
+    @Description("Time span when the bus event must be re-dispatched")
+    public abstract TimeSpan getReapThreshold();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.maxReDispatchCount")
+    @Default("10")
+    @Description("Max number of bus events to be re-dispatched at a time")
+    public abstract int getMaxReDispatchCount();
 }

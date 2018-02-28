@@ -756,4 +756,14 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         });
     }
+
+    public void updateCreatingOwner(final Date reapingDate) {
+        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
+                transactional.updateCreatingOwner(CreatorName.get(), config.getMaxReDispatchCount(), clock.getUTCNow().toDate(), reapingDate, config.getTableName());
+                return null;
+            }
+        });
+    }
 }

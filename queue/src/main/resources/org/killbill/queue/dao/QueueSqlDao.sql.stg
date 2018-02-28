@@ -207,6 +207,19 @@ updateOnError(tableName) ::= <<
     ;
 >>
 
+updateCreatingOwner(tableName) ::= <<
+    update <tableName>
+    set
+      creating_owner = :newCreatingOwner
+      , processing_owner = NULL
+      , processing_available_date = :now
+      , processing_state = 'AVAILABLE'
+    where
+      <reapWhereClause()>
+    limit :max
+    ;
+>>
+
 removeEntry(tableName) ::= <<
     delete from <tableName>
     where

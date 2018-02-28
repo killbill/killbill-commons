@@ -16,6 +16,8 @@
 
 package org.killbill.bus;
 
+import java.util.concurrent.TimeUnit;
+
 import org.killbill.bus.api.PersistentBusConfig;
 import org.skife.config.TimeSpan;
 import org.testng.annotations.AfterMethod;
@@ -79,6 +81,16 @@ public class TestInMemoryEventBus {
             @Override
             public String getHistoryTableName() {
                 return null;
+            }
+
+            @Override
+            public TimeSpan getReapThreshold() {
+                return new TimeSpan(5, TimeUnit.MINUTES);
+            }
+
+            @Override
+            public int getMaxReDispatchCount() {
+                return 10;
             }
         });
         testEventBusBase = new TestEventBusBase(busService);
