@@ -212,6 +212,11 @@ public class DBI implements IDBI
     @Override
     public Handle open()
     {
+        return open(connectionFactory);
+    }
+
+    public Handle open(final ConnectionFactory connectionFactory)
+    {
         try {
             final long start = System.nanoTime();
 

@@ -115,7 +115,7 @@ public interface DaoConfig {
 
     @Description("MySQL server version")
     @Config("org.killbill.dao.mysqlServerVersion")
-    @Default("4.0")
+    @Default("5.1")
     String getMySQLServerVersion();
 
     @Description("Log level for SQL queries")
@@ -142,4 +142,9 @@ public interface DaoConfig {
     @Config("org.killbill.dao.initializationFailFast")
     @Default("false")
     boolean isInitializationFailFast();
+
+    @Description("Set the default transaction isolation level")
+    @Config("org.killbill.dao.transactionIsolationLevel")
+    @Default("TRANSACTION_READ_COMMITTED")
+    String getTransactionIsolationLevel();
 }

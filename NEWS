@@ -1,3 +1,11 @@
+0.21.8
+    jdbi : set the default transaction isolation level at the pool level
+    jdbi : don't call setMaxRows(1) for most queries
+
+0.21.7
+    jdbi: make sure DBI caches are used for the queues APIs
+    jdbi: ensure prepared statements are cached (server-side) by default (regression with recent MariaDB driver upgrade)
+
 0.21.6
     jdbi: optimize LowerToCamelBeanMapper
     Update to killbill-oss-parent 0.141.34
