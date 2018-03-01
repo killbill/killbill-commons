@@ -27,4 +27,6 @@ public interface Reaper {
      * Stop the reaper
      */
     void stop();
+
+    boolean isStarted();
 }

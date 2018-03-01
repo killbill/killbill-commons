@@ -167,6 +167,16 @@ getInProcessingEntries(tableName) ::= <<
     ;
 >>
 
+getEntriesLeftBehindIds(tableName) ::= <<
+    select
+      record_id
+    from <tableName>
+    where
+      <reapWhereClause()>
+    order by created_date desc
+    limit :max;
+>>
+
 claimEntry(tableName) ::= <<
     update <tableName>
     set
@@ -207,16 +217,16 @@ updateOnError(tableName) ::= <<
     ;
 >>
 
-updateCreatingOwner(tableName) ::= <<
+updateCreatingOwner(tableName, record_ids) ::= <<
     update <tableName>
     set
       creating_owner = :newCreatingOwner
       , processing_owner = NULL
-      , processing_available_date = :now
+      , processing_available_date = NULL
       , processing_state = 'AVAILABLE'
     where
       <reapWhereClause()>
-    limit :max
+      and record_id in (<record_ids>)
     ;
 >>
 

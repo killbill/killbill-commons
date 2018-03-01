@@ -74,6 +74,12 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
     @SqlQuery
     List<T> getInProcessingEntries(@Define("tableName") final String tableName);
 
+    @SqlQuery
+    List<Long> getEntriesLeftBehindIds(@Bind("max") int max,
+                                 @Bind("now") Date now,
+                                 @Bind("reapingDate") Date reapingDate,
+                                 @Define("tableName") final String tableName);
+
     @SqlUpdate
     int claimEntry(@Bind("recordId") Long id,
                    @Bind("now") Date now,
@@ -96,9 +102,9 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
 
     @SqlUpdate
     int updateCreatingOwner(@Bind("newCreatingOwner") String newCreatingOwner,
-                            @Bind("max") int max,
                             @Bind("now") Date now,
                             @Bind("reapingDate") Date reapingDate,
+                            @BindIn("record_ids") final List<Long> recordIds,
                             @Define("tableName") final String tableName);
 
     @SqlUpdate

@@ -95,7 +95,7 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.reapThreshold")
-    @Default("5m")
+    @Default("10m")
     @Description("Time span when the bus event must be re-dispatched")
     public abstract TimeSpan getReapThreshold();
 

@@ -761,7 +761,17 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                transactional.updateCreatingOwner(CreatorName.get(), config.getMaxReDispatchCount(), clock.getUTCNow().toDate(), reapingDate, config.getTableName());
+                final Date now = clock.getUTCNow().toDate();
+                final List<Long> entriesLeftBehindIds = sqlDao.getEntriesLeftBehindIds(config.getMaxReDispatchCount(), now, reapingDate, config.getTableName());
+
+                if (entriesLeftBehindIds.size() > 0) {
+                    final int entriesReaped = transactional.updateCreatingOwner(CreatorName.get(), now, reapingDate, entriesLeftBehindIds, config.getTableName());
+
+                    if (entriesReaped > 0) {
+                        log.warn(String.format( "%s %s entries were reaped by %s",DB_QUEUE_LOG_ID ,entriesReaped, CreatorName.get()));
+                    }
+                }
+
                 return null;
             }
         });

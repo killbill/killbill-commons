@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
@@ -37,6 +38,7 @@ public class BusReaper implements Reaper {
     private final PersistentBusConfig config;
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
+    private final AtomicBoolean isStarted;
     private ScheduledFuture<?> reapEntriesHandle;
 
     private static final Logger log = LoggerFactory.getLogger(BusReaper.class);
@@ -45,13 +47,28 @@ public class BusReaper implements Reaper {
         this.dao = dao;
         this.config = config;
         this.clock = clock;
+        this.isStarted = new AtomicBoolean(false);
         this.scheduler = Executors.newSingleThreadScheduledExecutor("ReaperExecutor");
     }
 
     @Override
     public void start() {
-        final TimeUnit pendingRateUnit = config.getReapThreshold().getUnit();
-        final long pendingPeriod = config.getReapThreshold().getPeriod();
+        if (!isStarted.compareAndSet(false, true)) {
+            return;
+        }
+
+        final long pendingPeriod;
+
+        // if Claim time is greater than reap threshold
+        if (config.getClaimedTime().getMillis() >= config.getReapThreshold().getMillis()) {
+            // override reap threshold using claim time + 5 minutes
+            pendingPeriod = config.getClaimedTime().getMillis() + 300000;
+            log.warn(String.format("Reap threshold was mis-configured. Claim time [%s] is greater than reap threshold [%s]",
+                                   config.getClaimedTime().toString(), config.getReapThreshold().toString()));
+
+        } else {
+            pendingPeriod = config.getReapThreshold().getMillis();
+        }
 
         final Runnable reapEntries = new Runnable() {
             @Override
@@ -60,28 +77,19 @@ public class BusReaper implements Reaper {
             }
 
             private Date getReapingDate() {
-                final TimeUnit rateUnit = config.getReapThreshold().getUnit();
-                final long threshold = config.getReapThreshold().getPeriod();
-
-                if ( rateUnit == TimeUnit.SECONDS) {
-                    return clock.getUTCNow().minusSeconds((int) threshold).toDate();
-                } else if ( rateUnit == TimeUnit.MINUTES) {
-                    return clock.getUTCNow().minusMinutes((int) threshold).toDate();
-                } else if ( rateUnit == TimeUnit.HOURS) {
-                    return clock.getUTCNow().minusHours((int) threshold).toDate();
-                } else if ( rateUnit == TimeUnit.DAYS) {
-                    return clock.getUTCNow().minusDays((int) threshold).toDate();
-                } else {
-                    return clock.getUTCNow().minusMillis((int) threshold).toDate();
-                }
+                return clock.getUTCNow().minusMillis((int) pendingPeriod).toDate();
             }
         };
 
-        reapEntriesHandle = scheduler.scheduleAtFixedRate(reapEntries, pendingPeriod, pendingPeriod, pendingRateUnit);
+        reapEntriesHandle = scheduler.scheduleWithFixedDelay(reapEntries, pendingPeriod, pendingPeriod, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void stop() {
+        if (!isStarted.compareAndSet(true, false)) {
+            return;
+        }
+
         if (!reapEntriesHandle.isCancelled() || !reapEntriesHandle.isDone()) {
             reapEntriesHandle.cancel(true);
         }
@@ -91,9 +99,15 @@ public class BusReaper implements Reaper {
             try {
                 scheduler.awaitTermination(5, TimeUnit.SECONDS);
             } catch (final InterruptedException e) {
-                log.info(String.format("Reaper stop sequence has been interrupted"));
+                Thread.currentThread().interrupt();
+                log.info("Reaper stop sequence has been interrupted");
             }
         }
+    }
+
+    @Override
+    public boolean isStarted() {
+        return isStarted.get();
     }
 
 }
