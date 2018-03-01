@@ -17,97 +17,16 @@
 
 package org.killbill.bus;
 
-import java.util.Date;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.clock.Clock;
-import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.DBBackedQueue;
-import org.killbill.queue.api.Reaper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.killbill.queue.DefaultReaper;
 
-public class BusReaper implements Reaper {
-
-    private final DBBackedQueue<BusEventModelDao> dao;
-    private final PersistentBusConfig config;
-    private final ScheduledExecutorService scheduler;
-    private final Clock clock;
-    private final AtomicBoolean isStarted;
-    private ScheduledFuture<?> reapEntriesHandle;
-
-    private static final Logger log = LoggerFactory.getLogger(BusReaper.class);
+public class BusReaper extends DefaultReaper {
 
     public BusReaper(final DBBackedQueue<BusEventModelDao> dao, final PersistentBusConfig config, final Clock clock) {
-        this.dao = dao;
-        this.config = config;
-        this.clock = clock;
-        this.isStarted = new AtomicBoolean(false);
-        this.scheduler = Executors.newSingleThreadScheduledExecutor("ReaperExecutor");
-    }
-
-    @Override
-    public void start() {
-        if (!isStarted.compareAndSet(false, true)) {
-            return;
-        }
-
-        final long pendingPeriod;
-
-        // if Claim time is greater than reap threshold
-        if (config.getClaimedTime().getMillis() >= config.getReapThreshold().getMillis()) {
-            // override reap threshold using claim time + 5 minutes
-            pendingPeriod = config.getClaimedTime().getMillis() + 300000;
-            log.warn(String.format("Reap threshold was mis-configured. Claim time [%s] is greater than reap threshold [%s]",
-                                   config.getClaimedTime().toString(), config.getReapThreshold().toString()));
-
-        } else {
-            pendingPeriod = config.getReapThreshold().getMillis();
-        }
-
-        final Runnable reapEntries = new Runnable() {
-            @Override
-            public void run() {
-                dao.updateCreatingOwner(getReapingDate());
-            }
-
-            private Date getReapingDate() {
-                return clock.getUTCNow().minusMillis((int) pendingPeriod).toDate();
-            }
-        };
-
-        reapEntriesHandle = scheduler.scheduleWithFixedDelay(reapEntries, pendingPeriod, pendingPeriod, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void stop() {
-        if (!isStarted.compareAndSet(true, false)) {
-            return;
-        }
-
-        if (!reapEntriesHandle.isCancelled() || !reapEntriesHandle.isDone()) {
-            reapEntriesHandle.cancel(true);
-        }
-
-        if (!scheduler.isShutdown()) {
-            scheduler.shutdown();
-            try {
-                scheduler.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.info("Reaper stop sequence has been interrupted");
-            }
-        }
-    }
-
-    @Override
-    public boolean isStarted() {
-        return isStarted.get();
+        super(dao, config, clock, "BusReaper");
     }
 
 }
