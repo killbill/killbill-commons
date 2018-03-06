@@ -618,7 +618,7 @@ public class TestDBBackedQueue extends TestSetup {
         assertEquals(leftBehind.size(), 5);
 
         Date reapingDate = clock.getUTCNow().minusMinutes((int) config.getReapThreshold().getPeriod()).toDate();
-        queue.updateCreatingOwner(reapingDate);
+        queue.reapEntries(reapingDate);
 
         int reDispatchedClaims = 0;
         for (int i = 0; i < 5; i++) {

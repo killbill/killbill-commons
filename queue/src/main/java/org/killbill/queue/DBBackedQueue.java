@@ -48,6 +48,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -757,22 +759,50 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
-    public void updateCreatingOwner(final Date reapingDate) {
+    public void reapEntries(final Date reapingDate) {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 final Date now = clock.getUTCNow().toDate();
-                final List<Long> entriesLeftBehindIds = sqlDao.getEntriesLeftBehindIds(config.getMaxReDispatchCount(), now, reapingDate, config.getTableName());
+                final List<T> entriesLeftBehind = sqlDao.getEntriesLeftBehind(config.getMaxReDispatchCount(), now, reapingDate, config.getTableName());
 
-                if (entriesLeftBehindIds.size() > 0) {
-                    final int entriesReaped = transactional.updateCreatingOwner(CreatorName.get(), now, reapingDate, entriesLeftBehindIds, config.getTableName());
+                if (entriesLeftBehind.size() > 0) {
+                    final Iterable<T> entriesToMove = Iterables.transform(entriesLeftBehind, new Function<T, T>() {
+                        @Nullable
+                        @Override
+                        public T apply(@Nullable final T entry) {
+                            set(entry, "processingState", PersistentQueueEntryLifecycleState.REAPED);
+                            return entry;
+                        }
+                    });
 
-                    if (entriesReaped > 0) {
-                        log.warn(String.format( "%s %s entries were reaped by %s",DB_QUEUE_LOG_ID ,entriesReaped, CreatorName.get()));
+                    moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
+
+                    for (T entry : entriesLeftBehind) {
+                        set(entry, "creatingOwner", CreatorName.get());
+                        set(entry, "createdDate", clock.getUTCNow());
+                        set(entry, "processingState", PersistentQueueEntryLifecycleState.AVAILABLE);
+                        insertEntryFromTransaction(transactional, entry);
                     }
+
+                    log.warn(String.format( "%s %s entries were reaped by %s",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get()));
                 }
 
                 return null;
+            }
+
+            private void set(T entry, String fieldName, Object value) {
+                Class clazz = entry.getClass();
+                Field field = null;
+                try {
+                    field = clazz.getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    field.set(entry, value);
+                } catch (NoSuchFieldException e) {
+                    // this exception is not supposed to happen
+                } catch (IllegalAccessException e) {
+                    // this exception is not supposed to happen
+                }
             }
         });
     }

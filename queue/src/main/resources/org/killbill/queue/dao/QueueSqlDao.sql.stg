@@ -167,9 +167,9 @@ getInProcessingEntries(tableName) ::= <<
     ;
 >>
 
-getEntriesLeftBehindIds(tableName) ::= <<
+getEntriesLeftBehind(tableName) ::= <<
     select
-      record_id
+      <allTableFields()>
     from <tableName>
     where
       <reapWhereClause()>
@@ -214,19 +214,6 @@ updateOnError(tableName) ::= <<
       , error_count = :errorCount
     where
       record_id = :recordId
-    ;
->>
-
-updateCreatingOwner(tableName, record_ids) ::= <<
-    update <tableName>
-    set
-      creating_owner = :newCreatingOwner
-      , processing_owner = NULL
-      , processing_available_date = NULL
-      , processing_state = 'AVAILABLE'
-    where
-      <reapWhereClause()>
-      and record_id in (<record_ids>)
     ;
 >>
 

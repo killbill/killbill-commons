@@ -63,7 +63,7 @@ public abstract class DefaultReaper implements Reaper {
         final Runnable reapEntries = new Runnable() {
             @Override
             public void run() {
-                dao.updateCreatingOwner(getReapingDate());
+                dao.reapEntries(getReapingDate());
             }
 
             private Date getReapingDate() {
