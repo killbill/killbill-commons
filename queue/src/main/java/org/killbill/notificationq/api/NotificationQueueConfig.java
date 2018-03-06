@@ -94,7 +94,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.reapThreshold")
-    @Default("5m")
+    @Default("10m")
     @Description("Time span when a notification must be re-dispatched")
     public abstract TimeSpan getReapThreshold();
 

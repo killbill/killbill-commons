@@ -45,6 +45,10 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -617,6 +621,13 @@ public class TestDBBackedQueue extends TestSetup {
         final List<BusEventModelDao> leftBehind = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
         assertEquals(leftBehind.size(), 5);
 
+        final Iterable<Long> leftBehindSearchKey1 = Iterables.<BusEventModelDao, Long>transform(leftBehind, new Function<BusEventModelDao, Long>() {
+            @Override
+            public Long apply(final BusEventModelDao input) {
+                return input.getSearchKey1();
+            }
+        });
+
         Date reapingDate = clock.getUTCNow().minusMinutes((int) config.getReapThreshold().getPeriod()).toDate();
         queue.reapEntries(reapingDate);
 
@@ -634,7 +645,13 @@ public class TestDBBackedQueue extends TestSetup {
 
             assertEquals(cur.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
 
-            assertEquals(cur.getSearchKey1(), new Long(i+20));
+            Long value = Iterables.find(leftBehindSearchKey1, new Predicate<Long>() {
+                public boolean apply(Long input) {
+                    return input == cur.getSearchKey1() ;
+                }
+            });
+
+            assertEquals(cur.getSearchKey1(), value);
             assertEquals(cur.getSearchKey2(), new Long(1));
 
             recordIs.add(cur.getRecordId());

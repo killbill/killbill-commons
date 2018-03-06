@@ -30,6 +30,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.Subscribe;
+
+import org.joda.time.DateTime;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
@@ -49,7 +51,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -763,15 +764,15 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
-                final Date now = clock.getUTCNow().toDate();
-                final List<T> entriesLeftBehind = sqlDao.getEntriesLeftBehind(config.getMaxReDispatchCount(), now, reapingDate, config.getTableName());
+                final DateTime now = clock.getUTCNow();
+                final List<T> entriesLeftBehind = sqlDao.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, config.getTableName());
 
                 if (entriesLeftBehind.size() > 0) {
                     final Iterable<T> entriesToMove = Iterables.transform(entriesLeftBehind, new Function<T, T>() {
                         @Nullable
                         @Override
                         public T apply(@Nullable final T entry) {
-                            set(entry, "processingState", PersistentQueueEntryLifecycleState.REAPED);
+                            entry.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
                             return entry;
                         }
                     });
@@ -779,30 +780,16 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
 
                     for (T entry : entriesLeftBehind) {
-                        set(entry, "creatingOwner", CreatorName.get());
-                        set(entry, "createdDate", clock.getUTCNow());
-                        set(entry, "processingState", PersistentQueueEntryLifecycleState.AVAILABLE);
+                        entry.setCreatedDate(now);
+                        entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
+                        entry.setCreatingOwner(CreatorName.get());
                         insertEntryFromTransaction(transactional, entry);
                     }
 
-                    log.warn(String.format( "%s %s entries were reaped by %s",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get()));
+                    log.warn(String.format( "{} {} entries were reaped by {}",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get()));
                 }
 
                 return null;
-            }
-
-            private void set(T entry, String fieldName, Object value) {
-                Class clazz = entry.getClass();
-                Field field = null;
-                try {
-                    field = clazz.getDeclaredField(fieldName);
-                    field.setAccessible(true);
-                    field.set(entry, value);
-                } catch (NoSuchFieldException e) {
-                    // this exception is not supposed to happen
-                } catch (IllegalAccessException e) {
-                    // this exception is not supposed to happen
-                }
             }
         });
     }

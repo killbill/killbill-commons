@@ -89,8 +89,8 @@ public abstract class DefaultReaper implements Reaper {
             try {
                 scheduler.awaitTermination(5, TimeUnit.SECONDS);
             } catch (final InterruptedException e) {
+                log.info(String.format("{} stop sequence has been interrupted",threadScheduledExecutorName));
                 Thread.currentThread().interrupt();
-                log.info(String.format("%s stop sequence has been interrupted",threadScheduledExecutorName));
             }
         }
     }
@@ -106,7 +106,7 @@ public abstract class DefaultReaper implements Reaper {
         if (config.getClaimedTime().getMillis() >= config.getReapThreshold().getMillis()) {
             // override reap threshold using claim time + 5 minutes
             threshold = config.getClaimedTime().getMillis() + FIVE_MINUTES;
-            log.warn(String.format("%s: Reap threshold was mis-configured. Claim time [%s] is greater than reap threshold [%s]",
+            log.warn(String.format("{}: Reap threshold was mis-configured. Claim time [{}] is greater than reap threshold [{}]",
                                    threadScheduledExecutorName, config.getClaimedTime().toString(), config.getReapThreshold().toString()));
 
         } else {
