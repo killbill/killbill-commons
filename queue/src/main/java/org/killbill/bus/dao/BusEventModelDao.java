@@ -85,6 +85,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return className;
     }
 
+    @Override
     public void setClassName(final String className) {
         this.className = className;
     }
@@ -94,6 +95,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return eventJson;
     }
 
+    @Override
     public void setEventJson(final String eventJson) {
         this.eventJson = eventJson;
     }
@@ -103,6 +105,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return userToken;
     }
 
+    @Override
     public void setUserToken(final UUID userToken) {
         this.userToken = userToken;
     }
@@ -111,6 +114,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return createdDate;
     }
 
+    @Override
     public void setCreatedDate(final DateTime createdDate) {
         this.createdDate = createdDate;
     }
@@ -120,6 +124,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return creatingOwner;
     }
 
+    @Override
     public void setCreatingOwner(final String creatingOwner) {
         this.creatingOwner = creatingOwner;
     }
@@ -129,6 +134,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingOwner;
     }
 
+    @Override
     public void setProcessingOwner(final String processingOwner) {
         this.processingOwner = processingOwner;
     }
@@ -147,6 +153,7 @@ public class BusEventModelDao implements EventEntryModelDao {
         this.processingAvailableDate = processingAvailableDate;
     }
 
+    @Override
     public void setErrorCount(final Long errorCount) {
         this.errorCount = errorCount;
     }
@@ -156,14 +163,17 @@ public class BusEventModelDao implements EventEntryModelDao {
         return processingState;
     }
 
+    @Override
     public void setProcessingState(final PersistentQueueEntryLifecycleState processingState) {
         this.processingState = processingState;
     }
 
+    @Override
     public void setSearchKey1(final Long searchKey1) {
         this.searchKey1 = searchKey1;
     }
 
+    @Override
     public void setSearchKey2(final Long searchKey2) {
         this.searchKey2 = searchKey2;
     }

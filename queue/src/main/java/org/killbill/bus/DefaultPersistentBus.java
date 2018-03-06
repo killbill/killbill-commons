@@ -49,6 +49,7 @@ import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.InTransaction;
+import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.CallableCallbackBase;
@@ -78,6 +79,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final PersistentBusConfig config;
     private final Timer dispatchTimer;
     private final Profiling<Iterable<BusEventModelDao>, RuntimeException> prof;
+    private final BusReaper reaper;
 
     private final Dispatcher<BusEventModelDao> dispatcher;
     private final AtomicBoolean isStarted;
@@ -113,6 +115,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
+        this.reaper = new BusReaper(this.dao, config, clock);
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
@@ -133,6 +136,10 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             dispatcher.start();
             startQueue();
         }
+
+        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
+            reaper.start();
+        }
     }
 
     @Override
@@ -141,6 +148,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             stopQueue();
             dispatcher.stop();
         }
+
+        reaper.stop();
     }
 
     @Override

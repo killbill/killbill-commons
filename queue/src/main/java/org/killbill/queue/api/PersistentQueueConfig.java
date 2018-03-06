@@ -51,4 +51,8 @@ public interface PersistentQueueConfig {
     String getTableName();
 
     String getHistoryTableName();
+
+    TimeSpan getReapThreshold();
+
+    int getMaxReDispatchCount();
 }

@@ -167,6 +167,16 @@ getInProcessingEntries(tableName) ::= <<
     ;
 >>
 
+getEntriesLeftBehind(tableName) ::= <<
+    select
+      <allTableFields()>
+    from <tableName>
+    where
+      <reapWhereClause()>
+    order by created_date desc
+    limit :max;
+>>
+
 claimEntry(tableName) ::= <<
     update <tableName>
     set
