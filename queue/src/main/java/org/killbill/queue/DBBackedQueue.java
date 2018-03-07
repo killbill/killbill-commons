@@ -783,10 +783,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                         entry.setCreatedDate(now);
                         entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
                         entry.setCreatingOwner(CreatorName.get());
-                        insertEntryFromTransaction(transactional, entry);
                     }
 
-                    log.warn(String.format( "{} {} entries were reaped by {}",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get()));
+                    transactional.insertEntries(entriesLeftBehind, config.getTableName());
+
+                    log.warn("{} {} entries were reaped by {}",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get());
                 }
 
                 return null;
