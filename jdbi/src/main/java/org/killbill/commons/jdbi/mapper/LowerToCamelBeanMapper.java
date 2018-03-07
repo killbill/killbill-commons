@@ -274,6 +274,9 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                         field.setAccessible(true); // Often private...
                         field.set(bean, value);
                     }
+                } catch (final IllegalArgumentException e) {
+                    throw new IllegalArgumentException(String.format("Unable to set field for " +
+                                                                     "property: name=%s, value=%s", name, value), e);
                 } catch (final NoSuchFieldException e) {
                     throw new IllegalArgumentException(String.format("Unable to find field for " +
                                                                      "property, %s", name), e);
@@ -285,7 +288,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                                                                      "invoker setter for the %s property", name), e);
                 } catch (final NullPointerException e) {
                     throw new IllegalArgumentException(String.format("No appropriate method to " +
-                                                                     "write value %s ", value.toString()), e);
+                                                                     "write value %s ", value), e);
                 }
             }
         }
