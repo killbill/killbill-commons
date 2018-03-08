@@ -18,6 +18,7 @@
 package org.killbill.queue;
 
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,8 @@ public abstract class DefaultReaper implements Reaper {
             return;
         }
 
+        log.info("{}: Starting...", threadScheduledExecutorName);
+
         final long pendingPeriod = getReapThreshold();
         final Runnable reapEntries = new Runnable() {
             @Override
@@ -80,6 +83,7 @@ public abstract class DefaultReaper implements Reaper {
             return;
         }
 
+        log.info("{}: Shutdown...", threadScheduledExecutorName);
         if (!reapEntriesHandle.isCancelled() || !reapEntriesHandle.isDone()) {
             reapEntriesHandle.cancel(true);
         }

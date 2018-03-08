@@ -63,7 +63,6 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private final Clock clock;
     private final NotificationQueueConfig config;
     private final Profiling<Iterable<NotificationEventModelDao>, RuntimeException> prof;
-    private final NotificationReaper reaper;
 
     private volatile boolean isStarted;
 
@@ -86,7 +85,6 @@ public class DefaultNotificationQueue implements NotificationQueue {
         this.clock = clock;
         this.config = config;
         this.prof = new Profiling<Iterable<NotificationEventModelDao>, RuntimeException>();
-        this.reaper = new NotificationReaper(this.dao, config, clock);
     }
 
     @Override
@@ -358,9 +356,6 @@ public class DefaultNotificationQueue implements NotificationQueue {
         notificationQueueService.startQueue();
         isStarted = true;
 
-        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
-            reaper.start();
-        }
         return true;
     }
 
@@ -369,7 +364,6 @@ public class DefaultNotificationQueue implements NotificationQueue {
         // Order matters...
         isStarted = false;
         notificationQueueService.stopQueue();
-        reaper.stop();
     }
 
     @Override
