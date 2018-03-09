@@ -41,7 +41,6 @@ import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.QueueObjectMapper;
-import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.skife.jdbi.v2.DBI;

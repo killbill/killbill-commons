@@ -783,6 +783,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                         entry.setCreatedDate(now);
                         entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
                         entry.setCreatingOwner(CreatorName.get());
+
+                        totalInsert.inc();
                     }
 
                     transactional.insertEntries(entriesLeftBehind, config.getTableName());
