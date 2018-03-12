@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Dispatcher<M extends EventEntryModelDao> {
-
 
     private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
 
@@ -78,7 +77,7 @@ public class Dispatcher<M extends EventEntryModelDao> {
 
 
     public <E extends QueueEvent> void dispatch(final M modelDao, final CallableCallback<E, M> callback) {
-        log.debug("Dispatching entry: recordId={} className={} json={}", modelDao.getRecordId(), modelDao.getClassName(), modelDao.getEventJson());
+        log.debug("Dispatching entry {}", modelDao);
         final CallableQueue<E, M> entry = new CallableQueue<E, M>(modelDao, callback);
         executor.submit(entry);
     }
