@@ -18,6 +18,7 @@
 package org.killbill.queue;
 
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,8 @@ public abstract class DefaultReaper implements Reaper {
             return;
         }
 
+        log.info("{}: Starting...", threadScheduledExecutorName);
+
         final long pendingPeriod = getReapThreshold();
         final Runnable reapEntries = new Runnable() {
             @Override
@@ -80,6 +83,7 @@ public abstract class DefaultReaper implements Reaper {
             return;
         }
 
+        log.info("{}: Shutdown...", threadScheduledExecutorName);
         if (!reapEntriesHandle.isCancelled() || !reapEntriesHandle.isDone()) {
             reapEntriesHandle.cancel(true);
         }
@@ -89,7 +93,7 @@ public abstract class DefaultReaper implements Reaper {
             try {
                 scheduler.awaitTermination(5, TimeUnit.SECONDS);
             } catch (final InterruptedException e) {
-                log.info(String.format("{} stop sequence has been interrupted",threadScheduledExecutorName));
+                log.info("{} stop sequence has been interrupted",threadScheduledExecutorName);
                 Thread.currentThread().interrupt();
             }
         }
@@ -106,8 +110,8 @@ public abstract class DefaultReaper implements Reaper {
         if (config.getClaimedTime().getMillis() >= config.getReapThreshold().getMillis()) {
             // override reap threshold using claim time + 5 minutes
             threshold = config.getClaimedTime().getMillis() + FIVE_MINUTES;
-            log.warn(String.format("{}: Reap threshold was mis-configured. Claim time [{}] is greater than reap threshold [{}]",
-                                   threadScheduledExecutorName, config.getClaimedTime().toString(), config.getReapThreshold().toString()));
+            log.warn("{}: Reap threshold was mis-configured. Claim time [{}] is greater than reap threshold [{}]",
+                                   threadScheduledExecutorName, config.getClaimedTime().toString(), config.getReapThreshold().toString());
 
         } else {
             threshold = config.getReapThreshold().getMillis();

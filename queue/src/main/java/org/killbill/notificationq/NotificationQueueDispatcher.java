@@ -41,6 +41,7 @@ import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.notificationq.dispatching.NotificationCallableCallback;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
+import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.skife.jdbi.v2.IDBI;
@@ -71,6 +72,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     // We could event have one per queue is required...
     private final Dispatcher<NotificationEventModelDao> dispatcher;
     private final AtomicBoolean isStarted;
+
+    private final NotificationReaper reaper;
 
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
@@ -104,7 +107,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
         this.metricRegistry = metricRegistry;
         this.isStarted = new AtomicBoolean(false);
-
+        this.reaper = new NotificationReaper(this.dao, config, clock);
     }
 
     @Override
@@ -114,6 +117,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             dispatcher.start();
             super.startQueue();
             return true;
+        }
+
+        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
+            reaper.start();
         }
         return false;
     }
@@ -142,6 +149,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             super.stopQueue();
             isStarted.set(false);
         }
+
+        reaper.stop();
     }
 
     @Override

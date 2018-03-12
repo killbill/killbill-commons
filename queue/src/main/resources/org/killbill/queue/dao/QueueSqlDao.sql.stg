@@ -173,7 +173,7 @@ getEntriesLeftBehind(tableName) ::= <<
     from <tableName>
     where
       <reapWhereClause()>
-    order by created_date desc
+    order by created_date asc
     limit :max;
 >>
 
