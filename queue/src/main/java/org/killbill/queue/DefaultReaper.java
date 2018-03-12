@@ -18,7 +18,6 @@
 package org.killbill.queue;
 
 import java.util.Date;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +34,6 @@ public abstract class DefaultReaper implements Reaper {
 
     private final DBBackedQueue<?> dao;
     private final PersistentQueueConfig config;
-    private final ScheduledExecutorService scheduler;
     private final Clock clock;
     private final AtomicBoolean isStarted;
     private final String threadScheduledExecutorName;
@@ -45,13 +43,14 @@ public abstract class DefaultReaper implements Reaper {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultReaper.class);
 
+    private ScheduledExecutorService scheduler;
+
     public DefaultReaper(final DBBackedQueue<?> dao, final PersistentQueueConfig config, final Clock clock, final String threadScheduledExecutorName) {
         this.dao = dao;
         this.config = config;
         this.clock = clock;
         this.isStarted = new AtomicBoolean(false);
         this.threadScheduledExecutorName = threadScheduledExecutorName;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(threadScheduledExecutorName);
     }
 
     @Override
@@ -74,6 +73,7 @@ public abstract class DefaultReaper implements Reaper {
             }
         };
 
+        scheduler = Executors.newSingleThreadScheduledExecutor(threadScheduledExecutorName);
         reapEntriesHandle = scheduler.scheduleWithFixedDelay(reapEntries, pendingPeriod, pendingPeriod, TimeUnit.MILLISECONDS);
     }
 
