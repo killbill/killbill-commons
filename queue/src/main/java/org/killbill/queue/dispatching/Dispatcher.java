@@ -18,6 +18,7 @@
 package org.killbill.queue.dispatching;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +31,7 @@ import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class Dispatcher<M extends EventEntryModelDao> {
 
@@ -84,6 +86,10 @@ public class Dispatcher<M extends EventEntryModelDao> {
 
     public static class CallableQueue<E extends QueueEvent, M extends EventEntryModelDao> implements Callable<E> {
 
+        private static final String MDC_KB_USER_TOKEN = "kb.userToken";
+
+        private static final Logger log = LoggerFactory.getLogger(CallableQueue.class);
+
         private final M entry;
         private final CallableCallback<E, M> callback;
 
@@ -94,25 +100,35 @@ public class Dispatcher<M extends EventEntryModelDao> {
 
         @Override
         public E call() throws Exception {
-            final E event = callback.deserialize(entry);
-            if (event != null) {
-                Throwable lastException = null;
-                long errorCount = entry.getErrorCount();
-                try {
-                    callback.dispatch(event, entry);
-                } catch (final Exception e) {
-                    if (e.getCause() != null && e.getCause() instanceof InvocationTargetException) {
-                        lastException = e.getCause().getCause();
-                    } else {
+            try {
+                final UUID userToken = entry.getUserToken();
+                MDC.put(MDC_KB_USER_TOKEN, userToken != null ? userToken.toString() : null);
+
+                log.debug("Starting processing entry {}", entry);
+
+                final E event = callback.deserialize(entry);
+                if (event != null) {
+                    Throwable lastException = null;
+                    long errorCount = entry.getErrorCount();
+                    try {
+                        callback.dispatch(event, entry);
+                    } catch (final Exception e) {
+                        if (e.getCause() != null && e.getCause() instanceof InvocationTargetException) {
+                            lastException = e.getCause().getCause();
+                        } else {
+                            lastException = e;
+                        }
                         lastException = e;
+                        errorCount++;
+                    } finally {
+                        callback.updateErrorCountOrMoveToHistory(event, entry, errorCount, lastException);
                     }
-                    lastException = e;
-                    errorCount++;
-                } finally {
-                    callback.updateErrorCountOrMoveToHistory(event, entry, errorCount, lastException);
                 }
+                return event;
+            } finally {
+                log.debug("Done processing entry {}", entry);
+                MDC.remove(MDC_KB_USER_TOKEN);
             }
-            return event;
         }
     }
 }
