@@ -354,6 +354,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         }
         notificationQueueService.startQueue();
         isStarted = true;
+
         return true;
     }
 

@@ -21,6 +21,13 @@ readyWhereClause(owner) ::= <<
     and (processing_owner IS NULL OR processing_available_date \<= :now)
 >>
 
+reapWhereClause() ::= <<
+    processing_state != 'PROCESSED'
+    and processing_state != 'REMOVED'
+    and (processing_owner IS NULL OR processing_available_date \<= :now)
+    and effective_date \<= :reapingDate
+>>
+
 readyOrderByClause() ::= <<
         effective_date asc
       , created_date asc
