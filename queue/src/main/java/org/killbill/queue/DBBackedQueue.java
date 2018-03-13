@@ -778,16 +778,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     });
 
                     moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
-
-                    for (T entry : entriesLeftBehind) {
-                        entry.setCreatedDate(now);
-                        entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
-                        entry.setCreatingOwner(CreatorName.get());
-
-                        totalInsert.inc();
-                    }
-
-                    transactional.insertEntries(entriesLeftBehind, config.getTableName());
+                    insertReapedEntriesFromTransaction(transactional, entriesLeftBehind, now);
 
                     log.warn("{} {} entries were reaped by {}",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get());
                 }
@@ -795,5 +786,24 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 return null;
             }
         });
+    }
+
+    private void insertReapedEntriesFromTransaction(final QueueSqlDao<T> transactional, final List<T> entriesLeftBehind, DateTime now) {
+
+        for (T entry : entriesLeftBehind) {
+            entry.setCreatedDate(now);
+            entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
+            entry.setCreatingOwner(CreatorName.get());
+
+            if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
+                insertEntryFromTransaction(transactional, entry);
+            } else {
+                totalInsert.inc();
+            }
+        }
+
+        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
+            transactional.insertEntries(entriesLeftBehind, config.getTableName());
+        }
     }
 }

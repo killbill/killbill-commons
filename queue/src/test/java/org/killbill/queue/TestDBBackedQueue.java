@@ -662,6 +662,97 @@ public class TestDBBackedQueue extends TestSetup {
 
     }
 
+    @Test(groups = "slow")
+    public void testStickyEventsWithLeftBehindEntries() {
+
+        for (int i = 0; i < 5; i++) {
+            final DateTime createdTime = clock.getUTCNow().minusMinutes(10);
+            final BusEventModelDao input = createEntry(new Long(i), "leftBehind", createdTime);
+            sqlDao.insertEntry(input, "bus_events");
+        }
+
+        final PersistentBusConfig config = createConfig(1, 10, PersistentQueueMode.STICKY_EVENTS);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "stickyEventsWithLeftBehindEntries-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue.initialize();
+
+        long expectedRecordId = -1;
+        final List<Long> recordIs = new ArrayList<Long>();
+        for (int i = 0; i < 10; i++) {
+
+            assertTrue(queue.isQueueOpenForRead());
+            assertTrue(queue.isQueueOpenForWrite());
+
+            final BusEventModelDao input = createEntry(new Long(i));
+            queue.insertEntry(input);
+            final List<BusEventModelDao> claimed = queue.getReadyEntries();
+            assertEquals(claimed.size(), 1);
+
+            final BusEventModelDao output = claimed.get(0);
+
+            expectedRecordId = (i == 0) ? output.getRecordId() : (expectedRecordId + 1);
+            assertEquals(output.getRecordId(), new Long(expectedRecordId));
+            assertEquals(output.getClassName(), String.class.getName());
+            assertEquals(output.getEventJson(), "json");
+            assertEquals(output.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
+
+            recordIs.add(output.getRecordId());
+            final BusEventModelDao historyInput = new BusEventModelDao(output, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            queue.moveEntryToHistory(historyInput);
+        }
+
+        assertEquals(queue.getTotalInflightFetched(), 10L);
+        assertEquals(queue.getTotalFetched(), 10L);
+        assertEquals(queue.getTotalInflightInsert(), 10L);
+        assertEquals(queue.getTotalInsert(), 10L);
+
+        final List<BusEventModelDao> leftBehind = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
+        assertEquals(leftBehind.size(), 5);
+
+        final Iterable<Long> leftBehindSearchKey1 = Iterables.<BusEventModelDao, Long>transform(leftBehind, new Function<BusEventModelDao, Long>() {
+            @Override
+            public Long apply(final BusEventModelDao input) {
+                return input.getSearchKey1();
+            }
+        });
+
+        Date reapingDate = clock.getUTCNow().minusMinutes((int) config.getReapThreshold().getPeriod()).toDate();
+        queue.reapEntries(reapingDate);
+
+        assertEquals(queue.getTotalInflightFetched(), 10L);
+        assertEquals(queue.getTotalFetched(), 10L);
+        assertEquals(queue.getTotalInflightInsert(), 15L);
+        assertEquals(queue.getTotalInsert(), 15L);
+
+        final List<BusEventModelDao> reDispatchedClaims = queue.getReadyEntries();
+        for (final BusEventModelDao cur : reDispatchedClaims) {
+
+            assertEquals(cur.getClassName(), String.class.getName());
+            assertEquals(cur.getEventJson(), "json");
+            assertEquals(cur.getCreatingOwner(), CreatorName.get());
+
+            assertEquals(cur.getProcessingState(), PersistentQueueEntryLifecycleState.AVAILABLE);
+
+            Long value = Iterables.find(leftBehindSearchKey1, new Predicate<Long>() {
+                public boolean apply(Long input) {
+                    return input == cur.getSearchKey1() ;
+                }
+            });
+
+            assertEquals(cur.getSearchKey1(), value);
+            assertEquals(cur.getSearchKey2(), new Long(1));
+
+            recordIs.add(cur.getRecordId());
+            final BusEventModelDao historyInput = new BusEventModelDao(cur, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
+            queue.moveEntryToHistory(historyInput);
+        }
+        assertEquals(reDispatchedClaims.size(), leftBehind.size());
+        assertEquals(queue.getTotalInflightFetched(), 15L);
+        assertEquals(queue.getTotalFetched(), 15L);
+        assertEquals(queue.getTotalInflightInsert(), 15L);
+        assertEquals(queue.getTotalInsert(), 15L);
+
+    }
+
     public class ReaderRunnable implements Runnable {
 
         private final DBBackedQueue<BusEventModelDao> queue;
