@@ -1,6 +1,11 @@
+0.21.9
+    queue: harden STICKY_ modes for cloud deployments, see #29 and #30
+    queue: put the user token in the MDC
+    jdbi: add support for read-only pool
+
 0.21.8
-    jdbi : set the default transaction isolation level at the pool level
-    jdbi : don't call setMaxRows(1) for most queries
+    jdbi: set the default transaction isolation level at the pool level
+    jdbi: don't call setMaxRows(1) for most queries
 
 0.21.7
     jdbi: make sure DBI caches are used for the queues APIs

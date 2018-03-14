@@ -100,7 +100,9 @@ public class ClockMock implements Clock {
     }
 
     public synchronized void resetDeltaFromReality() {
+        final DateTime prev = getUTCNow();
         reset();
+        logChange(prev);
     }
 
     private synchronized void reset() {

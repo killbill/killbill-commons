@@ -81,7 +81,19 @@ public class NotificationEventModelDao extends BusEventModelDao {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("NotificationEventModelDao{");
-        sb.append("futureUserToken=").append(futureUserToken);
+        sb.append("recordId=").append(getRecordId());
+        sb.append(", className='").append(getClassName()).append('\'');
+        sb.append(", eventJson='").append(getEventJson()).append('\'');
+        sb.append(", userToken=").append(getUserToken());
+        sb.append(", createdDate=").append(getCreatedDate());
+        sb.append(", creatingOwner='").append(getCreatingOwner()).append('\'');
+        sb.append(", processingOwner='").append(getProcessingOwner()).append('\'');
+        sb.append(", processingAvailableDate=").append(getProcessingAvailableDate());
+        sb.append(", errorCount=").append(getErrorCount());
+        sb.append(", processingState=").append(getProcessingState());
+        sb.append(", searchKey1=").append(getSearchKey1());
+        sb.append(", searchKey2=").append(getSearchKey2());
+        sb.append(", futureUserToken=").append(futureUserToken);
         sb.append(", effectiveDate=").append(effectiveDate);
         sb.append(", queueName='").append(queueName).append('\'');
         sb.append('}');

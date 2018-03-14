@@ -147,4 +147,9 @@ public interface DaoConfig {
     @Config("org.killbill.dao.transactionIsolationLevel")
     @Default("TRANSACTION_READ_COMMITTED")
     String getTransactionIsolationLevel();
+
+    @Description("Whether to put connections in read-only mode")
+    @Config("org.killbill.dao.readOnly")
+    @Default("false")
+    boolean isReadOnly();
 }
