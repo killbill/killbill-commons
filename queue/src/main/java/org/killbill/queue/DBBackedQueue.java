@@ -752,7 +752,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
                 final Long lastInsertId = transactional.getLastInsertId();
                 if (log.isDebugEnabled()) {
-                    log.debug(DB_QUEUE_LOG_ID + "Inserting entry: lastInsertId={} recordId={} className={} json={}", lastInsertId, entry.getRecordId(), entry.getClassName(), entry.getEventJson());
+                    log.debug(DB_QUEUE_LOG_ID + "Inserting entry: lastInsertId={}, entry={}", lastInsertId, entry);
                 }
 
                 return lastInsertId;
