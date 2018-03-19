@@ -342,9 +342,11 @@ public class DefaultNotificationQueue implements NotificationQueue {
         dao.getSqlDao().inTransaction(new Transaction<Void, QueueSqlDao<NotificationEventModelDao>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<NotificationEventModelDao> transactional, final TransactionStatus status) throws Exception {
+                // Move entries by batch into the history table
                 final int batchSize = 25;
                 final Collection<NotificationEventModelDao> currentBatch = new ArrayList<NotificationEventModelDao>(batchSize);
 
+                // Note that we don't claim them here, so it could be possible that some of these entries end up being processed nonetheless
                 final Iterator<NotificationEventModelDao> futureQueueEntriesForSearchKeys = ((NotificationSqlDao) transactional).getReadyQueueEntriesForSearchKeys(getFullQName(),
                                                                                                                                                                    searchKey1,
                                                                                                                                                                    searchKey2,
