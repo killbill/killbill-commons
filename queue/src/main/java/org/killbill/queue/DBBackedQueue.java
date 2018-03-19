@@ -488,7 +488,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 }
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("{} Got interrupted ", DB_QUEUE_LOG_ID);
+                log.warn("{} Got interrupted", DB_QUEUE_LOG_ID);
                 return ImmutableList.of();
             }
         }
