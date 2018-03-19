@@ -20,6 +20,8 @@ package org.killbill.notificationq;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -42,15 +44,23 @@ import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.QueueObjectMapper;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 
 public class DefaultNotificationQueue implements NotificationQueue {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultNotificationQueue.class);
 
     private final DBI dbi;
     private final DBBackedQueue<NotificationEventModelDao> dao;
@@ -325,6 +335,42 @@ public class DefaultNotificationQueue implements NotificationQueue {
             }
         };
         InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
+    }
+
+    @Override
+    public void removeFutureNotificationsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        dao.getSqlDao().inTransaction(new Transaction<Void, QueueSqlDao<NotificationEventModelDao>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<NotificationEventModelDao> transactional, final TransactionStatus status) throws Exception {
+                final int batchSize = 25;
+                final Collection<NotificationEventModelDao> currentBatch = new ArrayList<NotificationEventModelDao>(batchSize);
+
+                final Iterator<NotificationEventModelDao> futureQueueEntriesForSearchKeys = ((NotificationSqlDao) transactional).getReadyQueueEntriesForSearchKeys(getFullQName(),
+                                                                                                                                                                   searchKey1,
+                                                                                                                                                                   searchKey2,
+                                                                                                                                                                   config.getTableName());
+                try {
+                    while (futureQueueEntriesForSearchKeys.hasNext()) {
+                        final NotificationEventModelDao notificationEventModelDao = futureQueueEntriesForSearchKeys.next();
+                        notificationEventModelDao.setProcessingState(PersistentQueueEntryLifecycleState.REMOVED);
+                        currentBatch.add(notificationEventModelDao);
+
+                        if (currentBatch.size() >= batchSize || !futureQueueEntriesForSearchKeys.hasNext()) {
+                            dao.moveEntriesToHistoryFromTransaction(transactional, currentBatch);
+                            currentBatch.clear();
+                        }
+                    }
+                } finally {
+                    // This will go through all results to close the connection
+                    final int nbNotificationsLeft = Iterators.size(futureQueueEntriesForSearchKeys);
+                    if (nbNotificationsLeft > 0) {
+                        logger.warn("Unable to remove {} notifications for searchKey1={}, searchKey2={}", searchKey1, searchKey2);
+                    }
+                }
+
+                return null;
+            }
+        });
     }
 
     @Override

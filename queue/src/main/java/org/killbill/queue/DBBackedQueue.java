@@ -451,8 +451,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         }
     }
 
-    private void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
-
+    public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
         if (!entries.iterator().hasNext()) {
             return;
         }
