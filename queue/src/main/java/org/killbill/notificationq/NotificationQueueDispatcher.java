@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -97,8 +97,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
         this.dispatcher = new Dispatcher<NotificationEventModelDao>(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler());
-        final NotificationSqlDao sqlDao = dbi.onDemand(NotificationSqlDao.class);
-        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, sqlDao, config, "notif-" + config.getTableName(), metricRegistry, null);
+        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, dbi, NotificationSqlDao.class, config, "notif-" + config.getTableName(), metricRegistry, null);
 
         this.queues = new TreeMap<String, NotificationQueue>();
 
@@ -161,23 +160,12 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     @Override
     public int doProcessEvents() {
-        return doProcessEventsWithLimit(-1);
-    }
-
-    protected int doProcessEventsWithLimit(final int limit) {
-        logDebug("ENTER doProcessEvents");
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
         if (notifications.isEmpty()) {
-            logDebug("EXIT doProcessEvents");
             return 0;
         }
-        logDebug("doProcessEventsWithLimit date = %s, got %s", getClock().getUTCNow().toDate(), notifications.size());
+        log.debug("Notifications from {} to process: {}", config.getTableName(), notifications);
 
-        if (limit > 0) {
-            while (notifications.size() > limit) {
-                notifications.remove(notifications.size() - 1);
-            }
-        }
         for (final NotificationEventModelDao cur : notifications) {
             final NotificationCallableCallback callback = new NotificationCallableCallback(this);
             dispatcher.dispatch(cur, callback);
@@ -245,14 +233,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         }
         return claimedNotifications;
     }
-
-    private void logDebug(final String format, final Object... args) {
-        if (log.isDebugEnabled()) {
-            final String realDebug = String.format(format, args);
-            log.debug(String.format("Thread %d  %s", Thread.currentThread().getId(), realDebug));
-        }
-    }
-
 
     public static String getCompositeName(final String svcName, final String queueName) {
         return svcName + ":" + queueName;
