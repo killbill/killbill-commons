@@ -21,7 +21,7 @@
     <parent>
         <artifactId>killbill-commons</artifactId>
         <groupId>org.kill-bill.commons</groupId>
-        <version>0.21.10-SNAPSHOT</version>
+        <version>0.21.10</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-locker</artifactId>
