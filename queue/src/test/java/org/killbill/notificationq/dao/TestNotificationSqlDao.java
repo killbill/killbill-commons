@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -20,6 +20,7 @@ package org.killbill.notificationq.dao;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +33,9 @@ import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
+import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -58,6 +61,26 @@ public class TestNotificationSqlDao extends TestSetup {
     public void beforeClass() throws Exception {
         super.beforeClass();
         dao = getDBI().onDemand(NotificationSqlDao.class);
+    }
+
+    @Test(groups = "slow", description = "Verify SQL bound arguments are properly serialized")
+    public void testQueryGeneratesNoWarning() throws Exception {
+        final Handle handle = getDBI().open();
+        try {
+            final Date date = new DateTime().toDate();
+            handle.inTransaction(new TransactionCallback<Object>() {
+                @Override
+                public Object inTransaction(final Handle conn, final TransactionStatus status) throws Exception {
+                    final NotificationSqlDao notificationSqlDao = conn.attach(NotificationSqlDao.class);
+                    final List<NotificationEventModelDao> entries = notificationSqlDao.getReadyEntries(date, 3, hostname, notificationQueueConfig.getTableName());
+                    assertNull(conn.getConnection().getWarnings());
+                    assertEquals(entries.size(), 0);
+                    return null;
+                }
+            });
+        } finally {
+            handle.close();
+        }
     }
 
     @Test(groups = "slow")

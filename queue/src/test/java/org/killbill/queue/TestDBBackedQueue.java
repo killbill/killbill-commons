@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -84,7 +84,7 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "mysql")
     public void testOnlyInflightQ() {
         final PersistentBusConfig config = createConfig(1, 10, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "onlyInflightQ-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "onlyInflightQ-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -144,7 +144,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 10, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -195,7 +195,7 @@ public class TestDBBackedQueue extends TestSetup {
     @Test(groups = "mysql")
     public void testInflightQWithMultipleEntriesPerTransaction() {
         final PersistentBusConfig config = createConfig(3, 10, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "MultipleEntriesPerTransaction-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "MultipleEntriesPerTransaction-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         final BusEventModelDao input1 = createEntry(new Long(1));
@@ -241,7 +241,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(7, 100, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithSmallExistingEntriesOnStart-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "inflightQWithSmallExistingEntriesOnStart-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -318,7 +318,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(20, 100, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "inflightQWithLargeExistingEntriesOnStart-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "inflightQWithLargeExistingEntriesOnStart-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -420,7 +420,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 100, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "smallExistingEntriesOnStartAndOverflowWrite_bus-event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "smallExistingEntriesOnStartAndOverflowWrite_bus-event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         assertFalse(queue.isQueueOpenForRead());
@@ -493,7 +493,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testWithOneReaderOneWriter() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "oneReaderOneWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "oneReaderOneWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
 
@@ -537,7 +537,7 @@ public class TestDBBackedQueue extends TestSetup {
     public void testMultipleWritersOneReader() throws InterruptedException {
 
         final PersistentBusConfig config = createConfig(7, 100, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
 
@@ -587,7 +587,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 10, PersistentQueueMode.STICKY_POLLING);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "existingEntriesForDifferentOwners-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         long expectedRecordId = -1;
@@ -672,7 +672,7 @@ public class TestDBBackedQueue extends TestSetup {
         }
 
         final PersistentBusConfig config = createConfig(1, 10, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "stickyEventsWithLeftBehindEntries-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "stickyEventsWithLeftBehindEntries-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
 
         long expectedRecordId = -1;
