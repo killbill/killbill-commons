@@ -1,3 +1,7 @@
+0.21.10
+    queue: revisit DEBUG log entries
+    queue: add NotificationQueue#removeFutureNotificationsForSearchKeys API
+
 0.21.9
     queue: harden STICKY_ modes for cloud deployments, see #29 and #30
     queue: put the user token in the MDC
