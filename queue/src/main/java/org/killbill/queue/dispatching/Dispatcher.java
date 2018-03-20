@@ -73,10 +73,9 @@ public class Dispatcher<M extends EventEntryModelDao> {
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            log.info(String.format("Stop sequence has been interrupted"));
+            log.info("Stop sequence has been interrupted");
         }
     }
-
 
     public <E extends QueueEvent> void dispatch(final M modelDao, final CallableCallback<E, M> callback) {
         log.debug("Dispatching entry {}", modelDao);

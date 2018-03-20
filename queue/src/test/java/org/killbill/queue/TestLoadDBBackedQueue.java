@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2017 Groupon, Inc
- * Copyright 2015-2017 The Billing Project, LLC
+ * Copyright 2015-2018 Groupon, Inc
+ * Copyright 2015-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -74,7 +74,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
         final int CLAIMED_EVENTS = 10;
 
         final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, PersistentQueueMode.POLLING);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "perf-bus_event", metricRegistry, null);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "perf-bus_event", metricRegistry, null);
         queue.initialize();
 
 
@@ -119,7 +119,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
 
         final int nbEntries = 10000;
         final PersistentBusConfig config = createConfig(10, nbEntries, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
         for (int i = 0; i < nbEntries; i++) {
             final BusEventModelDao input = createEntry(new Long(i + 5));

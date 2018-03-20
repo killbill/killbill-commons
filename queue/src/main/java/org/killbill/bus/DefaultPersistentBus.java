@@ -95,11 +95,10 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super("Bus", config);
         this.dbi = (DBI) dbi;
-        final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
         this.clock = clock;
         this.config = config;
         this.dbBackedQId = "bus-" + config.getTableName();
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
         this.prof = new Profiling<Iterable<BusEventModelDao>, RuntimeException>();
         final ThreadFactory busThreadFactory = new ThreadFactory() {
             @Override
@@ -158,14 +157,13 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         if (events.isEmpty()) {
             return 0;
         }
+        log.debug("Bus events from {} to process: {}", config.getTableName(), events);
 
-        int result = 0;
         for (final BusEventModelDao cur : events) {
             final BusCallableCallback callback = new BusCallableCallback(this);
             dispatcher.dispatch(cur, callback);
-            result++;
         }
-        return result;
+        return events.size();
     }
 
     @Override
