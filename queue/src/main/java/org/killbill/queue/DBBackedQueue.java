@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2015-2018 Groupon, Inc
+ * Copyright 2015-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,18 +18,18 @@
 
 package org.killbill.queue;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
@@ -44,21 +44,26 @@ import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dao.QueueSqlDao;
+import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
+import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.eventbus.AllowConcurrentEvents;
+import com.google.common.eventbus.Subscribe;
 
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
@@ -99,6 +104,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private final String DB_QUEUE_LOG_ID;
 
+    private final IDBI dbi;
+    private final Class<? extends QueueSqlDao<T>> sqlDaoClass;
     private final QueueSqlDao<T> sqlDao;
     private final Clock clock;
     private final PersistentQueueConfig config;
@@ -133,14 +140,17 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final TransientInflightQRowIdCache transientInflightQRowIdCache;
 
     public DBBackedQueue(final Clock clock,
-                         final QueueSqlDao<T> sqlDao,
+                         final IDBI dbi,
+                         final Class<? extends QueueSqlDao<T>> sqlDaoClass,
                          final PersistentQueueConfig config,
                          final String dbBackedQId,
                          final MetricRegistry metricRegistry,
                          @Nullable final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         this.queueId = QUEUE_ID_CNT.incrementAndGet();
         this.useInflightQueue = config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS;
-        this.sqlDao = sqlDao;
+        this.dbi = dbi;
+        this.sqlDaoClass = sqlDaoClass;
+        this.sqlDao = dbi.onDemand(sqlDaoClass);
         this.config = config;
         this.inflightEvents = useInflightQueue ? new LinkedBlockingQueue<Long>(config.getEventQueueCapacity()) : null;
         this.isQueueOpenForWrite = false;
@@ -200,12 +210,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         this.lastPollingOrphanTime = clock.getUTCNow().getMillis();
         this.lowestOrphanEntry = -1L;
         this.transientInflightQRowIdCache = useInflightQueue ? new TransientInflightQRowIdCache(queueId) : null;
-        this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId + ": ";
+        this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId;
     }
 
-
     public void initialize() {
-
         if (useInflightQueue) {
             inflightEvents.clear();
             final List<T> entries = fetchReadyEntries(thresholdToReopenQForWrite);
@@ -231,15 +239,12 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         totalProcessedFirstFailures.dec(totalProcessedFirstFailures.getCount());
         totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
-        log.info(DB_QUEUE_LOG_ID + "Initialized with queueId = " + queueId +
-                ", mode = " + config.getPersistentQueueMode() +
-                ", isQueueOpenForWrite = " + isQueueOpenForWrite +
-                ", isQueueOpenForRead = " + isQueueOpenForRead);
+        log.info("{} Initialized with queueId={}, mode={}, isQueueOpenForWrite={}, isQueueOpenForRead={}",
+                 DB_QUEUE_LOG_ID, queueId, config.getPersistentQueueMode(), isQueueOpenForWrite, isQueueOpenForRead);
     }
 
-
     public void insertEntry(final T entry) {
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+        executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) {
                 insertEntryFromTransaction(transactional, entry);
@@ -248,11 +253,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
-
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
         final Long lastInsertId = safeInsertEntry(transactional, entry);
         if (lastInsertId == 0) {
-            log.warn(DB_QUEUE_LOG_ID + "Failed to insert entry, lastInsertedId " + lastInsertId);
+            log.warn("{} Failed to insert entry, lastInsertedId={}", DB_QUEUE_LOG_ID, lastInsertId);
             return;
         }
 
@@ -261,7 +265,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         // and insert the recordId into a blockingQ that is highly optimized to dispatch events.
         if (useInflightQueue && isQueueOpenForWrite) {
             transientInflightQRowIdCache.addRowId(lastInsertId);
-            //log.info(DB_QUEUE_LOG_ID + "Setting for thread " + Thread.currentThread().getId() + ", row = " + lastInsertId);
         }
         totalInsert.inc();
     }
@@ -278,14 +281,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
         totalFetched.inc(entriesToClaim.size());
         if (!entriesToClaim.isEmpty()) {
-            log.debug("Entries to claim: {}", entriesToClaim);
+            log.debug("{} Entries to claim: {}", DB_QUEUE_LOG_ID, entriesToClaim);
             return claimEntries(entriesToClaim);
         }
         return ImmutableList.<T>of();
     }
 
     private List<T> getReadyEntriesUsingInflightQueue() {
-
         List<T> candidates;
         if (isQueueOpenForRead) {
 
@@ -304,7 +306,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             // the Q overflowed previously so we disable reading from the Q and continue below.
             if (!isQueueOpenForWrite) {
                 isQueueOpenForRead = false;
-                log.info(DB_QUEUE_LOG_ID + " Closing Q for read");
+                log.info("{} Closing Q for read", DB_QUEUE_LOG_ID);
             }
         }
 
@@ -319,7 +321,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     (candidates.size() < config.getMaxEntriesClaimed() ||
                             (getNbReadyEntries() < thresholdToReopenQForWrite))) {
                 isQueueOpenForWrite = true;
-                log.info(DB_QUEUE_LOG_ID + " Opening Q for write");
+                log.info("{} Opening Q for write", DB_QUEUE_LOG_ID);
             }
 
             //
@@ -329,7 +331,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             //
             if (removeInflightEventsWhenSwitchingToQueueOpenForRead(candidates)) {
                 isQueueOpenForRead = true;
-                log.info(DB_QUEUE_LOG_ID + " Opening Q for read");
+                log.info("{} Opening Q for read", DB_QUEUE_LOG_ID);
             }
 
             // Only keep as many candidates as we are allowed to
@@ -346,7 +348,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             final Long previousLowestOrphanEntry = lowestOrphanEntry;
             lowestOrphanEntry = (entriesToClaim.isEmpty()) ? -1L : entriesToClaim.get(0).getRecordId();
             if (previousLowestOrphanEntry > 0 && previousLowestOrphanEntry == lowestOrphanEntry) {
-                log.warn(DB_QUEUE_LOG_ID + "Detected unprocessed bus event {}, may need to restart server...", previousLowestOrphanEntry);
+                log.warn("{} Detected unprocessed bus event {}", DB_QUEUE_LOG_ID, previousLowestOrphanEntry);
             }
 
             lastPollingOrphanTime = clock.getUTCNow().getMillis();
@@ -354,7 +356,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     private boolean removeInflightEventsWhenSwitchingToQueueOpenForRead(final List<T> candidates) {
-
         // There is no entry and yet Q is open for write so we can safely start reading from Q
         if (candidates.isEmpty()) {
             return true;
@@ -373,10 +374,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         return foundAllEntriesInInflightEvents;
     }
 
-
     public void updateOnError(final T entry) {
         // We are not (re)incrementing counters totalInflightInsert and totalInsert for these entries, this is a matter of semantics
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+        executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 transactional.updateOnError(entry.getRecordId(), clock.getUTCNow().toDate(), entry.getErrorCount(), config.getTableName());
@@ -392,7 +392,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     public void moveEntryToHistory(final T entry) {
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+        executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 moveEntryToHistoryFromTransaction(transactional, entry);
@@ -400,7 +400,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
         });
     }
-
 
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
         try {
@@ -415,24 +414,22 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     // Don't default for REMOVED since we could call this API 'manually' with that state.
                     break;
                 default:
-                    log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + entry.getProcessingState() + " for record_id = " + entry.getRecordId());
+                    log.warn("{} Unexpected terminal event state={} for record_id={}", DB_QUEUE_LOG_ID, entry.getProcessingState(), entry.getRecordId());
                     break;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Moving entry into history: recordId={} className={} json={}", entry.getRecordId(), entry.getClassName(), entry.getEventJson());
-            }
+            log.debug("{} Moving entry into history: recordId={}, className={}, json={}", DB_QUEUE_LOG_ID, entry.getRecordId(), entry.getClassName(), entry.getEventJson());
 
             transactional.insertEntry(entry, config.getHistoryTableName());
             transactional.removeEntry(entry.getRecordId(), config.getTableName());
         } catch (final Exception e) {
-            log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + entry.getRecordId() + "] into history ", e);
+            log.warn("{} Failed to move entry into history: {}", DB_QUEUE_LOG_ID, entry, e);
         }
     }
 
     public void moveEntriesToHistory(final Iterable<T> entries) {
         try {
-            sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+            executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
                 @Override
                 public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                     moveEntriesToHistoryFromTransaction(transactional, entries);
@@ -440,19 +437,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 }
             });
         } catch (final Exception e) {
-            final Iterable<Long> recordIds = Iterables.transform(entries, new Function<T, Long>() {
-                @Nullable
-                @Override
-                public Long apply(@Nullable final T input) {
-                    return input.getRecordId();
-                }
-            });
-            log.warn(DB_QUEUE_LOG_ID + "Failed to move entries [" + Joiner.on(", ").join(recordIds) + "] into history ", e);
+            log.warn("{} Failed to move entries into history: {}", DB_QUEUE_LOG_ID, entries, e);
         }
     }
 
-    private void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
-
+    public void moveEntriesToHistoryFromTransaction(final QueueSqlDao<T> transactional, final Iterable<T> entries) {
         if (!entries.iterator().hasNext()) {
             return;
         }
@@ -469,12 +458,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     // Don't default for REMOVED since we could call this API 'manually' with that state.
                     break;
                 default:
-                    log.warn(DB_QUEUE_LOG_ID + "Unexpected terminal event state " + cur.getProcessingState() + " for record_id = " + cur.getRecordId());
+                    log.warn("{} Unexpected terminal event state={} for record_id={}", DB_QUEUE_LOG_ID, cur.getProcessingState(), cur.getRecordId());
                     break;
             }
-            if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Moving entry into history: recordId={} className={} json={}", cur.getRecordId(), cur.getClassName(), cur.getEventJson());
-            }
+            log.debug("{} Moving entry into history: recordId={}, className={}, json={}", DB_QUEUE_LOG_ID, cur.getRecordId(), cur.getClassName(), cur.getEventJson());
         }
 
         final Iterable<Long> toBeRemovedRecordIds = Iterables.<T, Long>transform(entries, new Function<T, Long>() {
@@ -488,9 +475,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         transactional.removeEntries(ImmutableList.<Long>copyOf(toBeRemovedRecordIds), config.getTableName());
     }
 
-
     private List<T> fetchReadyEntriesFromIds() {
-
         // Drain the inflightEvents queue up to a maximum (MAX_FETCHED_ENTRIES)
         final List<Long> recordIds = new ArrayList<Long>(MAX_FETCHED_ENTRIES);
         inflightEvents.drainTo(recordIds, MAX_FETCHED_ENTRIES);
@@ -503,16 +488,20 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 }
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn(DB_QUEUE_LOG_ID + "Got interrupted ");
+                log.warn("{} Got interrupted", DB_QUEUE_LOG_ID);
                 return ImmutableList.of();
             }
         }
 
         if (!recordIds.isEmpty()) {
-            if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "fetchReadyEntriesFromIds, size = " + recordIds.size() + ", ids = " + Joiner.on(", ").join(recordIds));
-            }
-            return sqlDao.getEntriesFromIds(recordIds, config.getTableName());
+            log.debug("{} fetchReadyEntriesFromIds: {}", DB_QUEUE_LOG_ID, recordIds);
+
+            return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
+                @Override
+                public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
+                    return queueSqlDao.getEntriesFromIds(recordIds, config.getTableName());
+                }
+            });
         }
         return ImmutableList.<T>of();
     }
@@ -520,8 +509,12 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private List<T> fetchReadyEntries(final int size) {
         final Date now = clock.getUTCNow().toDate();
         final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
-        final List<T> entries = sqlDao.getReadyEntries(now, size, owner, config.getTableName());
-        return entries;
+        return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
+            @Override
+            public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
+                return queueSqlDao.getReadyEntries(now, size, owner, config.getTableName());
+            }
+        });
     }
 
     private long getNbReadyEntries() {
@@ -531,7 +524,12 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     public long getNbReadyEntries(final Date now) {
         final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
-        return sqlDao.getNbReadyEntries(now, owner, config.getTableName());
+        return executeQuery(new Query<Long, QueueSqlDao<T>>() {
+            @Override
+            public Long execute(final QueueSqlDao<T> queueSqlDao) {
+                return queueSqlDao.getNbReadyEntries(now, owner, config.getTableName());
+            }
+        });
     }
 
     private List<T> claimEntries(final List<T> candidates) {
@@ -560,19 +558,29 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 return input.getRecordId();
             }
         });
-        final int resultCount = sqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+        final int resultCount = executeQuery(new Query<Integer, QueueSqlDao<T>>() {
+            @Override
+            public Integer execute(final QueueSqlDao<T> queueSqlDao) {
+                return queueSqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+            }
+        });
         // We should ALWAYS see the same number since we are in STICKY_POLLING mode and there is only one thread claiming entries.
         // We keep the 2 cases below for safety (code was written when this was MT-threaded), and we log with warn (will eventually remove it in the future)
         if (resultCount == candidates.size()) {
             totalClaimed.inc(resultCount);
-            log.debug("batchClaimEntries claimed: {}", candidates);
+            log.debug("{} batchClaimEntries claimed: {}", DB_QUEUE_LOG_ID, candidates);
             return candidates;
             // Nothing... the synchronized block let go another concurrent thread
         } else if (resultCount == 0) {
-            log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries see 0 entries");
+            log.warn("{} batchClaimEntries see 0 entries", DB_QUEUE_LOG_ID);
             return ImmutableList.of();
         } else {
-            final List<T> maybeClaimedEntries = sqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+            final List<T> maybeClaimedEntries = executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
+                @Override
+                public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
+                    return queueSqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+                }
+            });
             final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
                 public boolean apply(final T input) {
@@ -582,7 +590,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             final List<T> result = ImmutableList.<T>copyOf(claimed);
 
-            log.warn(DB_QUEUE_LOG_ID + "batchClaimEntries only claimed partial entries " + candidates.size() + "/" + result.size());
+            log.warn("{} batchClaimEntries only claimed partial entries {}/{}", DB_QUEUE_LOG_ID, result.size(), candidates.size());
 
             totalClaimed.inc(result.size());
             return result;
@@ -604,13 +612,17 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private boolean claimEntry(final T entry) {
         final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
-        final boolean claimed = (sqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName()) == 1);
+        final int claimEntry = executeQuery(new Query<Integer, QueueSqlDao<T>>() {
+            @Override
+            public Integer execute(final QueueSqlDao<T> queueSqlDao) {
+                return queueSqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+            }
+        });
+        final boolean claimed = (claimEntry == 1);
 
         if (claimed) {
             totalClaimed.inc();
-            if (log.isDebugEnabled()) {
-                log.debug(DB_QUEUE_LOG_ID + "Claiming entry " + entry.getRecordId());
-            }
+            log.debug("{} Claimed entry {}", DB_QUEUE_LOG_ID, entry);
         }
         return claimed;
     }
@@ -664,16 +676,13 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 final Long entry = entries.next();
                 final boolean result = inflightEvents.offer(entry);
                 if (result) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(DB_QUEUE_LOG_ID + "Inserting entry " + entry +
-                                (result ? " into inflightQ" : " into disk"));
-                    }
+                    log.debug("{} Inserting entry {} into inflightQ", DB_QUEUE_LOG_ID, entry);
                     totalInflightInsert.inc();
                     // Q overflowed, which means we will stop writing entries into the Q, and as a result, we will end up stop reading
                     // from the Q and return to polling mode
                 } else if (isQueueOpenForWrite) {
                     isQueueOpenForWrite = false;
-                    log.warn(DB_QUEUE_LOG_ID + "Closing Q for write: Overflowed with recordId = " + entry);
+                    log.warn("{} Closing Q for write: Overflowed with recordId={}", DB_QUEUE_LOG_ID, entry);
                 }
             }
         } finally {
@@ -751,9 +760,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 transactional.insertEntry(entry, config.getTableName());
 
                 final Long lastInsertId = transactional.getLastInsertId();
-                if (log.isDebugEnabled()) {
-                    log.debug(DB_QUEUE_LOG_ID + "Inserting entry: lastInsertId={}, entry={}", lastInsertId, entry);
-                }
+                log.debug("{} Inserting entry: lastInsertId={}, entry={}", DB_QUEUE_LOG_ID, lastInsertId, entry);
 
                 return lastInsertId;
             }
@@ -761,11 +768,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     public void reapEntries(final Date reapingDate) {
-        sqlDao.inTransaction(new Transaction<Void, QueueSqlDao<T>>() {
+        executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 final DateTime now = clock.getUTCNow();
-                final List<T> entriesLeftBehind = sqlDao.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, config.getTableName());
+                final List<T> entriesLeftBehind = transactional.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, config.getTableName());
 
                 if (entriesLeftBehind.size() > 0) {
                     final Iterable<T> entriesToMove = Iterables.transform(entriesLeftBehind, new Function<T, T>() {
@@ -780,7 +787,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
                     insertReapedEntriesFromTransaction(transactional, entriesLeftBehind, now);
 
-                    log.warn("{} {} entries were reaped by {}",DB_QUEUE_LOG_ID ,entriesLeftBehind.size(), CreatorName.get());
+                    log.warn("{} {} entries were reaped by {}", DB_QUEUE_LOG_ID, entriesLeftBehind.size(), CreatorName.get());
                 }
 
                 return null;
@@ -788,9 +795,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
-    private void insertReapedEntriesFromTransaction(final QueueSqlDao<T> transactional, final List<T> entriesLeftBehind, DateTime now) {
-
-        for (T entry : entriesLeftBehind) {
+    private void insertReapedEntriesFromTransaction(final QueueSqlDao<T> transactional, final List<T> entriesLeftBehind, final DateTime now) {
+        for (final T entry : entriesLeftBehind) {
             entry.setCreatedDate(now);
             entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
             entry.setCreatingOwner(CreatorName.get());
@@ -805,5 +811,47 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
             transactional.insertEntries(entriesLeftBehind, config.getTableName());
         }
+    }
+
+    private <U> U executeQuery(final Query<U, QueueSqlDao<T>> query) {
+        return dbi.withHandle(new HandleCallback<U>() {
+            @Override
+            public U withHandle(final Handle handle) throws Exception {
+                final U result = query.execute(handle.attach(sqlDaoClass));
+                printSQLWarnings(handle);
+                return result;
+            }
+        });
+    }
+
+    private <U> U executeTransaction(final Transaction<U, QueueSqlDao<T>> transaction) {
+        return dbi.inTransaction(new TransactionCallback<U>() {
+            @Override
+            public U inTransaction(final Handle handle, final TransactionStatus status) throws Exception {
+                final U result = transaction.inTransaction(handle.attach(sqlDaoClass), status);
+                printSQLWarnings(handle);
+                return result;
+            }
+        });
+    }
+
+    private void printSQLWarnings(final Handle handle) {
+        if (log.isDebugEnabled()) {
+            try {
+                SQLWarning warning = handle.getConnection().getWarnings();
+                while (warning != null) {
+                    log.debug("[SQL WARNING] {}", warning);
+                    warning = warning.getNextWarning();
+                }
+                handle.getConnection().clearWarnings();
+            } catch (final SQLException e) {
+                log.debug("Error whilst retrieving SQL warnings", e);
+            }
+        }
+    }
+
+    private interface Query<U, QueueSqlDao> {
+
+        U execute(QueueSqlDao sqlDao);
     }
 }

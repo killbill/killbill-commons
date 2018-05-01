@@ -204,6 +204,14 @@ public interface NotificationQueue extends QueueLifecycle {
                                            final Long recordId);
 
     /**
+     * Remove all future notifications associated with that queue and matching these search keys
+     *
+     * @param searchKey1 the value for key1
+     * @param searchKey2 the value for key2
+     */
+    void removeFutureNotificationsForSearchKeys(final Long searchKey1, final Long searchKey2);
+
+    /**
      * @return the name of that queue
      */
     String getFullQName();

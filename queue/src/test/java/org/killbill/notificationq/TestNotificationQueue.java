@@ -18,16 +18,16 @@
 
 package org.killbill.notificationq;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
 import org.killbill.TestSetup;
-import org.killbill.clock.ClockMock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -46,16 +46,15 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
-import static org.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.awaitility.Awaitility.await;
 import static org.testng.Assert.assertEquals;
 
 public class TestNotificationQueue extends TestSetup {
@@ -217,6 +216,18 @@ public class TestNotificationQueue extends TestSetup {
             }
         });
 
+        final UUID key5 = UUID.randomUUID();
+        final NotificationEvent eventJson5 = new TestNotificationKey(key5.toString());
+        expectedNotifications.put(eventJson4, Boolean.FALSE);
+        dbi.inTransaction(new TransactionCallback<Object>() {
+            @Override
+            public Object inTransaction(final Handle conn, final TransactionStatus status) throws Exception {
+                queue.recordFutureNotificationFromTransaction(conn.getConnection(), readyTime.plusMonths(1), eventJson5, TOKEN_ID, 1L, 1L);
+                log.info("Posted key: " + eventJson5);
+                return null;
+            }
+        });
+
         Assert.assertEquals(Iterables.<NotificationEventWithMetadata<TestNotificationKey>>size(queue.getInProcessingNotifications()), 0);
         Assert.assertEquals(queue.getNbReadyEntries(readyTime), 4);
 
@@ -231,7 +242,6 @@ public class TestNotificationQueue extends TestSetup {
             }
         }
         Assert.assertEquals(found, 2);
-
 
         final List<NotificationEventWithMetadata> futures2 = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKey2(null, SEARCH_KEY_2));
         Assert.assertEquals(futures2.size(), 3);
@@ -249,21 +259,29 @@ public class TestNotificationQueue extends TestSetup {
         // Move time in the future after the notification effectiveDate
         clock.setDeltaFromReality(3000);
 
-
         // Notification should have kicked but give it at least a sec' for thread scheduling
         await().atMost(1, MINUTES)
-                .until(new Callable<Boolean>() {
-                           @Override
-                           public Boolean call() throws
-                                   Exception {
-                               return expectedNotifications.get(eventJson1) &&
-                                       expectedNotifications.get(eventJson2) &&
-                                       expectedNotifications.get(eventJson3) &&
-                                       expectedNotifications.get(eventJson4);
-                           }
-                       }
-                );
+               .until(new Callable<Boolean>() {
+                          @Override
+                          public Boolean call() throws
+                                                Exception {
+                              return expectedNotifications.get(eventJson1) &&
+                                     expectedNotifications.get(eventJson2) &&
+                                     expectedNotifications.get(eventJson3) &&
+                                     expectedNotifications.get(eventJson4);
+                          }
+                      }
+                     );
         Assert.assertEquals(queue.getNbReadyEntries(readyTime), 0);
+
+        // No-op
+        Assert.assertEquals(Iterables.size(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2)), 0);
+        queue.removeFutureNotificationsForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2);
+        Assert.assertEquals(Iterables.size(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2)), 0);
+
+        Assert.assertEquals(Iterables.size(queue.getFutureNotificationForSearchKeys(1L, 1L)), 1);
+        queue.removeFutureNotificationsForSearchKeys(1L, 1L);
+        Assert.assertEquals(Iterables.size(queue.getFutureNotificationForSearchKeys(1L, 1L)), 0);
 
         queue.stopQueue();
     }
