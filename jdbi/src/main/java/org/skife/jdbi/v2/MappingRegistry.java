@@ -56,8 +56,7 @@ class MappingRegistry
 
     public ResultSetMapper mapperFor(Class type, StatementContext ctx) {
         // check if cache must be bypassed
-        Map<String, Object> attributes = ctx.getAttributes();
-        Boolean bypassCache = attributes.containsKey("bypassMappingRegistryCache") ? (Boolean) ctx.getAttribute("bypassMappingRegistryCache") : Boolean.FALSE;
+        Boolean bypassCache = Boolean.valueOf(String.valueOf(ctx.getAttribute("bypassMappingRegistryCache")));
 
         if (cache.containsKey(type)) {
             ResultSetMapper mapper = cache.get(type);
