@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -27,12 +27,19 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
+import org.joda.time.Period;
 import org.killbill.TestSetup;
+import org.killbill.billing.util.queue.QueueRetryException;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueService;
 import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
+import org.killbill.notificationq.dao.NotificationEventModelDao;
+import org.killbill.notificationq.dao.NotificationSqlDao;
+import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.retry.RetryableHandler;
+import org.killbill.queue.retry.RetryableService;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
@@ -52,6 +59,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
@@ -66,8 +74,16 @@ public class TestNotificationQueue extends TestSetup {
     private static final long SEARCH_KEY_2 = 34;
 
     private NotificationQueueService queueService;
+    private RetryableNotificationQueueService retryableQueueService;
 
     private volatile int eventsReceived;
+
+    private static final class RetryableNotificationQueueService extends RetryableService {
+
+        public RetryableNotificationQueueService(final NotificationQueueService notificationQueueService) {
+            super(notificationQueueService);
+        }
+    }
 
     private static final class TestNotificationKey implements NotificationEvent, Comparable<TestNotificationKey> {
 
@@ -130,6 +146,7 @@ public class TestNotificationQueue extends TestSetup {
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         queueService = new DefaultNotificationQueueService(getDBI(), clock, getNotificationQueueConfig(), metricRegistry);
+        retryableQueueService = new RetryableNotificationQueueService(queueService);
         eventsReceived = 0;
     }
 
@@ -443,23 +460,35 @@ public class TestNotificationQueue extends TestSetup {
 
     private class NotificationQueueHandlerWithExceptions implements NotificationQueueHandler {
 
+        private final List<Period> retrySchedule;
         private final int nbTotalExceptionsToThrow;
         private int nbExceptionsThrown;
 
-        public NotificationQueueHandlerWithExceptions(final int nbTotalExceptionsToThrow) {
-            this.nbTotalExceptionsToThrow = nbTotalExceptionsToThrow;
-            this.nbExceptionsThrown = 0;
+        public NotificationQueueHandlerWithExceptions(final List<Period> retrySchedule) {
+            this(retrySchedule, 0, 0);
         }
 
+        public NotificationQueueHandlerWithExceptions(final int nbTotalExceptionsToThrow) {
+            this(null, nbTotalExceptionsToThrow, 0);
+        }
+
+        public NotificationQueueHandlerWithExceptions(final List<Period> retrySchedule, final int nbTotalExceptionsToThrow, final int nbExceptionsThrown) {
+            this.retrySchedule = retrySchedule;
+            this.nbTotalExceptionsToThrow = nbTotalExceptionsToThrow;
+            this.nbExceptionsThrown = nbExceptionsThrown;
+        }
 
         @Override
         public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+            final NullPointerException exceptionForTests = new NullPointerException("Expected exception for tests");
 
-            //Assert.assertEquals(((DefaultNotificationQueueService) queueService).getDao().getSqlDao().getInProcessingEntries(notificationQueueConfig.getTableName()).size(), 1);
+            if (retrySchedule != null) {
+                throw new QueueRetryException(exceptionForTests, retrySchedule);
+            }
 
             if (nbExceptionsThrown < nbTotalExceptionsToThrow) {
                 nbExceptionsThrown++;
-                throw new NullPointerException();
+                throw exceptionForTests;
             }
             eventsReceived++;
         }
@@ -499,11 +528,8 @@ public class TestNotificationQueue extends TestSetup {
         }
     }
 
-
-
     @Test(groups = "slow")
     public void testWithExceptionAndFailed() throws Exception {
-
         final NotificationQueue queueWithExceptionAndFailed = queueService.createNotificationQueue("ExceptionAndRetrySuccess", "svc", new NotificationQueueHandlerWithExceptions(3));
         try {
             queueWithExceptionAndFailed.startQueue();
@@ -533,5 +559,67 @@ public class TestNotificationQueue extends TestSetup {
         } finally {
             queueWithExceptionAndFailed.stopQueue();
         }
-   }
+    }
+
+    @Test(groups = "slow")
+    public void testGaveUpRetrying() throws Exception {
+        // 4 retries
+        final NotificationQueueHandlerWithExceptions handlerDelegate = new NotificationQueueHandlerWithExceptions(ImmutableList.<Period>of(Period.millis(1),
+                                                                                                                                           Period.millis(1),
+                                                                                                                                           Period.millis(1),
+                                                                                                                                           Period.millis(1)));
+        final NotificationQueueHandler retryableHandler = new RetryableHandler(clock, retryableQueueService, handlerDelegate);
+        final NotificationQueue queueWithExceptionAndFailed = queueService.createNotificationQueue("svc", "queueName", retryableHandler);
+        try {
+            retryableQueueService.initialize(queueWithExceptionAndFailed.getQueueName(), handlerDelegate);
+            retryableQueueService.start();
+            queueWithExceptionAndFailed.startQueue();
+
+            final DateTime now = new DateTime();
+            final DateTime readyTime = now.plusMillis(2000);
+            final NotificationEvent eventJson = new TestNotificationKey("Foo");
+
+            queueWithExceptionAndFailed.recordFutureNotification(readyTime, eventJson, TOKEN_ID, SEARCH_KEY_1, SEARCH_KEY_2);
+
+            // Move time in the future after the notification effectiveDate
+            clock.setDeltaFromReality(3000);
+
+            final NotificationSqlDao notificationSqlDao = dbi.onDemand(NotificationSqlDao.class);
+
+            // Make sure all notifications are processed
+            await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return Iterators.size(notificationSqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getTableName())) == 0 &&
+                           Iterators.size(notificationSqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getTableName())) == 0;
+                }
+            });
+
+            // Initial event was processed once
+            final List<NotificationEventModelDao> historicalEntriesForOriginalEvent = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
+            // No error
+            Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
+            // State is RETRIED
+            Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.RETRIED);
+
+            // Retry events
+            final List<NotificationEventModelDao> historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            Assert.assertEquals(historicalEntriesForRetries.size(), 4);
+            for (int i = 0; i < historicalEntriesForRetries.size() - 1; i++) {
+                // No error
+                Assert.assertEquals((long) historicalEntriesForRetries.get(i).getErrorCount(), (long) 0);
+                // State is RETRIED
+                Assert.assertEquals(historicalEntriesForRetries.get(i).getProcessingState(), PersistentQueueEntryLifecycleState.RETRIED);
+            }
+
+            // Last one has still no error
+            Assert.assertEquals((long) historicalEntriesForRetries.get(historicalEntriesForRetries.size() - 1).getErrorCount(), (long) 0);
+            // State is GIVEN_UP
+            Assert.assertEquals(historicalEntriesForRetries.get(historicalEntriesForRetries.size() - 1).getProcessingState(), PersistentQueueEntryLifecycleState.GIVEN_UP);
+        } finally {
+            queueWithExceptionAndFailed.stopQueue();
+            retryableQueueService.stop();
+        }
+    }
 }

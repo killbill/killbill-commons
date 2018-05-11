@@ -25,6 +25,7 @@ import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
+import org.killbill.queue.retry.RetryableInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +74,12 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
             if (log.isDebugEnabled()) {
                 log.debug("Done handling notification {}, key = {}", modelDao.getRecordId(), modelDao.getEventJson());
             }
+        } else if (lastException instanceof RetryableInternalException) {
+            if (((RetryableInternalException) lastException).isRetried()) {
+                moveRetriedEventToHistory(modelDao);
+            } else {
+                moveGivenUpEventToHistory(modelDao);
+            }
         } else if (errorCount <= config.getMaxFailureRetries()) {
             log.info("Dispatch error, will attempt a retry ", lastException);
             updateRetryCountForFailedEvent(modelDao, errorCount);
@@ -92,9 +99,18 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
         dao.updateOnError(newEntry);
     }
 
-
     private void moveFailedEventToHistory(final M input) {
         final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, input.getErrorCount());
+        dao.moveEntryToHistory(newEntry);
+    }
+
+    private void moveRetriedEventToHistory(final M input) {
+        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.RETRIED, input.getErrorCount());
+        dao.moveEntryToHistory(newEntry);
+    }
+
+    private void moveGivenUpEventToHistory(final M input) {
+        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.GIVEN_UP, input.getErrorCount());
         dao.moveEntryToHistory(newEntry);
     }
 }

@@ -22,5 +22,9 @@ public enum PersistentQueueEntryLifecycleState {
     PROCESSED,
     REMOVED,
     FAILED,
-    REAPED
+    REAPED,
+    // User initiated retry
+    RETRIED,
+    // Retries exhausted
+    GIVEN_UP
 }
