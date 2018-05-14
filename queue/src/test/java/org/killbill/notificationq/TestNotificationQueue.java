@@ -49,7 +49,6 @@ import org.skife.jdbi.v2.util.IntegerMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -133,12 +132,6 @@ public class TestNotificationQueue extends TestSetup {
         public int hashCode() {
             return value != null ? value.hashCode() : 0;
         }
-    }
-
-    @Override
-    @BeforeClass(groups = "slow")
-    public void beforeClass() throws Exception {
-        super.beforeClass();
     }
 
     @Override
@@ -463,6 +456,7 @@ public class TestNotificationQueue extends TestSetup {
         private final List<Period> retrySchedule;
         private final int nbTotalExceptionsToThrow;
         private int nbExceptionsThrown;
+        public boolean shouldFail = true;
 
         public NotificationQueueHandlerWithExceptions(final List<Period> retrySchedule) {
             this(retrySchedule, 0, 0);
@@ -480,6 +474,11 @@ public class TestNotificationQueue extends TestSetup {
 
         @Override
         public void handleReadyNotification(final NotificationEvent eventJson, final DateTime eventDateTime, final UUID userToken, final Long searchKey1, final Long searchKey2) {
+            if (!shouldFail) {
+                eventsReceived++;
+                return;
+            }
+
             final NullPointerException exceptionForTests = new NullPointerException("Expected exception for tests");
 
             if (retrySchedule != null) {
@@ -491,6 +490,10 @@ public class TestNotificationQueue extends TestSetup {
                 throw exceptionForTests;
             }
             eventsReceived++;
+        }
+
+        public void shouldFail(final boolean shouldFail) {
+            this.shouldFail = shouldFail;
         }
     }
 
@@ -562,12 +565,12 @@ public class TestNotificationQueue extends TestSetup {
     }
 
     @Test(groups = "slow")
-    public void testGaveUpRetrying() throws Exception {
+    public void testRetryStateForNotifications() throws Exception {
         // 4 retries
         final NotificationQueueHandlerWithExceptions handlerDelegate = new NotificationQueueHandlerWithExceptions(ImmutableList.<Period>of(Period.millis(1),
                                                                                                                                            Period.millis(1),
                                                                                                                                            Period.millis(1),
-                                                                                                                                           Period.millis(1)));
+                                                                                                                                           Period.days(1)));
         final NotificationQueueHandler retryableHandler = new RetryableHandler(clock, retryableQueueService, handlerDelegate);
         final NotificationQueue queueWithExceptionAndFailed = queueService.createNotificationQueue("svc", "queueName", retryableHandler);
         try {
@@ -590,33 +593,55 @@ public class TestNotificationQueue extends TestSetup {
             await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    return Iterators.size(notificationSqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getTableName())) == 0 &&
-                           Iterators.size(notificationSqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getTableName())) == 0;
+                    return Iterators.size(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName())) == 1 &&
+                           Iterators.size(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName())) == 3;
                 }
             });
 
             // Initial event was processed once
-            final List<NotificationEventModelDao> historicalEntriesForOriginalEvent = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            List<NotificationEventModelDao> historicalEntriesForOriginalEvent = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
-            // No error
             Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
-            // State is RETRIED
-            Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.RETRIED);
+            // State is initially FAILED
+            Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
 
             // Retry events
-            final List<NotificationEventModelDao> historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
-            Assert.assertEquals(historicalEntriesForRetries.size(), 4);
-            for (int i = 0; i < historicalEntriesForRetries.size() - 1; i++) {
-                // No error
-                Assert.assertEquals((long) historicalEntriesForRetries.get(i).getErrorCount(), (long) 0);
-                // State is RETRIED
-                Assert.assertEquals(historicalEntriesForRetries.get(i).getProcessingState(), PersistentQueueEntryLifecycleState.RETRIED);
+            List<NotificationEventModelDao> historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            Assert.assertEquals(historicalEntriesForRetries.size(), 3);
+            for (final NotificationEventModelDao historicalEntriesForRetry : historicalEntriesForRetries) {
+                Assert.assertEquals((long) historicalEntriesForRetry.getErrorCount(), (long) 0);
+                Assert.assertEquals(historicalEntriesForRetry.getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
             }
 
-            // Last one has still no error
-            Assert.assertEquals((long) historicalEntriesForRetries.get(historicalEntriesForRetries.size() - 1).getErrorCount(), (long) 0);
-            // State is GIVEN_UP
-            Assert.assertEquals(historicalEntriesForRetries.get(historicalEntriesForRetries.size() - 1).getProcessingState(), PersistentQueueEntryLifecycleState.GIVEN_UP);
+            // Make the next retry work
+            handlerDelegate.shouldFail(false);
+
+            clock.addDays(1);
+
+            // Make sure all notifications are processed
+            await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return Iterators.size(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName())) == 1 &&
+                           Iterators.size(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName())) == 4;
+                }
+            });
+
+            // Initial event was processed once
+            historicalEntriesForOriginalEvent = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
+            Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
+            // State is still FAILED
+            Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
+
+            // Retry events
+            historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            Assert.assertEquals(historicalEntriesForRetries.size(), 4);
+            for (int i = 0; i < historicalEntriesForRetries.size(); i++) {
+                final NotificationEventModelDao historicalEntriesForRetry = historicalEntriesForRetries.get(i);
+                Assert.assertEquals((long) historicalEntriesForRetry.getErrorCount(), (long) 0);
+                Assert.assertEquals(historicalEntriesForRetry.getProcessingState(), i == historicalEntriesForRetries.size() - 1 ? PersistentQueueEntryLifecycleState.PROCESSED : PersistentQueueEntryLifecycleState.FAILED);
+            }
         } finally {
             queueWithExceptionAndFailed.stopQueue();
             retryableQueueService.stop();
