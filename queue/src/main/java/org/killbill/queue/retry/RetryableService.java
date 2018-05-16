@@ -133,15 +133,17 @@ public abstract class RetryableService {
         final DateTime effectiveDate = computeRetryDate(exception, originalEffectiveDate, retryNb);
         if (effectiveDate == null) {
             log.warn("Error processing event, NOT scheduling retry for event='{}', retryNb='{}'", originalNotificationEvent, retryNb, exception);
-            return;
+            throw new RetryableInternalException(false);
         }
         log.warn("Error processing event, scheduling retry for event='{}', effectiveDate='{}', retryNb='{}'", originalNotificationEvent, effectiveDate, retryNb, exception);
 
         try {
             final NotificationEvent retryNotificationEvent = new RetryNotificationEvent(objectMapper.writeValueAsString(originalNotificationEvent), originalNotificationEvent.getClass(), originalEffectiveDate, retryNb);
             retryNotificationQueue.recordFutureNotification(effectiveDate, retryNotificationEvent, userToken, searchKey1, searchKey2);
+            throw new RetryableInternalException(true);
         } catch (final IOException e) {
             log.error("Unable to schedule retry for event='{}', effectiveDate='{}'", originalNotificationEvent, effectiveDate, e);
+            throw new RetryableInternalException(false);
         }
     }
 

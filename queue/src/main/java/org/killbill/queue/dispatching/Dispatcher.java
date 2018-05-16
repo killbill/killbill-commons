@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import org.killbill.commons.concurrent.DynamicThreadPoolExecutorWithLoggingOnExceptions;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
+import org.killbill.queue.retry.RetryableInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -114,10 +115,11 @@ public class Dispatcher<M extends EventEntryModelDao> {
                     } catch (final Exception e) {
                         if (e.getCause() != null && e.getCause() instanceof InvocationTargetException) {
                             lastException = e.getCause().getCause();
+                        } else if (e.getCause() != null && e.getCause() instanceof RetryableInternalException) {
+                            lastException = e.getCause();
                         } else {
                             lastException = e;
                         }
-                        lastException = e;
                         errorCount++;
                     } finally {
                         callback.updateErrorCountOrMoveToHistory(event, entry, errorCount, lastException);
