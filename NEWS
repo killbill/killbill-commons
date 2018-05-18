@@ -1,3 +1,6 @@
+0.21.13
+    Improve state definition for events that were retried to better understand the final retry state.
+
 0.21.12
     Add the possibility to bypass mapping registry cache
 
