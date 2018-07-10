@@ -115,5 +115,10 @@ buildNumber.properties
 #
 
 *.db
+
+# Eclipse metadata
+.classpath
+.project
+.settings/
 logs/
 .logs

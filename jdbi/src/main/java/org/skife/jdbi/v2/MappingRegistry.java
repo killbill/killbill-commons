@@ -19,6 +19,7 @@ import org.skife.jdbi.v2.exceptions.DBIException;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -54,6 +55,9 @@ class MappingRegistry
     }
 
     public ResultSetMapper mapperFor(Class type, StatementContext ctx) {
+        // check if cache must be bypassed
+        Boolean bypassCache = Boolean.valueOf(String.valueOf(ctx.getAttribute("bypassMappingRegistryCache")));
+
         if (cache.containsKey(type)) {
             ResultSetMapper mapper = cache.get(type);
             if (mapper != null) {
@@ -64,7 +68,10 @@ class MappingRegistry
         for (ResultSetMapperFactory factory : factories) {
             if (factory.accepts(type, ctx)) {
                 ResultSetMapper mapper =  factory.mapperFor(type, ctx);
-                cache.put(type, mapper);
+                // bypass the cache
+                if (!bypassCache.booleanValue()) {
+                    cache.put(type, mapper);
+                }
                 return mapper;
             }
         }

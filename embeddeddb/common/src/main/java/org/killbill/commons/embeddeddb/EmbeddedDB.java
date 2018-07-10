@@ -67,9 +67,9 @@ public abstract class EmbeddedDB {
 
     public abstract DBEngine getDBEngine();
 
-    public abstract void initialize() throws IOException;
+    public abstract void initialize() throws IOException, SQLException;
 
-    public abstract void start() throws IOException;
+    public abstract void start() throws IOException, SQLException;
 
     public abstract void refreshTableNames() throws IOException;
 

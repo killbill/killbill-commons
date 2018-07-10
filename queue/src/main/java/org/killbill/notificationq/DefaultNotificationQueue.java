@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2011 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2015-2018 Groupon, Inc
+ * Copyright 2015-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -20,6 +20,8 @@ package org.killbill.notificationq;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -42,15 +44,25 @@ import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.QueueObjectMapper;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
+import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dispatching.CallableCallbackBase;
+import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.Transaction;
+import org.skife.jdbi.v2.TransactionStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
+    private static final Logger logger = LoggerFactory.getLogger(DefaultNotificationQueue.class);
+
+    private final DBI dbi;
     private final DBBackedQueue<NotificationEventModelDao> dao;
     private final String svcName;
     private final String queueName;
@@ -64,14 +76,15 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private volatile boolean isStarted;
 
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
-                                    final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
+                                    final DBI dbi, final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
                                     final Clock clock, final NotificationQueueConfig config) {
-        this(svcName, queueName, handler, dao, notificationQueueService, clock, config, QueueObjectMapper.get());
+        this(svcName, queueName, handler, dbi, dao, notificationQueueService, clock, config, QueueObjectMapper.get());
     }
 
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
-                                    final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
+                                    final DBI dbi, final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
                                     final Clock clock, final NotificationQueueConfig config, final ObjectMapper objectMapper) {
+        this.dbi = dbi;
         this.svcName = svcName;
         this.queueName = queueName;
         this.handler = handler;
@@ -107,7 +120,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return null;
             }
         };
-        InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
     }
 
     @Override
@@ -134,7 +147,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return null;
             }
         };
-        InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
     }
 
 
@@ -152,7 +165,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return getFutureNotificationsInternal(transactional, null, searchKey1, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
     }
 
     @Override
@@ -168,7 +181,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return getFutureNotificationsInternal(transactional, maxEffectiveDate, null, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
     }
 
     @Override
@@ -189,7 +202,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return getFutureOrInProcessingNotificationsInternal(transactional, null, searchKey1, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
     }
 
     @Override
@@ -205,7 +218,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return getFutureOrInProcessingNotificationsInternal(transactional, maxEffectiveDate, null, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
     }
 
     @Override
@@ -298,6 +311,11 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    public long getNbReadyEntries(final DateTime maxCreatedDate) {
+        return dao.getNbReadyEntries(maxCreatedDate.toDate());
+    }
+
+    @Override
     public void removeNotification(final Long recordId) {
         final NotificationEventModelDao existing = dao.getSqlDao().getByRecordId(recordId, config.getTableName());
         final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
@@ -316,7 +334,45 @@ public class DefaultNotificationQueue implements NotificationQueue {
                 return null;
             }
         };
-        InTransaction.execute(connection, handler, NotificationSqlDao.class);
+        InTransaction.execute(dbi, connection, handler, NotificationSqlDao.class);
+    }
+
+    @Override
+    public void removeFutureNotificationsForSearchKeys(final Long searchKey1, final Long searchKey2) {
+        dao.getSqlDao().inTransaction(new Transaction<Void, QueueSqlDao<NotificationEventModelDao>>() {
+            @Override
+            public Void inTransaction(final QueueSqlDao<NotificationEventModelDao> transactional, final TransactionStatus status) throws Exception {
+                // Move entries by batch into the history table
+                final int batchSize = 25;
+                final Collection<NotificationEventModelDao> currentBatch = new ArrayList<NotificationEventModelDao>(batchSize);
+
+                // Note that we don't claim them here, so it could be possible that some of these entries end up being processed nonetheless
+                final Iterator<NotificationEventModelDao> futureQueueEntriesForSearchKeys = ((NotificationSqlDao) transactional).getReadyQueueEntriesForSearchKeys(getFullQName(),
+                                                                                                                                                                   searchKey1,
+                                                                                                                                                                   searchKey2,
+                                                                                                                                                                   config.getTableName());
+                try {
+                    while (futureQueueEntriesForSearchKeys.hasNext()) {
+                        final NotificationEventModelDao notificationEventModelDao = futureQueueEntriesForSearchKeys.next();
+                        notificationEventModelDao.setProcessingState(PersistentQueueEntryLifecycleState.REMOVED);
+                        currentBatch.add(notificationEventModelDao);
+
+                        if (currentBatch.size() >= batchSize || !futureQueueEntriesForSearchKeys.hasNext()) {
+                            dao.moveEntriesToHistoryFromTransaction(transactional, currentBatch);
+                            currentBatch.clear();
+                        }
+                    }
+                } finally {
+                    // This will go through all results to close the connection
+                    final int nbNotificationsLeft = Iterators.size(futureQueueEntriesForSearchKeys);
+                    if (nbNotificationsLeft > 0) {
+                        logger.warn("Unable to remove {} notifications for searchKey1={}, searchKey2={}", searchKey1, searchKey2);
+                    }
+                }
+
+                return null;
+            }
+        });
     }
 
     @Override
@@ -346,6 +402,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         }
         notificationQueueService.startQueue();
         isStarted = true;
+
         return true;
     }
 
@@ -359,5 +416,14 @@ public class DefaultNotificationQueue implements NotificationQueue {
     @Override
     public boolean isStarted() {
         return isStarted;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("DefaultNotificationQueue{");
+        sb.append("svcName='").append(svcName).append('\'');
+        sb.append(", queueName='").append(queueName).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -267,7 +267,9 @@ public class Query<ResultType> extends SQLStatement<Query<ResultType>> implement
     @Override
     public <T> T first(Class<T> containerType)
     {
-        addStatementCustomizer(StatementCustomizers.MAX_ROW_ONE);
+        // Kill Bill specific: assume our queries will always either use LIMIT 1 or will return exactly one row (see ResultReturnThing)
+        // This saves a roundtrip (set @@SQL_SELECT_LIMIT=1)
+        //addStatementCustomizer(StatementCustomizers.MAX_ROW_ONE);
         ContainerBuilder builder = getContainerMapperRegistry().createBuilderFor(containerType);
 
         return (T) this.fold(builder, new Folder3<ContainerBuilder, ResultType>()

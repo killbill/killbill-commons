@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -49,11 +49,13 @@ import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.InTransaction;
+import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.skife.config.ConfigurationObjectFactory;
+import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,15 +71,19 @@ import com.google.common.eventbus.EventBusThatThrowsException;
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
+
+    private final DBI dbi;
     private final EventBusThatThrowsException eventBusDelegate;
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
     private final PersistentBusConfig config;
     private final Timer dispatchTimer;
     private final Profiling<Iterable<BusEventModelDao>, RuntimeException> prof;
+    private final BusReaper reaper;
 
     private final Dispatcher<BusEventModelDao> dispatcher;
     private final AtomicBoolean isStarted;
+    private final String dbBackedQId;
 
     private static final class EventBusDelegate extends EventBusThatThrowsException {
         public EventBusDelegate(final String busName) {
@@ -88,11 +94,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Inject
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super("Bus", config);
-        final PersistentBusSqlDao sqlDao = dbi.onDemand(PersistentBusSqlDao.class);
+        this.dbi = (DBI) dbi;
         this.clock = clock;
         this.config = config;
-        final String dbBackedQId = "bus-" + config.getTableName();
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, sqlDao, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
+        this.dbBackedQId = "bus-" + config.getTableName();
+        this.dao = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
         this.prof = new Profiling<Iterable<BusEventModelDao>, RuntimeException>();
         final ThreadFactory busThreadFactory = new ThreadFactory() {
             @Override
@@ -108,6 +114,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
+        this.reaper = new BusReaper(this.dao, config, clock);
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
@@ -128,6 +135,10 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             dispatcher.start();
             startQueue();
         }
+
+        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING || config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
+            reaper.start();
+        }
     }
 
     @Override
@@ -136,6 +147,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             stopQueue();
             dispatcher.stop();
         }
+
+        reaper.stop();
     }
 
     @Override
@@ -144,14 +157,13 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         if (events.isEmpty()) {
             return 0;
         }
+        log.debug("Bus events from {} to process: {}", config.getTableName(), events);
 
-        int result = 0;
         for (final BusEventModelDao cur : events) {
             final BusCallableCallback callback = new BusCallableCallback(this);
             dispatcher.dispatch(cur, callback);
-            result++;
         }
-        return result;
+        return events.size();
     }
 
     @Override
@@ -226,7 +238,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             }
         };
 
-        InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -242,7 +254,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -258,7 +270,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -279,7 +291,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -295,7 +307,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                 return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
-        return InTransaction.execute(connection, handler, PersistentBusSqlDao.class);
+        return InTransaction.execute(dbi, connection, handler, PersistentBusSqlDao.class);
     }
 
     @Override
@@ -306,6 +318,19 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Override
     public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(final DateTime minCreatedDate, final Long searchKey2) {
         return getHistoricalBusEventsForSearchKeysInternal((PersistentBusSqlDao) dao.getSqlDao(), minCreatedDate, null, searchKey2);
+    }
+
+    @Override
+    public long getNbReadyEntries(final DateTime maxCreatedDate) {
+        return dao.getNbReadyEntries(maxCreatedDate.toDate());
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("DefaultPersistentBus{");
+        sb.append("dbBackedQId='").append(dbBackedQId).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 
     public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {

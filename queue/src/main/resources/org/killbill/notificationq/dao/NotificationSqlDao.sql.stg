@@ -21,6 +21,13 @@ readyWhereClause(owner) ::= <<
     and (processing_owner IS NULL OR processing_available_date \<= :now)
 >>
 
+reapWhereClause() ::= <<
+    processing_state != 'PROCESSED'
+    and processing_state != 'REMOVED'
+    and (processing_owner IS NULL OR processing_available_date \<= :now)
+    and effective_date \<= :reapingDate
+>>
+
 readyOrderByClause() ::= <<
         effective_date asc
       , created_date asc
@@ -117,19 +124,5 @@ updateEntry(tableName) ::= <<
     record_id = :recordId
     and search_key1 = :searchKey1
     and search_key2 = :searchKey2
-;
->>
-
-
-/** Notifications specific queries **/
-getCountReadyEntries(tableName) ::= <<
-    select
-     count(*)
-    from <tableName>
-    where
-      processing_state = 'AVAILABLE'
-      and effective_date \<= :now
-      and search_key1 = :searchKey1
-      and search_key2 = :searchKey2
 ;
 >>

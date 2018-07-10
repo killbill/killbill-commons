@@ -1,3 +1,59 @@
+0.21.15
+    Update to killbill-oss-parent 0.141.91
+
+0.21.14
+    Update to killbill-oss-parent 0.141.72
+
+0.21.13
+    Improve state definition for events that were retried to better understand the final retry state.
+
+0.21.12
+    Add the possibility to bypass mapping registry cache
+
+0.21.11
+    Failed release. Dont' use.
+
+0.21.10
+    queue: revisit DEBUG log entries
+    queue: add NotificationQueue#removeFutureNotificationsForSearchKeys API
+
+0.21.9
+    queue: harden STICKY_ modes for cloud deployments, see #29 and #30
+    queue: put the user token in the MDC
+    jdbi: add support for read-only pool
+
+0.21.8
+    jdbi: set the default transaction isolation level at the pool level
+    jdbi: don't call setMaxRows(1) for most queries
+
+0.21.7
+    jdbi: make sure DBI caches are used for the queues APIs
+    jdbi: ensure prepared statements are cached (server-side) by default (regression with recent MariaDB driver upgrade)
+
+0.21.6
+    jdbi: optimize LowerToCamelBeanMapper
+    Update to killbill-oss-parent 0.141.34
+
+0.21.5
+    Add additional profiling flags for global locker and database connection.
+
+0.21.4
+    queues: expose getNbReadyEntries API
+    Update to killbill-oss-parent 0.141.27
+
+0.21.3
+    Change org.killbill.dao.leakDetectionThreshold to TimeSpan
+
+0.21.2
+    Configure HikariCP leak detection
+
+0.21.1
+    Add new apis to update notifications
+
+0.21.0
+    Initial release against work-for-release-0.19.x -- mostly getting latest code from master
+    queue: Retry code logic
+
 0.20.17
     change org.killbill.dao.leakDetectionThreshold to TimeSpan
 

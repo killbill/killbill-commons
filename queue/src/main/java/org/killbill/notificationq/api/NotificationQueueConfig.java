@@ -91,4 +91,16 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Default("notifications_history")
     @Description("Notifications history table name")
     public abstract String getHistoryTableName();
+
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.reapThreshold")
+    @Default("10m")
+    @Description("Time span when a notification must be re-dispatched")
+    public abstract TimeSpan getReapThreshold();
+
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.maxReDispatchCount")
+    @Default("10")
+    @Description("Max number of notification to be re-dispatched at a time")
+    public abstract int getMaxReDispatchCount();
 }

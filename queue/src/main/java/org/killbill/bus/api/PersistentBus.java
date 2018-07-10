@@ -194,4 +194,12 @@ public interface PersistentBus extends QueueLifecycle {
      * @return a list of BusEventWithMetadata objects matching the search
      */
     <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getHistoricalBusEventsForSearchKey2(DateTime minCreatedDate, Long searchKey2);
+
+    /**
+     * Count the number of bus entries ready to be processed
+     *
+     * @param maxCreatedDate created_date cutoff (typically now())
+     * @return the number of ready entries
+     */
+    long getNbReadyEntries(final DateTime maxCreatedDate);
 }

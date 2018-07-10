@@ -48,4 +48,24 @@ public interface EventEntryModelDao {
 
     Long getSearchKey2();
 
+    // setters
+    void setClassName(final String className);
+
+    void setEventJson(final String eventJson);
+
+    void setUserToken(final UUID userToken);
+
+    void setCreatingOwner(final String creatingOwner);
+
+    void setProcessingState(final PersistentQueueEntryLifecycleState processingState);
+
+    void setProcessingOwner(final String processingOwner);
+
+    void setCreatedDate(final DateTime createdDate);
+
+    void setErrorCount(final Long errorCount);
+
+    void setSearchKey1(final Long searchKey1);
+
+    void setSearchKey2(final Long searchKey2);
 }

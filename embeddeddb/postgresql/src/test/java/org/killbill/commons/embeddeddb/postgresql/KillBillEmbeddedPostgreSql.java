@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -45,8 +46,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.airlift.command.Command;
 import io.airlift.command.CommandFailedException;
 import io.airlift.units.Duration;
@@ -59,7 +60,7 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
-// Forked from https://github.com/airlift/testing-postgresql-server (as of 0c18d5aa4e67114d5a3f4eb66e899c2397374157)
+// Forked from https://github.com/airlift/testing-postgresql-server (as of 9.6.3-3)
 // Added Java 6 support and ability to configure the port
 class KillBillEmbeddedPostgreSql implements Closeable {
 
@@ -92,13 +93,13 @@ class KillBillEmbeddedPostgreSql implements Closeable {
         postgresConfig = ImmutableMap.<String, String>builder()
                                      .put("timezone", "UTC")
                                      .put("synchronous_commit", "off")
-                                     .put("checkpoint_segments", "64")
                                      .put("max_connections", "300")
                                      .build();
 
         try {
             unpackPostgres(serverDirectory);
 
+            pgVersion();
             initdb();
             postmaster = startPostmaster();
         } catch (final IOException e) {
@@ -169,6 +170,10 @@ class KillBillEmbeddedPostgreSql implements Closeable {
                           .toString();
     }
 
+    private void pgVersion() {
+        log.info(system(pgBin("postgres"), "-V").trim());
+    }
+
     private void initdb() {
         system(pgBin("initdb"),
                "-A", "trust",
@@ -196,6 +201,8 @@ class KillBillEmbeddedPostgreSql implements Closeable {
                 .start();
 
         log.info("postmaster started on port {}. Waiting up to {} for startup to finish.", port, PG_STARTUP_WAIT);
+
+        startOutputProcessor(process.getInputStream());
 
         waitForServerStartup(process);
 
@@ -234,6 +241,14 @@ class KillBillEmbeddedPostgreSql implements Closeable {
     }
 
     private void checkReady() throws SQLException {
+
+        try {
+            Socket ignored = new Socket("localhost", port);
+            // connect succeeded
+        } catch (IOException e) {
+            throw new SQLException(e);
+        }
+
         Connection connection = null;
         Statement statement = null;
         ResultSet resultSet = null;
@@ -269,6 +284,19 @@ class KillBillEmbeddedPostgreSql implements Closeable {
     private String pgBin(final String binaryName) {
         return serverDirectory.resolve("bin").resolve(binaryName).toString();
     }
+
+    private void startOutputProcessor(final InputStream in) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ByteStreams.copy(in, System.err);
+                } catch (IOException ignored) {
+                }
+            }
+        });
+    }
+
 
     private String system(final String... command) {
         try {

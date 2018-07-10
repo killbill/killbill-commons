@@ -29,13 +29,17 @@ public class ProfilingFeature {
     private static final int API_MASK = 0x2;
     private static final int DAO_MASK = 0x4;
     private static final int DAO_DETAILS_MASK = 0x8;
-    private static final int PLUGIN_MASK = 0x10;
+    private static final int GLOCK_MASK = 0x10;
+    private static final int PLUGIN_MASK = 0x20;
+    private static final int DAO_CONNECTION_MASK = 0x40;
 
     public enum ProfilingFeatureType {
         JAXRS(JAXRS_MASK),
         API(API_MASK),
         DAO(DAO_MASK),
         DAO_DETAILS(DAO_MASK, DAO_DETAILS_MASK),
+        DAO_CONNECTION(DAO_CONNECTION_MASK),
+        GLOCK(GLOCK_MASK),
         PLUGIN(PLUGIN_MASK);
 
         private final int mask;
@@ -47,22 +51,12 @@ public class ProfilingFeature {
             }
             this.mask = tmp;
         }
-
         public int getMask() {
             return mask;
         }
     }
 
-    private final ImmutableList<ProfilingFeatureType> featureTypeList = new ImmutableList.Builder<ProfilingFeatureType>()
-            .add(ProfilingFeatureType.JAXRS)
-            .add(ProfilingFeatureType.API)
-            /* DAO_DETAILS needs to come before DAO for regex to work, this is a bit naughty... */
-            .add(ProfilingFeatureType.DAO_DETAILS)
-            .add(ProfilingFeatureType.DAO)
-            .add(ProfilingFeatureType.PLUGIN)
-            .build();
-
-    private final Pattern featurePattern = Pattern.compile("\\s*,?\\s*(" + Joiner.on("|").join(featureTypeList) + ")");
+    private final Pattern featurePattern = Pattern.compile("\\s*,?\\s*((?:[A-Z])+(?:_)?+(?:[A-Z])*)");
 
     private final int profilingBits;
 
@@ -79,8 +73,12 @@ public class ProfilingFeature {
         final Matcher matcher = featurePattern.matcher(features);
         while (matcher.find()) {
             final String cur = matcher.group(1);
-            final ProfilingFeatureType featureType = ProfilingFeatureType.valueOf(cur);
-            tmp |= featureType.getMask();
+            try {
+                final ProfilingFeatureType featureType = ProfilingFeatureType.valueOf(cur);
+                tmp |= featureType.getMask();
+            } catch (final IllegalArgumentException e) {
+                // Ignore bad entry like 'FOO'
+            }
         }
         this.profilingBits = tmp;
     }
@@ -108,4 +106,13 @@ public class ProfilingFeature {
     public boolean isProfilingPlugin() {
         return isDefined(ProfilingFeatureType.PLUGIN);
     }
+
+    public boolean isProfilingGlock() {
+        return isDefined(ProfilingFeatureType.GLOCK);
+    }
+
+    public boolean isProfilingDaoConnection() {
+        return isDefined(ProfilingFeatureType.DAO_CONNECTION);
+    }
+
 }
