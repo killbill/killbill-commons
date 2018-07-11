@@ -157,6 +157,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
                 session.getDatabase().getMvStore().close(0);
             }
         }
+        started.set(false);
         logger.info(String.format("H2 stopped on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                   getJdbcConnectionString(), getUsername(), getPassword()));
 
