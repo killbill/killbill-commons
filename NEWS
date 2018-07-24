@@ -1,3 +1,6 @@
+0.22.1
+    Configure jackson Mapper to ignore unknown properties
+
 0.22.0
     Initial release for Kill Bill 0.20.x
 
