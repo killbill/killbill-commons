@@ -34,7 +34,7 @@ public class RedisGlobalLocker extends GlobalLockerBase implements GlobalLocker 
     public RedisGlobalLocker(final String redisAddress) {
         super(DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         final Config config = new Config();
-        config.useSingleServer().setAddress(redisAddress);
+        config.useSingleServer().setAddress(redisAddress).setConnectionMinimumIdleSize(10);
         redissonClient = Redisson.create(config);
     }
 
