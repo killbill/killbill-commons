@@ -1,7 +1,6 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2016 Groupon, Inc
- * Copyright 2014-2016 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -16,53 +15,66 @@
  * under the License.
  */
 
-package org.killbill.commons.locker.memory;
+package org.killbill.commons.locker.redis;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
+import org.redisson.Redisson;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 
-public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker {
+public class RedisGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
-    private final Map<String, AtomicBoolean> locks = new ConcurrentHashMap<String, AtomicBoolean>();
+    private final RedissonClient redissonClient;
 
-    public MemoryGlobalLocker() {
+    public RedisGlobalLocker(final String redisAddress) {
         super(DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        final Config config = new Config();
+        config.useSingleServer().setAddress(redisAddress);
+        redissonClient = Redisson.create(config);
     }
 
     @Override
     public synchronized boolean isFree(final String service, final String lockKey) {
         final String lockName = getLockName(service, lockKey);
-        return isFree(lockName);
-    }
-
-    private synchronized Boolean isFree(final String lockName) {
-        final AtomicBoolean lock = locks.get(lockName);
-        return lock == null || !lock.get();
+        final RLock redisLock = redissonClient.getLock(lockName);
+        return !redisLock.isLocked();
     }
 
     @Override
     protected synchronized GlobalLock doLock(final String lockName) {
-        if (!isFree(lockName)) {
+        final RLock redisLock = redissonClient.getLock(lockName);
+        if (redisLock.isLocked()) {
             return null;
         }
 
-        if (locks.get(lockName) == null) {
-            locks.put(lockName, new AtomicBoolean(true));
-        } else {
-            locks.get(lockName).set(true);
+        final boolean acquired;
+        try {
+            // waitTime=1ms (retry done ourselves)
+            // leaseTime=5min
+            acquired = redisLock.tryLock(1, 300000, TimeUnit.MILLISECONDS);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+
+        if (!acquired) {
+            return null;
+        } else if (redisLock.getHoldCount() > 1) {
+            // Someone beat us to it?
+            redisLock.forceUnlock();
+            return null;
         }
 
         final GlobalLock lock = new GlobalLock() {
             @Override
             public void release() {
                 if (lockTable.releaseLock(lockName)) {
-                    locks.get(lockName).set(false);
+                    redisLock.forceUnlock();
                 }
             }
         };

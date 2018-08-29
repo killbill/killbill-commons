@@ -44,6 +44,11 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>2.12.5</version>
+        </dependency>
+        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>units</artifactId>
             <version>1.0</version>
