@@ -30,5 +30,6 @@
         <module>h2</module>
         <module>mysql</module>
         <module>postgresql</module>
+        <module>spanner</module>
     </modules>
 </project>

@@ -23,6 +23,7 @@
         <module name="killbill-embeddeddb-h2" />
         <module name="killbill-embeddeddb-mysql" />
         <module name="killbill-embeddeddb-postgresql" />
+        <module name="killbill-embeddeddb-spanner" />
         <module name="killbill-jdbi" />
         <module name="killbill-locker" />
         <module name="killbill-metrics" />
@@ -41,6 +42,7 @@
       <module name="killbill-embeddeddb-h2" target="1.6" />
       <module name="killbill-embeddeddb-mysql" target="1.6" />
       <module name="killbill-embeddeddb-postgresql" target="1.6" />
+      <module name="killbill-embeddeddb-spanner" target="1.6" />
       <module name="killbill-jdbi" target="1.6" />
       <module name="killbill-locker" target="1.6" />
       <module name="killbill-metrics" target="1.6" />
@@ -51,5 +53,23 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_STRING" value="-Xlint:unchecked " />
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="killbill-automaton" options="" />
+      <module name="killbill-clock" options="" />
+      <module name="killbill-commons" options="" />
+      <module name="killbill-concurrent" options="" />
+      <module name="killbill-embeddeddb" options="" />
+      <module name="killbill-embeddeddb-common" options="" />
+      <module name="killbill-embeddeddb-h2" options="" />
+      <module name="killbill-embeddeddb-mysql" options="" />
+      <module name="killbill-embeddeddb-postgresql" options="" />
+      <module name="killbill-embeddeddb-spanner" options="" />
+      <module name="killbill-jdbi" options="" />
+      <module name="killbill-locker" options="" />
+      <module name="killbill-metrics" options="" />
+      <module name="killbill-queue" options="" />
+      <module name="killbill-skeleton" options="" />
+      <module name="killbill-xmlloader" options="" />
+    </option>
   </component>
 </project>
