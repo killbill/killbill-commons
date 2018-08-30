@@ -22,20 +22,16 @@ import java.util.concurrent.TimeUnit;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
-import org.redisson.Redisson;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
 
 public class RedisGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
     private final RedissonClient redissonClient;
 
-    public RedisGlobalLocker(final String redisAddress) {
+    public RedisGlobalLocker(final RedissonClient redissonClient) {
         super(DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        final Config config = new Config();
-        config.useSingleServer().setAddress(redisAddress).setConnectionMinimumIdleSize(10);
-        redissonClient = Redisson.create(config);
+        this.redissonClient = redissonClient;
     }
 
     @Override

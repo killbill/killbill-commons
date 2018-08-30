@@ -25,6 +25,9 @@ import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.LockFailedException;
 import org.killbill.commons.request.Request;
 import org.killbill.commons.request.RequestData;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -36,7 +39,10 @@ public class TestRedisGlobalLocker {
 
     @BeforeMethod(groups = "redis")
     public void beforeMethod() throws Exception {
-        locker = new RedisGlobalLocker("redis://127.0.0.1:6379");
+        final Config config = new Config();
+        config.useSingleServer().setAddress("redis://127.0.0.1:6379").setConnectionMinimumIdleSize(10);
+        final RedissonClient redissonClient = Redisson.create(config);
+        locker = new RedisGlobalLocker(redissonClient);
         Request.resetPerThreadRequestData();
     }
 
