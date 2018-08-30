@@ -1,5 +1,4 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
  * Copyright 2014-2018 Groupon, Inc
  * Copyright 2014-2018 The Billing Project, LLC
  *
@@ -18,13 +17,24 @@
 
 package org.killbill.clock;
 
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.testng.annotations.Test;
 
-public class TestClockMock extends TestClockMockBase {
+public class TestDistributedClockMock extends TestClockMockBase {
 
-    @Test(groups = "fast")
+    @Test(groups = "redis")
     public void testBasicClockOperations() throws Exception {
-        final ClockMock clock = new ClockMock();
-        testBasicClockOperations(clock);
+        final Config config = new Config();
+        config.useSingleServer().setAddress("redis://127.0.0.1:6379").setConnectionMinimumIdleSize(10);
+        final RedissonClient redissonClient = Redisson.create(config);
+        try {
+            final DistributedClockMock clock = new DistributedClockMock();
+            clock.setRedissonClient(redissonClient);
+            testBasicClockOperations(clock);
+        } finally {
+            redissonClient.shutdown();
+        }
     }
 }

@@ -35,19 +35,21 @@ import org.testng.annotations.Test;
 
 public class TestRedisGlobalLocker {
 
+    private RedissonClient redissonClient;
     private GlobalLocker locker;
 
     @BeforeMethod(groups = "redis")
     public void beforeMethod() throws Exception {
         final Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6379").setConnectionMinimumIdleSize(10);
-        final RedissonClient redissonClient = Redisson.create(config);
+        redissonClient = Redisson.create(config);
         locker = new RedisGlobalLocker(redissonClient);
         Request.resetPerThreadRequestData();
     }
 
     @AfterMethod(groups = "redis")
     public void afterMethod() throws Exception {
+        redissonClient.shutdown();
         Request.resetPerThreadRequestData();
     }
 
