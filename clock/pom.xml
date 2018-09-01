@@ -26,8 +26,8 @@
     <name>Kill Bill Clock classes and interfaces for killbill and killbill-commons</name>
     <dependencies>
         <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson</artifactId>
+            <groupId>it.ozimov</groupId>
+            <artifactId>embedded-redis</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -37,6 +37,11 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

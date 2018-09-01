@@ -33,27 +33,34 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import redis.embedded.RedisServer;
+
 public class TestRedisGlobalLocker {
 
     private RedissonClient redissonClient;
     private GlobalLocker locker;
+    private RedisServer redisServer;
 
-    @BeforeMethod(groups = "redis")
+    @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
+        redisServer = new RedisServer(56379);
+        redisServer.start();
+
         final Config config = new Config();
-        config.useSingleServer().setAddress("redis://127.0.0.1:6379").setConnectionMinimumIdleSize(10);
+        config.useSingleServer().setAddress("redis://127.0.0.1:56379").setConnectionMinimumIdleSize(10);
         redissonClient = Redisson.create(config);
         locker = new RedisGlobalLocker(redissonClient);
         Request.resetPerThreadRequestData();
     }
 
-    @AfterMethod(groups = "redis")
+    @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
         redissonClient.shutdown();
         Request.resetPerThreadRequestData();
+        redisServer.stop();
     }
 
-    @Test(groups = "redis")
+    @Test(groups = "slow")
     public void testSimpleLocking() throws IOException, LockFailedException {
         final String serviceLock = "MY_AWESOME_LOCK";
         final String lockName = UUID.randomUUID().toString();
@@ -73,7 +80,7 @@ public class TestRedisGlobalLocker {
         Assert.assertTrue(locker.isFree(serviceLock, lockName));
     }
 
-    @Test(groups = "redis")
+    @Test(groups = "slow")
     public void testReentrantLock() throws IOException, LockFailedException {
         final String serviceLock = "MY_SHITTY_LOCK";
         final String lockName = UUID.randomUUID().toString();

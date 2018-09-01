@@ -95,5 +95,3 @@ public abstract class GlobalLockerBaseWithDao extends GlobalLockerBase {
 
     protected abstract GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb);
 }
-
-

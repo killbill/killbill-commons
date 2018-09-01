@@ -97,7 +97,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
             Thread.sleep(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.warn("GlobalLockerBaseWithDao got interrupted", e);
+            logger.warn("GlobalLockerBase got interrupted", e);
         }
     }
 }

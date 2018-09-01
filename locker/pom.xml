@@ -50,6 +50,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>it.ozimov</groupId>
+            <artifactId>embedded-redis</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-mxj</artifactId>
             <scope>test</scope>

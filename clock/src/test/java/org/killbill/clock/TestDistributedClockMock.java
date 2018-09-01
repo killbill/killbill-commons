@@ -20,14 +20,31 @@ package org.killbill.clock;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import redis.embedded.RedisServer;
 
 public class TestDistributedClockMock extends TestClockMockBase {
 
-    @Test(groups = "redis")
+    private RedisServer redisServer;
+
+    @BeforeMethod(groups = "slow")
+    public void setUp() {
+        redisServer = new RedisServer(56379);
+        redisServer.start();
+    }
+
+    @AfterMethod(groups = "slow")
+    public void tearDown() {
+        redisServer.stop();
+    }
+
+    @Test(groups = "slow")
     public void testBasicClockOperations() throws Exception {
         final Config config = new Config();
-        config.useSingleServer().setAddress("redis://127.0.0.1:6379").setConnectionMinimumIdleSize(10);
+        config.useSingleServer().setAddress("redis://127.0.0.1:56379");
         final RedissonClient redissonClient = Redisson.create(config);
         try {
             final DistributedClockMock clock = new DistributedClockMock();
