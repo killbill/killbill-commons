@@ -33,22 +33,22 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="killbill-automaton" target="1.6" />
-      <module name="killbill-clock" target="1.6" />
-      <module name="killbill-commons" target="1.6" />
-      <module name="killbill-concurrent" target="1.6" />
-      <module name="killbill-embeddeddb" target="1.6" />
-      <module name="killbill-embeddeddb-common" target="1.6" />
-      <module name="killbill-embeddeddb-h2" target="1.6" />
-      <module name="killbill-embeddeddb-mysql" target="1.6" />
-      <module name="killbill-embeddeddb-postgresql" target="1.6" />
-      <module name="killbill-embeddeddb-spanner" target="1.6" />
-      <module name="killbill-jdbi" target="1.6" />
-      <module name="killbill-locker" target="1.6" />
-      <module name="killbill-metrics" target="1.6" />
-      <module name="killbill-queue" target="1.6" />
-      <module name="killbill-skeleton" target="1.6" />
-      <module name="killbill-xmlloader" target="1.6" />
+      <module name="killbill-automaton" target="1.8" />
+      <module name="killbill-clock" target="1.8" />
+      <module name="killbill-commons" target="1.8" />
+      <module name="killbill-concurrent" target="1.8" />
+      <module name="killbill-embeddeddb" target="1.8" />
+      <module name="killbill-embeddeddb-common" target="1.8" />
+      <module name="killbill-embeddeddb-h2" target="1.8" />
+      <module name="killbill-embeddeddb-mysql" target="1.8" />
+      <module name="killbill-embeddeddb-postgresql" target="1.8" />
+      <module name="killbill-embeddeddb-spanner" target="1.8" />
+      <module name="killbill-jdbi" target="1.8" />
+      <module name="killbill-locker" target="1.8" />
+      <module name="killbill-metrics" target="1.8" />
+      <module name="killbill-queue" target="1.8" />
+      <module name="killbill-skeleton" target="1.8" />
+      <module name="killbill-xmlloader" target="1.8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

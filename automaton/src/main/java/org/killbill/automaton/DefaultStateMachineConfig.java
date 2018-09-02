@@ -53,12 +53,12 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
     }
 
     @Override
-    public void initialize(final DefaultStateMachineConfig root, final URI uri) {
+    public void initialize(final DefaultStateMachineConfig root) {
         for (final DefaultStateMachine cur : stateMachines) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
         }
         for (final DefaultLinkStateMachine cur : linkStateMachines) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
         }
     }
 
