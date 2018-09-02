@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2014 Groupon, Inc
- * Copyright 2014 The Billing Project, LLC
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -31,11 +31,12 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
-import com.google.common.base.Strings;
 import org.killbill.billing.catalog.api.InvalidConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+
+import com.google.common.base.Strings;
 
 public class XMLLoader {
 
@@ -49,7 +50,7 @@ public class XMLLoader {
         }
         log.info("Initializing an object of class " + objectType.getName() + " from xml file at: " + uri);
 
-        return getObjectFromStream(new URI(uri), UriAccessor.accessUri(uri), objectType);
+        return getObjectFromStream(UriAccessor.accessUri(uri), objectType);
     }
 
     public static <T extends ValidatingConfig<T>> T getObjectFromUri(final URI uri, final Class<T> objectType) throws Exception {
@@ -58,20 +59,19 @@ public class XMLLoader {
         }
         log.info("Initializing an object of class " + objectType.getName() + " from xml file at: " + uri);
 
-        return getObjectFromStream(uri, UriAccessor.accessUri(uri), objectType);
+        return getObjectFromStream(UriAccessor.accessUri(uri), objectType);
     }
 
-    public static <T extends ValidatingConfig<T>> T getObjectFromStream(final URI uri, final InputStream stream, final Class<T> clazz) throws SAXException, InvalidConfigException, JAXBException, IOException, TransformerException, ValidationException {
+    public static <T extends ValidatingConfig<T>> T getObjectFromStream(final InputStream stream, final Class<T> clazz) throws SAXException, InvalidConfigException, JAXBException, IOException, TransformerException, ValidationException {
         if (stream == null) {
             return null;
         }
 
         final Object o = unmarshaller(clazz).unmarshal(stream);
         if (clazz.isInstance(o)) {
-            @SuppressWarnings("unchecked") final
-            T castObject = (T) o;
+            @SuppressWarnings("unchecked") final T castObject = (T) o;
             try {
-                initializeAndValidate(uri, castObject);
+                initializeAndValidate(castObject);
             } catch (final ValidationException e) {
                 e.getErrors().log(log);
                 throw e;
@@ -85,17 +85,15 @@ public class XMLLoader {
     public static <T> T getObjectFromStreamNoValidation(final InputStream stream, final Class<T> clazz) throws SAXException, InvalidConfigException, JAXBException, IOException, TransformerException {
         final Object o = unmarshaller(clazz).unmarshal(stream);
         if (clazz.isInstance(o)) {
-            @SuppressWarnings("unchecked") final
-            T castObject = (T) o;
+            @SuppressWarnings("unchecked") final T castObject = (T) o;
             return castObject;
         } else {
             return null;
         }
     }
 
-
-    public static <T extends ValidatingConfig<T>> void initializeAndValidate(final URI uri, final T c) throws ValidationException {
-        c.initialize(c, uri);
+    public static <T extends ValidatingConfig<T>> void initializeAndValidate(final T c) throws ValidationException {
+        c.initialize(c);
 
         if (shouldDisableValidation()) {
             log.warn("Catalog validation has been disabled using property " + DISABLE_VALIDATION_PROP);
@@ -103,7 +101,6 @@ public class XMLLoader {
         }
 
         final ValidationErrors errs = c.validate(c, new ValidationErrors());
-        log.info("Errors: " + errs.size() + " for " + uri);
         if (!errs.isEmpty()) {
             throw new ValidationException(errs);
         }

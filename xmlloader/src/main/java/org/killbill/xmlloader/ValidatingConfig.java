@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -14,10 +16,8 @@
  * under the License.
  */
 
-
 package org.killbill.xmlloader;
 
-import java.net.URI;
 import java.util.Collection;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -25,26 +25,15 @@ import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class ValidatingConfig<Context> {
-    /**
-     * All must implement validation
-     *
-     * @param root
-     * @param errors
-     * @return
-     */
+
     public abstract ValidationErrors validate(Context root, ValidationErrors errors);
 
-
-    /**
-     * Override  to initialize
-     *
-     * @param root
-     */
-    public void initialize(final Context root, final URI uri) {
+    public void initialize(final Context root) {
     }
 
     protected Collection<? extends ValidationError> validateCollection(final Context context,
-                                                                       final ValidationErrors errors, final ValidatingConfig<Context>[] configs) {
+                                                                       final ValidationErrors errors,
+                                                                       final ValidatingConfig<Context>[] configs) {
         for (final ValidatingConfig<Context> config : configs) {
             config.validate(context, errors);
         }

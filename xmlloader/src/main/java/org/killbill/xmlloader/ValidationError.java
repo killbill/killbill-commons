@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,32 +18,25 @@
 
 package org.killbill.xmlloader;
 
-import java.net.URI;
-
 import org.slf4j.Logger;
 
-
 public class ValidationError {
+
     private final String description;
-    private final URI sourceURI;
     private final Class<?> objectType;
     private final String objectName;
 
-    public ValidationError(final String description, final URI sourceURI,
-                           final Class<?> objectType, final String objectName) {
+    public ValidationError(final String description,
+                           final Class<?> objectType,
+                           final String objectName) {
         super();
         this.description = description;
-        this.sourceURI = sourceURI;
         this.objectType = objectType;
         this.objectName = objectName;
     }
 
     public String getDescription() {
         return description;
-    }
-
-    public URI getSourceURI() {
-        return sourceURI;
     }
 
     public Class<?> getObjectType() {
@@ -53,10 +48,10 @@ public class ValidationError {
     }
 
     public void log(final Logger log) {
-        log.error(String.format("%s [%s] (%s:%s)", description, sourceURI, objectType, objectName));
+        log.error(String.format("%s (%s:%s)", description, objectType, objectName));
     }
 
     public String toString() {
-        return String.format("%s [%s] (%s:%s)\n", description, sourceURI, objectType, objectName);
+        return String.format("%s (%s:%s)\n", description, objectType, objectName);
     }
 }
