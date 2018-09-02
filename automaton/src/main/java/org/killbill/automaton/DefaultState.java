@@ -1,7 +1,8 @@
 /*
- * Copyright 2014 Groupon, Inc
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Groupon licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,6 +17,10 @@
 
 package org.killbill.automaton;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.net.URI;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -26,13 +31,17 @@ import javax.xml.bind.annotation.XmlID;
 import org.killbill.xmlloader.ValidationErrors;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements State {
+public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements State, Externalizable {
 
     @XmlAttribute(required = true)
     @XmlID
     private String name;
 
     private DefaultStateMachine stateMachine;
+
+    // Required for deserialization
+    public DefaultState() {
+    }
 
     @Override
     public void initialize(final DefaultStateMachineConfig root, final URI uri) {
@@ -116,5 +125,15 @@ public class DefaultState extends StateMachineValidatingConfig<DefaultStateMachi
 
     public void setStateMachine(final DefaultStateMachine stateMachine) {
         this.stateMachine = stateMachine;
+    }
+
+    @Override
+    public void writeExternal(final ObjectOutput out) throws IOException {
+        out.writeUTF(name);
+    }
+
+    @Override
+    public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+        this.name = in.readUTF();
     }
 }

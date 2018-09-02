@@ -1,7 +1,8 @@
 /*
- * Copyright 2014 Groupon, Inc
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Groupon licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,17 +17,27 @@
 
 package org.killbill.automaton;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.net.URI;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.killbill.xmlloader.ValidationErrors;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import org.killbill.xmlloader.ValidationErrors;
-
-import javax.xml.bind.annotation.*;
-import java.net.URI;
 
 @XmlRootElement(name = "stateMachineConfig")
 @XmlAccessorType(XmlAccessType.NONE)
-public class DefaultStateMachineConfig extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachineConfig {
+public class DefaultStateMachineConfig extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachineConfig, Externalizable {
 
     @XmlElementWrapper(name = "stateMachines", required = true)
     @XmlElement(name = "stateMachine", required = true)
@@ -35,6 +46,10 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
     @XmlElementWrapper(name = "linkStateMachines", required = false)
     @XmlElement(name = "linkStateMachine", required = false)
     private DefaultLinkStateMachine[] linkStateMachines = new DefaultLinkStateMachine[0];
+
+    // Required for deserialization
+    public DefaultStateMachineConfig() {
+    }
 
     @Override
     public void initialize(final DefaultStateMachineConfig root, final URI uri) {
@@ -57,7 +72,6 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
     public StateMachine getStateMachine(final String stateMachineName) throws MissingEntryException {
         return (StateMachine) getEntry(stateMachines, stateMachineName);
     }
-
 
     @Override
     public LinkStateMachine getLinkStateMachine(final String linkStateMachineName) throws MissingEntryException {
@@ -85,7 +99,6 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
         return stateMachines;
     }
 
-
     public void setStateMachines(final DefaultStateMachine[] stateMachines) {
         this.stateMachines = stateMachines;
     }
@@ -101,13 +114,25 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
                 @Override
                 public boolean apply(final LinkStateMachine input) {
                     return input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
-                            input.getInitialState().getName().equals(srcState.getName()) &&
-                            input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
+                           input.getInitialState().getName().equals(srcState.getName()) &&
+                           input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
                 }
             }).get();
         } catch (final IllegalStateException e) {
             throw new MissingEntryException("Missing transition for srcStateMachine " + srcStateMachine.getName() +
-                    ", srcState = " + srcState.getName() + ", dstStateMachine = " + dstStateMachine.getName(), e);
+                                            ", srcState = " + srcState.getName() + ", dstStateMachine = " + dstStateMachine.getName(), e);
         }
+    }
+
+    @Override
+    public void writeExternal(final ObjectOutput out) throws IOException {
+        out.writeObject(stateMachines);
+        out.writeObject(linkStateMachines);
+    }
+
+    @Override
+    public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+        this.stateMachines = (DefaultStateMachine[]) in.readObject();
+        this.linkStateMachines = (DefaultLinkStateMachine[]) in.readObject();
     }
 }
