@@ -118,6 +118,38 @@ public class DefaultTransition extends StateMachineValidatingConfig<DefaultState
     }
 
     @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final DefaultTransition that = (DefaultTransition) o;
+
+        if (initialState != null ? !initialState.equals(that.initialState) : that.initialState != null) {
+            return false;
+        }
+        if (operation != null ? !operation.equals(that.operation) : that.operation != null) {
+            return false;
+        }
+        if (operationResult != that.operationResult) {
+            return false;
+        }
+        return finalState != null ? finalState.equals(that.finalState) : that.finalState == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = initialState != null ? initialState.hashCode() : 0;
+        result = 31 * result + (operation != null ? operation.hashCode() : 0);
+        result = 31 * result + (operationResult != null ? operationResult.hashCode() : 0);
+        result = 31 * result + (finalState != null ? finalState.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public void writeExternal(final ObjectOutput out) throws IOException {
         out.writeObject(initialState);
         out.writeObject(operation);
