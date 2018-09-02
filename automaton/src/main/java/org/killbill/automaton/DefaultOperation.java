@@ -1,7 +1,8 @@
 /*
- * Copyright 2014 Groupon, Inc
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Groupon licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,8 +17,10 @@
 
 package org.killbill.automaton;
 
-import org.killbill.xmlloader.ValidationErrors;
-
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.net.URI;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -25,9 +28,10 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
 
+import org.killbill.xmlloader.ValidationErrors;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements Operation {
+public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements Operation, Externalizable {
 
     @XmlAttribute(required = true)
     @XmlID
@@ -35,11 +39,14 @@ public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateM
 
     private DefaultStateMachine stateMachine;
 
+    // Required for deserialization
+    public DefaultOperation() {
+    }
+
     @Override
     public String getName() {
         return name;
     }
-
 
     @Override
     public StateMachine getStateMachine() {
@@ -66,5 +73,15 @@ public class DefaultOperation extends StateMachineValidatingConfig<DefaultStateM
 
     public void setStateMachine(final DefaultStateMachine stateMachine) {
         this.stateMachine = stateMachine;
+    }
+
+    @Override
+    public void writeExternal(final ObjectOutput out) throws IOException {
+        out.writeUTF(name);
+    }
+
+    @Override
+    public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+        this.name = in.readUTF();
     }
 }
