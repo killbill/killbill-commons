@@ -108,6 +108,38 @@ public class DefaultLinkStateMachine extends StateMachineValidatingConfig<Defaul
     }
 
     @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final DefaultLinkStateMachine that = (DefaultLinkStateMachine) o;
+
+        if (initialStateMachine != null ? !initialStateMachine.equals(that.initialStateMachine) : that.initialStateMachine != null) {
+            return false;
+        }
+        if (initialState != null ? !initialState.equals(that.initialState) : that.initialState != null) {
+            return false;
+        }
+        if (finalStateMachine != null ? !finalStateMachine.equals(that.finalStateMachine) : that.finalStateMachine != null) {
+            return false;
+        }
+        return finalState != null ? finalState.equals(that.finalState) : that.finalState == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = initialStateMachine != null ? initialStateMachine.hashCode() : 0;
+        result = 31 * result + (initialState != null ? initialState.hashCode() : 0);
+        result = 31 * result + (finalStateMachine != null ? finalStateMachine.hashCode() : 0);
+        result = 31 * result + (finalState != null ? finalState.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public void writeExternal(final ObjectOutput out) throws IOException {
         out.writeObject(initialStateMachine);
         out.writeObject(initialState);

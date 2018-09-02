@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.net.URI;
+import java.util.Arrays;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -165,6 +166,38 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
             throw new MissingEntryException("Missing transition for initialState " + initialState.getName() +
                                             ", operation = " + operation.getName() + ", result = " + operationResult, e);
         }
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final DefaultStateMachine that = (DefaultStateMachine) o;
+
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (!Arrays.equals(states, that.states)) {
+            return false;
+        }
+        if (!Arrays.equals(transitions, that.transitions)) {
+            return false;
+        }
+        return Arrays.equals(operations, that.operations);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + Arrays.hashCode(states);
+        result = 31 * result + Arrays.hashCode(transitions);
+        result = 31 * result + Arrays.hashCode(operations);
+        return result;
     }
 
     @Override
