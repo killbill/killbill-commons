@@ -63,18 +63,18 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
     }
 
     @Override
-    public void initialize(final DefaultStateMachineConfig root, final URI uri) {
+    public void initialize(final DefaultStateMachineConfig root) {
         stateMachineConfig = root;
         for (final DefaultState cur : states) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
             cur.setStateMachine(this);
         }
         for (final DefaultTransition cur : transitions) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
             cur.setStateMachine(this);
         }
         for (final DefaultOperation cur : operations) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
             cur.setStateMachine(this);
         }
     }

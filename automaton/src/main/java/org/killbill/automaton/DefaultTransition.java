@@ -88,10 +88,6 @@ public class DefaultTransition extends StateMachineValidatingConfig<DefaultState
     }
 
     @Override
-    public void initialize(final DefaultStateMachineConfig root, final URI uri) {
-    }
-
-    @Override
     public ValidationErrors validate(final DefaultStateMachineConfig root, final ValidationErrors errors) {
         return errors;
     }

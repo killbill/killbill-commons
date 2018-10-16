@@ -79,10 +79,6 @@ public class DefaultLinkStateMachine extends StateMachineValidatingConfig<Defaul
     }
 
     @Override
-    public void initialize(final DefaultStateMachineConfig root, final URI uri) {
-    }
-
-    @Override
     public ValidationErrors validate(final DefaultStateMachineConfig root, final ValidationErrors errors) {
         return errors;
     }
