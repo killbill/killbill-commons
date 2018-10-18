@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,11 +17,7 @@
 
 package org.killbill.commons.locker;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
-
-import javax.sql.DataSource;
 
 import org.killbill.commons.locker.ReentrantLock.TryAcquireLockState;
 import org.killbill.commons.profiling.Profiling;
@@ -36,27 +32,22 @@ public abstract class GlobalLockerBase implements GlobalLocker {
 
     protected static final Logger logger = LoggerFactory.getLogger(GlobalLockerBase.class);
 
-    protected final GlobalLockDao globalLockDao;
     protected final long timeout;
     protected final TimeUnit timeUnit;
     protected final ReentrantLock lockTable;
 
-    private final DataSource dataSource;
     private final Profiling<GlobalLock, LockFailedException> prof;
 
-    public GlobalLockerBase(final DataSource dataSource, final GlobalLockDao globalLockDao, final long timeout, final TimeUnit timeUnit) {
-        this.dataSource = dataSource;
+    public GlobalLockerBase(final long timeout, final TimeUnit timeUnit) {
         this.timeout = timeout;
         this.timeUnit = timeUnit;
-        this.globalLockDao = globalLockDao;
         this.lockTable = new ReentrantLock();
         this.prof = new Profiling<GlobalLock, LockFailedException>();
     }
 
     @Override
     public GlobalLock lockWithNumberOfTries(final String service, final String lockKey, final int retry) throws LockFailedException {
-
-         return prof.executeWithProfiling(ProfilingFeatureType.GLOCK, "lock", new WithProfilingCallback<GlobalLock, LockFailedException>() {
+        return prof.executeWithProfiling(ProfilingFeatureType.GLOCK, "lock", new WithProfilingCallback<GlobalLock, LockFailedException>() {
             @Override
             public GlobalLock execute() throws LockFailedException {
                 final String lockName = getLockName(service, lockKey);
@@ -77,29 +68,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         });
     }
 
-    @Override
-    public boolean isFree(final String service, final String lockKey) {
-        final String lockName = getLockName(service, lockKey);
-
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            return globalLockDao.isLockFree(connection, lockName);
-        } catch (final SQLException e) {
-            logger.warn("Unable to check if lock is free", e);
-            return false;
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (final SQLException e) {
-                    logger.warn("Unable to close connection", e);
-                }
-            }
-        }
-    }
-
-    protected GlobalLock lock(final String lockName) throws LockFailedException {
+    protected GlobalLock lock(final String lockName) {
         final TryAcquireLockState lockState = lockTable.tryAcquireLockForExistingOwner(lockName);
         if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_OWNER) {
             return lockState.getOriginalLock();
@@ -119,37 +88,7 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         return doLock(lockName);
     }
 
-    protected GlobalLock doLock(final String lockName) {
-        Connection connection = null;
-        boolean obtained = false;
-        try {
-            connection = dataSource.getConnection();
-            obtained = globalLockDao.lock(connection, lockName, timeout, timeUnit);
-            if (obtained) {
-                final GlobalLock lock = getGlobalLock(connection, lockName, new ResetReentrantLockCallback() {
-                    @Override
-                    public boolean reset(final String lockName) {
-                        return lockTable.releaseLock(lockName);
-                    }
-                });
-                lockTable.createLock(lockName, lock);
-                return lock;
-            }
-        } catch (final SQLException e) {
-            logger.warn("Unable to obtain lock for {}", lockName, e);
-        } finally {
-            if (!obtained && connection != null) {
-                try {
-                    connection.close();
-                } catch (final SQLException e) {
-                    logger.warn("Unable to close connection", e);
-                }
-            }
-        }
-        return null;
-    }
-
-    protected abstract GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb);
+    protected abstract GlobalLock doLock(final String lockName);
 
     protected abstract String getLockName(final String service, final String lockKey);
 
@@ -162,5 +101,3 @@ public abstract class GlobalLockerBase implements GlobalLocker {
         }
     }
 }
-
-

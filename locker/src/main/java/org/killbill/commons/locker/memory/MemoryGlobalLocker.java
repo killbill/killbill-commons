@@ -18,7 +18,6 @@
 
 package org.killbill.commons.locker.memory;
 
-import java.sql.Connection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -27,14 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
 import org.killbill.commons.locker.GlobalLockerBase;
-import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker {
 
     private final Map<String, AtomicBoolean> locks = new ConcurrentHashMap<String, AtomicBoolean>();
 
     public MemoryGlobalLocker() {
-        super(null, null, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        super(DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -72,11 +70,6 @@ public class MemoryGlobalLocker extends GlobalLockerBase implements GlobalLocker
         lockTable.createLock(lockName, lock);
 
         return lock;
-    }
-
-    @Override
-    protected GlobalLock getGlobalLock(final Connection connection, final String lockName, final ResetReentrantLockCallback resetCb) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

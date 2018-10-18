@@ -20,14 +20,14 @@ package org.killbill.commons.locker.mysql;
 
 import org.killbill.commons.locker.GlobalLock;
 import org.killbill.commons.locker.GlobalLocker;
-import org.killbill.commons.locker.GlobalLockerBase;
+import org.killbill.commons.locker.GlobalLockerBaseWithDao;
 import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.concurrent.TimeUnit;
 
-public class MySqlGlobalLocker extends GlobalLockerBase implements GlobalLocker {
+public class MySqlGlobalLocker extends GlobalLockerBaseWithDao implements GlobalLocker {
 
 
     public MySqlGlobalLocker(final DataSource dataSource) {
