@@ -1,7 +1,8 @@
 /*
- * Copyright 2014 Groupon, Inc
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
- * Groupon licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -16,7 +17,12 @@
 
 package org.killbill.automaton;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.net.URI;
+import java.util.Arrays;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -25,14 +31,14 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlID;
 
+import org.killbill.xmlloader.ValidationErrors;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import org.killbill.xmlloader.ValidationErrors;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachine {
+public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachine, Externalizable {
 
     @XmlAttribute(required = true)
     @XmlID
@@ -52,19 +58,23 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
 
     private DefaultStateMachineConfig stateMachineConfig;
 
+    // Required for deserialization
+    public DefaultStateMachine() {
+    }
+
     @Override
-    public void initialize(final DefaultStateMachineConfig root, final URI uri) {
+    public void initialize(final DefaultStateMachineConfig root) {
         stateMachineConfig = root;
         for (final DefaultState cur : states) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
             cur.setStateMachine(this);
         }
         for (final DefaultTransition cur : transitions) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
             cur.setStateMachine(this);
         }
         for (final DefaultOperation cur : operations) {
-            cur.initialize(root, uri);
+            cur.initialize(root);
             cur.setStateMachine(this);
         }
     }
@@ -156,6 +166,54 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
             throw new MissingEntryException("Missing transition for initialState " + initialState.getName() +
                                             ", operation = " + operation.getName() + ", result = " + operationResult, e);
         }
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final DefaultStateMachine that = (DefaultStateMachine) o;
+
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (!Arrays.equals(states, that.states)) {
+            return false;
+        }
+        if (!Arrays.equals(transitions, that.transitions)) {
+            return false;
+        }
+        return Arrays.equals(operations, that.operations);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + Arrays.hashCode(states);
+        result = 31 * result + Arrays.hashCode(transitions);
+        result = 31 * result + Arrays.hashCode(operations);
+        return result;
+    }
+
+    @Override
+    public void writeExternal(final ObjectOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeObject(states);
+        out.writeObject(transitions);
+        out.writeObject(operations);
+    }
+
+    @Override
+    public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+        this.name = in.readUTF();
+        this.states = (DefaultState[]) in.readObject();
+        this.transitions = (DefaultTransition[]) in.readObject();
+        this.operations = (DefaultOperation[]) in.readObject();
     }
 }
 
