@@ -18,55 +18,13 @@
 
 package org.killbill.clock;
 
-import java.util.concurrent.Callable;
-
-import org.killbill.clock.ClockMock;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import org.awaitility.Awaitility;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
-public class TestClockMock {
+public class TestClockMock extends TestClockMockBase {
 
     @Test(groups = "fast")
     public void testBasicClockOperations() throws Exception {
         final ClockMock clock = new ClockMock();
-
-        final DateTime startingTime = new DateTime(DateTimeZone.UTC);
-        // Lame, but required due to the truncation magic
-        Awaitility.await().atMost(1500, MILLISECONDS).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return clock.getUTCNow().isAfter(startingTime);
-            }
-        });
-
-        clock.setTime(new DateTime(2012, 5, 1, 1, 2, 3, DateTimeZone.UTC));
-        Assert.assertEquals(clock.getUTCToday(), new LocalDate(2012, 5, 1));
-        final DateTime utcNowAfterSetTime = clock.getUTCNow();
-        Assert.assertEquals(utcNowAfterSetTime.getHourOfDay(), 1);
-        Assert.assertEquals(utcNowAfterSetTime.getMinuteOfHour(), 2);
-        Assert.assertEquals(utcNowAfterSetTime.getSecondOfMinute(), 3);
-
-        clock.addDays(1);
-        Assert.assertEquals(clock.getUTCToday(), new LocalDate(2012, 5, 2));
-
-        clock.addMonths(1);
-        Assert.assertEquals(clock.getUTCToday(), new LocalDate(2012, 6, 2));
-
-        clock.addYears(1);
-        Assert.assertEquals(clock.getUTCToday(), new LocalDate(2013, 6, 2));
-
-        clock.setDay(new LocalDate(2045, 12, 12));
-        Assert.assertEquals(clock.getUTCToday(), new LocalDate(2045, 12, 12));
-
-        clock.resetDeltaFromReality();
-        Assert.assertTrue(clock.getUTCNow().isAfter(startingTime));
-        Assert.assertTrue(clock.getUTCNow().isBefore(startingTime.plusMinutes(1)));
+        testBasicClockOperations(clock);
     }
 }

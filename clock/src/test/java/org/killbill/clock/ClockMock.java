@@ -46,7 +46,7 @@ public class ClockMock implements Clock {
 
     @Override
     public synchronized DateTime getUTCNow() {
-        return truncate(mockDateTimeUTC.plus(System.currentTimeMillis() - initialDeltaMillis));
+        return truncate(getReferenceDateTimeUTC().plus(System.currentTimeMillis() - initialDeltaMillis));
     }
 
     @Override
@@ -105,18 +105,18 @@ public class ClockMock implements Clock {
         logChange(prev);
     }
 
-    private synchronized void reset() {
+    protected synchronized void reset() {
         reset(realNow());
     }
 
     private void reset(final DateTime timeInAnyTimeZone) {
-        mockDateTimeUTC = timeInAnyTimeZone.toDateTime(DateTimeZone.UTC);
+        setReferenceDateTimeUTC(timeInAnyTimeZone.toDateTime(DateTimeZone.UTC));
         initialDeltaMillis = System.currentTimeMillis();
     }
 
     private void adjustTo(final ReadablePeriod period) {
         final DateTime prev = getUTCNow();
-        mockDateTimeUTC = mockDateTimeUTC.plus(period);
+        setReferenceDateTimeUTC(getReferenceDateTimeUTC().plus(period));
         logChange(prev);
     }
 
@@ -131,5 +131,13 @@ public class ClockMock implements Clock {
 
     private DateTime realNow() {
         return new DateTime(DateTimeZone.UTC);
+    }
+
+    protected void setReferenceDateTimeUTC(final DateTime mockDateTimeUTC) {
+        this.mockDateTimeUTC = mockDateTimeUTC;
+    }
+
+    protected DateTime getReferenceDateTimeUTC() {
+        return mockDateTimeUTC;
     }
 }

@@ -17,20 +17,24 @@
 
 package org.killbill.commons.locker.postgresql;
 
-import org.killbill.commons.locker.GlobalLock;
-import org.killbill.commons.locker.GlobalLocker;
-import org.killbill.commons.locker.GlobalLockerBase;
-import org.killbill.commons.locker.ResetReentrantLockCallback;
-
-import javax.sql.DataSource;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.util.concurrent.TimeUnit;
 
-public class PostgreSQLGlobalLocker extends GlobalLockerBase implements GlobalLocker {
+import javax.sql.DataSource;
 
+import org.killbill.commons.locker.GlobalLock;
+import org.killbill.commons.locker.GlobalLocker;
+import org.killbill.commons.locker.GlobalLockerBaseWithDao;
+import org.killbill.commons.locker.ResetReentrantLockCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class PostgreSQLGlobalLocker extends GlobalLockerBaseWithDao implements GlobalLocker {
+
+    private static final Logger logger = LoggerFactory.getLogger(PostgreSQLGlobalLocker.class);
 
     public PostgreSQLGlobalLocker(final DataSource dataSource) {
         this(dataSource, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
