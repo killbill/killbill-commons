@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 
 public class TestUriAccessor {
 
-    private static final Pattern GUAVA_PATTERN = Pattern.compile(".*/guava-(\\d{2}.\\d).jar$");
+    private static final Pattern GUAVA_PATTERN = Pattern.compile(".*/guava-(\\d{2}.\\d-jre).jar$");
 
     private URL guavaUrl = null;
     private String guavaVersion = null;
