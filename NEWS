@@ -1,3 +1,9 @@
+0.22.2
+    automaton: fix serialization for distributed caching
+    clock: implement distributed clock using Redis
+    xmlloader: remove legacy URI parameter in validation
+    Update to killbill-oss-parent 0.142.5 (JDK 1.8)
+
 0.22.1
     Configure jackson Mapper to ignore unknown properties
 
