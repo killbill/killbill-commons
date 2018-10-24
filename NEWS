@@ -1,3 +1,6 @@
+0.22.3
+    queue: create additional jdbi-shaded artifact
+
 0.22.2
     automaton: fix serialization for distributed caching
     clock: implement distributed clock using Redis
