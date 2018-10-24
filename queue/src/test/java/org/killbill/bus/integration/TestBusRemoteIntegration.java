@@ -19,6 +19,7 @@ package org.killbill.bus.integration;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +38,7 @@ import org.killbill.bus.api.PersistentBus.EventBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -189,7 +191,6 @@ public class TestBusRemoteIntegration {
                 logger.warn("Ignoring event for test name %s", request.getName());
                 return;
             }
-
             final Point.Builder pointBuilder = Point.measurement("input_events")
                                                     .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
                                                     .tag(request.getKey(), request.getValue())
@@ -199,9 +200,11 @@ public class TestBusRemoteIntegration {
                                                     .addField("searchKey1", request.getSearchKey2());
             try {
 
-                final PersistentBus bus = instance.getBus();
-                if (bus !=  null) {
-                    bus.post(new TestEvent(request));
+                // We use the source to decide whether this is an event or an entry we want to manually add in the queue
+                if (Strings.isNullOrEmpty(request.getSource())) {
+                    instance.postEntry(request);
+                } else {
+                    instance.insertEntryIntoQueue(request);
                 }
 
                 long v = instance.incNbEvents();

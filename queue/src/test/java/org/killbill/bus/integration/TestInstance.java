@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
+import org.killbill.CreatorName;
+import org.killbill.billing.rpc.test.queue.gen.EventMsg;
 import org.killbill.billing.rpc.test.queue.gen.InitMsg;
 import org.killbill.billing.rpc.test.queue.gen.TestType;
 import org.killbill.bus.DefaultPersistentBus;
@@ -31,23 +33,32 @@ import org.killbill.bus.InMemoryPersistentBus;
 import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBus.EventBusException;
 import org.killbill.bus.api.PersistentBusConfig;
+import org.killbill.bus.dao.BusEventModelDao;
+import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.queue.InTransaction;
+import org.killbill.queue.QueueObjectMapper;
+import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.config.ConfigSource;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.jdbi.v2.DBI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
 import static org.killbill.billing.rpc.test.queue.gen.TestType.MEMORY;
 
 public class TestInstance {
+
+    private final Logger logger = LoggerFactory.getLogger(TestInstance.class);
 
     private final InitMsg initMsg;
     private final InfluxDB influxDB;
@@ -58,6 +69,7 @@ public class TestInstance {
     private final Clock clock;
     private final MetricRegistry metricRegistry;
     private final AtomicLong nbEvents;
+    private final PersistentBusConfig persistentBusConfig;
 
     public TestInstance(final InitMsg initMsg, final InfluxDB influxDB, final String jdbcConnection, final String dbUsername, final String dbPassword) {
         this.initMsg = initMsg;
@@ -68,21 +80,48 @@ public class TestInstance {
         this.clock = new DefaultClock();
         this.databaseTransactionNotificationApi = new DatabaseTransactionNotificationApi();
         this.dbi = setupDBI(jdbcConnection, dbUsername, dbPassword);
+        this.persistentBusConfig = setupQueueConfig();
         this.bus = setupPersistentBus();
     }
 
     public void start() throws EventBusException {
-        if (bus !=  null) {
+        if (bus != null) {
             bus.start();
             bus.register(busHandler);
         }
     }
 
     public void stop() throws EventBusException {
-        if (bus !=  null) {
+        if (bus != null) {
             bus.unregister(busHandler);
             bus.stop();
         }
+    }
+
+    public void postEntry(final EventMsg request) throws EventBusException {
+        if (bus != null) {
+            bus.post(new TestEvent(request));
+        }
+    }
+
+    public void insertEntryIntoQueue(final EventMsg request) throws EventBusException {
+        final PersistentBusSqlDao dao = dbi.onDemand(PersistentBusSqlDao.class);
+        final TestEvent entry = new TestEvent(request);
+
+        final String json;
+        try {
+            json = QueueObjectMapper.get().writeValueAsString(entry);
+            // We use the source info to override the creator name
+            final BusEventModelDao model = new BusEventModelDao(entry.getSource(), clock.getUTCNow(), TestEvent.class.getName(), json,
+                                                                entry.getUserToken(), entry.getSearchKey1(), entry.getSearchKey2());
+
+
+            dao.insertEntry(model, persistentBusConfig.getTableName());
+        } catch (final JsonProcessingException e) {
+            throw new EventBusException("Unable to serialize event " + entry);
+        }
+
+
     }
 
     private DBI setupDBI(final String jdbcConnection, final String username, final String password) {
@@ -105,7 +144,7 @@ public class TestInstance {
         config.put(key, value);
     }
 
-    private ConfigSource createQueueConfigSource() {
+    private PersistentBusConfig setupQueueConfig() {
 
         final Map<String, String> config = new HashMap<>();
         insertNonNullValue(config, "org.killbill.persistent.bus.main.inMemory", String.valueOf(initMsg.getType() == MEMORY));
@@ -118,19 +157,19 @@ public class TestInstance {
         insertNonNullValue(config, "org.killbill.persistent.bus.main.reapThreshold", initMsg.getQueueReapThreshold());
         insertNonNullValue(config, "org.killbill.persistent.bus.main.maxReDispatchCount", initMsg.getQueueMaxReDispatchCount());
 
-        return new ConfigSource() {
+        final ConfigSource configSource = new ConfigSource() {
             @Override
             public String getString(final String propertyName) {
                 return config.get(propertyName);
             }
         };
+
+        final PersistentBusConfig persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
+                                                                                                                           ImmutableMap.<String, String>of("instanceName", "main"));
+        return persistentBusConfig;
     }
 
     public PersistentBus setupPersistentBus() {
-        final ConfigSource configSource = createQueueConfigSource();
-        final PersistentBusConfig persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                                                                                                                           ImmutableMap.<String, String>of("instanceName", "main"));
-
         switch (initMsg.getType()) {
             case MEMORY:
                 return new InMemoryPersistentBus(persistentBusConfig);
@@ -141,13 +180,9 @@ public class TestInstance {
         }
     }
 
-    public PersistentBus getBus() {
-        return bus;
-    }
-
     public long incNbEvents() {
 
-        for (String metricsKey :metricRegistry.getCounters().keySet()) {
+        for (String metricsKey : metricRegistry.getCounters().keySet()) {
             final Counter counter = metricRegistry.getCounters().get(metricsKey);
             final String[] parts = metricsKey.split("\\.");
             final String measurement = "bus_events_" + parts[parts.length - 1];
