@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
-import org.killbill.CreatorName;
 import org.killbill.billing.rpc.test.queue.gen.EventMsg;
 import org.killbill.billing.rpc.test.queue.gen.InitMsg;
 import org.killbill.billing.rpc.test.queue.gen.TestType;
@@ -41,7 +40,6 @@ import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.QueueObjectMapper;
-import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.config.ConfigSource;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.jdbi.v2.DBI;
@@ -115,12 +113,10 @@ public class TestInstance {
             final BusEventModelDao model = new BusEventModelDao(entry.getSource(), clock.getUTCNow(), TestEvent.class.getName(), json,
                                                                 entry.getUserToken(), entry.getSearchKey1(), entry.getSearchKey2());
 
-
             dao.insertEntry(model, persistentBusConfig.getTableName());
         } catch (final JsonProcessingException e) {
             throw new EventBusException("Unable to serialize event " + entry);
         }
-
 
     }
 
@@ -182,16 +178,18 @@ public class TestInstance {
 
     public long incNbEvents() {
 
-        for (String metricsKey : metricRegistry.getCounters().keySet()) {
-            final Counter counter = metricRegistry.getCounters().get(metricsKey);
-            final String[] parts = metricsKey.split("\\.");
-            final String measurement = "bus_events_" + parts[parts.length - 1];
+        if (influxDB != null) {
+            for (String metricsKey : metricRegistry.getCounters().keySet()) {
+                final Counter counter = metricRegistry.getCounters().get(metricsKey);
+                final String[] parts = metricsKey.split("\\.");
+                final String measurement = "bus_events_" + parts[parts.length - 1];
 
-            final Point.Builder pointBuilder = Point.measurement(measurement)
-                                                    .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                                                    .addField("value", counter.getCount());
-            influxDB.write(pointBuilder.build());
+                final Point.Builder pointBuilder = Point.measurement(measurement)
+                                                        .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+                                                        .addField("value", counter.getCount());
+                influxDB.write(pointBuilder.build());
 
+            }
         }
 
         return nbEvents.incrementAndGet();

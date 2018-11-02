@@ -19,7 +19,6 @@ package org.killbill.bus.integration;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +32,6 @@ import org.killbill.billing.rpc.test.queue.gen.InitMsg;
 import org.killbill.billing.rpc.test.queue.gen.QueueApiGrpc;
 import org.killbill.billing.rpc.test.queue.gen.StatusMsg;
 import org.killbill.billing.rpc.test.queue.gen.TerminateMsg;
-import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBus.EventBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +43,20 @@ import io.grpc.stub.StreamObserver;
 
 public class TestBusRemoteIntegration {
 
-    public static final int DEFAULT_DATA_SERVER_PORT = 21345;
+    private static final String SERVER_PORT_PROP = "org.killbill.test.server.port";
 
-    private static final String DEFAULT_INFLUX_DB_ADDR = "http://127.0.0.1:8086";
+    private static final String INFLUX_ADDR_PROP = "org.killbill.test.influx.addr";
+    private static final String INFLUX_DB_PROP = "org.killbill.test.influx.db";
+    private static final String INFLUX_USER_PROP = "org.killbill.test.influx.user";
+    private static final String INFLUX_PWD_PROP = "org.killbill.test.influx.pwd";
+
+    private static final String JDBC_CONN_PROP = "org.killbill.test.jdbc.conn";
+    private static final String JDBC_USER_PROP = "org.killbill.test.jdbc.user";
+    private static final String JDBC_PWD_PROP = "org.killbill.test.jdbc.addr";
+
+    public static final String DEFAULT_DATA_SERVER_PORT = "21345";
+
+    private static final String DEFAULT_INFLUX_ADDR = "http://127.0.0.1:8086";
     private static final String DEFAULT_INFLUX_DB = "killbill";
     private static final String DEFAULT_INFLUX_USERNAME = "killbill";
     private static final String DEFAULT_INFLUX_PWD = "killbill";
@@ -56,17 +65,53 @@ public class TestBusRemoteIntegration {
     private static final String DEFAULT_DB_USERNAME = "root";
     private static final String DEFAULT_DB_PWD = "root";
 
+    private final int serverPort;
+    private final String influxDbAddr;
+    private final String influxDbName;
+    private final String influxUser;
+    private final String influxPwd;
+    private final String jdbcConn;
+    private final String jdbcUser;
+    private final String jdbcPwd;
+
     private static final Logger logger = LoggerFactory.getLogger(TestBusRemoteIntegration.class);
 
     private final InfluxDB influxDB;
 
-    public TestBusRemoteIntegration() {
+    public TestBusRemoteIntegration(final String serverPort,
+                                    final String influxDbAddr,
+                                    final String influxDbName,
+                                    final String influxUser,
+                                    final String influxPwd,
+                                    final String jdbcConn,
+                                    final String jdbcUser,
+                                    final String jdbcPwd) {
+        this.serverPort = Integer.valueOf(serverPort);
+        this.influxDbAddr = influxDbAddr;
+        this.influxDbName = influxDbName;
+        this.influxUser = influxUser;
+        this.influxPwd = influxPwd;
+        this.jdbcConn = jdbcConn;
+        this.jdbcUser = jdbcUser;
+        this.jdbcPwd = jdbcPwd;
+
+        logger.info(String.format("Started test server serverPort='%d', influxDbAddr='%s', influxDbName='%s', influxUser='%s', influxPwd='%s'," +
+                                  " jdbcConn='%s', jdbcUser='%s', jdbcPwd='%s'",
+                                  this.serverPort,
+                                  this.influxDbAddr,
+                                  this.influxDbName,
+                                  this.influxUser,
+                                  this.influxPwd,
+                                  this.jdbcConn,
+                                  this.jdbcUser,
+                                  this.jdbcPwd));
+
         this.influxDB = setupInfluxDB();
     }
 
     private void startServer() throws IOException, InterruptedException {
 
-        final QueueGRPCServer queueServer = new QueueGRPCServer(DEFAULT_DATA_SERVER_PORT, influxDB);
+        final QueueGRPCServer queueServer = new QueueGRPCServer(serverPort, influxDB, jdbcConn, jdbcUser, jdbcPwd);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -90,10 +135,10 @@ public class TestBusRemoteIntegration {
         private final Server server;
         private final Map<String, TestInstance> activeTests;
 
-        public QueueGRPCServer(final int port, final InfluxDB influxDB) {
+        public QueueGRPCServer(final int port, final InfluxDB influxDB, final String jdbcConn, final String jdbcUser, final String jdbcPwd) {
             activeTests = new HashMap<String, TestInstance>();
             server = ServerBuilder.forPort(port)
-                                  .addService(new ControlService(activeTests, influxDB))
+                                  .addService(new ControlService(activeTests, influxDB, jdbcConn, jdbcUser, jdbcPwd))
                                   .addService(new QueueService(activeTests, influxDB))
                                   .build();
 
@@ -111,25 +156,37 @@ public class TestBusRemoteIntegration {
     }
 
     private InfluxDB setupInfluxDB() {
-        InfluxDB influxDB = InfluxDBFactory.connect(DEFAULT_INFLUX_DB_ADDR, DEFAULT_INFLUX_USERNAME, DEFAULT_INFLUX_PWD);
-        String dbName = DEFAULT_INFLUX_DB;
-        influxDB.setDatabase(dbName);
-        String rpName = "aRetentionPolicy";
-        influxDB.createRetentionPolicy(rpName, dbName, "30d", "30m", 2, true);
-        influxDB.setRetentionPolicy(rpName);
+        try {
+            InfluxDB influxDB = InfluxDBFactory.connect(influxDbAddr, influxUser, influxPwd);
+            String dbName = influxDbName;
+            influxDB.setDatabase(dbName);
+            String rpName = "aRetentionPolicy";
+            influxDB.createRetentionPolicy(rpName, dbName, "30d", "30m", 2, true);
+            influxDB.setRetentionPolicy(rpName);
 
-        influxDB.enableBatch(BatchOptions.DEFAULTS);
-        return influxDB;
+            influxDB.enableBatch(BatchOptions.DEFAULTS);
+            return influxDB;
+
+        } catch (org.influxdb.InfluxDBIOException e) {
+            logger.warn("Failed to connect to influxDB, skip metrics");
+        }
+        return null;
     }
 
     private static class ControlService extends ControlApiGrpc.ControlApiImplBase {
 
         private final Map<String, TestInstance> activeTests;
         private final InfluxDB influxDB;
+        private final String jdbcConn;
+        private final String jdbcUser;
+        private final String jdbcPwd;
 
-        public ControlService(final Map<String, TestInstance> activeTests, final InfluxDB influxDB) {
+        public ControlService(final Map<String, TestInstance> activeTests, final InfluxDB influxDB, final String jdbcConn, final String jdbcUser, final String jdbcPwd) {
             this.activeTests = activeTests;
             this.influxDB = influxDB;
+            this.jdbcConn = jdbcConn;
+            this.jdbcUser = jdbcUser;
+            this.jdbcPwd = jdbcPwd;
         }
 
         public synchronized void initialize(InitMsg request, StreamObserver<StatusMsg> responseObserver) {
@@ -140,7 +197,7 @@ public class TestBusRemoteIntegration {
                 responseObserver.onNext(StatusMsg.newBuilder().setError(String.format("Test %s already exists", request.getName())).setSuccess(false).build());
             } else {
 
-                final TestInstance testInstance = new TestInstance(request, influxDB, DEFAULT_JDBC_CONNECTION, DEFAULT_DB_USERNAME, DEFAULT_DB_PWD);
+                final TestInstance testInstance = new TestInstance(request, influxDB, jdbcConn, jdbcUser, jdbcPwd);
                 try {
                     testInstance.start();
                     activeTests.put(request.getName(), testInstance);
@@ -219,14 +276,24 @@ public class TestBusRemoteIntegration {
                 responseObserver.onError(e);
                 pointBuilder.tag("error", "true");
             } finally {
-                influxDB.write(pointBuilder.build());
+                if (influxDB != null) {
+                    influxDB.write(pointBuilder.build());
+                }
             }
         }
 
     }
 
     public static void main(final String[] args) throws IOException, InterruptedException {
-        final TestBusRemoteIntegration test = new TestBusRemoteIntegration();
+
+        final TestBusRemoteIntegration test = new TestBusRemoteIntegration(System.getProperty(SERVER_PORT_PROP, DEFAULT_DATA_SERVER_PORT),
+                                                                           System.getProperty(INFLUX_ADDR_PROP, DEFAULT_INFLUX_ADDR),
+                                                                           System.getProperty(INFLUX_DB_PROP, DEFAULT_INFLUX_DB),
+                                                                           System.getProperty(INFLUX_USER_PROP, DEFAULT_INFLUX_USERNAME),
+                                                                           System.getProperty(INFLUX_PWD_PROP, DEFAULT_INFLUX_PWD),
+                                                                           System.getProperty(JDBC_CONN_PROP, DEFAULT_JDBC_CONNECTION),
+                                                                           System.getProperty(JDBC_USER_PROP, DEFAULT_DB_USERNAME),
+                                                                           System.getProperty(JDBC_PWD_PROP, DEFAULT_DB_PWD));
         test.startServer();
     }
 

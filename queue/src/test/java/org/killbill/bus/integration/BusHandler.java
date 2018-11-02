@@ -36,14 +36,16 @@ public class BusHandler {
     @AllowConcurrentEvents
     @Subscribe
     public void dispatchEvent(final TestEvent event) {
-        influxDB.write(Point.measurement("dispatched_events")
-                            .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                            .tag("source", event.getSource())
-                            .tag("key", event.getKey())
-                            .tag("value", event.getValue())
-                            .addField("searchKey1", event.getSearchKey1())
-                            .addField("searchKey1", event.getSearchKey2())
-                            .build());
+        if (influxDB != null) {
+            influxDB.write(Point.measurement("dispatched_events")
+                                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+                                .tag("source", event.getSource())
+                                .tag("key", event.getKey())
+                                .tag("value", event.getValue())
+                                .addField("searchKey1", event.getSearchKey1())
+                                .addField("searchKey1", event.getSearchKey2())
+                                .build());
+        }
 
     }
 }
