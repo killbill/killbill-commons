@@ -56,7 +56,7 @@ public class TestDataSource {
 
         hikariConfig.setMaximumPoolSize(100);
         hikariConfig.setMinimumIdle(1);
-        hikariConfig.setConnectionTimeout(10 * 000);
+        hikariConfig.setConnectionTimeout(10 * 1000);
         hikariConfig.setIdleTimeout(60 * 1000 * 1000);
         hikariConfig.setMaxLifetime(0);
 

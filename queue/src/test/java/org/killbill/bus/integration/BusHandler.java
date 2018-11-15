@@ -17,7 +17,7 @@
 
 package org.killbill.bus.integration;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
@@ -25,25 +25,30 @@ import org.influxdb.dto.Point;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.Subscribe;
 
+import static org.killbill.bus.integration.TestBusRemoteIntegration.DEFAULT_INFLUX_BATCH;
+
 public class BusHandler {
 
     private final InfluxDB influxDB;
 
+    private final AtomicLong counter;
+
     public BusHandler(final InfluxDB influxDB) {
         this.influxDB = influxDB;
+        this.counter = new AtomicLong();
     }
 
     @AllowConcurrentEvents
     @Subscribe
     public void dispatchEvent(final TestEvent event) {
+        long dispatched = counter.incrementAndGet();
+
         if (influxDB != null) {
             influxDB.write(Point.measurement("dispatched_events")
-                                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
                                 .tag("source", event.getSource())
-                                .tag("key", event.getKey())
-                                .tag("value", event.getValue())
+                                .tag("uniq", String.valueOf(dispatched % (DEFAULT_INFLUX_BATCH + 13)))
                                 .addField("searchKey1", event.getSearchKey1())
-                                .addField("searchKey1", event.getSearchKey2())
+                                .addField("searchKey2", event.getSearchKey2())
                                 .build());
         }
 

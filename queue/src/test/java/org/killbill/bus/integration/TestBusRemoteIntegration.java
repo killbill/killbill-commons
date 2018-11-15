@@ -20,9 +20,9 @@ package org.killbill.bus.integration;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
@@ -60,6 +60,8 @@ public class TestBusRemoteIntegration {
     private static final String DEFAULT_INFLUX_DB = "killbill";
     private static final String DEFAULT_INFLUX_USERNAME = "killbill";
     private static final String DEFAULT_INFLUX_PWD = "killbill";
+    // We don't expect to send more than 2000 events/sec
+    public static final int DEFAULT_INFLUX_BATCH = 2000;
 
     private static final String DEFAULT_JDBC_CONNECTION = "jdbc:mysql://127.0.0.1:3306/test_events";
     private static final String DEFAULT_DB_USERNAME = "root";
@@ -95,16 +97,16 @@ public class TestBusRemoteIntegration {
         this.jdbcUser = jdbcUser;
         this.jdbcPwd = jdbcPwd;
 
-        logger.info(String.format("Started test server serverPort='%d', influxDbAddr='%s', influxDbName='%s', influxUser='%s', influxPwd='%s'," +
-                                  " jdbcConn='%s', jdbcUser='%s', jdbcPwd='%s'",
-                                  this.serverPort,
-                                  this.influxDbAddr,
-                                  this.influxDbName,
-                                  this.influxUser,
-                                  this.influxPwd,
-                                  this.jdbcConn,
-                                  this.jdbcUser,
-                                  this.jdbcPwd));
+        logger.info("Started test server serverPort='{}', influxDbAddr='{}', influxDbName='{}', influxUser='{}', influxPwd='{}'," +
+                    " jdbcConn='{}', jdbcUser='{}', jdbcPwd='{}'",
+                    this.serverPort,
+                    this.influxDbAddr,
+                    this.influxDbName,
+                    this.influxUser,
+                    this.influxPwd,
+                    this.jdbcConn,
+                    this.jdbcUser,
+                    this.jdbcPwd);
 
         this.influxDB = setupInfluxDB();
     }
@@ -138,6 +140,7 @@ public class TestBusRemoteIntegration {
         public QueueGRPCServer(final int port, final InfluxDB influxDB, final String jdbcConn, final String jdbcUser, final String jdbcPwd) {
             activeTests = new HashMap<String, TestInstance>();
             server = ServerBuilder.forPort(port)
+                                  .executor(Executors.newFixedThreadPool(20))
                                   .addService(new ControlService(activeTests, influxDB, jdbcConn, jdbcUser, jdbcPwd))
                                   .addService(new QueueService(activeTests, influxDB))
                                   .build();
@@ -155,18 +158,17 @@ public class TestBusRemoteIntegration {
 
     }
 
+
     private InfluxDB setupInfluxDB() {
         try {
-            InfluxDB influxDB = InfluxDBFactory.connect(influxDbAddr, influxUser, influxPwd);
-            String dbName = influxDbName;
+            InfluxDB influxDB = InfluxDBFactory.connect(DEFAULT_INFLUX_ADDR, DEFAULT_INFLUX_USERNAME, DEFAULT_INFLUX_PWD);
+            String dbName = DEFAULT_INFLUX_DB;
             influxDB.setDatabase(dbName);
-            String rpName = "aRetentionPolicy";
-            influxDB.createRetentionPolicy(rpName, dbName, "30d", "30m", 2, true);
+            String rpName = "testRetentionPolicy";
+            influxDB.createRetentionPolicy(rpName, dbName, "1d", "2h", 1, true);
             influxDB.setRetentionPolicy(rpName);
-
-            influxDB.enableBatch(BatchOptions.DEFAULTS);
+            influxDB.enableBatch(DEFAULT_INFLUX_BATCH, 20, TimeUnit.MILLISECONDS);
             return influxDB;
-
         } catch (org.influxdb.InfluxDBIOException e) {
             logger.warn("Failed to connect to influxDB, skip metrics");
         }
@@ -191,7 +193,7 @@ public class TestBusRemoteIntegration {
 
         public synchronized void initialize(InitMsg request, StreamObserver<StatusMsg> responseObserver) {
 
-            logger.info(String.format("Initializing new test %s", request.getName()));
+            logger.info("Initializing new test {}", request.getName());
 
             if (activeTests.containsKey(request.getName())) {
                 responseObserver.onNext(StatusMsg.newBuilder().setError(String.format("Test %s already exists", request.getName())).setSuccess(false).build());
@@ -212,7 +214,7 @@ public class TestBusRemoteIntegration {
 
         public synchronized void terminate(TerminateMsg request, StreamObserver<StatusMsg> responseObserver) {
 
-            logger.info(String.format("Stopping test %s", request.getName()));
+            logger.info("Stopping test {}", request.getName());
 
             final TestInstance testInstance = activeTests.get(request.getName());
 
@@ -245,16 +247,24 @@ public class TestBusRemoteIntegration {
 
             final TestInstance instance = activeTests.get(request.getName());
             if (instance == null) {
-                logger.warn("Ignoring event for test name %s", request.getName());
+                logger.warn("Ignoring event for test name {}", request.getName());
                 return;
             }
+
+            long v = instance.incNbEvents();
+            if (v % 1000 == 0) {
+                System.err.println(String.format("Test %s : got %d events", request.getName(), v));
+            }
+
             final Point.Builder pointBuilder = Point.measurement("input_events")
-                                                    .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                                                    .tag(request.getKey(), request.getValue())
                                                     .tag("type", request.getType())
+                                                    .tag("instance", request.getName())
                                                     .tag("source", request.getSource())
+                                                    // We need to ensure that each point recorded in the same second has different 'feature' otherwise influxdb treats those as duplicates
+                                                    // At the same time using a UUID would creates too many series per database and lead to error: InfluxDBException: partial write: max-series-per-database limit exceeded: (1000000) dropped=72
+                                                    .tag("uniq", String.valueOf(instance.getNbEvents() % (DEFAULT_INFLUX_BATCH + 13)))
                                                     .addField("searchKey1", request.getSearchKey1())
-                                                    .addField("searchKey1", request.getSearchKey2());
+                                                    .addField("searchKey2", request.getSearchKey2());
             try {
 
                 // We use the source to decide whether this is an event or an entry we want to manually add in the queue
@@ -264,10 +274,6 @@ public class TestBusRemoteIntegration {
                     instance.insertEntryIntoQueue(request);
                 }
 
-                long v = instance.incNbEvents();
-                if (v % 100 == 0) {
-                    System.err.println(String.format("Got %d events", v));
-                }
                 responseObserver.onNext(StatusMsg.newBuilder().setSuccess(true).build());
                 responseObserver.onCompleted();
 
