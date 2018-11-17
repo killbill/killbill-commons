@@ -403,6 +403,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
         try {
+
+
+
             switch (entry.getProcessingState()) {
                 case FAILED:
                     totalProcessedAborted.inc();
@@ -411,7 +414,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     totalProcessedSuccess.inc();
                     break;
                 case REMOVED:
-                    // Don't default for REMOVED since we could call this API 'manually' with that state.
+                case REAPED:
                     break;
                 default:
                     log.warn("{} Unexpected terminal event state={} for record_id={}", DB_QUEUE_LOG_ID, entry.getProcessingState(), entry.getRecordId());
@@ -455,6 +458,7 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                     totalProcessedSuccess.inc();
                     break;
                 case REMOVED:
+                case REAPED:
                     // Don't default for REMOVED since we could call this API 'manually' with that state.
                     break;
                 default:
