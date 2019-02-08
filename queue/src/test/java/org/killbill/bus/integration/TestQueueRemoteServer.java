@@ -32,7 +32,7 @@ import org.killbill.billing.rpc.test.queue.gen.InitMsg;
 import org.killbill.billing.rpc.test.queue.gen.QueueApiGrpc;
 import org.killbill.billing.rpc.test.queue.gen.StatusMsg;
 import org.killbill.billing.rpc.test.queue.gen.TerminateMsg;
-import org.killbill.bus.api.PersistentBus.EventBusException;
+import org.killbill.billing.rpc.test.queue.gen.TestQueueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 
-public class TestBusRemoteIntegration {
+public class TestQueueRemoteServer {
 
     private static final String SERVER_PORT_PROP = "org.killbill.test.server.port";
 
@@ -76,18 +76,18 @@ public class TestBusRemoteIntegration {
     private final String jdbcUser;
     private final String jdbcPwd;
 
-    private static final Logger logger = LoggerFactory.getLogger(TestBusRemoteIntegration.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestQueueRemoteServer.class);
 
     private final InfluxDB influxDB;
 
-    public TestBusRemoteIntegration(final String serverPort,
-                                    final String influxDbAddr,
-                                    final String influxDbName,
-                                    final String influxUser,
-                                    final String influxPwd,
-                                    final String jdbcConn,
-                                    final String jdbcUser,
-                                    final String jdbcPwd) {
+    public TestQueueRemoteServer(final String serverPort,
+                                 final String influxDbAddr,
+                                 final String influxDbName,
+                                 final String influxUser,
+                                 final String influxPwd,
+                                 final String jdbcConn,
+                                 final String jdbcUser,
+                                 final String jdbcPwd) {
         this.serverPort = Integer.valueOf(serverPort);
         this.influxDbAddr = influxDbAddr;
         this.influxDbName = influxDbName;
@@ -158,7 +158,6 @@ public class TestBusRemoteIntegration {
 
     }
 
-
     private InfluxDB setupInfluxDB() {
         try {
             InfluxDB influxDB = InfluxDBFactory.connect(DEFAULT_INFLUX_ADDR, DEFAULT_INFLUX_USERNAME, DEFAULT_INFLUX_PWD);
@@ -199,13 +198,15 @@ public class TestBusRemoteIntegration {
                 responseObserver.onNext(StatusMsg.newBuilder().setError(String.format("Test %s already exists", request.getName())).setSuccess(false).build());
             } else {
 
-                final TestInstance testInstance = new TestInstance(request, influxDB, jdbcConn, jdbcUser, jdbcPwd);
+                final TestInstance testInstance = request.getTestQueueType() == TestQueueType.BUS ?
+                                                  new TestBusInstance(request, influxDB, jdbcConn, jdbcUser, jdbcPwd) :
+                                                  new TestNotificationInstance(request, influxDB, jdbcConn, jdbcUser, jdbcPwd);
                 try {
                     testInstance.start();
                     activeTests.put(request.getName(), testInstance);
                     responseObserver.onNext(StatusMsg.newBuilder().setSuccess(true).build());
-                } catch (EventBusException e) {
-                    logger.warn("Failed to start bus ", e);
+                } catch (Exception e) {
+                    logger.warn("Failed to start queue ", e);
                     responseObserver.onNext(StatusMsg.newBuilder().setSuccess(false).build());
                 }
             }
@@ -223,8 +224,8 @@ public class TestBusRemoteIntegration {
                 try {
                     testInstance.stop();
                     responseObserver.onNext(StatusMsg.newBuilder().setSuccess(true).build());
-                } catch (EventBusException e) {
-                    logger.warn("Failed to stop bus ", e);
+                } catch (Exception e) {
+                    logger.warn("Failed to stop queue ", e);
                     responseObserver.onNext(StatusMsg.newBuilder().setSuccess(false).build());
                 }
             }
@@ -277,7 +278,7 @@ public class TestBusRemoteIntegration {
                 responseObserver.onNext(StatusMsg.newBuilder().setSuccess(true).build());
                 responseObserver.onCompleted();
 
-            } catch (final EventBusException e) {
+            } catch (final Exception e) {
                 responseObserver.onNext(StatusMsg.newBuilder().setSuccess(false).build());
                 responseObserver.onError(e);
                 pointBuilder.tag("error", "true");
@@ -292,14 +293,14 @@ public class TestBusRemoteIntegration {
 
     public static void main(final String[] args) throws IOException, InterruptedException {
 
-        final TestBusRemoteIntegration test = new TestBusRemoteIntegration(System.getProperty(SERVER_PORT_PROP, DEFAULT_DATA_SERVER_PORT),
-                                                                           System.getProperty(INFLUX_ADDR_PROP, DEFAULT_INFLUX_ADDR),
-                                                                           System.getProperty(INFLUX_DB_PROP, DEFAULT_INFLUX_DB),
-                                                                           System.getProperty(INFLUX_USER_PROP, DEFAULT_INFLUX_USERNAME),
-                                                                           System.getProperty(INFLUX_PWD_PROP, DEFAULT_INFLUX_PWD),
-                                                                           System.getProperty(JDBC_CONN_PROP, DEFAULT_JDBC_CONNECTION),
-                                                                           System.getProperty(JDBC_USER_PROP, DEFAULT_DB_USERNAME),
-                                                                           System.getProperty(JDBC_PWD_PROP, DEFAULT_DB_PWD));
+        final TestQueueRemoteServer test = new TestQueueRemoteServer(System.getProperty(SERVER_PORT_PROP, DEFAULT_DATA_SERVER_PORT),
+                                                                     System.getProperty(INFLUX_ADDR_PROP, DEFAULT_INFLUX_ADDR),
+                                                                     System.getProperty(INFLUX_DB_PROP, DEFAULT_INFLUX_DB),
+                                                                     System.getProperty(INFLUX_USER_PROP, DEFAULT_INFLUX_USERNAME),
+                                                                     System.getProperty(INFLUX_PWD_PROP, DEFAULT_INFLUX_PWD),
+                                                                     System.getProperty(JDBC_CONN_PROP, DEFAULT_JDBC_CONNECTION),
+                                                                     System.getProperty(JDBC_USER_PROP, DEFAULT_DB_USERNAME),
+                                                                     System.getProperty(JDBC_PWD_PROP, DEFAULT_DB_PWD));
         test.startServer();
     }
 

@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 
-public class TestEvent implements BusEvent {
+public class TestBusEvent implements BusEvent {
 
     private final String source;
     private final Long searchKey1;
@@ -34,17 +34,17 @@ public class TestEvent implements BusEvent {
     private final UUID userToken;
 
     @JsonCreator
-    public TestEvent(@JsonProperty("source") final String source,
-                     @JsonProperty("searchKey1") final Long searchKey1,
-                     @JsonProperty("searchKey2") final Long searchKey2,
-                     @JsonProperty("userToken") final UUID userToken) {
+    public TestBusEvent(@JsonProperty("source") final String source,
+                        @JsonProperty("searchKey1") final Long searchKey1,
+                        @JsonProperty("searchKey2") final Long searchKey2,
+                        @JsonProperty("userToken") final UUID userToken) {
         this.source = source;
         this.searchKey1 = searchKey1;
         this.searchKey2 = searchKey2;
         this.userToken = userToken;
     }
 
-    public TestEvent(final EventMsg in, final String testName) {
+    public TestBusEvent(final EventMsg in, final String testName) {
         this.source = in.getSource() != null ? in.getSource() : testName;
         this.searchKey1 = in.getSearchKey1();
         this.searchKey2 = in.getSearchKey2();

@@ -18,19 +18,26 @@
 package org.killbill.bus.integration;
 
 import org.killbill.billing.rpc.test.queue.gen.EventMsg;
+import org.killbill.notificationq.api.NotificationEvent;
 
-public interface TestInstance {
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    public void start() throws Exception;
+public class TestNotificationEvent implements NotificationEvent {
 
-    public void stop() throws Exception;
+    private final String source;
 
-    public void postEntry(final EventMsg request) throws Exception;
+    @JsonCreator
+    public TestNotificationEvent(@JsonProperty("source") final String source) {
+        this.source = source;
+    }
 
-    public void insertEntryIntoQueue(final EventMsg request) throws Exception;
+    public TestNotificationEvent(final EventMsg in, final String testName) {
+        this.source = in.getSource() != null ? in.getSource() : testName;
+    }
 
-    public long getNbEvents();
-
-    public long incNbEvents();
+    public String getSource() {
+        return source;
+    }
 
 }

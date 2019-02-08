@@ -21,27 +21,39 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.Subscribe;
 
-import static org.killbill.bus.integration.TestBusRemoteIntegration.DEFAULT_INFLUX_BATCH;
+import static org.killbill.bus.integration.TestQueueRemoteServer.DEFAULT_INFLUX_BATCH;
 
-public class BusHandler {
+public class TestBusHandler {
+
+    private final Logger logger = LoggerFactory.getLogger(TestBusHandler.class);
+
 
     private final InfluxDB influxDB;
 
     private final AtomicLong counter;
 
-    public BusHandler(final InfluxDB influxDB) {
+    private final long sleepTimeMsec;
+
+    public TestBusHandler(final InfluxDB influxDB, final long handlerLatency) {
         this.influxDB = influxDB;
         this.counter = new AtomicLong();
+
+        this.sleepTimeMsec = handlerLatency;
+        logger.info("BusHandler configured to sleep {} mSec", sleepTimeMsec);
     }
 
     @AllowConcurrentEvents
     @Subscribe
-    public void dispatchEvent(final TestEvent event) {
+    public void dispatchEvent(final TestBusEvent event) {
         long dispatched = counter.incrementAndGet();
+
+        sleepIfRequired();
 
         if (influxDB != null) {
             influxDB.write(Point.measurement("dispatched_events")
@@ -52,5 +64,16 @@ public class BusHandler {
                                 .build());
         }
 
+    }
+
+
+    private void sleepIfRequired() {
+        if (sleepTimeMsec > 0) {
+            try {
+                Thread.sleep(sleepTimeMsec);
+            } catch (final Exception e) {
+
+            }
+        }
     }
 }
