@@ -212,6 +212,34 @@
                     </descriptors>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>jdbi-shaded</shadedClassifierName>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.skife.jdbi</pattern>
+                                    <shadedPattern>org.killbill.queue.org.skife.jdbi</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.kill-bill.commons:killbill-jdbi</include>
+                                    <include>org.kill-bill.commons:killbill-queue</include>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
