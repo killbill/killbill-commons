@@ -98,7 +98,11 @@ public class GeneratedKeys<Type> implements ResultBearing<Type>
     public <ContainerType> ContainerType list(Class<ContainerType> containerType)
     {
 //        return containerFactoryRegistry.lookup(containerType).create(Arrays.asList(list()));
-        throw new UnsupportedOperationException("Not Yet Implemented!");
+        if (containerType.isAssignableFrom(List.class)) {
+            return (ContainerType) list();
+        } else {
+            throw new UnsupportedOperationException("Not Yet Implemented!");
+        }
     }
 
     @Override

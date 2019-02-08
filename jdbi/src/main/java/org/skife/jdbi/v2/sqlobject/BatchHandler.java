@@ -17,9 +17,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
+import org.skife.jdbi.v2.GeneratedKeys;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.PreparedBatch;
 import org.skife.jdbi.v2.PreparedBatchPart;
@@ -45,9 +48,7 @@ class BatchHandler extends CustomizingStatementHandler
 
     BatchHandler(Class<?> sqlObjectType, ResolvedMethod method) {
         super(sqlObjectType, method);
-        if (!returnTypeIsValid(method.getRawMember().getReturnType())) {
-            throw new DBIException(invalidReturnTypeMessage(method)) {};
-        }
+
         Method raw_method = method.getRawMember();
         SqlBatch anno = raw_method.getAnnotation(SqlBatch.class);
         this.sql = SqlObject.getSql(anno, raw_method);
@@ -55,9 +56,13 @@ class BatchHandler extends CustomizingStatementHandler
         this.batchChunkSize = determineBatchChunkSize(sqlObjectType, raw_method);
         final GetGeneratedKeys getGeneratedKeys = raw_method.getAnnotation(GetGeneratedKeys.class);
         if (getGeneratedKeys == null) {
+            if (!returnTypeIsValid(method.getRawMember().getReturnType())) {
+                throw new DBIException(invalidReturnTypeMessage(method)) {};
+            }
             returner = new Returner() {
                 @Override
-                public int[] value(PreparedBatch batch) {
+                public Object value(PreparedBatch batch, HandleDing baton)
+                {
                     return batch.execute();
                 }
             };
@@ -68,19 +73,24 @@ class BatchHandler extends CustomizingStatementHandler
             } catch (Exception e) {
                 throw new UnableToCreateStatementException("Unable to instantiate result set mapper for statement", e);
             }
+            final ResultReturnThing magic = ResultReturnThing.forType(method);
             if (getGeneratedKeys.columnName().isEmpty()) {
                 returner = new Returner() {
                     @Override
-                    public int[] value(PreparedBatch batch) {
-                        return toPrimitiveArray(batch.executeAndGenerateKeys(mapper).list());
+                    public Object value(PreparedBatch batch, HandleDing baton)
+                    {
+                        GeneratedKeys o = batch.executeAndGenerateKeys(mapper);
+                        return magic.result(o, baton);
                     }
                 };
             } else {
                 returner = new Returner() {
                     @Override
-                    public int[] value(PreparedBatch batch) {
+                    public Object value(PreparedBatch batch, HandleDing baton)
+                    {
                         String columnName = getGeneratedKeys.columnName();
-                        return toPrimitiveArray(batch.executeAndGenerateKeys(mapper, columnName).list());
+                        GeneratedKeys o = batch.executeAndGenerateKeys(mapper, columnName);
+                        return magic.result(o, baton);
                     }
                 };
             }
@@ -178,7 +188,7 @@ class BatchHandler extends CustomizingStatementHandler
         }
 
         int processed = 0;
-        List<int[]> rs_parts = new ArrayList<int[]>();
+        List<Object> results = new LinkedList<Object>();
 
         PreparedBatch batch = handle.prepareBatch(sql);
         applyCustomizers(batch, args);
@@ -192,7 +202,7 @@ class BatchHandler extends CustomizingStatementHandler
             if (++processed == chunk_size) {
                 // execute this chunk
                 processed = 0;
-                rs_parts.add(executeBatch(handle, batch));
+                executeBatch(results, h, handle, batch);
                 batch = handle.prepareBatch(sql);
                 applyCustomizers(batch, args);
             }
@@ -200,51 +210,38 @@ class BatchHandler extends CustomizingStatementHandler
 
         //execute the rest
         if (batch.getSize() > 0) {
-            rs_parts.add(executeBatch(handle, batch));
+            executeBatch(results, h, handle, batch);
         }
 
-        // combine results
-        int end_size = 0;
-        for (int[] rs_part : rs_parts) {
-            end_size += rs_part.length;
-        }
-        int[] rs = new int[end_size];
-        int offset = 0;
-        for (int[] rs_part : rs_parts) {
-            System.arraycopy(rs_part, 0, rs, offset, rs_part.length);
-            offset += rs_part.length;
-        }
-
-        return rs;
+        return results;
     }
 
-    private int[] executeBatch(final Handle handle, final PreparedBatch batch)
+    private void executeBatch(final Collection<Object> results, final HandleDing h, final Handle handle, final PreparedBatch batch) {
+        final Object res = executeBatch(h, handle, batch);
+        if (res instanceof Collection) {
+            results.addAll((Collection) res);
+        } else {
+            results.add(res);
+        }
+    }
+
+    private Object executeBatch(final HandleDing h, final Handle handle, final PreparedBatch batch)
     {
         if (!handle.isInTransaction() && transactional) {
             // it is safe to use same prepared batch as the inTransaction passes in the same
             // Handle instance.
-            return handle.inTransaction(new TransactionCallback<int[]>()
+            return handle.inTransaction(new TransactionCallback<Object>()
             {
                 @Override
-                public int[] inTransaction(Handle conn, TransactionStatus status) throws Exception
+                public Object inTransaction(Handle conn, TransactionStatus status) throws Exception
                 {
-                    return returner.value(batch);
+                    return returner.value(batch, h);
                 }
             });
         }
         else {
-            return returner.value(batch);
+            return returner.value(batch, h);
         }
-    }
-
-    private static int[] toPrimitiveArray(List<Integer> list)
-    {
-        int[] array = new int[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            array[i] = list.get(i);
-        }
-
-        return array;
     }
 
     private static Object[] next(List<Iterator> args)
@@ -263,7 +260,7 @@ class BatchHandler extends CustomizingStatementHandler
 
     private interface Returner
     {
-        int[] value(PreparedBatch batch);
+        Object value(PreparedBatch batch, HandleDing baton);
     }
 
     private interface ChunkSizeFunction
