@@ -13,17 +13,23 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.killbill.queue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.QueueLifecycle;
+import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
@@ -33,15 +39,19 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final long ONE_MILLION = 1000L * 1000L;
 
+    private static final int COMPLETED_BATCH_SIZE = 100;
+
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
+
+    private final LinkedBlockingQueue<EventEntryModelDao> completedOrFailedEvents;
+    private final LinkedBlockingQueue<EventEntryModelDao> retriedEvents;
 
     private volatile boolean isProcessingEvents;
 
     // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
     private ExecutorService executor;
-
 
     public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config) {
         this(svcQName, config, QueueObjectMapper.get());
@@ -52,6 +62,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.config = config;
         this.isProcessingEvents = false;
         this.objectMapper = objectMapper;
+        this.completedOrFailedEvents = new LinkedBlockingQueue<>(config.getEventQueueCapacity());
+        this.retriedEvents = new LinkedBlockingQueue<>(config.getEventQueueCapacity());
     }
 
     @Override
@@ -66,9 +78,9 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
             public void run() {
 
                 log.info(String.format("%s: Thread %s [%d] starting",
-                        svcQName,
-                        Thread.currentThread().getName(),
-                        Thread.currentThread().getId()));
+                                       svcQName,
+                                       Thread.currentThread().getName(),
+                                       Thread.currentThread().getId()));
 
                 try {
                     while (true) {
@@ -78,12 +90,18 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
                         final long beforeLoop = System.nanoTime();
                         try {
+                            // Fetch ready entries from DB and dispatch them to thread pool
                             doProcessEvents();
+
+                            // Delete/update completed/errored entries from DB
+                            drainCompletedEvents();
+                            drainRetriedEvents();
+
                         } catch (final Exception e) {
                             log.warn(String.format("%s: Thread  %s  [%d] got an exception, catching and moving on...",
-                                    svcQName,
-                                    Thread.currentThread().getName(),
-                                    Thread.currentThread().getId()), e);
+                                                   svcQName,
+                                                   Thread.currentThread().getName(),
+                                                   Thread.currentThread().getId()), e);
                         } finally {
                             final long afterLoop = System.nanoTime();
                             sleepALittle((afterLoop - beforeLoop) / ONE_MILLION);
@@ -98,9 +116,32 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                 }
             }
 
+            // Move completed entries through batches using the same main DB (lifecycle) thread
+            private void drainCompletedEvents() {
+                final List<EventEntryModelDao> completed = new ArrayList<>(COMPLETED_BATCH_SIZE);
+                int totalSize = completedOrFailedEvents.size();
+                while (totalSize > 0) {
+                    final int curSize = totalSize > COMPLETED_BATCH_SIZE ? COMPLETED_BATCH_SIZE : totalSize;
+                    completedOrFailedEvents.drainTo(completed, curSize);
+                    doProcessCompletedEvents(completed);
+                    totalSize -= curSize;
+                    completed.clear();
+                }
+            }
+
+            // Move retried entries using the same main DB (lifecycle) thread
+            private void drainRetriedEvents() {
+                final int curSize = retriedEvents.size();
+                if (curSize > 0) {
+                    final List<EventEntryModelDao> retried = new ArrayList<>(curSize);
+                    retriedEvents.drainTo(retried, curSize);
+                    doProcessRetriedEvents(retried);
+                }
+            }
+
             private void sleepALittle(final long loopTimeMsec) throws InterruptedException {
                 if (config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS) {
-                    // Disregard config.getPollingSleepTimeMs() in that mode in case this is not correctky configured with 0
+                    // Disregard config.getPollingSleepTimeMs() in that mode in case this is not correctly configured with 0
                     return;
                 }
                 final long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
@@ -111,7 +152,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         });
         return true;
     }
-
 
     @Override
     public void stopQueue() {
@@ -125,8 +165,19 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         }
     }
 
+    public <M extends EventEntryModelDao> void dispatchCompletedOrFailedEvents(final M event) {
+        completedOrFailedEvents.add(event);
+    }
+
+    public <M extends EventEntryModelDao> void dispatchRetriedEvents(final M event) {
+        retriedEvents.add(event);
+    }
+
     public abstract int doProcessEvents();
 
+    public abstract void doProcessCompletedEvents(final Iterable<? extends EventEntryModelDao> completed);
+
+    public abstract void doProcessRetriedEvents(final Iterable<? extends EventEntryModelDao> retried);
 
     public ObjectMapper getObjectMapper() {
         return objectMapper;

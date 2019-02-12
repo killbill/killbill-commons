@@ -26,7 +26,11 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.killbill.clock.Clock;
 import org.killbill.commons.concurrent.DynamicThreadPoolExecutorWithLoggingOnExceptions;
+import org.killbill.queue.DefaultQueueLifecycle;
+import org.killbill.queue.api.PersistentQueueConfig;
+import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.retry.RetryableInternalException;
@@ -34,10 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-public class Dispatcher<M extends EventEntryModelDao> {
+public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
 
     private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
 
+    // Dynamic ThreadPool Executor
     private final int corePoolSize;
     private final int maximumPoolSize;
     private final long keepAliveTime;
@@ -46,56 +51,78 @@ public class Dispatcher<M extends EventEntryModelDao> {
     private final ThreadFactory threadFactory;
     private final RejectedExecutionHandler rejectionHandler;
 
+    private final int maxFailureRetries;
+    private final CallableCallback<E, M> handlerCallback;
+    private final DefaultQueueLifecycle parentLifeCycle;
+    private final Clock clock;
+
     // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
-    private ExecutorService executor;
+    private ExecutorService handlerExecutor;
 
     public Dispatcher(final int corePoolSize,
-                      final int maximumPoolSize,
+                      final PersistentQueueConfig config,
                       final long keepAliveTime,
                       final TimeUnit keepAliveTimeUnit,
                       final BlockingQueue<Runnable> workQueue,
                       final ThreadFactory threadFactory,
-                      final RejectedExecutionHandler rejectionHandler) {
+                      final RejectedExecutionHandler rejectionHandler,
+                      final Clock clock,
+                      final CallableCallback<E, M> handlerCallback,
+                      final DefaultQueueLifecycle parentLifeCycle) {
         this.corePoolSize = corePoolSize;
-        this.maximumPoolSize = maximumPoolSize;
+        this.maximumPoolSize = config.geMaxDispatchThreads();
         this.keepAliveTime = keepAliveTime;
         this.keepAliveTimeUnit = keepAliveTimeUnit;
         this.workQueue = workQueue;
         this.threadFactory = threadFactory;
         this.rejectionHandler = rejectionHandler;
+
+        this.clock = clock;
+        this.maxFailureRetries = config.getMaxFailureRetries();
+        this.handlerCallback = handlerCallback;
+        this.parentLifeCycle = parentLifeCycle;
     }
 
+
     public void start() {
-        this.executor = new DynamicThreadPoolExecutorWithLoggingOnExceptions(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
+        this.handlerExecutor = new DynamicThreadPoolExecutorWithLoggingOnExceptions(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
     }
 
     public void stop() {
-        executor.shutdown();
+        handlerExecutor.shutdown();
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            handlerExecutor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            log.info("Stop sequence has been interrupted");
+            log.info("Stop sequence, handlerExecutor has been interrupted");
         }
     }
 
-    public <E extends QueueEvent> void dispatch(final M modelDao, final CallableCallback<E, M> callback) {
-        log.debug("Dispatching entry {}", modelDao);
-        final CallableQueue<E, M> entry = new CallableQueue<E, M>(modelDao, callback);
-        executor.submit(entry);
+    public void dispatch(final M modelDao) {
+        if (log.isDebugEnabled()) {
+            log.debug("Dispatching entry {}", modelDao);
+        }
+        final CallableQueueHandler<E, M> entry = new CallableQueueHandler<E, M>(modelDao, handlerCallback, parentLifeCycle, clock, maxFailureRetries);
+        handlerExecutor.submit(entry);
     }
 
-    public static class CallableQueue<E extends QueueEvent, M extends EventEntryModelDao> implements Callable<E> {
+    public static class CallableQueueHandler<E extends QueueEvent, M extends EventEntryModelDao> implements Callable<E> {
 
         private static final String MDC_KB_USER_TOKEN = "kb.userToken";
 
-        private static final Logger log = LoggerFactory.getLogger(CallableQueue.class);
+        private static final Logger log = LoggerFactory.getLogger(CallableQueueHandler.class);
 
         private final M entry;
         private final CallableCallback<E, M> callback;
+        private final DefaultQueueLifecycle parentLifeCycle;
+        private final int maxFailureRetries;
+        private final Clock clock;
 
-        public CallableQueue(final M entry, final CallableCallback<E, M> callback) {
+        public CallableQueueHandler(final M entry, final CallableCallback<E, M> callback, final DefaultQueueLifecycle parentLifeCycle, final Clock clock, final int maxFailureRetries) {
             this.entry = entry;
             this.callback = callback;
+            this.parentLifeCycle = parentLifeCycle;
+            this.clock = clock;
+            this.maxFailureRetries = maxFailureRetries;
         }
 
         @Override
@@ -104,7 +131,9 @@ public class Dispatcher<M extends EventEntryModelDao> {
                 final UUID userToken = entry.getUserToken();
                 MDC.put(MDC_KB_USER_TOKEN, userToken != null ? userToken.toString() : null);
 
-                log.debug("Starting processing entry {}", entry);
+                if (log.isDebugEnabled()) {
+                    log.debug("Starting processing entry {}", entry);
+                }
 
                 final E event = callback.deserialize(entry);
                 if (event != null) {
@@ -122,14 +151,40 @@ public class Dispatcher<M extends EventEntryModelDao> {
                         }
                         errorCount++;
                     } finally {
-                        callback.updateErrorCountOrMoveToHistory(event, entry, errorCount, lastException);
+
+                        if (parentLifeCycle != null) {
+                            if (lastException == null) {
+                                final M newEntry = callback.buildEntry(entry, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED, entry.getErrorCount());
+                                parentLifeCycle.dispatchCompletedOrFailedEvents(newEntry);
+
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Done handling notification {}, key = {}", entry.getRecordId(), entry.getEventJson());
+                                }
+                            } else if (lastException instanceof RetryableInternalException) {
+
+                                final M newEntry = callback.buildEntry(entry, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, entry.getErrorCount());
+                                parentLifeCycle.dispatchCompletedOrFailedEvents(newEntry);
+                            } else if (errorCount <= maxFailureRetries) {
+
+                                log.info("Dispatch error, will attempt a retry ", lastException);
+
+                                final M newEntry = callback.buildEntry(entry, clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
+                                parentLifeCycle.dispatchRetriedEvents(newEntry);
+                            } else {
+
+                                log.error("Fatal NotificationQ dispatch error, data corruption...", lastException);
+
+                                final M newEntry = callback.buildEntry(entry, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, entry.getErrorCount());
+                                parentLifeCycle.dispatchCompletedOrFailedEvents(newEntry);
+                            }
+                        }
                     }
                 }
                 return event;
             } finally {
-                log.debug("Done processing entry {}", entry);
                 MDC.remove(MDC_KB_USER_TOKEN);
             }
         }
     }
+
 }

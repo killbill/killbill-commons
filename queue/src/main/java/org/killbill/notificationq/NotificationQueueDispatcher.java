@@ -21,6 +21,7 @@ package org.killbill.notificationq;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -42,6 +43,7 @@ import org.killbill.notificationq.dispatching.NotificationCallableCallback;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
+import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.skife.jdbi.v2.IDBI;
@@ -70,8 +72,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     private final Map<String, Histogram> perQueueProcessingTime;
 
     // We could event have one per queue is required...
-    private final Dispatcher<NotificationEventModelDao> dispatcher;
+    private final Dispatcher<NotificationEvent, NotificationEventModelDao> dispatcher;
     private final AtomicBoolean isStarted;
+
+    private final NotificationCallableCallback notificationCallableCallback;
 
     private final NotificationReaper reaper;
 
@@ -96,7 +100,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.clock = clock;
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
-        this.dispatcher = new Dispatcher<NotificationEventModelDao>(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler());
         this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, dbi, NotificationSqlDao.class, config, "notif-" + config.getTableName(), metricRegistry, null);
 
         this.queues = new TreeMap<String, NotificationQueue>();
@@ -107,6 +110,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.metricRegistry = metricRegistry;
         this.isStarted = new AtomicBoolean(false);
         this.reaper = new NotificationReaper(this.dao, config, clock);
+
+        this.notificationCallableCallback = new NotificationCallableCallback(this);
+        this.dispatcher = new Dispatcher<>(1, config, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler(),
+                                           clock, notificationCallableCallback, this);
     }
 
     @Override
@@ -129,7 +136,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         if (!isStarted()) {
             return;
         }
-
 
         // If there are no active queues left, stop the processing for the queues
         // (This is not intended to be robust against a system that would stop and start queues at the same time,
@@ -157,7 +163,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         return isStarted.get();
     }
 
-
     @Override
     public int doProcessEvents() {
         final List<NotificationEventModelDao> notifications = getReadyNotifications();
@@ -167,10 +172,23 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         log.debug("Notifications from {} to process: {}", config.getTableName(), notifications);
 
         for (final NotificationEventModelDao cur : notifications) {
-            final NotificationCallableCallback callback = new NotificationCallableCallback(this);
-            dispatcher.dispatch(cur, callback);
+            dispatcher.dispatch(cur);
         }
         return notifications.size();
+    }
+
+    @Override
+    public void doProcessCompletedEvents(final Iterable<? extends EventEntryModelDao> completed) {
+        notificationCallableCallback.moveCompletedOrFailedEvents((Iterable<NotificationEventModelDao>) completed);
+    }
+
+    @Override
+    public void doProcessRetriedEvents(final Iterable<? extends EventEntryModelDao> retried) {
+        Iterator<? extends EventEntryModelDao> it = retried.iterator();
+        while (it.hasNext()) {
+            NotificationEventModelDao cur = (NotificationEventModelDao) it.next();
+            notificationCallableCallback.updateRetriedEvents(cur);
+        }
     }
 
     public void handleNotificationWithMetrics(final NotificationQueueHandler handler, final NotificationEventModelDao notification, final NotificationEvent key) throws NotificationQueueException {
@@ -216,7 +234,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         }
         return queue.getHandler();
     }
-
 
     private List<NotificationEventModelDao> getReadyNotifications() {
 

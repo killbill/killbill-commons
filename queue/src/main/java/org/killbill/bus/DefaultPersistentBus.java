@@ -51,6 +51,7 @@ import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.QueueEvent;
+import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
@@ -81,9 +82,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final Profiling<Iterable<BusEventModelDao>, RuntimeException> prof;
     private final BusReaper reaper;
 
-    private final Dispatcher<BusEventModelDao> dispatcher;
+    private final Dispatcher<BusEvent, BusEventModelDao> dispatcher;
     private final AtomicBoolean isStarted;
     private final String dbBackedQId;
+
+    private final BusCallableCallback busCallableCallback;
 
     private static final class EventBusDelegate extends EventBusThatThrowsException {
         public EventBusDelegate(final String busName) {
@@ -110,11 +113,16 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         };
 
         this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
-        this.dispatcher = new Dispatcher<BusEventModelDao>(1, config.geMaxDispatchThreads(), 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new BlockingRejectionExecutionHandler());
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isStarted = new AtomicBoolean(false);
         this.reaper = new BusReaper(this.dao, config, clock);
+
+        this.busCallableCallback = new BusCallableCallback(this);
+        this.dispatcher = new Dispatcher<>(1, config, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new BlockingRejectionExecutionHandler(),
+                                           clock, busCallableCallback, this);
+
+
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
@@ -160,10 +168,23 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         log.debug("Bus events from {} to process: {}", config.getTableName(), events);
 
         for (final BusEventModelDao cur : events) {
-            final BusCallableCallback callback = new BusCallableCallback(this);
-            dispatcher.dispatch(cur, callback);
+            dispatcher.dispatch(cur);
         }
         return events.size();
+    }
+
+    @Override
+    public void doProcessCompletedEvents(final Iterable<? extends EventEntryModelDao> completed) {
+        busCallableCallback.moveCompletedOrFailedEvents((Iterable<BusEventModelDao>) completed);
+    }
+
+    @Override
+    public void doProcessRetriedEvents(final Iterable<? extends EventEntryModelDao> retried) {
+        Iterator<? extends EventEntryModelDao> it = retried.iterator();
+        while (it.hasNext()) {
+            BusEventModelDao cur = (BusEventModelDao) it.next();
+            busCallableCallback.updateRetriedEvents(cur);
+        }
     }
 
     @Override

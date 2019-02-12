@@ -17,16 +17,17 @@
 
 package org.killbill.bus.dispatching;
 
-import com.google.common.eventbus.EventBusException;
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
 import org.killbill.bus.DefaultPersistentBus;
+import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 
-public class BusCallableCallback extends CallableCallbackBase<QueueEvent, BusEventModelDao> {
+import com.google.common.eventbus.EventBusException;
+
+public class BusCallableCallback extends CallableCallbackBase<BusEvent, BusEventModelDao> {
 
     private final DefaultPersistentBus parent;
 
@@ -36,7 +37,7 @@ public class BusCallableCallback extends CallableCallbackBase<QueueEvent, BusEve
     }
 
     @Override
-    public void dispatch(final QueueEvent event, final BusEventModelDao modelDao) throws EventBusException {
+    public void dispatch(final BusEvent event, final BusEventModelDao modelDao) throws EventBusException {
         parent.dispatchBusEventWithMetrics(event);
     }
 

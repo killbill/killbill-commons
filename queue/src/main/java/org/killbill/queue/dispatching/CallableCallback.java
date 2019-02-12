@@ -17,13 +17,20 @@
 
 package org.killbill.queue.dispatching;
 
+import org.joda.time.DateTime;
+import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
 
 public interface CallableCallback<E extends QueueEvent, M extends EventEntryModelDao> {
+
     E deserialize(final M modelDao);
 
     void dispatch(final E event, final M modelDao) throws Exception;
 
-    void updateErrorCountOrMoveToHistory(final E event, final M modelDao, final long errorCount, final Throwable lastException);
+    M buildEntry(final M modelDao, final DateTime now, final PersistentQueueEntryLifecycleState newState, final long newErrorCount);
+
+    void moveCompletedOrFailedEvents(final Iterable<M> entries);
+
+    void updateRetriedEvents(final M updatedEntry);
 }
