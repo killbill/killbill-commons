@@ -55,7 +55,9 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -122,6 +124,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final Counter totalProcessedFirstFailures;
     private final Counter totalProcessedSuccess;
     private final Counter totalProcessedAborted;
+
+    private final Timer getTime;
+    private final Timer insertTime;
+    private final Timer claimTime;
+    private final Timer deleteTime;
 
     private final Profiling<Long, RuntimeException> prof;
 
@@ -205,6 +212,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 return lowestOrphanEntry;
             }
         });
+
+        this.getTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "getTime"));
+        this.insertTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "insertTimes"));
+        this.claimTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "claimTime"));
+        this.deleteTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "deleteTime"));
 
         this.thresholdToReopenQForWrite = config.getEventQueueCapacity() / RATIO_INFLIGHT_SIZE_TO_REOPEN_Q_FOR_WRITE;
         this.lastPollingOrphanTime = clock.getUTCNow().getMillis();
@@ -423,8 +435,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             log.debug("{} Moving entry into history: recordId={}, className={}, json={}", DB_QUEUE_LOG_ID, entry.getRecordId(), entry.getClassName(), entry.getEventJson());
 
+            long ini = System.nanoTime();
             transactional.insertEntry(entry, config.getHistoryTableName());
             transactional.removeEntry(entry.getRecordId(), config.getTableName());
+            deleteTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+
         } catch (final Exception e) {
             log.warn("{} Failed to move entry into history: {}", DB_QUEUE_LOG_ID, entry, e);
         }
@@ -474,9 +489,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 return input.getRecordId();
             }
         });
-
+        long ini = System.nanoTime();
         transactional.insertEntries(entries, config.getHistoryTableName());
         transactional.removeEntries(ImmutableList.<Long>copyOf(toBeRemovedRecordIds), config.getTableName());
+        deleteTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
     }
 
     private List<T> fetchReadyEntriesFromIds() {
@@ -516,7 +532,11 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
             @Override
             public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
-                return queueSqlDao.getReadyEntries(now, size, owner, config.getTableName());
+
+                long ini = System.nanoTime();
+                final List<T> result = queueSqlDao.getReadyEntries(now, size, owner, config.getTableName());
+                getTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                return result;
             }
         });
     }
@@ -565,7 +585,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final int resultCount = executeQuery(new Query<Integer, QueueSqlDao<T>>() {
             @Override
             public Integer execute(final QueueSqlDao<T> queueSqlDao) {
-                return queueSqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+                long ini = System.nanoTime();
+                final Integer result = queueSqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+                claimTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                return result;
             }
         });
         // We should ALWAYS see the same number since we are in STICKY_POLLING mode and there is only one thread claiming entries.
@@ -619,7 +642,10 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final int claimEntry = executeQuery(new Query<Integer, QueueSqlDao<T>>() {
             @Override
             public Integer execute(final QueueSqlDao<T> queueSqlDao) {
-                return queueSqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+                long ini = System.nanoTime();
+                final Integer result =  queueSqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+                claimTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                return result;
             }
         });
         final boolean claimed = (claimEntry == 1);
@@ -757,6 +783,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             @Override
             public Long execute() throws RuntimeException {
+
+                long init = System.nanoTime();
+
                 // LAST_INSERT_ID is kept at the transaction level; we reset it to 0 so that in case insert fails, we don't end up with a previous
                 // value that would end up corrupting the inflightQ
                 // Note! This is a no-op for H2 (see QueueSqlDao.sql.stg and https://github.com/killbill/killbill/issues/223)
@@ -766,6 +795,8 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 final Long lastInsertId = transactional.getLastInsertId();
                 log.debug("{} Inserting entry: lastInsertId={}, entry={}", DB_QUEUE_LOG_ID, lastInsertId, entry);
 
+
+                insertTime.update(System.nanoTime() - init, TimeUnit.NANOSECONDS);
                 return lastInsertId;
             }
         });
