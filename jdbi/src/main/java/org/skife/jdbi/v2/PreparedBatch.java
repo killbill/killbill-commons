@@ -138,7 +138,7 @@ public class PreparedBatch extends SQLStatement<PreparedBatch>
             try {
                 Connection connection = getHandle().getConnection();
                 if (generateKeys) {
-                    if (columnNames != null) {
+                    if (columnNames != null && columnNames.length > 0) {
                         stmt = connection.prepareStatement(rewritten.getSql(), columnNames);
                     } else  {
                         stmt = connection.prepareStatement(rewritten.getSql(), Statement.RETURN_GENERATED_KEYS);
