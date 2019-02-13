@@ -22,8 +22,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.awaitility.Awaitility;
 import org.joda.time.DateTime;
 import org.killbill.bus.api.BusEvent;
+import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
+import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.api.QueueEvent;
+import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
@@ -42,7 +45,7 @@ public class TestDispatcher {
 
     private final int QUEUE_SIZE = 5;
 
-    private Dispatcher<BusEventModelDao> dispatcher;
+    private Dispatcher<BusEvent, BusEventModelDao> dispatcher;
     private TestCallableCallback callback;
 
     @BeforeClass(groups = "fast")
@@ -55,33 +58,34 @@ public class TestDispatcher {
                         "test-grp--th");
             }
         };
+
         this.callback = new TestCallableCallback();
-
-        this.dispatcher = new Dispatcher<BusEventModelDao>(1, 1, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), testThreadFactory, new TestBlockingRejectionExecutionHandler(callback));
-
+        this.dispatcher = new Dispatcher<>(1, createConfig(), 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), testThreadFactory, new TestBlockingRejectionExecutionHandler(callback),
+                                           null, callback, null);
         this.dispatcher.start();
     }
 
 
     @Test(groups = "fast")
-    public void testBlockingRejectionHandler() throws Exception {
+    public void testBlockingRejectionHandler() {
         callback.block();
 
         for (int i = 0; i < QUEUE_SIZE + 2; i++) {
-            dispatch(i, callback);
+            dispatch(i);
         }
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return callback.getProcessed().size() == QUEUE_SIZE + 2;
+                final int size = callback.getProcessed().size();
+                return size == QUEUE_SIZE + 2;
             }
         });
     }
 
-    private void dispatch(final int i, final TestCallableCallback callback) {
+    private void dispatch(final int i) {
         final BusEventModelDao e1 = new BusEventModelDao("owner", new DateTime(), String.class.getName(), "e-" + i, UUID.randomUUID(), 1L, 1L);
-        dispatcher.dispatch(e1, callback);
+        dispatcher.dispatch(e1);
     }
 
     private class TestBlockingRejectionExecutionHandler extends BlockingRejectionExecutionHandler {
@@ -100,7 +104,7 @@ public class TestDispatcher {
 
     }
 
-    private class TestCallableCallback implements CallableCallback<QueueEvent, BusEventModelDao> {
+    private class TestCallableCallback implements CallableCallback<BusEvent, BusEventModelDao> {
 
         private final Logger logger = LoggerFactory.getLogger(TestCallableCallback.class);
 
@@ -131,12 +135,12 @@ public class TestDispatcher {
         }
 
         @Override
-        public QueueEvent deserialize(final BusEventModelDao modelDao) {
+        public BusEvent deserialize(final BusEventModelDao modelDao) {
             return new TestEvent(modelDao.getEventJson(), modelDao.getSearchKey1(), modelDao.getSearchKey2(), modelDao.getUserToken());
         }
 
         @Override
-        public void dispatch(final QueueEvent event, final BusEventModelDao modelDao) throws Exception {
+        public void dispatch(final BusEvent event, final BusEventModelDao modelDao) throws Exception {
             synchronized (this) {
                 while (isBlocked) {
                     logger.info("Thread " + Thread.currentThread().getId() + " blocking...");
@@ -149,9 +153,20 @@ public class TestDispatcher {
         }
 
         @Override
-        public void updateErrorCountOrMoveToHistory(final QueueEvent event, final BusEventModelDao modelDao, final long errorCount, final Throwable lastException) {
+        public BusEventModelDao buildEntry(final BusEventModelDao modelDao, final DateTime now, final PersistentQueueEntryLifecycleState newState, final long newErrorCount) {
+            return null;
+        }
+
+        @Override
+        public void moveCompletedOrFailedEvents(final Iterable<BusEventModelDao> entries) {
 
         }
+
+        @Override
+        public void updateRetriedEvents(final BusEventModelDao updatedEntry) {
+
+        }
+
     }
 
     public static class TestEvent implements BusEvent {
@@ -190,6 +205,75 @@ public class TestDispatcher {
         public UUID getUserToken() {
             return userToken;
         }
+    }
+
+    private PersistentBusConfig createConfig() {
+        return new PersistentBusConfig() {
+            @Override
+            public boolean isInMemory() {
+                return false;
+            }
+
+            @Override
+            public int getMaxFailureRetries() {
+                return 0;
+            }
+
+            @Override
+            public int getMaxEntriesClaimed() {
+                return 1;
+            }
+
+            @Override
+            public PersistentQueueMode getPersistentQueueMode() {
+                return PersistentQueueMode.STICKY_EVENTS;
+            }
+
+            @Override
+            public TimeSpan getClaimedTime() {
+                return new TimeSpan("5m");
+            }
+
+            @Override
+            public long getPollingSleepTimeMs() {
+                return 100;
+            }
+
+            @Override
+            public boolean isProcessingOff() {
+                return false;
+            }
+
+            @Override
+            public int geMaxDispatchThreads() {
+                return 1;
+            }
+
+            @Override
+            public int getEventQueueCapacity() {
+                return QUEUE_SIZE;
+            }
+
+            @Override
+            public String getTableName() {
+                return "bus_events";
+            }
+
+            @Override
+            public String getHistoryTableName() {
+                return "bus_events_history";
+            }
+
+            @Override
+            public TimeSpan getReapThreshold() {
+                return new TimeSpan(5, TimeUnit.MINUTES);
+            }
+
+            @Override
+            public int getMaxReDispatchCount() {
+                return 10;
+            }
+        };
     }
 
 }

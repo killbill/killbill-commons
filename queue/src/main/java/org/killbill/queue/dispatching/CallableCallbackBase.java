@@ -17,7 +17,6 @@
 
 package org.killbill.queue.dispatching;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
 import org.killbill.clock.Clock;
 import org.killbill.queue.DBBackedQueue;
@@ -25,9 +24,10 @@ import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
-import org.killbill.queue.retry.RetryableInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class CallableCallbackBase<E extends QueueEvent, M extends EventEntryModelDao> implements CallableCallback<E, M> {
 
@@ -61,42 +61,19 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
         }
     }
 
+    @Override
+    public void moveCompletedOrFailedEvents(final Iterable<M> entries) {
+        dao.moveEntriesToHistory(entries);
+    }
+
+    @Override
+    public void updateRetriedEvents(final M updatedEntry) {
+        dao.updateOnError(updatedEntry);
+    }
 
     @Override
     public abstract void dispatch(final E event, final M modelDao) throws Exception;
 
     public abstract M buildEntry(final M modelDao, final DateTime now, final PersistentQueueEntryLifecycleState newState, final long newErrorCount);
 
-    @Override
-    public void updateErrorCountOrMoveToHistory(final E event, final M modelDao, final long errorCount, final Throwable lastException) {
-        if (lastException == null) {
-            moveSuccessfulEventToHistory(modelDao);
-            if (log.isDebugEnabled()) {
-                log.debug("Done handling notification {}, key = {}", modelDao.getRecordId(), modelDao.getEventJson());
-            }
-        } else if (lastException instanceof RetryableInternalException) {
-            moveFailedEventToHistory(modelDao);
-        } else if (errorCount <= config.getMaxFailureRetries()) {
-            log.info("Dispatch error, will attempt a retry ", lastException);
-            updateRetryCountForFailedEvent(modelDao, errorCount);
-        } else {
-            log.error("Fatal NotificationQ dispatch error, data corruption...", lastException);
-            moveFailedEventToHistory(modelDao);
-        }
-    }
-
-    private void moveSuccessfulEventToHistory(final M input) {
-        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED, input.getErrorCount());
-        dao.moveEntryToHistory(newEntry);
-    }
-
-    private void updateRetryCountForFailedEvent(final M input, final long errorCount) {
-        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.AVAILABLE, errorCount);
-        dao.updateOnError(newEntry);
-    }
-
-    private void moveFailedEventToHistory(final M input) {
-        final M newEntry = buildEntry(input, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, input.getErrorCount());
-        dao.moveEntryToHistory(newEntry);
-    }
 }
