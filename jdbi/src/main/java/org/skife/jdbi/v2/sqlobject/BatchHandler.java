@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2004 - 2014 Brian McCallister
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,37 +17,84 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
-import net.sf.cglib.proxy.MethodProxy;
-
-import org.skife.jdbi.v2.ConcreteStatementContext;
+import org.skife.jdbi.v2.GeneratedKeys;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.PreparedBatch;
 import org.skife.jdbi.v2.PreparedBatchPart;
+import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
+import org.skife.jdbi.v2.exceptions.DBIException;
+import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
+import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize;
+import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.fasterxml.classmate.members.ResolvedMethod;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import net.sf.cglib.proxy.MethodProxy;
 
 class BatchHandler extends CustomizingStatementHandler
 {
     private final String  sql;
     private final boolean transactional;
     private final ChunkSizeFunction batchChunkSize;
+    private final Returner returner;
 
-    public BatchHandler(Class<?> sqlObjectType, ResolvedMethod method)
-    {
+    BatchHandler(Class<?> sqlObjectType, ResolvedMethod method) {
         super(sqlObjectType, method);
+
         Method raw_method = method.getRawMember();
         SqlBatch anno = raw_method.getAnnotation(SqlBatch.class);
         this.sql = SqlObject.getSql(anno, raw_method);
         this.transactional = anno.transactional();
         this.batchChunkSize = determineBatchChunkSize(sqlObjectType, raw_method);
+        final GetGeneratedKeys getGeneratedKeys = raw_method.getAnnotation(GetGeneratedKeys.class);
+        if (getGeneratedKeys == null) {
+            if (!returnTypeIsValid(method.getRawMember().getReturnType())) {
+                throw new DBIException(invalidReturnTypeMessage(method)) {};
+            }
+            returner = new Returner() {
+                @Override
+                public Object value(PreparedBatch batch, HandleDing baton)
+                {
+                    return batch.execute();
+                }
+            };
+        } else {
+            final ResultSetMapper mapper;
+            try {
+                mapper = getGeneratedKeys.value().newInstance();
+            } catch (Exception e) {
+                throw new UnableToCreateStatementException("Unable to instantiate result set mapper for statement", e);
+            }
+            final ResultReturnThing magic = ResultReturnThing.forType(method);
+            if (getGeneratedKeys.columnName().isEmpty()) {
+                returner = new Returner() {
+                    @Override
+                    public Object value(PreparedBatch batch, HandleDing baton)
+                    {
+                        GeneratedKeys o = batch.executeAndGenerateKeys(mapper);
+                        return magic.result(o, baton);
+                    }
+                };
+            } else {
+                returner = new Returner() {
+                    @Override
+                    public Object value(PreparedBatch batch, HandleDing baton)
+                    {
+                        String columnName = getGeneratedKeys.columnName();
+                        GeneratedKeys o = batch.executeAndGenerateKeys(mapper, columnName);
+                        return magic.result(o, baton);
+                    }
+                };
+            }
+        }
     }
 
     private ChunkSizeFunction determineBatchChunkSize(Class<?> sqlObjectType, Method raw_method)
@@ -95,50 +140,57 @@ class BatchHandler extends CustomizingStatementHandler
     @Override
     public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
     {
+        boolean foundIterator = false;
         Handle handle = h.getHandle();
 
         List<Iterator> extras = new ArrayList<Iterator>();
         for (final Object arg : args) {
             if (arg instanceof Iterable) {
                 extras.add(((Iterable) arg).iterator());
+                foundIterator = true;
             }
             else if (arg instanceof Iterator) {
                 extras.add((Iterator) arg);
+                foundIterator = true;
             }
             else if (arg.getClass().isArray()) {
                 extras.add(Arrays.asList((Object[])arg).iterator());
+                foundIterator = true;
             }
             else {
                 extras.add(new Iterator()
-                {
-                    @Override
-                    public boolean hasNext()
-                    {
-                        return true;
-                    }
+                           {
+                               @Override
+                               public boolean hasNext()
+                               {
+                                   return true;
+                               }
 
-                    @Override
-                    @SuppressFBWarnings("IT_NO_SUCH_ELEMENT")
-                    public Object next()
-                    {
-                        return arg;
-                    }
+                               @Override
+                               @SuppressFBWarnings("IT_NO_SUCH_ELEMENT")
+                               public Object next()
+                               {
+                                   return arg;
+                               }
 
-                    @Override
-                    public void remove()
-                    {
-                        // NOOP
-                    }
-                }
-                );
+                               @Override
+                               public void remove()
+                               {
+                                   // NOOP
+                               }
+                           }
+                          );
             }
         }
 
+        if (!foundIterator) {
+            throw new UnableToExecuteStatementException("@SqlBatch must have at least one iterable parameter", (StatementContext)null);
+        }
+
         int processed = 0;
-        List<int[]> rs_parts = new ArrayList<int[]>();
+        List<Object> results = new LinkedList<Object>();
 
         PreparedBatch batch = handle.prepareBatch(sql);
-        populateSqlObjectData((ConcreteStatementContext) batch.getContext());
         applyCustomizers(batch, args);
         Object[] _args;
         int chunk_size = batchChunkSize.call(args);
@@ -150,47 +202,45 @@ class BatchHandler extends CustomizingStatementHandler
             if (++processed == chunk_size) {
                 // execute this chunk
                 processed = 0;
-                rs_parts.add(executeBatch(handle, batch));
+                executeBatch(results, h, handle, batch);
                 batch = handle.prepareBatch(sql);
-                populateSqlObjectData((ConcreteStatementContext) batch.getContext());
                 applyCustomizers(batch, args);
             }
         }
 
         //execute the rest
-        rs_parts.add(executeBatch(handle, batch));
-
-        // combine results
-        int end_size = 0;
-        for (int[] rs_part : rs_parts) {
-            end_size += rs_part.length;
-        }
-        int[] rs = new int[end_size];
-        int offset = 0;
-        for (int[] rs_part : rs_parts) {
-            System.arraycopy(rs_part, 0, rs, offset, rs_part.length);
-            offset += rs_part.length;
+        if (batch.getSize() > 0) {
+            executeBatch(results, h, handle, batch);
         }
 
-        return rs;
+        return results;
     }
 
-    private int[] executeBatch(final Handle handle, final PreparedBatch batch)
+    private void executeBatch(final Collection<Object> results, final HandleDing h, final Handle handle, final PreparedBatch batch) {
+        final Object res = executeBatch(h, handle, batch);
+        if (res instanceof Collection) {
+            results.addAll((Collection) res);
+        } else {
+            results.add(res);
+        }
+    }
+
+    private Object executeBatch(final HandleDing h, final Handle handle, final PreparedBatch batch)
     {
         if (!handle.isInTransaction() && transactional) {
             // it is safe to use same prepared batch as the inTransaction passes in the same
             // Handle instance.
-            return handle.inTransaction(new TransactionCallback<int[]>()
+            return handle.inTransaction(new TransactionCallback<Object>()
             {
                 @Override
-                public int[] inTransaction(Handle conn, TransactionStatus status) throws Exception
+                public Object inTransaction(Handle conn, TransactionStatus status) throws Exception
                 {
-                    return batch.execute();
+                    return returner.value(batch, h);
                 }
             });
         }
         else {
-            return batch.execute();
+            return returner.value(batch, h);
         }
     }
 
@@ -206,6 +256,11 @@ class BatchHandler extends CustomizingStatementHandler
             }
         }
         return rs.toArray();
+    }
+
+    private interface Returner
+    {
+        Object value(PreparedBatch batch, HandleDing baton);
     }
 
     private interface ChunkSizeFunction
@@ -241,5 +296,19 @@ class BatchHandler extends CustomizingStatementHandler
         {
             return (Integer)args[index];
         }
+    }
+
+    private static boolean returnTypeIsValid(Class<?> type) {
+        if (type.equals(Void.TYPE) || type.isArray() && type.getComponentType().equals(Integer.TYPE)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static String invalidReturnTypeMessage(ResolvedMethod method) {
+        return method.getDeclaringType() + "." + method +
+               " method is annotated with @SqlBatch so should return void or int[] but is returning: " +
+               method.getReturnType();
     }
 }

@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2004 - 2014 Brian McCallister
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +15,7 @@ package org.skife.jdbi.v2;
 
 import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
+import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import org.skife.jdbi.v2.tweak.RewrittenStatement;
 import org.skife.jdbi.v2.tweak.SQLLog;
 import org.skife.jdbi.v2.tweak.StatementBuilder;
@@ -24,8 +23,10 @@ import org.skife.jdbi.v2.tweak.StatementCustomizer;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 import org.skife.jdbi.v2.tweak.StatementRewriter;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -93,10 +94,32 @@ public class PreparedBatch extends SQLStatement<PreparedBatch>
      *
      * @return the number of rows modified or inserted per batch part.
      */
-    public int[] execute()
-    {
+    public int[] execute() {
+        return (int[]) internalBatchExecute(null, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <GeneratedKeyType> GeneratedKeys<GeneratedKeyType> executeAndGenerateKeys(final ResultSetMapper<GeneratedKeyType> mapper,
+                                                                                     String... columnNames) {
+        return (GeneratedKeys<GeneratedKeyType>) internalBatchExecute(new QueryResultMunger<GeneratedKeys<GeneratedKeyType>>() {
+            public GeneratedKeys<GeneratedKeyType> munge(Statement results) throws SQLException {
+                return new GeneratedKeys<GeneratedKeyType>(mapper,
+                                                           PreparedBatch.this,
+                                                           results,
+                                                           getContext(),
+                                                           getContainerMapperRegistry());
+            }
+        }, columnNames);
+
+    }
+
+    private <Result> Object internalBatchExecute(QueryResultMunger<Result> munger, String[] columnNames) {
+        boolean generateKeys = munger != null;
         // short circuit empty batch
         if (parts.size() == 0) {
+            if (generateKeys) {
+                throw new IllegalArgumentException("Unable generate keys for a not prepared batch");
+            }
             return new int[]{};
         }
 
@@ -109,11 +132,20 @@ public class PreparedBatch extends SQLStatement<PreparedBatch>
             throw new UnableToCreateStatementException(String.format("Exception while locating statement for [%s]",
                                                                      getSql()), e, getContext());
         }
-        final RewrittenStatement rewritten = getRewriter().rewrite(my_sql, current.getParameters(), getContext());
+        final RewrittenStatement rewritten = getRewriter().rewrite(my_sql, current.getParams(), getContext());
         PreparedStatement stmt = null;
         try {
             try {
-                stmt = getHandle().getConnection().prepareStatement(rewritten.getSql());
+                Connection connection = getHandle().getConnection();
+                if (generateKeys) {
+                    if (columnNames != null && columnNames.length > 0) {
+                        stmt = connection.prepareStatement(rewritten.getSql(), columnNames);
+                    } else  {
+                        stmt = connection.prepareStatement(rewritten.getSql(), Statement.RETURN_GENERATED_KEYS);
+                    }
+                } else {
+                    stmt = connection.prepareStatement(rewritten.getSql(), Statement.NO_GENERATED_KEYS);
+                }
                 addCleanable(Cleanables.forStatement(stmt));
             }
             catch (SQLException e) {
@@ -123,7 +155,7 @@ public class PreparedBatch extends SQLStatement<PreparedBatch>
 
             try {
                 for (PreparedBatchPart part : parts) {
-                    rewritten.bind(part.getParameters(), stmt);
+                    rewritten.bind(part.getParams(), stmt);
                     stmt.addBatch();
                 }
             }
@@ -142,7 +174,7 @@ public class PreparedBatch extends SQLStatement<PreparedBatch>
 
                 afterExecution(stmt);
 
-                return rs;
+                return generateKeys ? munger.munge(stmt) : rs;
             }
             catch (SQLException e) {
                 throw new UnableToExecuteStatementException(e, getContext());
@@ -150,7 +182,9 @@ public class PreparedBatch extends SQLStatement<PreparedBatch>
         }
         finally {
             try {
-                cleanup();
+                if (!generateKeys) {
+                    cleanup();
+                }
             }
             finally {
                 this.parts.clear();
