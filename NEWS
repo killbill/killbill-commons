@@ -1,3 +1,6 @@
+0.22.5
+    jdbi: PostgreSQL bugfix for @GetGeneratedKeys on batches
+
 0.22.4
     jdbi: add support for @GetGeneratedKeys on batches
 
