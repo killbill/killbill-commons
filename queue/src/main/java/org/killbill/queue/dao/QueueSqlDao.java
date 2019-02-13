@@ -30,6 +30,7 @@ import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
+import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize;
 import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
@@ -114,6 +115,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
 
 
     @SqlBatch
+    @BatchChunkSize(100)
     void insertEntries(@SmartBindBean Iterable<T> evts,
                        @Define("tableName") final String tableName);
 }

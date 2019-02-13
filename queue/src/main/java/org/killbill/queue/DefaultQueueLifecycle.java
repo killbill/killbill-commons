@@ -39,8 +39,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final long ONE_MILLION = 1000L * 1000L;
 
-    private static final int COMPLETED_BATCH_SIZE = 100;
-
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
@@ -118,14 +116,11 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
             // Move completed entries through batches using the same main DB (lifecycle) thread
             private void drainCompletedEvents() {
-                final List<EventEntryModelDao> completed = new ArrayList<>(COMPLETED_BATCH_SIZE);
-                int totalSize = completedOrFailedEvents.size();
-                while (totalSize > 0) {
-                    final int curSize = totalSize > COMPLETED_BATCH_SIZE ? COMPLETED_BATCH_SIZE : totalSize;
+                int curSize = completedOrFailedEvents.size();
+                if (curSize > 0) {
+                    final List<EventEntryModelDao> completed = new ArrayList<>(curSize);
                     completedOrFailedEvents.drainTo(completed, curSize);
                     doProcessCompletedEvents(completed);
-                    totalSize -= curSize;
-                    completed.clear();
                 }
             }
 

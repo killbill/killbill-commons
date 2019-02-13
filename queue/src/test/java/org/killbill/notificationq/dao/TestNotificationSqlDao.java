@@ -42,6 +42,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterators;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -145,7 +146,6 @@ public class TestNotificationSqlDao extends TestSetup {
     @Test(groups = "slow")
     public void testBatchOperations() throws InterruptedException {
         final long searchKey1 = 1242L;
-        final String ownerId = UUID.randomUUID().toString();
 
         final String eventJson = UUID.randomUUID().toString();
         final DateTime effDt = new DateTime();
@@ -195,6 +195,31 @@ public class TestNotificationSqlDao extends TestSetup {
     }
 
     @Test(groups = "slow")
+    public void testLargeBatchOperations() {
+        final long searchKey1 = 1242L;
+        final String ownerId = UUID.randomUUID().toString();
+
+
+        final List<NotificationEventModelDao> entries = new ArrayList<NotificationEventModelDao>();
+
+        final String eventJson = UUID.randomUUID().toString();
+        final DateTime effDt = new DateTime();
+
+        for (int i = 0; i < 2000; i++) {
+            NotificationEventModelDao cur = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
+                                                                             eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
+                                                                             UUID.randomUUID(), effDt, "testBasic1");
+            entries.add(cur);
+        }
+
+        dao.insertEntries(entries, notificationQueueConfig.getTableName());
+
+        final Iterator<NotificationEventModelDao> result = dao.getReadyQueueEntriesForSearchKeys("testBasic1", searchKey1, SEARCH_KEY_2, notificationQueueConfig.getTableName());
+        assertEquals(Iterators.size(result), 2000);
+    }
+
+
+        @Test(groups = "slow")
     public void testUpdateEvent() throws InterruptedException {
         final long searchKey1 = 14542L;
 
