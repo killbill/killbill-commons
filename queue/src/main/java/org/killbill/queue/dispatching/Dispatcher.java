@@ -83,7 +83,6 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
         this.parentLifeCycle = parentLifeCycle;
     }
 
-
     public void start() {
         this.handlerExecutor = new DynamicThreadPoolExecutorWithLoggingOnExceptions(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
     }
@@ -98,9 +97,7 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
     }
 
     public void dispatch(final M modelDao) {
-        if (log.isDebugEnabled()) {
-            log.debug("Dispatching entry {}", modelDao);
-        }
+        log.debug("Dispatching entry {}", modelDao);
         final CallableQueueHandler<E, M> entry = new CallableQueueHandler<E, M>(modelDao, handlerCallback, parentLifeCycle, clock, maxFailureRetries);
         handlerExecutor.submit(entry);
     }
@@ -131,10 +128,7 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
                 final UUID userToken = entry.getUserToken();
                 MDC.put(MDC_KB_USER_TOKEN, userToken != null ? userToken.toString() : null);
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Starting processing entry {}", entry);
-                }
-
+                log.debug("Starting processing entry {}", entry);
                 final E event = callback.deserialize(entry);
                 if (event != null) {
                     Throwable lastException = null;
@@ -157,9 +151,7 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
                                 final M newEntry = callback.buildEntry(entry, clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED, entry.getErrorCount());
                                 parentLifeCycle.dispatchCompletedOrFailedEvents(newEntry);
 
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Done handling notification {}, key = {}", entry.getRecordId(), entry.getEventJson());
-                                }
+                                log.debug("Done handling notification {}, key = {}", entry.getRecordId(), entry.getEventJson());
                             } else if (lastException instanceof RetryableInternalException) {
 
                                 final M newEntry = callback.buildEntry(entry, clock.getUTCNow(), PersistentQueueEntryLifecycleState.FAILED, entry.getErrorCount());
