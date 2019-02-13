@@ -48,6 +48,8 @@ public class TestNotificationInstance extends TestQueueInstance implements TestI
 
     private final Logger logger = LoggerFactory.getLogger(TestNotificationInstance.class);
 
+    private static final String SVC_NAME = "test-svc";
+
     private final TestNotificationQueueHandler notificationQueueHandler;
     private final NotificationQueue notificationQueue;
 
@@ -57,6 +59,7 @@ public class TestNotificationInstance extends TestQueueInstance implements TestI
         super(initMsg, setupQueueConfig(initMsg), influxDB, jdbcConnection, dbUsername, dbPassword);
         this.notificationQueueHandler = new TestNotificationQueueHandler(influxDB, initMsg.getHandlerLatencyMsec());
         this.notificationQueue = setupNotificationQ();
+
     }
 
     @Override
@@ -72,7 +75,7 @@ public class TestNotificationInstance extends TestQueueInstance implements TestI
         logger.info("Stopping test instance {}", initMsg.getName());
         if (notificationQueue != null) {
             notificationQueue.stopQueue();
-            notificationQueueService.deleteNotificationQueue("test-svc", initMsg.getName());
+            notificationQueueService.deleteNotificationQueue(SVC_NAME, initMsg.getName());
         }
         super.stop();
     }
@@ -126,9 +129,9 @@ public class TestNotificationInstance extends TestQueueInstance implements TestI
             }
         };
 
-        final NotificationQueueConfig persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                                                                                                                               ImmutableMap.<String, String>of("instanceName", "main"));
-        return persistentBusConfig;
+        final NotificationQueueConfig notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
+                                                                                                                                   ImmutableMap.<String, String>of("instanceName", "main"));
+        return notificationQueueConfig;
     }
 
     public NotificationQueue setupNotificationQ() {
@@ -138,14 +141,14 @@ public class TestNotificationInstance extends TestQueueInstance implements TestI
             case MEMORY:
                 final MockNotificationQueueService mockQueueService = new MockNotificationQueueService(clock, (NotificationQueueConfig) queueConfig, dbi, metricRegistry);
                 this.notificationQueueService = mockQueueService;
-                return new MockNotificationQueue(clock, "test-svc", initMsg.getName(), notificationQueueHandler, mockQueueService);
+                return new MockNotificationQueue(clock, SVC_NAME, initMsg.getName(), notificationQueueHandler, mockQueueService);
 
             case DB:
                 final DefaultNotificationQueueService queueService = new DefaultNotificationQueueService(dbi, clock, (NotificationQueueConfig) queueConfig, metricRegistry);
                 this.notificationQueueService = queueService;
                 try {
-                    return queueService.createNotificationQueue("test-svc",
-                                                                "foo",
+                    return queueService.createNotificationQueue(SVC_NAME,
+                                                                initMsg.getName(),
                                                                 notificationQueueHandler);
                 } catch (NotificationQueueAlreadyExists e) {
                     throw new RuntimeException(e);

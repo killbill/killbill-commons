@@ -43,6 +43,9 @@ import io.grpc.stub.StreamObserver;
 
 public class TestQueueRemoteServer {
 
+    private static final long NANO_TO_MSEC =  1000 * 1000;
+
+
     private static final String SERVER_PORT_PROP = "org.killbill.test.server.port";
 
     private static final String INFLUX_ADDR_PROP = "org.killbill.test.influx.addr";
@@ -54,7 +57,10 @@ public class TestQueueRemoteServer {
     private static final String JDBC_USER_PROP = "org.killbill.test.jdbc.user";
     private static final String JDBC_PWD_PROP = "org.killbill.test.jdbc.addr";
 
+    private static final String GRPC_THREADS_PROP = "org.killbill.test.grpc.threads";
+
     public static final String DEFAULT_DATA_SERVER_PORT = "21345";
+    public static final String DEFAULT_GRPC_THREADS = "30";
 
     private static final String DEFAULT_INFLUX_ADDR = "http://127.0.0.1:8086";
     private static final String DEFAULT_INFLUX_DB = "killbill";
@@ -76,11 +82,14 @@ public class TestQueueRemoteServer {
     private final String jdbcUser;
     private final String jdbcPwd;
 
+    private final int grpcThreads;
+
     private static final Logger logger = LoggerFactory.getLogger(TestQueueRemoteServer.class);
 
     private final InfluxDB influxDB;
 
     public TestQueueRemoteServer(final String serverPort,
+                                 final String grpcThreads,
                                  final String influxDbAddr,
                                  final String influxDbName,
                                  final String influxUser,
@@ -89,6 +98,7 @@ public class TestQueueRemoteServer {
                                  final String jdbcUser,
                                  final String jdbcPwd) {
         this.serverPort = Integer.valueOf(serverPort);
+        this.grpcThreads = Integer.valueOf(grpcThreads);
         this.influxDbAddr = influxDbAddr;
         this.influxDbName = influxDbName;
         this.influxUser = influxUser;
@@ -97,9 +107,10 @@ public class TestQueueRemoteServer {
         this.jdbcUser = jdbcUser;
         this.jdbcPwd = jdbcPwd;
 
-        logger.info("Started test server serverPort='{}', influxDbAddr='{}', influxDbName='{}', influxUser='{}', influxPwd='{}'," +
+        logger.info("Started test server serverPort='{}', grpcThreads='{}', influxDbAddr='{}', influxDbName='{}', influxUser='{}', influxPwd='{}'," +
                     " jdbcConn='{}', jdbcUser='{}', jdbcPwd='{}'",
                     this.serverPort,
+                    this.grpcThreads,
                     this.influxDbAddr,
                     this.influxDbName,
                     this.influxUser,
@@ -113,7 +124,7 @@ public class TestQueueRemoteServer {
 
     private void startServer() throws IOException, InterruptedException {
 
-        final QueueGRPCServer queueServer = new QueueGRPCServer(serverPort, influxDB, jdbcConn, jdbcUser, jdbcPwd);
+        final QueueGRPCServer queueServer = new QueueGRPCServer(serverPort, grpcThreads, influxDB, jdbcConn, jdbcUser, jdbcPwd);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -137,10 +148,10 @@ public class TestQueueRemoteServer {
         private final Server server;
         private final Map<String, TestInstance> activeTests;
 
-        public QueueGRPCServer(final int port, final InfluxDB influxDB, final String jdbcConn, final String jdbcUser, final String jdbcPwd) {
+        public QueueGRPCServer(final int port, final int grpcThreads, final InfluxDB influxDB, final String jdbcConn, final String jdbcUser, final String jdbcPwd) {
             activeTests = new HashMap<String, TestInstance>();
             server = ServerBuilder.forPort(port)
-                                  .executor(Executors.newFixedThreadPool(20))
+                                  .executor(Executors.newFixedThreadPool(grpcThreads))
                                   .addService(new ControlService(activeTests, influxDB, jdbcConn, jdbcUser, jdbcPwd))
                                   .addService(new QueueService(activeTests, influxDB))
                                   .build();
@@ -246,16 +257,19 @@ public class TestQueueRemoteServer {
 
         public void sendEvent(EventMsg request, StreamObserver<StatusMsg> responseObserver) {
 
+
+            long before = System.nanoTime();
+
             final TestInstance instance = activeTests.get(request.getName());
             if (instance == null) {
                 logger.warn("Ignoring event for test name {}", request.getName());
+                responseObserver.onNext(StatusMsg.newBuilder().setSuccess(false).build());
+                responseObserver.onCompleted();
                 return;
             }
 
             long v = instance.incNbEvents();
-            if (v % 1000 == 0) {
-                System.err.println(String.format("Test %s : got %d events", request.getName(), v));
-            }
+            boolean success = false;
 
             final Point.Builder pointBuilder = Point.measurement("input_events")
                                                     .tag("type", request.getType())
@@ -268,6 +282,7 @@ public class TestQueueRemoteServer {
                                                     .addField("searchKey2", request.getSearchKey2());
             try {
 
+
                 // We use the source to decide whether this is an event or an entry we want to manually add in the queue
                 if (Strings.isNullOrEmpty(request.getSource())) {
                     instance.postEntry(request);
@@ -275,17 +290,32 @@ public class TestQueueRemoteServer {
                     instance.insertEntryIntoQueue(request);
                 }
 
-                responseObserver.onNext(StatusMsg.newBuilder().setSuccess(true).build());
-                responseObserver.onCompleted();
+                success = true;
+
 
             } catch (final Exception e) {
+                logger.warn("Exception inserting event ", e);
                 responseObserver.onNext(StatusMsg.newBuilder().setSuccess(false).build());
                 responseObserver.onError(e);
                 pointBuilder.tag("error", "true");
+
             } finally {
                 if (influxDB != null) {
                     influxDB.write(pointBuilder.build());
                 }
+
+                long after = System.nanoTime();
+
+                final long deltaMilliSec = (after - before) / NANO_TO_MSEC;
+                if (deltaMilliSec > 1000) {
+                    logger.info("Inserting entry took {} mSec !!!!\n", deltaMilliSec);
+                }
+                if (v % 1000 == 0) {
+                    logger.info("Test {} : got {} events, current evt latency (mSec) = {}", request.getName(), v, deltaMilliSec);
+                }
+                responseObserver.onNext(StatusMsg.newBuilder().setSuccess(success).build());
+                responseObserver.onCompleted();
+
             }
         }
 
@@ -294,6 +324,7 @@ public class TestQueueRemoteServer {
     public static void main(final String[] args) throws IOException, InterruptedException {
 
         final TestQueueRemoteServer test = new TestQueueRemoteServer(System.getProperty(SERVER_PORT_PROP, DEFAULT_DATA_SERVER_PORT),
+                                                                     System.getProperty(GRPC_THREADS_PROP, DEFAULT_GRPC_THREADS),
                                                                      System.getProperty(INFLUX_ADDR_PROP, DEFAULT_INFLUX_ADDR),
                                                                      System.getProperty(INFLUX_DB_PROP, DEFAULT_INFLUX_DB),
                                                                      System.getProperty(INFLUX_USER_PROP, DEFAULT_INFLUX_USERNAME),

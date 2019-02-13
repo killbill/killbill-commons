@@ -40,6 +40,7 @@ import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariDataSource;
@@ -58,6 +59,7 @@ public abstract class TestQueueInstance implements TestInstance {
     protected final MetricRegistry metricRegistry;
     protected final AtomicLong nbEvents;
     protected final PersistentQueueConfig queueConfig;
+    protected final JmxReporter reporter;
 
     public TestQueueInstance(final InitMsg initMsg, final PersistentQueueConfig queueConfig, final InfluxDB influxDB, final String jdbcConnection, final String dbUsername, final String dbPassword) {
         this.initMsg = initMsg;
@@ -70,6 +72,11 @@ public abstract class TestQueueInstance implements TestInstance {
         this.dataSource = setupDataSource(daoConfig);
         this.dbi = setupDBI(dataSource);
         this.queueConfig = queueConfig;
+
+        reporter = JmxReporter.forRegistry(metricRegistry)
+                              .inDomain("org.killbill.queue.integration." + initMsg.getName())
+                              .build();
+        reporter.start();
     }
 
     @Override
@@ -79,6 +86,9 @@ public abstract class TestQueueInstance implements TestInstance {
             ((HikariDataSource) dataSource).close();
             shutdownPool = true;
         }
+
+        reporter.stop();
+
         logger.info("Stopped test instance {}, (shutdown pool={})", initMsg.getName(), shutdownPool);
     }
 
