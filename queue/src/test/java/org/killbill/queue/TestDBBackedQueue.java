@@ -128,11 +128,6 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
             assertEquals(readyHistory.get(i).getProcessingOwner(), CreatorName.get());
         }
-
-        assertEquals(queue.getTotalInflightFetched(), 100L);
-        assertEquals(queue.getTotalFetched(), 100L);
-        assertEquals(queue.getTotalInflightInsert(), 100L);
-        assertEquals(queue.getTotalInsert(), 100L);
     }
 
     @Test(groups = "slow")
@@ -178,12 +173,6 @@ public class TestDBBackedQueue extends TestSetup {
             final BusEventModelDao historyInput = new BusEventModelDao(output, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
             queue.moveEntryToHistory(historyInput);
         }
-
-        assertEquals(queue.getTotalInflightFetched(), 10L);
-        assertEquals(queue.getTotalFetched(), 10L);
-        assertEquals(queue.getTotalInflightInsert(), 10L);
-        assertEquals(queue.getTotalInsert(), 10L);
-
         final List<BusEventModelDao> remaining = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
         assertEquals(remaining.size(), 5);
         for (final BusEventModelDao cur : remaining) {
@@ -295,11 +284,6 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
             assertEquals(readyHistory.get(i).getProcessingOwner(), CreatorName.get());
         }
-
-        assertEquals(queue.getTotalInflightFetched(), 91L);
-        assertEquals(queue.getTotalFetched(), 105L);
-        assertEquals(queue.getTotalInflightInsert(), 100L);
-        assertEquals(queue.getTotalInsert(), 100L);
     }
 
 
@@ -396,11 +380,6 @@ public class TestDBBackedQueue extends TestSetup {
                 break;
             }
         }
-
-        assertEquals(queue.getTotalInflightFetched(), 38L);
-        assertEquals(queue.getTotalFetched(), 100L);
-        assertEquals(queue.getTotalInflightInsert(), 58L);
-        assertEquals(queue.getTotalInsert(), 80L);
     }
 
 
@@ -481,11 +460,6 @@ public class TestDBBackedQueue extends TestSetup {
             assertEquals(readyHistory.get(i).getProcessingState(), PersistentQueueEntryLifecycleState.PROCESSED);
             assertEquals(readyHistory.get(i).getProcessingOwner(), CreatorName.get());
         }
-
-        assertEquals(queue.getTotalInflightFetched(), 99L);
-        assertEquals(queue.getTotalFetched(), 205L);
-        assertEquals(queue.getTotalInflightInsert(), 100L);
-        assertEquals(queue.getTotalInsert(), 200L);
     }
 
 
@@ -520,9 +494,6 @@ public class TestDBBackedQueue extends TestSetup {
 
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, CreatorName.get(), "bus_events");
         assertEquals(ready.size(), 0);
-
-        log.info("Got inflightProcessed = " + queue.getTotalInflightFetched() + "/1000, inflightWritten = " + queue.getTotalInflightInsert() + "/1000");
-        assertEquals(queue.getTotalInsert(), 1000L);
 
         // Verify ordering
         long expected = 999;
@@ -573,8 +544,6 @@ public class TestDBBackedQueue extends TestSetup {
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, CreatorName.get(), "bus_events");
         assertEquals(ready.size(), 0);
 
-        log.info("Got inflightProcessed = " + queue.getTotalInflightFetched() + "/1000, inflightWritten = " + queue.getTotalInflightInsert() + "/1000");
-        assertEquals(queue.getTotalInsert(), 2000);
     }
 
     @Test(groups = "slow")
@@ -615,8 +584,6 @@ public class TestDBBackedQueue extends TestSetup {
             queue.moveEntryToHistory(historyInput);
         }
 
-        assertEquals(queue.getTotalFetched(), 10L);
-        assertEquals(queue.getTotalInsert(), 10L);
 
         final List<BusEventModelDao> leftBehind = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
         assertEquals(leftBehind.size(), 5);
@@ -700,11 +667,6 @@ public class TestDBBackedQueue extends TestSetup {
             queue.moveEntryToHistory(historyInput);
         }
 
-        assertEquals(queue.getTotalInflightFetched(), 10L);
-        assertEquals(queue.getTotalFetched(), 10L);
-        assertEquals(queue.getTotalInflightInsert(), 10L);
-        assertEquals(queue.getTotalInsert(), 10L);
-
         final List<BusEventModelDao> leftBehind = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 10, null, "bus_events");
         assertEquals(leftBehind.size(), 5);
 
@@ -718,10 +680,6 @@ public class TestDBBackedQueue extends TestSetup {
         Date reapingDate = clock.getUTCNow().minusMinutes((int) config.getReapThreshold().getPeriod()).toDate();
         queue.reapEntries(reapingDate);
 
-        assertEquals(queue.getTotalInflightFetched(), 10L);
-        assertEquals(queue.getTotalFetched(), 10L);
-        assertEquals(queue.getTotalInflightInsert(), 15L);
-        assertEquals(queue.getTotalInsert(), 15L);
 
         final List<BusEventModelDao> reDispatchedClaims = queue.getReadyEntries();
         for (final BusEventModelDao cur : reDispatchedClaims) {
@@ -746,10 +704,6 @@ public class TestDBBackedQueue extends TestSetup {
             queue.moveEntryToHistory(historyInput);
         }
         assertEquals(reDispatchedClaims.size(), leftBehind.size());
-        assertEquals(queue.getTotalInflightFetched(), 15L);
-        assertEquals(queue.getTotalFetched(), 15L);
-        assertEquals(queue.getTotalInflightInsert(), 15L);
-        assertEquals(queue.getTotalInsert(), 15L);
 
     }
 

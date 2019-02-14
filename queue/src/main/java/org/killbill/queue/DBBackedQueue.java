@@ -114,15 +114,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
     private final LinkedBlockingQueue<Long> inflightEvents;
     private final int thresholdToReopenQForWrite;
 
-    private final Counter totalInflightInsert;
-    private final Counter totalInflightFetched;
-    private final Counter totalInsert;
-    private final Counter totalFetched;
-    private final Counter totalClaimed;
-    private final Counter totalProcessedFirstFailures;
-    private final Counter totalProcessedSuccess;
-    private final Counter totalProcessedAborted;
-
     private final Timer getTime;
     private final Timer insertTime;
     private final Timer claimTime;
@@ -169,22 +160,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         //
         // Metrics
         //
-        // Number of entries written in the inflightQ since last boot time
-        this.totalInflightInsert = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInflightInsert"));
-        // Number of entries fetched from inflightQ since last boot time (only entries that exist and are aavailable on disk are counted)
-        this.totalInflightFetched = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInflightFetched"));
-        // Number of entries written on disk -- if transaction is rolled back, it is still counted.
-        this.totalInsert = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalInsert"));
-        // Number of entries fetched from disk -- if transaction is rolled back, it is still counted.
-        this.totalFetched = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalFetched"));
-        // Number of successfully claimed events
-        this.totalClaimed = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalClaimed"));
-        // Number of successfully processed events (move to history table) -- if transaction is rolled back, it is still counted.
-        this.totalProcessedSuccess = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalProcessedSuccess"));
-        // Number of first failures for a specific event
-        this.totalProcessedFirstFailures = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalProcessedFirstFailures"));
-        //  Number of aborted events
-        this.totalProcessedAborted = metricRegistry.counter(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "totalProcessedAborted"));
         // Export size of inflightQ
         metricRegistry.register(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "inflightQ", "size"), new Gauge<Integer>() {
             @Override
@@ -239,15 +214,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             isQueueOpenForWrite = false;
         }
 
-        // Reset counters.
-        totalInflightFetched.dec(totalInflightFetched.getCount());
-        totalFetched.dec(totalFetched.getCount());
-        totalInflightInsert.dec(totalInflightInsert.getCount());
-        totalInsert.dec(totalInsert.getCount());
-        totalClaimed.dec(totalClaimed.getCount());
-        totalProcessedSuccess.dec(totalProcessedSuccess.getCount());
-        totalProcessedFirstFailures.dec(totalProcessedFirstFailures.getCount());
-        totalProcessedAborted.dec(totalProcessedAborted.getCount());
 
         log.info("{} Initialized with queueId={}, mode={}, isQueueOpenForWrite={}, isQueueOpenForRead={}",
                  DB_QUEUE_LOG_ID, queueId, config.getPersistentQueueMode(), isQueueOpenForWrite, isQueueOpenForRead);
@@ -276,7 +242,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         if (useInflightQueue && isQueueOpenForWrite) {
             transientInflightQRowIdCache.addRowId(lastInsertId);
         }
-        totalInsert.inc();
     }
 
     public List<T> getReadyEntries() {
@@ -289,7 +254,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     private List<T> getReadyEntriesUsingPollingMode() {
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
-        totalFetched.inc(entriesToClaim.size());
         if (!entriesToClaim.isEmpty()) {
             log.debug("{} Entries to claim: {}", DB_QUEUE_LOG_ID, entriesToClaim);
             return claimEntries(entriesToClaim);
@@ -306,8 +270,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             candidates = fetchReadyEntriesFromIds();
             // There are entries in the Q, we just return those
             if (!candidates.isEmpty()) {
-                totalInflightFetched.inc(candidates.size());
-                totalFetched.inc(candidates.size());
                 // There is no need to claim entries in the mode as the thread holding the records is the only one which had access to the ids
                 return candidates;
             }
@@ -345,7 +307,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             }
 
             // Only keep as many candidates as we are allowed to
-            totalFetched.inc(candidates.size());
             return claimEntries(candidates);
         }
         return ImmutableList.<T>of();
@@ -390,9 +351,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 transactional.updateOnError(entry.getRecordId(), clock.getUTCNow().toDate(), entry.getErrorCount(), config.getTableName());
-                if (entry.getErrorCount() == 1) {
-                    totalProcessedFirstFailures.inc();
-                }
                 if (useInflightQueue) {
                     transientInflightQRowIdCache.addRowId(entry.getRecordId());
                 }
@@ -413,14 +371,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
     public void moveEntryToHistoryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
         try {
-
             switch (entry.getProcessingState()) {
                 case FAILED:
-                    totalProcessedAborted.inc();
-                    break;
                 case PROCESSED:
-                    totalProcessedSuccess.inc();
-                    break;
                 case REMOVED:
                 case REAPED:
                     break;
@@ -463,14 +416,9 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         for (final T cur : entries) {
             switch (cur.getProcessingState()) {
                 case FAILED:
-                    totalProcessedAborted.inc();
-                    break;
                 case PROCESSED:
-                    totalProcessedSuccess.inc();
-                    break;
                 case REMOVED:
                 case REAPED:
-                    // Don't default for REMOVED since we could call this API 'manually' with that state.
                     break;
                 default:
                     log.warn("{} Unexpected terminal event state={} for record_id={}", DB_QUEUE_LOG_ID, cur.getProcessingState(), cur.getRecordId());
@@ -590,7 +538,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         // We should ALWAYS see the same number since we are in STICKY_POLLING mode and there is only one thread claiming entries.
         // We keep the 2 cases below for safety (code was written when this was MT-threaded), and we log with warn (will eventually remove it in the future)
         if (resultCount == candidates.size()) {
-            totalClaimed.inc(resultCount);
             log.debug("{} batchClaimEntries claimed: {}", DB_QUEUE_LOG_ID, candidates);
             return candidates;
             // Nothing... the synchronized block let go another concurrent thread
@@ -614,8 +561,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
             final List<T> result = ImmutableList.<T>copyOf(claimed);
 
             log.warn("{} batchClaimEntries only claimed partial entries {}/{}", DB_QUEUE_LOG_ID, result.size(), candidates.size());
-
-            totalClaimed.inc(result.size());
             return result;
         }
     }
@@ -647,7 +592,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         final boolean claimed = (claimEntry == 1);
 
         if (claimed) {
-            totalClaimed.inc();
             log.debug("{} Claimed entry {}", DB_QUEUE_LOG_ID, entry);
         }
         return claimed;
@@ -665,21 +609,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
         return isQueueOpenForRead;
     }
 
-    public long getTotalInflightFetched() {
-        return totalInflightFetched.getCount();
-    }
-
-    public long getTotalFetched() {
-        return totalFetched.getCount();
-    }
-
-    public long getTotalInflightInsert() {
-        return totalInflightInsert.getCount();
-    }
-
-    public long getTotalInsert() {
-        return totalInsert.getCount();
-    }
 
     @AllowConcurrentEvents
     @Subscribe
@@ -703,7 +632,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
                 final boolean result = inflightEvents.offer(entry);
                 if (result) {
                     log.debug("{} Inserting entry {} into inflightQ", DB_QUEUE_LOG_ID, entry);
-                    totalInflightInsert.inc();
                     // Q overflowed, which means we will stop writing entries into the Q, and as a result, we will end up stop reading
                     // from the Q and return to polling mode
                 } else if (isQueueOpenForWrite) {
@@ -832,8 +760,6 @@ public class DBBackedQueue<T extends EventEntryModelDao> {
 
             if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
                 insertEntryFromTransaction(transactional, entry);
-            } else {
-                totalInsert.inc();
             }
         }
 

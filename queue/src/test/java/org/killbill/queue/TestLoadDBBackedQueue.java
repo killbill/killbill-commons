@@ -158,10 +158,6 @@ public class TestLoadDBBackedQueue extends TestSetup {
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
-        log.info("Got inflightProcessed = " + queue.getTotalInflightFetched() + "/1000, inflightWritten = " + queue.getTotalInflightInsert() + "/1000");
-        assertEquals(queue.getTotalInsert(), nbEntries);
-        assertEquals(queue.getTotalInflightFetched(), nbEntries);
-        assertEquals(queue.getTotalInflightInsert(), nbEntries);
     }
 
 
