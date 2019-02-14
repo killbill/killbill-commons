@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.AllowConcurrentEvents;
@@ -206,6 +207,11 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         }
     }
 
+    @VisibleForTesting
+    public int getInflightQSize() {
+        return inflightEvents.size();
+    }
+
     //
     // Hide the ThreadLocal logic required for inflightQ algorithm in that class and export an easy to use interface.
     //
@@ -280,6 +286,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
             if (existingIds.size() < MAX_FETCHED_RECORDS_ID) {
                 break;
             }
+            fromRecordId = existingIds.get(existingIds.size() - 1) + 1;
         } while (true);
 
         log.info("{} Inserting {} entries into inflightQ during initialization",
