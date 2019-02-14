@@ -60,8 +60,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.config = config;
         this.isProcessingEvents = false;
         this.objectMapper = objectMapper;
-        this.completedOrFailedEvents = new LinkedBlockingQueue<>(config.getEventQueueCapacity());
-        this.retriedEvents = new LinkedBlockingQueue<>(config.getEventQueueCapacity());
+        this.completedOrFailedEvents = new LinkedBlockingQueue<>();
+        this.retriedEvents = new LinkedBlockingQueue<>();
     }
 
     @Override

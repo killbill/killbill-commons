@@ -25,6 +25,19 @@ reapWhereClause() ::= <<
     and created_date \<= :reapingDate
 >>
 
+getReadyEntryIds(owner, tableName) ::= <<
+    select
+      record_id
+    from <tableName>
+    where
+      record_id >= :from
+      and <readyWhereClause(owner)>
+    order by
+      <readyOrderByClause()>
+    limit :max
+    ;
+>>
+
 /** Bus Events specific queries **/
 getReadyQueueEntriesForSearchKeys(tableName) ::= <<
     select

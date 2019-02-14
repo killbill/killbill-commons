@@ -41,6 +41,7 @@ import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.notificationq.dispatching.NotificationCallableCallback;
 import org.killbill.queue.DBBackedQueue;
+import org.killbill.queue.DBBackedQueueWithPolling;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.dao.EventEntryModelDao;
@@ -100,7 +101,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.clock = clock;
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
-        this.dao = new DBBackedQueue<NotificationEventModelDao>(clock, dbi, NotificationSqlDao.class, config, "notif-" + config.getTableName(), metricRegistry, null);
+        this.dao = new DBBackedQueueWithPolling<NotificationEventModelDao>(clock, dbi, NotificationSqlDao.class, config, "notif-" + config.getTableName(), metricRegistry);
 
         this.queues = new TreeMap<String, NotificationQueue>();
 

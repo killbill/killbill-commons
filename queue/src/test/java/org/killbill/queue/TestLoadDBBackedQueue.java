@@ -53,13 +53,13 @@ public class TestLoadDBBackedQueue extends TestSetup {
     private DBBackedQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;
 
-    @BeforeClass(groups = "slow")
+    @BeforeClass(groups = "load")
     public void beforeClass() throws Exception {
         super.beforeClass();
         sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
     }
 
-    @BeforeMethod(groups = "slow")
+    @BeforeMethod(groups = "load")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
@@ -74,7 +74,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
         final int CLAIMED_EVENTS = 10;
 
         final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, PersistentQueueMode.POLLING);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "perf-bus_event", metricRegistry, null);
+        queue = new DBBackedQueueWithPolling<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "perf-bus_event", metricRegistry);
         queue.initialize();
 
 
@@ -119,7 +119,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
 
         final int nbEntries = 10000;
         final PersistentBusConfig config = createConfig(10, nbEntries, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueueWithInflightQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
         for (int i = 0; i < nbEntries; i++) {
             final BusEventModelDao input = createEntry(new Long(i + 5));
