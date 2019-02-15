@@ -47,6 +47,7 @@ import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.DBBackedQueue;
+import org.killbill.queue.DBBackedQueue.ReadyEntriesWithMetrics;
 import org.killbill.queue.DBBackedQueueWithInflightQueue;
 import org.killbill.queue.DBBackedQueueWithPolling;
 import org.killbill.queue.DefaultQueueLifecycle;
@@ -80,12 +81,13 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
     private final PersistentBusConfig config;
-    private final Timer dispatchTimer;
     private final Profiling<Iterable<BusEventModelDao>, RuntimeException> prof;
     private final BusReaper reaper;
 
     private final Dispatcher<BusEvent, BusEventModelDao> dispatcher;
 
+    // Time it takes to handle the bus request (going through multiple handles potentially)
+    private final Timer busHandlersProcessingTime;
 
     private final AtomicBoolean isInitialized;
     private final AtomicBoolean isStarted;
@@ -102,7 +104,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Inject
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
-        super("Bus", config);
+        super("Bus", config, metricRegistry);
         this.dbi = (DBI) dbi;
         this.clock = clock;
         this.config = config;
@@ -121,7 +123,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             }
         };
 
-        this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
+        this.busHandlersProcessingTime = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "busHandlersProcessingTime"));
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isInitialized = new AtomicBoolean(false);
@@ -163,6 +165,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Override
     public void stop() {
         if (isStarted.compareAndSet(true, false)) {
+            isInitialized.set(false);
+            dao.close();
             stopQueue();
             dispatcher.stop();
             reaper.stop();
@@ -170,17 +174,19 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public int doProcessEvents() {
-        final List<BusEventModelDao> events = dao.getReadyEntries();
+    public DispatchResultMetrics doDispatchEvents() {
+        final ReadyEntriesWithMetrics<BusEventModelDao> eventsWithMetrics = dao.getReadyEntries();
+        final List<BusEventModelDao> events = eventsWithMetrics.getEntries();
         if (events.isEmpty()) {
-            return 0;
+            return new DispatchResultMetrics(0, eventsWithMetrics.getTime());
         }
         log.debug("Bus events from {} to process: {}", config.getTableName(), events);
 
+        long ini = System.nanoTime();
         for (final BusEventModelDao cur : events) {
             dispatcher.dispatch(cur);
         }
-        return events.size();
+        return new DispatchResultMetrics(events.size(), (System.nanoTime() - ini) + eventsWithMetrics.getTime());
     }
 
     @Override
@@ -365,7 +371,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
-        final Timer.Context dispatchTimerContext = dispatchTimer.time();
+        final Timer.Context dispatchTimerContext = busHandlersProcessingTime.time();
         try {
             eventBusDelegate.postWithException(event);
         } finally {

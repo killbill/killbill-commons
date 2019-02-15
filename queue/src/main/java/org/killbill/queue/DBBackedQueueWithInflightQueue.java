@@ -56,11 +56,12 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
     // How many recordIds we pull per iteration during init to fill the inflightQ
     private static final int MAX_FETCHED_RECORDS_ID = 1000;
 
-    // Drain inflightQ 100 at a time and sleep for a maximum of 100 mSec if there is nothing to do
-    private static final int MAX_FETCHED_ENTRIES = 100;
+    // Drain inflightQ using getMaxEntriesClaimed() config at a time and sleep for a maximum of 100 mSec if there is nothing to do
     private static final long INFLIGHT_POLLING_TIMEOUT_MSEC = 100;
 
     private final LinkedBlockingQueue<Long> inflightEvents;
+
+    private final DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
 
     //
     // Per thread information to keep track or recordId while it is accessible and right before
@@ -79,16 +80,13 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
                                           final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super(clock, dbi, sqlDaoClass, config, dbBackedQId, metricRegistry);
         this.queueId = QUEUE_ID_CNT.incrementAndGet();
-        // We use an unboundedQ - the risk of running OUtOfMemory exists for a very large number of entries showing a more systematic problem
+        // We use an unboundedQ - the risk of running OUtOfMemory exists for a very large number of entries showing a more systematic problem...
         this.inflightEvents = new LinkedBlockingQueue<Long>();
 
-        // TODO unregister
+        this.databaseTransactionNotificationApi = databaseTransactionNotificationApi;
         databaseTransactionNotificationApi.registerForNotification(this);
 
-        //
-        // Metrics
-        //
-        // Export size of inflightQ
+        // Metrics the size of the inflightQ
         metricRegistry.register(MetricRegistry.name(DBBackedQueueWithInflightQueue.class, dbBackedQId, "inflightQ", "size"), new Gauge<Integer>() {
             @Override
             public Integer getValue() {
@@ -106,6 +104,12 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         log.info("{} Initialized with queueId={}, mode={}",
                  DB_QUEUE_LOG_ID, queueId, config.getPersistentQueueMode());
     }
+
+    @Override
+    public void close() {
+        databaseTransactionNotificationApi.unregisterForNotification(this);
+    }
+
 
     @Override
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {

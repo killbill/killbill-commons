@@ -73,10 +73,21 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
     protected final Clock clock;
     protected final PersistentQueueConfig config;
 
-    protected final Timer getTime;
-    protected final Timer insertTime;
-    protected final Timer claimTime;
-    protected final Timer deleteTime;
+    //
+    // All these *raw* time measurement only measure the query time *not* including the transaction and the time to acquire DB connection
+    //
+    // Time to get the ready entries (polling) or all entries from ids (inflight)
+    protected final Timer rawGetEntriesTime;
+    // Time to insert one entry in the DB
+    protected final Timer rawInsertEntryTime;
+    // Time to claim the batch of entries (STICKY_POLLING)
+    protected final Timer rawClaimEntriesTime;
+    // Time to claim one entry (POLLING mode)
+    protected final Timer rawClaimEntryTime;
+    // Time to move a batch of entries (delete from table + insert into history)
+    protected final Timer rawDeleteEntriesTime;
+    // Time to move one entry (delete from table + insert into history)
+    protected final Timer rawDeleteEntryTime;
 
     protected final Profiling<Long, RuntimeException> prof;
 
@@ -93,17 +104,39 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         this.clock = clock;
         this.prof = new Profiling<Long, RuntimeException>();
 
-        this.getTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "getTime"));
-        this.insertTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "insertTimes"));
-        this.claimTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "claimTime"));
-        this.deleteTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "deleteTime"));
+        this.rawGetEntriesTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "rawGetEntriesTime"));
+        this.rawInsertEntryTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "rawInsertEntryTime"));
+        this.rawClaimEntriesTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "rawClaimEntriesTime"));
+        this.rawClaimEntryTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "rawClaimEntryTime"));
+        this.rawDeleteEntriesTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "rawDeleteEntriesTime"));
+        this.rawDeleteEntryTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, "rawDeleteEntryTime"));
 
         this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId;
     }
 
+    public static class ReadyEntriesWithMetrics<T extends EventEntryModelDao> {
+        private final List<T> entries;
+        private final long time;
+
+        public ReadyEntriesWithMetrics(final List<T> entries, final long time) {
+            this.entries = entries;
+            this.time = time;
+        }
+
+        public List<T> getEntries() {
+            return entries;
+        }
+
+        public long getTime() {
+            return time;
+        }
+    }
+
     public abstract void initialize();
 
-    public abstract List<T> getReadyEntries();
+    public abstract void close();
+
+    public abstract ReadyEntriesWithMetrics<T> getReadyEntries();
 
     public abstract void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry);
 
@@ -149,7 +182,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
             long ini = System.nanoTime();
             transactional.insertEntry(entry, config.getHistoryTableName());
             transactional.removeEntry(entry.getRecordId(), config.getTableName());
-            deleteTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+            rawDeleteEntryTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
 
         } catch (final Exception e) {
             log.warn("{} Failed to move entry into history: {}", DB_QUEUE_LOG_ID, entry, e);
@@ -198,7 +231,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         long ini = System.nanoTime();
         transactional.insertEntries(entries, config.getHistoryTableName());
         transactional.removeEntries(ImmutableList.<Long>copyOf(toBeRemovedRecordIds), config.getTableName());
-        deleteTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+        rawDeleteEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
     }
 
     protected long getNbReadyEntries() {
@@ -212,21 +245,6 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
             @Override
             public Long execute(final QueueSqlDao<T> queueSqlDao) {
                 return queueSqlDao.getNbReadyEntries(now, owner, config.getTableName());
-            }
-        });
-    }
-
-    protected List<T> fetchReadyEntries(int maxEntries) {
-        final Date now = clock.getUTCNow().toDate();
-        final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
-        return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
-            @Override
-            public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
-
-                long ini = System.nanoTime();
-                final List<T> result = queueSqlDao.getReadyEntries(now, maxEntries, owner, config.getTableName());
-                getTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
-                return result;
             }
         });
     }
@@ -249,7 +267,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                 final Long lastInsertId = transactional.getLastInsertId();
                 log.debug("{} Inserting entry: lastInsertId={}, entry={}", DB_QUEUE_LOG_ID, lastInsertId, entry);
 
-                insertTime.update(System.nanoTime() - init, TimeUnit.NANOSECONDS);
+                rawInsertEntryTime.update(System.nanoTime() - init, TimeUnit.NANOSECONDS);
                 return lastInsertId;
             }
         });

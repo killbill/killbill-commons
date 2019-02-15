@@ -29,6 +29,9 @@ import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
@@ -46,22 +49,40 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     private final LinkedBlockingQueue<EventEntryModelDao> completedOrFailedEvents;
     private final LinkedBlockingQueue<EventEntryModelDao> retriedEvents;
 
+    // Time to dispatch entries to Dispatcher threads
+    private final Timer dispatchTime;
+    // Time to move entries to history table (or update entry for retry)
+    private final Timer completeTime;
+    // Nb of entries dispatched at each loop
+    private final Histogram dispatchedEntries;
+    // Nb of entries completed at each loop
+    private final Histogram completeEntries;
+
+    private final boolean isStickyEvent;
+
     private volatile boolean isProcessingEvents;
 
     // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
     private ExecutorService executor;
 
-    public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config) {
-        this(svcQName, config, QueueObjectMapper.get());
+    public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final MetricRegistry metricRegistry) {
+        this(svcQName, config, metricRegistry, QueueObjectMapper.get());
     }
 
-    private DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final ObjectMapper objectMapper) {
+    private DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final MetricRegistry metricRegistry, final ObjectMapper objectMapper) {
         this.svcQName = svcQName;
         this.config = config;
         this.isProcessingEvents = false;
         this.objectMapper = objectMapper;
         this.completedOrFailedEvents = new LinkedBlockingQueue<>();
         this.retriedEvents = new LinkedBlockingQueue<>();
+        this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
+
+        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, "dispatchTime"));
+        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, "completeTime"));
+
+        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, "dispatchedEntries"));
+        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, "completeEntries"));
     }
 
     @Override
@@ -82,66 +103,90 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
                 try {
                     while (true) {
+
+                        // Delete/update completed/errored entries from DB
+                        completeOrRetryProcessedEvents();
+
                         if (!isProcessingEvents) {
                             break;
                         }
 
                         final long beforeLoop = System.nanoTime();
-                        try {
-                            // Fetch ready entries from DB and dispatch them to thread pool
-                            doProcessEvents();
+                        dispatchEvents();
+                        final long afterLoop = System.nanoTime();
 
-                            // Delete/update completed/errored entries from DB
-                            drainCompletedEvents();
-                            drainRetriedEvents();
+                        completeOrRetryProcessedEvents();
 
-                        } catch (final Exception e) {
-                            log.warn(String.format("%s: Thread  %s  [%d] got an exception, catching and moving on...",
-                                                   svcQName,
-                                                   Thread.currentThread().getName(),
-                                                   Thread.currentThread().getId()), e);
-                        } finally {
-                            final long afterLoop = System.nanoTime();
-                            sleepALittle((afterLoop - beforeLoop) / ONE_MILLION);
-                        }
+                        sleepSporadically((afterLoop - beforeLoop) / ONE_MILLION);
                     }
                 } catch (final InterruptedException e) {
                     log.info(String.format("%s: Thread %s got interrupted, exting... ", svcQName, Thread.currentThread().getName()));
                 } catch (final Throwable e) {
                     log.error(String.format("%s: Thread %s got an exception, exting... ", svcQName, Thread.currentThread().getName()), e);
                 } finally {
+                    completeOrRetryProcessedEvents();
                     log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
                 }
             }
 
+            private void dispatchEvents() {
+                long ini = System.nanoTime();
+                final DispatchResultMetrics metricsResult = doDispatchEvents();
+                dispatchedEntries.update(metricsResult.getNbEntries());
+                if (isStickyEvent) {
+                    dispatchTime.update(metricsResult.getTimeNanoSec(), TimeUnit.NANOSECONDS);
+                } else {
+                    dispatchTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                }
+            }
+
+            private void completeOrRetryProcessedEvents() {
+                long ini = System.nanoTime();
+                int completed = drainCompletedEvents();
+                int retried = drainRetriedEvents();
+                final int completeOrRetried = completed + retried;
+                if (completeOrRetried > 0) {
+                    completeEntries.update(completeOrRetried);
+                    completeTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                }
+            }
+
             // Move completed entries through batches using the same main DB (lifecycle) thread
-            private void drainCompletedEvents() {
+            private int drainCompletedEvents() {
                 int curSize = completedOrFailedEvents.size();
                 if (curSize > 0) {
                     final List<EventEntryModelDao> completed = new ArrayList<>(curSize);
                     completedOrFailedEvents.drainTo(completed, curSize);
                     doProcessCompletedEvents(completed);
                 }
+                return curSize;
             }
 
             // Move retried entries using the same main DB (lifecycle) thread
-            private void drainRetriedEvents() {
+            private int drainRetriedEvents() {
                 final int curSize = retriedEvents.size();
                 if (curSize > 0) {
                     final List<EventEntryModelDao> retried = new ArrayList<>(curSize);
                     retriedEvents.drainTo(retried, curSize);
                     doProcessRetriedEvents(retried);
                 }
+                return curSize;
             }
 
-            private void sleepALittle(final long loopTimeMsec) throws InterruptedException {
-                if (config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS) {
-                    // Disregard config.getPollingSleepTimeMs() in that mode in case this is not correctly configured with 0
+            private void sleepSporadically(final long loopTimeMsec) throws InterruptedException {
+                if (isStickyEvent) {
+                    // In this mode, the main thread does not sleep, but blocks on the inflightQ to minimize latency.
                     return;
                 }
-                final long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
-                if (remainingSleepTime > 0) {
-                    Thread.sleep(remainingSleepTime);
+
+                final long MAX_SLEEP_TIME_MS = 100;
+                long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
+                while (remainingSleepTime > 0) {
+                    final long curSleepTime =  remainingSleepTime > MAX_SLEEP_TIME_MS ? MAX_SLEEP_TIME_MS : remainingSleepTime;
+                    Thread.sleep(curSleepTime);
+                    // Each loop we verify if we have new entries to complete
+                    completeOrRetryProcessedEvents();
+                    remainingSleepTime -= curSleepTime;
                 }
             }
         });
@@ -152,11 +197,17 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     public void stopQueue() {
         this.isProcessingEvents = false;
 
-        executor.shutdownNow();
+        executor.shutdown();
         try {
             executor.awaitTermination(config.getPollingSleepTimeMs(), TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
             log.info(String.format("%s: Stop sequence has been interrupted", svcQName));
+        } finally {
+            int remainingCompleted = completedOrFailedEvents.size();
+            int remainingRetried = retriedEvents.size();
+            if (remainingCompleted > 0 || remainingRetried > 0) {
+                log.warn(String.format("%s: Stopped queue with %d event/notifications non completed ", svcQName, (remainingCompleted + remainingRetried)));
+            }
         }
     }
 
@@ -168,7 +219,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         retriedEvents.add(event);
     }
 
-    public abstract int doProcessEvents();
+    public abstract DispatchResultMetrics doDispatchEvents();
 
     public abstract void doProcessCompletedEvents(final Iterable<? extends EventEntryModelDao> completed);
 
@@ -176,5 +227,24 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     public ObjectMapper getObjectMapper() {
         return objectMapper;
+    }
+
+    public static class DispatchResultMetrics {
+
+        private final int nbEntries;
+        private final long timeNanoSec;
+
+        public DispatchResultMetrics(final int nbEntries, final long timeNanoSec) {
+            this.nbEntries = nbEntries;
+            this.timeNanoSec = timeNanoSec;
+        }
+
+        public int getNbEntries() {
+            return nbEntries;
+        }
+
+        public long getTimeNanoSec() {
+            return timeNanoSec;
+        }
     }
 }

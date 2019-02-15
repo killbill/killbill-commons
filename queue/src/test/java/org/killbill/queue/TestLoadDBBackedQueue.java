@@ -30,6 +30,7 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.queue.DBBackedQueue.ReadyEntriesWithMetrics;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
@@ -91,7 +92,8 @@ public class TestLoadDBBackedQueue extends TestSetup {
         for (int i = 0; i < NB_EVENTS / CLAIMED_EVENTS; i++) {
 
             final long t1 = System.nanoTime();
-            final List<BusEventModelDao> ready = queue.getReadyEntries();
+            final ReadyEntriesWithMetrics<BusEventModelDao> result = queue.getReadyEntries();
+            final List<BusEventModelDao> ready = result.getEntries();
             assertEquals(ready.size(), CLAIMED_EVENTS);
             final long t2 = System.nanoTime();
             cumlGetReadyEntries += (t2 - t1);
@@ -178,7 +180,8 @@ public class TestLoadDBBackedQueue extends TestSetup {
         @Override
         public void run() {
             do {
-                final List<BusEventModelDao> entries = queue.getReadyEntries();
+                final ReadyEntriesWithMetrics<BusEventModelDao> result = queue.getReadyEntries();
+                final List<BusEventModelDao> entries = result.getEntries();
                 if (entries.isEmpty()) {
                     try {
                         Thread.sleep(10);

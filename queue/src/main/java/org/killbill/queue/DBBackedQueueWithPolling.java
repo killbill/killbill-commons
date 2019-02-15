@@ -55,8 +55,13 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
     @Override
     public void initialize() {
         log.info("{} Initialized  mode={}",
-                 config.getPersistentQueueMode());
+                 DB_QUEUE_LOG_ID, config.getPersistentQueueMode());
     }
+
+    @Override
+    public void close() {
+    }
+
 
     @Override
     public void insertEntryFromTransaction(final QueueSqlDao<T> transactional, final T entry) {
@@ -64,13 +69,17 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
     }
 
     @Override
-    public List<T> getReadyEntries() {
+    public ReadyEntriesWithMetrics<T> getReadyEntries() {
+
+        final long ini = System.nanoTime();
         final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
+
+        List<T> claimedEntries = ImmutableList.of();
         if (!entriesToClaim.isEmpty()) {
             log.debug("{} Entries to claim: {}", DB_QUEUE_LOG_ID, entriesToClaim);
-            return claimEntries(entriesToClaim);
+            claimedEntries = claimEntries(entriesToClaim);
         }
-        return ImmutableList.<T>of();
+        return new ReadyEntriesWithMetrics(claimedEntries, System.nanoTime() - ini);
     }
 
 
@@ -96,6 +105,22 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
             transactional.insertEntries(entriesLeftBehind, config.getTableName());
         }
     }
+
+    private List<T> fetchReadyEntries(int maxEntries) {
+        final Date now = clock.getUTCNow().toDate();
+        final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
+        return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
+            @Override
+            public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
+
+                long ini = System.nanoTime();
+                final List<T> result = queueSqlDao.getReadyEntries(now, maxEntries, owner, config.getTableName());
+                rawGetEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                return result;
+            }
+        });
+    }
+
 
     private List<T> claimEntries(final List<T> candidates) {
         switch (config.getPersistentQueueMode()) {
@@ -126,7 +151,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
             public Integer execute(final QueueSqlDao<T> queueSqlDao) {
                 long ini = System.nanoTime();
                 final Integer result = queueSqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
-                claimTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                rawClaimEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
                 return result;
             }
         });
@@ -180,7 +205,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
             public Integer execute(final QueueSqlDao<T> queueSqlDao) {
                 long ini = System.nanoTime();
                 final Integer result = queueSqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
-                claimTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                rawClaimEntryTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
                 return result;
             }
         });
