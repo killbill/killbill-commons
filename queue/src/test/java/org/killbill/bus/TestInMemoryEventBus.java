@@ -44,11 +44,19 @@ public class TestInMemoryEventBus {
             public int getMaxFailureRetries() {
                 return 0;
             }
+
+            @Override
+            public int getMinInFlightEntries() {
+                return 1;
+            }
+            @Override
+            public int getMaxInFlightEntries() {
+                return 1;
+            }
             @Override
             public int getMaxEntriesClaimed() {
                 return 0;
             }
-
             @Override
             public PersistentQueueMode getPersistentQueueMode() {
                 return PersistentQueueMode.POLLING;

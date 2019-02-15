@@ -35,8 +35,6 @@ import static org.testng.Assert.assertEquals;
 
 public class TestDBBackedQueueWithInflightQ extends TestSetup {
 
-    private static final String OWNER = CreatorName.get();
-
     private DBBackedQueueWithInflightQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;
 
@@ -90,62 +88,58 @@ public class TestDBBackedQueueWithInflightQ extends TestSetup {
             public boolean isInMemory() {
                 return false;
             }
-
             @Override
             public int getMaxFailureRetries() {
                 return 0;
             }
-
+            @Override
+            public int getMinInFlightEntries() {
+                return 1;
+            }
+            @Override
+            public int getMaxInFlightEntries() {
+                return 100;
+            }
             @Override
             public int getMaxEntriesClaimed() {
                 return 100;
             }
-
             @Override
             public PersistentQueueMode getPersistentQueueMode() {
                 return PersistentQueueMode.STICKY_EVENTS;
             }
-
             @Override
             public TimeSpan getClaimedTime() {
                 return new TimeSpan("5m");
             }
-
             @Override
             public long getPollingSleepTimeMs() {
                 return -1;
             }
-
             @Override
             public boolean isProcessingOff() {
                 return false;
             }
-
             @Override
             public int geMaxDispatchThreads() {
                 return 1;
             }
-
             @Override
             public int getEventQueueCapacity() {
                 return -1;
             }
-
             @Override
             public String getTableName() {
                 return "bus_events";
             }
-
             @Override
             public String getHistoryTableName() {
                 return "bus_events_history";
             }
-
             @Override
             public TimeSpan getReapThreshold() {
                 return new TimeSpan(5, TimeUnit.MINUTES);
             }
-
             @Override
             public int getMaxReDispatchCount() {
                 return 10;

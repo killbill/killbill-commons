@@ -56,7 +56,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
     // How many recordIds we pull per iteration during init to fill the inflightQ
     private static final int MAX_FETCHED_RECORDS_ID = 1000;
 
-    // Drain inflightQ using getMaxEntriesClaimed() config at a time and sleep for a maximum of 100 mSec if there is nothing to do
+    // Drain inflightQ using getMaxInFlightEntries() config at a time and sleep for a maximum of 100 mSec if there is nothing to do
     private static final long INFLIGHT_POLLING_TIMEOUT_MSEC = 100;
 
     private final LinkedBlockingQueue<Long> inflightEvents;
@@ -79,6 +79,9 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
                                           final MetricRegistry metricRegistry,
                                           final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
         super(clock, dbi, sqlDaoClass, config, dbBackedQId, metricRegistry);
+
+        Preconditions.checkArgument(config.getMinInFlightEntries() <= config.getMaxInFlightEntries());
+
         this.queueId = QUEUE_ID_CNT.incrementAndGet();
         // We use an unboundedQ - the risk of running OUtOfMemory exists for a very large number of entries showing a more systematic problem...
         this.inflightEvents = new LinkedBlockingQueue<Long>();
@@ -125,35 +128,58 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         transientInflightQRowIdCache.addRowId(lastInsertId);
     }
 
-    @Override
-    public List<T> getReadyEntries() {
-        final List<Long> recordIds = new ArrayList<Long>(MAX_FETCHED_ENTRIES);
-        inflightEvents.drainTo(recordIds, MAX_FETCHED_ENTRIES);
-        if (recordIds.isEmpty()) {
+    private long pollEntriesFromInflightQ(final List<Long> result) {
+
+        long pollSleepTime = 0;
+        inflightEvents.drainTo(result, config.getMaxInFlightEntries());
+        if (result.isEmpty()) {
             try {
-                // We block until we see the first entry or reach the timeout (in which case we will rerun the doProcessEvents() loop and come back here).
+                long beforePollTime = System.nanoTime();
+                // We block until we see the first entry or reach the timeout (in which case we will rerun the doDispatchEvents() loop and come back here).
                 final Long entryId = inflightEvents.poll(INFLIGHT_POLLING_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
+                // Maybe there was at least one entry and we did not sleep at all, in which case this time is close to 0.
+                pollSleepTime = System.nanoTime() - beforePollTime;
                 if (entryId != null) {
-                    recordIds.add(entryId);
+                    result.add(entryId);
                 }
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("{} Got interrupted", DB_QUEUE_LOG_ID);
-                return ImmutableList.of();
+                return 0;
             }
         }
+        return pollSleepTime;
+    }
 
+    @Override
+    public ReadyEntriesWithMetrics<T> getReadyEntries() {
+
+        final long ini = System.nanoTime();
+        long pollSleepTime = 0;
+
+        final List<Long> recordIds = new ArrayList<Long>(config.getMaxInFlightEntries());
+        do {
+            pollSleepTime += pollEntriesFromInflightQ(recordIds);
+        } while (recordIds.size() < config.getMinInFlightEntries() && pollSleepTime < INFLIGHT_POLLING_TIMEOUT_MSEC);
+
+
+        List<T> entries = ImmutableList.<T>of();
         if (!recordIds.isEmpty()) {
             log.debug("{} fetchReadyEntriesFromIds: {}", DB_QUEUE_LOG_ID, recordIds);
 
-            return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
+            entries = executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
                 @Override
                 public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
-                    return queueSqlDao.getEntriesFromIds(recordIds, config.getTableName());
+
+                    long ini = System.nanoTime();
+                    final List<T> result = queueSqlDao.getEntriesFromIds(recordIds, config.getTableName());
+                    rawGetEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+                    return result;
                 }
             });
         }
-        return ImmutableList.<T>of();
+        return new ReadyEntriesWithMetrics<T>(entries, (System.nanoTime() - ini) - pollSleepTime);
+
     }
 
     @Override
