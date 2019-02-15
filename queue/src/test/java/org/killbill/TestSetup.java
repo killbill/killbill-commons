@@ -116,6 +116,8 @@ public class TestSetup {
 
     @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
+        CreatorName.reset();
+        System.clearProperty(CreatorName.QUEUE_CREATOR_NAME);
         embeddedDB.cleanupAllTables();
         clock.resetDeltaFromReality();
         metricRegistry.removeMatching(MetricFilter.ALL);

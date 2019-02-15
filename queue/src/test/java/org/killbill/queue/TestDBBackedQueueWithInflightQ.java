@@ -63,7 +63,7 @@ public class TestDBBackedQueueWithInflightQ extends TestSetup {
         // Insert entries prior initialization
         for (int i = 0; i < NB_ENTRIES; i++) {
             final BusEventModelDao input = createEntry(new Long(i + 5));
-            queue.insertEntry(input);
+            sqlDao.insertEntry(input, config.getTableName());
         }
 
         final long readyEntries = queue.getNbReadyEntries();
@@ -81,7 +81,7 @@ public class TestDBBackedQueueWithInflightQ extends TestSetup {
     }
 
     private BusEventModelDao createEntry(final Long searchKey1) {
-        return createEntry(searchKey1, OWNER);
+        return createEntry(searchKey1, CreatorName.get());
     }
 
     private PersistentBusConfig createConfig() {
@@ -98,7 +98,7 @@ public class TestDBBackedQueueWithInflightQ extends TestSetup {
 
             @Override
             public int getMaxEntriesClaimed() {
-                return 0;
+                return 100;
             }
 
             @Override
