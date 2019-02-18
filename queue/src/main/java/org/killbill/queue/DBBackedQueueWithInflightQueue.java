@@ -226,8 +226,6 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
                 final boolean result = inflightEvents.offer(entry);
                 if (result) {
                     log.debug("{} Inserting entry {} into inflightQ", DB_QUEUE_LOG_ID, entry);
-                    // Q overflowed, which means we will stop writing entries into the Q, and as a result, we will end up stop reading
-                    // from the Q and return to polling mode
                 } else {
                     log.warn("{} Inflight Q overflowed....", DB_QUEUE_LOG_ID, entry);
                 }

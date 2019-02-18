@@ -392,7 +392,7 @@ public class TestNotificationQueue extends TestSetup {
      *
      * @throws Exception
      */
-    @Test(groups = "slow", enabled=false)
+    @Test(groups = "slow")
     public void testMultipleHandlerNotification() throws Exception {
         final Map<NotificationEvent, Boolean> expectedNotificationsFred = new TreeMap<NotificationEvent, Boolean>();
         final Map<NotificationEvent, Boolean> expectedNotificationsBarney = new TreeMap<NotificationEvent, Boolean>();
@@ -574,7 +574,7 @@ public class TestNotificationQueue extends TestSetup {
         }
     }
 
-    @Test(groups = "slow", enabled=false)
+    @Test(groups = "slow")
     public void testRetryStateForNotifications() throws Exception {
         // 4 retries
         final NotificationQueueHandlerWithExceptions handlerDelegate = new NotificationQueueHandlerWithExceptions(ImmutableList.<Period>of(Period.millis(1),

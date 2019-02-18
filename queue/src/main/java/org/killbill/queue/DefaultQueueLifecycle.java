@@ -42,6 +42,9 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final long ONE_MILLION = 1000L * 1000L;
 
+    // Max sleep on the notificationQ before going through the full loop
+    private static final long MAX_SLEEP_TIME_MS = 100;
+
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
@@ -179,7 +182,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                     return;
                 }
 
-                final long MAX_SLEEP_TIME_MS = 100;
                 long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
                 while (remainingSleepTime > 0) {
                     final long curSleepTime =  remainingSleepTime > MAX_SLEEP_TIME_MS ? MAX_SLEEP_TIME_MS : remainingSleepTime;
