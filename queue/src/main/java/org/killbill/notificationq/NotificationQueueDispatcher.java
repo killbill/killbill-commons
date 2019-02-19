@@ -215,8 +215,8 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                 perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
             }
         }
-        final DateTime beforeProcessing = clock.getUTCNow();
 
+        final long beforeProcessing = System.nanoTime();
         try {
             handler.handleReadyNotification(key, notification.getEffectiveDate(), notification.getFutureUserToken(), notification.getSearchKey1(), notification.getSearchKey2());
         } catch (final RuntimeException e) {
@@ -224,8 +224,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         } finally {
             nbProcessedEvents.incrementAndGet();
             // Unclear if those stats should include failures
-            final DateTime afterProcessing = clock.getUTCNow();
-            perQueueHistogramProcessingTime.update(afterProcessing.getMillis() - beforeProcessing.getMillis());
+            perQueueHistogramProcessingTime.update(System.nanoTime() - beforeProcessing);
             processedNotificationsSinceStart.inc();
         }
     }
