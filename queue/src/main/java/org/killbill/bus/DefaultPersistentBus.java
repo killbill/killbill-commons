@@ -47,6 +47,9 @@ import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.DBBackedQueue;
+import org.killbill.queue.DBBackedQueue.ReadyEntriesWithMetrics;
+import org.killbill.queue.DBBackedQueueWithInflightQueue;
+import org.killbill.queue.DBBackedQueueWithPolling;
 import org.killbill.queue.DefaultQueueLifecycle;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
@@ -78,17 +81,22 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
     private final PersistentBusConfig config;
-    private final Timer dispatchTimer;
     private final Profiling<Iterable<BusEventModelDao>, RuntimeException> prof;
     private final BusReaper reaper;
 
     private final Dispatcher<BusEvent, BusEventModelDao> dispatcher;
+
+    // Time it takes to handle the bus request (going through multiple handles potentially)
+    private final Timer busHandlersProcessingTime;
+
+    private final AtomicBoolean isInitialized;
     private final AtomicBoolean isStarted;
     private final String dbBackedQId;
 
     private final BusCallableCallback busCallableCallback;
 
     private static final class EventBusDelegate extends EventBusThatThrowsException {
+
         public EventBusDelegate(final String busName) {
             super(busName);
         }
@@ -96,25 +104,29 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Inject
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
-        super("Bus", config);
+        super("Bus", config, metricRegistry);
         this.dbi = (DBI) dbi;
         this.clock = clock;
         this.config = config;
         this.dbBackedQId = "bus-" + config.getTableName();
-        this.dao = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi);
+        this.dao = config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS ?
+                   new DBBackedQueueWithInflightQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi) :
+                   new DBBackedQueueWithPolling<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry);
+
         this.prof = new Profiling<Iterable<BusEventModelDao>, RuntimeException>();
         final ThreadFactory busThreadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
                 return new Thread(new ThreadGroup(EVENT_BUS_GROUP_NAME),
-                        r,
-                        config.getTableName() + "-th");
+                                  r,
+                                  config.getTableName() + "-th");
             }
         };
 
-        this.dispatchTimer = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "dispatch"));
+        this.busHandlersProcessingTime = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "busHandlersProcessingTime"));
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
+        this.isInitialized = new AtomicBoolean(false);
         this.isStarted = new AtomicBoolean(false);
         this.reaper = new BusReaper(this.dao, config, clock);
 
@@ -122,12 +134,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         this.dispatcher = new Dispatcher<>(1, config, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new BlockingRejectionExecutionHandler(),
                                            clock, busCallableCallback, this);
 
-
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, ImmutableMap.<String, String>of("instanceName", "main")),
-                new MetricRegistry(), new DatabaseTransactionNotificationApi());
+             new MetricRegistry(), new DatabaseTransactionNotificationApi());
     }
 
     @Override
@@ -138,39 +149,44 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             return;
         }
 
-        if (isStarted.compareAndSet(false, true)) {
+        if (isInitialized.compareAndSet(false, true)) {
             dao.initialize();
             dispatcher.start();
             startQueue();
+
+            if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING || config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
+                reaper.start();
+            }
+            isStarted.set(true);
         }
 
-        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING || config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
-            reaper.start();
-        }
     }
 
     @Override
     public void stop() {
         if (isStarted.compareAndSet(true, false)) {
+            isInitialized.set(false);
+            dao.close();
             stopQueue();
             dispatcher.stop();
+            reaper.stop();
         }
-
-        reaper.stop();
     }
 
     @Override
-    public int doProcessEvents() {
-        final List<BusEventModelDao> events = dao.getReadyEntries();
+    public DispatchResultMetrics doDispatchEvents() {
+        final ReadyEntriesWithMetrics<BusEventModelDao> eventsWithMetrics = dao.getReadyEntries();
+        final List<BusEventModelDao> events = eventsWithMetrics.getEntries();
         if (events.isEmpty()) {
-            return 0;
+            return new DispatchResultMetrics(0, eventsWithMetrics.getTime());
         }
         log.debug("Bus events from {} to process: {}", config.getTableName(), events);
 
+        long ini = System.nanoTime();
         for (final BusEventModelDao cur : events) {
             dispatcher.dispatch(cur);
         }
-        return events.size();
+        return new DispatchResultMetrics(events.size(), (System.nanoTime() - ini) + eventsWithMetrics.getTime());
     }
 
     @Override
@@ -216,7 +232,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             if (isStarted.get()) {
                 final String json = objectMapper.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), json,
-                        event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
+                                                                    event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
 
             } else {
@@ -243,7 +259,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }
 
         final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(),
-                clock.getUTCNow(),
+                                                            clock.getUTCNow(),
                                                             event.getClass().getName(),
                                                             json,
                                                             event.getUserToken(),
@@ -355,7 +371,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
-        final Timer.Context dispatchTimerContext = dispatchTimer.time();
+        final Timer.Context dispatchTimerContext = busHandlersProcessingTime.time();
         try {
             eventBusDelegate.postWithException(event);
         } finally {

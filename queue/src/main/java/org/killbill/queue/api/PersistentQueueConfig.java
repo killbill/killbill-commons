@@ -36,6 +36,10 @@ public interface PersistentQueueConfig {
 
     PersistentQueueMode getPersistentQueueMode();
 
+    int getMinInFlightEntries();
+
+    int getMaxInFlightEntries();
+
     int getMaxEntriesClaimed();
 
     TimeSpan getClaimedTime();

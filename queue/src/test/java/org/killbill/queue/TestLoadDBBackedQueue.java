@@ -30,6 +30,7 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.queue.DBBackedQueue.ReadyEntriesWithMetrics;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
@@ -53,13 +54,13 @@ public class TestLoadDBBackedQueue extends TestSetup {
     private DBBackedQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;
 
-    @BeforeClass(groups = "slow")
+    @BeforeClass(groups = "load")
     public void beforeClass() throws Exception {
         super.beforeClass();
         sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
     }
 
-    @BeforeMethod(groups = "slow")
+    @BeforeMethod(groups = "load")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
@@ -74,7 +75,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
         final int CLAIMED_EVENTS = 10;
 
         final PersistentBusConfig config = createConfig(CLAIMED_EVENTS, -1, PersistentQueueMode.POLLING);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "perf-bus_event", metricRegistry, null);
+        queue = new DBBackedQueueWithPolling<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "perf-bus_event", metricRegistry);
         queue.initialize();
 
 
@@ -91,7 +92,8 @@ public class TestLoadDBBackedQueue extends TestSetup {
         for (int i = 0; i < NB_EVENTS / CLAIMED_EVENTS; i++) {
 
             final long t1 = System.nanoTime();
-            final List<BusEventModelDao> ready = queue.getReadyEntries();
+            final ReadyEntriesWithMetrics<BusEventModelDao> result = queue.getReadyEntries();
+            final List<BusEventModelDao> ready = result.getEntries();
             assertEquals(ready.size(), CLAIMED_EVENTS);
             final long t2 = System.nanoTime();
             cumlGetReadyEntries += (t2 - t1);
@@ -119,7 +121,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
 
         final int nbEntries = 10000;
         final PersistentBusConfig config = createConfig(10, nbEntries, PersistentQueueMode.STICKY_EVENTS);
-        queue = new DBBackedQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
+        queue = new DBBackedQueueWithInflightQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "multipleReaderMultipleWriter-bus_event", metricRegistry, databaseTransactionNotificationApi);
         queue.initialize();
         for (int i = 0; i < nbEntries; i++) {
             final BusEventModelDao input = createEntry(new Long(i + 5));
@@ -158,10 +160,6 @@ public class TestLoadDBBackedQueue extends TestSetup {
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 1000, OWNER, "bus_events");
         assertEquals(ready.size(), 0);
 
-        log.info("Got inflightProcessed = " + queue.getTotalInflightFetched() + "/1000, inflightWritten = " + queue.getTotalInflightInsert() + "/1000");
-        assertEquals(queue.getTotalInsert(), nbEntries);
-        assertEquals(queue.getTotalInflightFetched(), nbEntries);
-        assertEquals(queue.getTotalInflightInsert(), nbEntries);
     }
 
 
@@ -182,7 +180,8 @@ public class TestLoadDBBackedQueue extends TestSetup {
         @Override
         public void run() {
             do {
-                final List<BusEventModelDao> entries = queue.getReadyEntries();
+                final ReadyEntriesWithMetrics<BusEventModelDao> result = queue.getReadyEntries();
+                final List<BusEventModelDao> entries = result.getEntries();
                 if (entries.isEmpty()) {
                     try {
                         Thread.sleep(10);
@@ -216,63 +215,58 @@ public class TestLoadDBBackedQueue extends TestSetup {
             public boolean isInMemory() {
                 return false;
             }
-
-
             @Override
             public int getMaxFailureRetries() {
                 return 0;
             }
-
+            @Override
+            public int getMinInFlightEntries() {
+                return 1;
+            }
+            @Override
+            public int getMaxInFlightEntries() {
+                return claimed;
+            }
             @Override
             public int getMaxEntriesClaimed() {
                 return claimed;
             }
-
             @Override
             public PersistentQueueMode getPersistentQueueMode() {
                 return mode;
             }
-
             @Override
             public TimeSpan getClaimedTime() {
                 return new TimeSpan("5m");
             }
-
             @Override
             public long getPollingSleepTimeMs() {
                 return 100;
             }
-
             @Override
             public boolean isProcessingOff() {
                 return false;
             }
-
             @Override
             public int geMaxDispatchThreads() {
                 return 0;
             }
-
             @Override
             public int getEventQueueCapacity() {
                 return qCapacity;
             }
-
             @Override
             public String getTableName() {
                 return "bus_events";
             }
-
             @Override
             public String getHistoryTableName() {
                 return "bus_events_history";
             }
-
             @Override
             public TimeSpan getReapThreshold() {
                 return new TimeSpan(5, TimeUnit.MINUTES);
             }
-
             @Override
             public int getMaxReDispatchCount() {
                 return 10;

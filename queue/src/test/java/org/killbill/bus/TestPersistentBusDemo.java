@@ -68,7 +68,7 @@ public class TestPersistentBusDemo {
         properties.setProperty("org.killbill.persistent.bus.main.inMemory", "false");
         properties.setProperty("org.killbill.persistent.bus.main.queue.mode", "STICKY_POLLING");
         properties.setProperty("org.killbill.persistent.bus.main.max.failure.retry", "3");
-        properties.setProperty("org.killbill.persistent.bus.main.claimed", "1");
+        properties.setProperty("org.killbill.persistent.bus.main.claimed", "100");
         properties.setProperty("org.killbill.persistent.bus.main.claim.time", "5m");
         properties.setProperty("org.killbill.persistent.bus.main.sleep", "100");
         properties.setProperty("org.killbill.persistent.bus.main.off", "false");

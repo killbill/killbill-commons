@@ -40,6 +40,18 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract int getMaxFailureRetries();
 
     @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.min")
+    @Default("1")
+    @Description("Min number of bus events to fetch from the database at once (only valid in 'STICKY_EVENTS')")
+    public abstract int getMinInFlightEntries();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.max")
+    @Default("100")
+    @Description("Max number of bus events to fetch from the database at once (only valid in 'STICKY_EVENTS')")
+    public abstract int getMaxInFlightEntries();
+
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.claimed")
     @Default("10")
     @Description("Number of bus events to fetch from the database at once (only valid in 'polling mode')")
