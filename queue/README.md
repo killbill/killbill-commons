@@ -106,6 +106,8 @@ see `getMaxFailureRetries` in the config): `processing_state` is updated back to
 
 After the number of retries is exhausted, the `processing_state` is updated to the final state `FAILED` and the entry is moved to the history table.
 
+Because of these retries, it is important that the queue handlers are idempotent.
+
 ### State transitions
 
 ![State transitions](doc/queue_states.png?raw=true "State transitions")
