@@ -1,0 +1,18 @@
+digraph State {
+    subgraph cluster_1 {
+      style=invis;
+
+      node_1 [style=filled color=grey label=AVAILABLE];
+      node_2 [label=IN_PROCESSING];
+      node_3 [style=filled color=grey label=PROCESSED];
+      node_4 [style=filled color=grey label=FAILED];
+      node_5 [style=filled color=grey label=REMOVED];
+      node_6 [style=filled color=grey label=REAPED];
+      node_1 -> node_2 [color=black];
+      node_2 -> node_3 [label="" color=green];
+      node_2 -> node_4 [label=<errorCount&gt;maxFailureRetries> color=red];
+      node_2 -> node_1 [label="" color=red];
+      node_1 -> node_5 [label=<API> color=orange style=dotted];
+      node_1 -> node_6 [label=<Reaper> color=blue style=dotted];
+    }
+}

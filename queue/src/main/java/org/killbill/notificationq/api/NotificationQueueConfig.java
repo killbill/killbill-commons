@@ -29,7 +29,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.notificationq.${instanceName}.inMemory")
     @Default("false")
-    @Description("Whether the implementation should be an in memory (set to false, not available for NotificationQueue)")
+    @Description("Set to false, not available for NotificationQueue")
     public abstract boolean isInMemory();
 
     @Override
@@ -47,7 +47,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.mode")
     @Default("STICKY_POLLING")
-    @Description("Number of bus events to dispatch from the inflightQ at once")
+    @Description("How entries are put in the queue")
     public abstract PersistentQueueMode getPersistentQueueMode();
 
     @Override
