@@ -29,6 +29,7 @@ import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -81,12 +82,20 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.retriedEvents = new LinkedBlockingQueue<>();
         this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
 
-        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, "dispatchTime"));
-        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, "completeTime"));
+        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchTime"));
+        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeTime"));
 
-        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, "dispatchedEntries"));
-        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, "completeEntries"));
+        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchedEntries"));
+        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeEntries"));
+
+        metricRegistry.register(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
+            @Override
+            public Integer getValue() {
+                return completedOrFailedEvents.size();
+            }
+        });
     }
+
 
     @Override
     public boolean startQueue() {
