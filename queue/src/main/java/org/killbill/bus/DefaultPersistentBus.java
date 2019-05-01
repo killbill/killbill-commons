@@ -104,11 +104,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Inject
     public DefaultPersistentBus(@Named(QUEUE_NAME) final IDBI dbi, final Clock clock, final PersistentBusConfig config, final MetricRegistry metricRegistry, final DatabaseTransactionNotificationApi databaseTransactionNotificationApi) {
-        super("Bus", config, metricRegistry);
+        super(config.getTableName(), config, metricRegistry);
         this.dbi = (DBI) dbi;
         this.clock = clock;
         this.config = config;
-        this.dbBackedQId = "bus-" + config.getTableName();
+        this.dbBackedQId = config.getTableName();
         this.dao = config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS ?
                    new DBBackedQueueWithInflightQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi) :
                    new DBBackedQueueWithPolling<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry);
@@ -123,7 +123,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             }
         };
 
-        this.busHandlersProcessingTime = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, "busHandlersProcessingTime"));
+        this.busHandlersProcessingTime = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, dbBackedQId, "busHandlersProcessingTime"));
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isInitialized = new AtomicBoolean(false);

@@ -84,13 +84,13 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.retriedEvents = new LinkedBlockingQueue<>();
         this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
 
-        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, "dispatchTime"));
-        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, "completeTime"));
+        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchTime"));
+        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeTime"));
 
-        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, "dispatchedEntries"));
-        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, "completeEntries"));
+        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchedEntries"));
+        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeEntries"));
 
-        metricRegistry.register(MetricRegistry.name(DefaultQueueLifecycle.class, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
+        metricRegistry.register(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
             @Override
             public Integer getValue() {
                 return completedOrFailedEvents.size();
