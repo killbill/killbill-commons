@@ -88,6 +88,18 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     public abstract int geMaxDispatchThreads();
 
     @Override
+    @Config("org.killbill.notificationq.${instanceName}.lifecycle.dispatch.nbThreads")
+    @Default("1")
+    @Description("Max number of lifecycle dispatch threads to use")
+    public abstract int geNbLifecycleDispatchThreads();
+
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.lifecycle.complete.nbThreads")
+    @Default("2")
+    @Description("Max number of lifecycle complete threads to use")
+    public abstract int geNbLifecycleCompleteThreads();
+
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
     @Default("100")
     @Description("Capacity for the worker queue")

@@ -52,6 +52,10 @@ public interface PersistentQueueConfig {
 
     int geMaxDispatchThreads();
 
+    int geNbLifecycleDispatchThreads();
+
+    int geNbLifecycleCompleteThreads();
+
     String getTableName();
 
     String getHistoryTableName();
