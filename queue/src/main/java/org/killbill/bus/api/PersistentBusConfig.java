@@ -60,7 +60,7 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.queue.mode")
     @Default("STICKY_EVENTS")
-    @Description("Number of bus events to dispatch from the inflightQ at once")
+    @Description("How entries are put in the queue")
     public abstract PersistentQueueMode getPersistentQueueMode();
 
     @Override

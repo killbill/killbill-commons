@@ -37,16 +37,33 @@ import org.skife.jdbi.v2.IDBI;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * A factory to create notification queues.
+ * An application will typically have a single instance and call <code>createNotificationQueue</code>
+ * to create one or several queues.
+ */
 public class DefaultNotificationQueueService extends NotificationQueueServiceBase {
 
     private final DBI dbi;
 
+    /**
+     * @param idbi           a DBI instance from the killbill-jdbi jar
+     * @param clock          a clock instance from the killbill-clock jar
+     * @param config         queues configuration
+     * @param metricRegistry DropWizard metrics registry instance
+     */
     @Inject
     public DefaultNotificationQueueService(@Named(QUEUE_NAME) final IDBI idbi, final Clock clock, final NotificationQueueConfig config, final MetricRegistry metricRegistry) {
         super(clock, config, idbi, metricRegistry);
         this.dbi = (DBI) idbi;
     }
 
+    /**
+     * Simple constructor when the DBI instance, clock or registry objects don't need to be configured
+     *
+     * @param dataSource JDBC datasource
+     * @param properties configuration properties
+     */
     public DefaultNotificationQueueService(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource),
              new DefaultClock(),
