@@ -70,7 +70,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     protected final DBBackedQueue<NotificationEventModelDao> dao;
     protected final MetricRegistry metricRegistry;
 
-    private final Counter processedNotificationsSinceStart;
     private final Map<String, Histogram> perQueueProcessingTime;
 
     // We could event have one per queue is required...
@@ -102,11 +101,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.clock = clock;
         this.config = config;
         this.nbProcessedEvents = new AtomicLong();
-        this.dao = new DBBackedQueueWithPolling<NotificationEventModelDao>(clock, dbi, NotificationSqlDao.class, config, "notif-" + config.getTableName(), metricRegistry);
+        this.dao = new DBBackedQueueWithPolling<NotificationEventModelDao>(clock, dbi, NotificationSqlDao.class, config, config.getTableName(), metricRegistry);
 
         this.queues = new TreeMap<String, NotificationQueue>();
 
-        this.processedNotificationsSinceStart = metricRegistry.counter(MetricRegistry.name(NotificationQueueDispatcher.class, "processed-notifications-since-start"));
         this.perQueueProcessingTime = new HashMap<String, Histogram>();
 
         this.metricRegistry = metricRegistry;
@@ -225,7 +223,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             nbProcessedEvents.incrementAndGet();
             // Unclear if those stats should include failures
             perQueueHistogramProcessingTime.update(System.nanoTime() - beforeProcessing);
-            processedNotificationsSinceStart.inc();
         }
     }
 

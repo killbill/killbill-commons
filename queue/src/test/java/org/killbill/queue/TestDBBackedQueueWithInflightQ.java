@@ -124,6 +124,17 @@ public class TestDBBackedQueueWithInflightQ extends TestSetup {
             public int geMaxDispatchThreads() {
                 return 1;
             }
+
+            @Override
+            public int geNbLifecycleDispatchThreads() {
+                return 1;
+            }
+
+            @Override
+            public int geNbLifecycleCompleteThreads() {
+                return 1;
+            }
+
             @Override
             public int getEventQueueCapacity() {
                 return -1;
