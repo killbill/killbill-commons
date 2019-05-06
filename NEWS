@@ -1,3 +1,6 @@
+0.23.1
+    Queue perf improvements
+
 0.23.0
     Remork bus and notificationQ (simplify logic, minimize DB queries, improve internal metrics)
 
