@@ -82,7 +82,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     // Package visibility on purpose
     NotificationQueueDispatcher(final Clock clock, final NotificationQueueConfig config, final IDBI dbi, final MetricRegistry metricRegistry) {
-        super("NotificationQ", config, metricRegistry);
+        super(config.getTableName(), config, metricRegistry);
         final ThreadFactory notificationQThreadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
