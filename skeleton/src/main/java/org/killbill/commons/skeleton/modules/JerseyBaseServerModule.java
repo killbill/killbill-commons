@@ -1,7 +1,9 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -45,7 +47,7 @@ public class JerseyBaseServerModule extends BaseServerModule {
     static final String JERSEY_DISABLE_ENTITYLOGGING = "com.sun.jersey.config.feature.logging.DisableEntitylogging";
 
     // See com.sun.jersey.api.core.ResourceConfig
-    private final ImmutableMap.Builder<String, String> jerseyParams;
+    protected final ImmutableMap.Builder<String, String> jerseyParams;
 
     public JerseyBaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
                                   final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex,
@@ -99,8 +101,12 @@ public class JerseyBaseServerModule extends BaseServerModule {
         // Catch-all resources
         if (!jaxrsResources.isEmpty()) {
             jerseyParams.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
-            serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
+            serveJaxrsResources();
         }
+    }
+
+    protected void serveJaxrsResources() {
+        serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
     }
 
     @VisibleForTesting
