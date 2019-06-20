@@ -1292,7 +1292,7 @@ public abstract class SQLStatement<SelfType extends SQLStatement<SelfType>> exte
         }
     }
 
-    protected <Result> Result internalExecute(final QueryResultMunger<Result> munger)
+    protected <Result> Result internalExecute(final QueryResultMunger<Result> munger, final String[] columnNames)
     {
         final String located_sql = wrapLookup(sql);
         getConcreteContext().setLocatedSql(located_sql);
@@ -1303,7 +1303,7 @@ public abstract class SQLStatement<SelfType extends SQLStatement<SelfType>> exte
                 stmt = statementBuilder.createCall(handle.getConnection(), rewritten.getSql(), getContext());
             }
             else {
-                stmt = statementBuilder.create(handle.getConnection(), rewritten.getSql(), getContext());
+                stmt = statementBuilder.create(handle.getConnection(), rewritten.getSql(), columnNames, getContext());
             }
         }
         catch (SQLException e) {

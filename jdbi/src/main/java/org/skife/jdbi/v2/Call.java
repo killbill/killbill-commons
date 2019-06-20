@@ -101,7 +101,7 @@ public class Call extends SQLStatement<Call>
                     }
                     return out;
                 }
-            });
+            }, null);
         }
         finally {
             cleanup();

@@ -123,7 +123,7 @@ public class Query<ResultType> extends SQLStatement<Query<ResultType>> implement
                     }
                     return result_list;
                 }
-            });
+            }, null);
         }
         finally {
             cleanup();
@@ -158,7 +158,7 @@ public class Query<ResultType> extends SQLStatement<Query<ResultType>> implement
                     }
                     return null;
                 }
-            });
+            }, null);
             return acc.get();
         }
         finally {
@@ -185,7 +185,7 @@ public class Query<ResultType> extends SQLStatement<Query<ResultType>> implement
                     }
                     return ac;
                 }
-            });
+            }, null);
         }
         finally {
             cleanup();
@@ -222,7 +222,7 @@ public class Query<ResultType> extends SQLStatement<Query<ResultType>> implement
                     }
                     return null;
                 }
-            });
+            }, null);
             return acc.get();
         }
         finally {
@@ -247,7 +247,7 @@ public class Query<ResultType> extends SQLStatement<Query<ResultType>> implement
                                                                stmt,
                                                                getContext());
             }
-        });
+        }, null);
     }
 
     /**
