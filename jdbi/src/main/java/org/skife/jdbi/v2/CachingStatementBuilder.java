@@ -49,7 +49,7 @@ public class CachingStatementBuilder implements StatementBuilder
      * @return A new, or cached, PreparedStatement
      */
     @Override
-    public PreparedStatement create(Connection conn, String sql, StatementContext ctx) throws SQLException
+    public PreparedStatement create(Connection conn, String sql, String columnNames[], StatementContext ctx) throws SQLException
     {
         if (cache.containsKey(sql)) {
             PreparedStatement cached = cache.get(sql);
@@ -57,7 +57,7 @@ public class CachingStatementBuilder implements StatementBuilder
             return cached;
         }
 
-        PreparedStatement stmt = builder.create(conn, sql, ctx);
+        PreparedStatement stmt = builder.create(conn, sql, columnNames, ctx);
         cache.put(sql, stmt);
         return stmt;
     }
