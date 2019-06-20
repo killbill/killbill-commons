@@ -74,7 +74,7 @@ public class ColonPrefixNamedParamStatementRewriter implements StatementRewriter
         return new MyRewrittenStatement(stmt, ctx);
     }
 
-    ParsedStatement parseString(final String sql) throws IllegalArgumentException
+    protected ParsedStatement parseString(final String sql) throws IllegalArgumentException
     {
         ParsedStatement stmt = new ParsedStatement();
         StringBuilder b = new StringBuilder(sql.length());
@@ -184,7 +184,7 @@ public class ColonPrefixNamedParamStatementRewriter implements StatementRewriter
         }
     }
 
-    static class ParsedStatement
+    protected static class ParsedStatement
     {
         private String sql;
         private boolean positionalOnly = true;
