@@ -36,6 +36,7 @@ import org.skife.jdbi.v2.TimingCollector;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import org.skife.jdbi.v2.tweak.SQLLog;
+import org.skife.jdbi.v2.tweak.StatementBuilderFactory;
 import org.skife.jdbi.v2.tweak.StatementRewriter;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
@@ -58,6 +59,7 @@ public class DBIProvider implements Provider<IDBI> {
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
     private StatementRewriter statementRewriter;
+    private StatementBuilderFactory statementBuilderFactory;
 
     @Inject
     public DBIProvider(final DaoConfig config, final DataSource ds, final TransactionHandler transactionHandler) {
@@ -104,12 +106,21 @@ public class DBIProvider implements Provider<IDBI> {
         this.statementRewriter = statementRewriter;
     }
 
+    @Inject(optional = true)
+    public void setStatementBuilderFactory(final StatementBuilderFactory statementBuilderFactory) {
+        this.statementBuilderFactory = statementBuilderFactory;
+    }
+
     @Override
     public IDBI get() {
         final DBI dbi = new DBI(ds);
 
         if (statementRewriter != null) {
             dbi.setStatementRewriter(statementRewriter);
+        }
+
+        if (statementBuilderFactory != null) {
+            dbi.setStatementBuilderFactory(statementBuilderFactory);
         }
 
         for (final ArgumentFactory argumentFactory : argumentFactorySet) {
