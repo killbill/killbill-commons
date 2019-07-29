@@ -101,6 +101,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
                 entry.setCreatedDate(now);
                 entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
                 entry.setCreatingOwner(CreatorName.get());
+                entry.setProcessingOwner(null);
             }
             transactional.insertEntries(entriesLeftBehind, config.getTableName());
         }

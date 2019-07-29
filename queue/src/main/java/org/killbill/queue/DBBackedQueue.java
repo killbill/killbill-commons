@@ -20,7 +20,10 @@ package org.killbill.queue;
 
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -276,23 +279,33 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 final DateTime now = clock.getUTCNow();
-                final List<T> entriesLeftBehind = transactional.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, config.getTableName());
+                final String owner = CreatorName.get();
+                final List<T> entriesLeftBehind = transactional.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, owner, config.getTableName());
 
-                if (entriesLeftBehind.size() > 0) {
-                    final Iterable<T> entriesToMove = Iterables.transform(entriesLeftBehind, new Function<T, T>() {
-                        @Nullable
-                        @Override
-                        public T apply(@Nullable final T entry) {
-                            entry.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
-                            return entry;
-                        }
-                    });
-
-                    moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
-                    insertReapedEntriesFromTransaction(transactional, entriesLeftBehind, now);
-
-                    log.warn("{} {} entries were reaped by {}", DB_QUEUE_LOG_ID, entriesLeftBehind.size(), CreatorName.get());
+                if (entriesLeftBehind.isEmpty()) {
+                    return null;
                 }
+
+                final Collection<T> entriesToMove = new ArrayList<T>(entriesLeftBehind.size());
+                final List<T> entriesToReInsert = new ArrayList<T>(entriesLeftBehind.size());
+                for (final T entryLeftBehind : entriesLeftBehind) {
+                    if (owner.equals(entryLeftBehind.getProcessingOwner())) {
+                        // See https://github.com/killbill/killbill-commons/issues/47
+                        log.warn("{} reapEntries: stuck queue entry {}", DB_QUEUE_LOG_ID, entryLeftBehind);
+                    } else {
+                        // Fields will be reset appropriately in insertReapedEntriesFromTransaction
+                        entriesToReInsert.add(entryLeftBehind);
+
+                        // Set the status to REAPED in the history table
+                        entryLeftBehind.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
+                        entriesToMove.add(entryLeftBehind);
+                    }
+                }
+
+                moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
+                insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
+
+                log.warn("{} {} entries were reaped by {}", DB_QUEUE_LOG_ID, entriesToReInsert.size(), owner);
 
                 return null;
             }

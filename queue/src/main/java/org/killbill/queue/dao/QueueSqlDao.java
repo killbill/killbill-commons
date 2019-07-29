@@ -75,6 +75,7 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
     List<T> getEntriesLeftBehind(@Bind("max") int max,
                                  @Bind("now") Date now,
                                  @Bind("reapingDate") Date reapingDate,
+                                 @Bind("owner") String owner,
                                  @Define("tableName") final String tableName);
 
     @SqlUpdate
