@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 import org.killbill.commons.jdbi.binder.SmartBindBean;
 import org.killbill.commons.jdbi.template.KillBillSqlDaoStringTemplate;
 import org.skife.jdbi.v2.sqlobject.Bind;
+import org.skife.jdbi.v2.sqlobject.GetGeneratedKeys;
 import org.skife.jdbi.v2.sqlobject.SqlBatch;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
@@ -35,18 +36,13 @@ import org.skife.jdbi.v2.sqlobject.customizers.Define;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 import org.skife.jdbi.v2.unstable.BindIn;
+import org.skife.jdbi.v2.util.LongMapper;
 
 @KillBillSqlDaoStringTemplate
 public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional<QueueSqlDao<T>>, CloseMe {
 
     @SqlQuery
     Long getMaxRecordId(@Define("tableName") final String tableName);
-
-    @SqlQuery
-    Long resetLastInsertId();
-
-    @SqlQuery
-    Long getLastInsertId();
 
     @SqlQuery
     T getByRecordId(@Bind("recordId") Long id,
@@ -110,9 +106,9 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
                        @Define("tableName") final String tableName);
 
     @SqlUpdate
-    void insertEntry(@SmartBindBean T evt,
+    @GetGeneratedKeys(value = LongMapper.class, columnName = "record_id")
+    Long insertEntry(@SmartBindBean T evt,
                      @Define("tableName") final String tableName);
-
 
     @SqlBatch
     @BatchChunkSize(100)
