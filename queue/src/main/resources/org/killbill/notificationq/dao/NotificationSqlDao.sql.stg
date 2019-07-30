@@ -15,10 +15,8 @@ extraValuesWithComma() ::= <<
 
 readyWhereClause(owner) ::= <<
     effective_date \<= :now
-    and processing_state != 'PROCESSED'
-    and processing_state != 'REMOVED'
+    and processing_state = 'AVAILABLE'
 <if(owner)>and creating_owner = '<owner>'<endif>
-    and processing_owner IS NULL
 >>
 
 reapWhereClause() ::= <<

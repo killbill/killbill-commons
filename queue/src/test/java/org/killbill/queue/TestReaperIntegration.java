@@ -176,8 +176,39 @@ public class TestReaperIntegration extends TestSetup {
         handler.assertSeenEvents(2);
     }
 
+
     @Test(groups = "slow")
-    public void testWithLateBus() throws EventBusException, JsonProcessingException, InterruptedException {
+    public void testWithLateBusOnThisNode() throws EventBusException, JsonProcessingException, InterruptedException {
+        final DateTime now = clock.getUTCNow();
+
+        // Verify bus is working
+        final BusEvent event1 = new DummyEvent();
+        bus.post(event1);
+        handler.waitFor(event1);
+        handler.assertSeenEvents(1);
+
+        // Insert old entry not yet processed by this node
+        final BusEvent event2 = new DummyEvent();
+        // PersistentQueueEntryLifecycleState.AVAILABLE would be more accurate, but this is just to trick the bus not to pick that entry up
+        sqlDao.insertEntry(createEntry(CreatorName.get(), null, now.minusHours(2), null, event2, PersistentQueueEntryLifecycleState.IN_PROCESSING), config.getTableName());
+        handler.ensureNotSeen(event2);
+        handler.assertSeenEvents(1);
+
+        // Post another event
+        final BusEvent event3 = new DummyEvent();
+        bus.post(event3);
+        handler.waitFor(event3);
+        handler.ensureNotSeen(event2);
+        handler.assertSeenEvents(2);
+
+        // The reaper will never reap it
+        clock.addDeltaFromReality(config.getReapThreshold().getMillis());
+        handler.ensureNotSeen(event2);
+        handler.assertSeenEvents(2);
+    }
+
+    @Test(groups = "slow")
+    public void testWithLateBusOnAnotherNode() throws EventBusException, JsonProcessingException, InterruptedException {
         final DateTime now = clock.getUTCNow();
 
         // Verify bus is working

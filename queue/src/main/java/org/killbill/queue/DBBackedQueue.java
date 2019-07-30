@@ -272,6 +272,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
+    // It is a good idea to monitor reapEntries in logs as these entries should rarely happen
     public void reapEntries(final Date reapingDate) {
         executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
@@ -287,9 +288,15 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                 final Collection<T> entriesToMove = new ArrayList<T>(entriesLeftBehind.size());
                 final List<T> entriesToReInsert = new ArrayList<T>(entriesLeftBehind.size());
                 for (final T entryLeftBehind : entriesLeftBehind) {
-                    if (owner.equals(entryLeftBehind.getProcessingOwner())) {
+                    // entryIsBeingProcessedByThisNode is a sign of a stuck entry on this node
+                    final boolean entryIsBeingProcessedByThisNode = owner.equals(entryLeftBehind.getProcessingOwner());
+                    // entryCreatedByThisNodeAndNeverProcessed is likely a sign of the queue being late
+                    final boolean entryCreatedByThisNodeAndNeverProcessed = owner.equals(entryLeftBehind.getCreatingOwner()) && entryLeftBehind.getProcessingOwner() == null;
+                    if (entryIsBeingProcessedByThisNode) {
                         // See https://github.com/killbill/killbill-commons/issues/47
                         log.warn("{} reapEntries: stuck queue entry {}", DB_QUEUE_LOG_ID, entryLeftBehind);
+                    } else if (entryCreatedByThisNodeAndNeverProcessed) {
+                        log.warn("{} reapEntries: late queue entries {}", DB_QUEUE_LOG_ID, entryLeftBehind);
                     } else {
                         // Fields will be reset appropriately in insertReapedEntriesFromTransaction
                         entriesToReInsert.add(entryLeftBehind);
@@ -303,7 +310,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                 if (!entriesToReInsert.isEmpty()) {
                     moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
                     insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
-                    log.warn("{} {} entries were reaped by {}: {}",
+                    log.warn("{} reapEntries: {} entries were reaped by {} {}",
                              DB_QUEUE_LOG_ID, entriesToReInsert.size(), owner, Iterables.<T, UUID>transform(entriesToReInsert,
                                                                                                             new Function<T, UUID>() {
                                                                                                                 @Override
