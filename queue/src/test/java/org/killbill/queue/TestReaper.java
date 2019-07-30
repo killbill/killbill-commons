@@ -81,10 +81,9 @@ public class TestReaper extends TestSetup {
 
         // Check ready entries
         final List<BusEventModelDao> readyEntries = sqlDao.getReadyEntries(now.toDate(), 10, CreatorName.get(), config.getTableName());
-        // One ready entry (STICKY_POLLING mode) and one (legacy) repeable entry
-        assertEquals(readyEntries.size(), 2);
+        // One ready entry (STICKY_POLLING mode)
+        assertEquals(readyEntries.size(), 1);
         assertEquals(readyEntries.get(0).getRecordId(), (Long) 1L);
-        assertEquals(readyEntries.get(1).getRecordId(), (Long) 5L);
 
         // Check ready and in processing entries
         final List<BusEventModelDao> readyOrInProcessingBeforeReaping = ImmutableList.<BusEventModelDao>copyOf(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
@@ -102,10 +101,9 @@ public class TestReaper extends TestSetup {
         queue.reapEntries(now.minus(config.getReapThreshold().getMillis()).toDate());
 
         final List<BusEventModelDao> readyEntriesAfterReaping = sqlDao.getReadyEntries(now.toDate(), 10, CreatorName.get(), config.getTableName());
-        assertEquals(readyEntriesAfterReaping.size(), 3);
+        assertEquals(readyEntriesAfterReaping.size(), 2);
         assertEquals(readyEntriesAfterReaping.get(0).getRecordId(), (Long) 1L);
-        assertEquals(readyEntriesAfterReaping.get(1).getRecordId(), (Long) 5L);
-        assertTrue(readyEntriesAfterReaping.get(2).getRecordId() > (Long) 6L);
+        assertTrue(readyEntriesAfterReaping.get(1).getRecordId() > (Long) 6L);
 
         final List<BusEventModelDao> readyOrInProcessingAfterReaping = ImmutableList.<BusEventModelDao>copyOf(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
         assertEquals(readyOrInProcessingAfterReaping.size(), 6);
@@ -130,13 +128,11 @@ public class TestReaper extends TestSetup {
                                          final String processingOwner,
                                          final DateTime createdDate,
                                          final PersistentQueueEntryLifecycleState state) {
-        // Take legacy reaper code out of the equation
-        final DateTime processingAvailableDate = createdDate.plusYears(1);
         return new BusEventModelDao(recordId,
                                     creatingOwner,
                                     processingOwner,
                                     createdDate,
-                                    processingAvailableDate,
+                                    createdDate, // Shouldn't matter
                                     state, String.class.getName(),
                                     "{}",
                                     0L,

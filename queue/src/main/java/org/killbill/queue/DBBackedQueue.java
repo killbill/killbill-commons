@@ -23,11 +23,9 @@ import java.sql.SQLWarning;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
@@ -118,6 +116,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     public static class ReadyEntriesWithMetrics<T extends EventEntryModelDao> {
+
         private final List<T> entries;
         private final long time;
 
@@ -252,7 +251,6 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
-
     protected Long safeInsertEntry(final QueueSqlDao<T> transactional, final T entry) {
         return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "QueueSqlDao:insert", new Profiling.WithProfilingCallback<Long, RuntimeException>() {
 
@@ -302,10 +300,18 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                     }
                 }
 
-                moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
-                insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
-
-                log.warn("{} {} entries were reaped by {}", DB_QUEUE_LOG_ID, entriesToReInsert.size(), owner);
+                if (!entriesToReInsert.isEmpty()) {
+                    moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
+                    insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
+                    log.warn("{} {} entries were reaped by {}: {}",
+                             DB_QUEUE_LOG_ID, entriesToReInsert.size(), owner, Iterables.<T, UUID>transform(entriesToReInsert,
+                                                                                                            new Function<T, UUID>() {
+                                                                                                                @Override
+                                                                                                                public UUID apply(final T input) {
+                                                                                                                    return input.getUserToken();
+                                                                                                                }
+                                                                                                            }));
+                }
 
                 return null;
             }
