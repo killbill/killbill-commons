@@ -74,7 +74,7 @@ public class TestReaper extends TestSetup {
         sqlDao.insertEntry(createEntry(3L, CreatorName.get(), CreatorName.get(), now, PersistentQueueEntryLifecycleState.IN_PROCESSING), config.getTableName());
         // Insert in-processing entry from another node (not yet reapable)
         sqlDao.insertEntry(createEntry(4L, "thatOtherNode", "thatOtherNode", now, PersistentQueueEntryLifecycleState.IN_PROCESSING), config.getTableName());
-        // Insert in-processing entry (reapable)
+        // Insert in-processing entry
         sqlDao.insertEntry(createEntryForReaping(5L, CreatorName.get(), CreatorName.get(), now, config.getReapThreshold().getMillis(), PersistentQueueEntryLifecycleState.IN_PROCESSING), config.getTableName());
         // Insert in-processing entry from another node (reapable)
         sqlDao.insertEntry(createEntryForReaping(6L, "thatOtherNode", "thatOtherNode", now, config.getReapThreshold().getMillis(), PersistentQueueEntryLifecycleState.IN_PROCESSING), config.getTableName());
