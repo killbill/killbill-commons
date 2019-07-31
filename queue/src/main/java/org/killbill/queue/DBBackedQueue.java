@@ -23,6 +23,7 @@ import java.sql.SQLWarning;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -287,6 +288,8 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
 
                 final Collection<T> entriesToMove = new ArrayList<T>(entriesLeftBehind.size());
                 final List<T> entriesToReInsert = new ArrayList<T>(entriesLeftBehind.size());
+                final List<T> stuckEntries = new LinkedList<T>();
+                final List<T> lateEntries = new LinkedList<T>();
                 for (final T entryLeftBehind : entriesLeftBehind) {
                     // entryIsBeingProcessedByThisNode is a sign of a stuck entry on this node
                     final boolean entryIsBeingProcessedByThisNode = owner.equals(entryLeftBehind.getProcessingOwner());
@@ -294,9 +297,9 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                     final boolean entryCreatedByThisNodeAndNeverProcessed = owner.equals(entryLeftBehind.getCreatingOwner()) && entryLeftBehind.getProcessingOwner() == null;
                     if (entryIsBeingProcessedByThisNode) {
                         // See https://github.com/killbill/killbill-commons/issues/47
-                        log.warn("{} reapEntries: stuck queue entry {}", DB_QUEUE_LOG_ID, entryLeftBehind);
+                        stuckEntries.add(entryLeftBehind);
                     } else if (entryCreatedByThisNodeAndNeverProcessed) {
-                        log.warn("{} reapEntries: late queue entries {}", DB_QUEUE_LOG_ID, entryLeftBehind);
+                        lateEntries.addAll(entriesLeftBehind);
                     } else {
                         // Fields will be reset appropriately in insertReapedEntriesFromTransaction
                         entriesToReInsert.add(entryLeftBehind);
@@ -305,6 +308,13 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                         entryLeftBehind.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
                         entriesToMove.add(entryLeftBehind);
                     }
+                }
+
+                if (!stuckEntries.isEmpty()) {
+                    log.warn("{} reapEntries: stuck queue entries {}", DB_QUEUE_LOG_ID, stuckEntries);
+                }
+                if (!lateEntries.isEmpty()) {
+                    log.warn("{} reapEntries: late queue entries {}", DB_QUEUE_LOG_ID, lateEntries);
                 }
 
                 if (!entriesToReInsert.isEmpty()) {
