@@ -116,9 +116,9 @@ public class TestNotificationSqlDao extends TestSetup {
 
 
         final DateTime nextAvailable = now.plusMinutes(5);
-        final int res = dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
+        final int res = dao.claimEntry(notification.getRecordId(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
         assertEquals(res, 1);
-        dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
+        dao.claimEntry(notification.getRecordId(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
 
         notification = dao.getByRecordId(notification.getRecordId(), notificationQueueConfig.getTableName());
         assertEquals(notification.getEventJson(), eventJson);

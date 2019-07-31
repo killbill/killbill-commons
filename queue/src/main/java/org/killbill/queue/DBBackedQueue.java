@@ -280,7 +280,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 final DateTime now = clock.getUTCNow();
                 final String owner = CreatorName.get();
-                final List<T> entriesLeftBehind = transactional.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, owner, config.getTableName());
+                final List<T> entriesLeftBehind = transactional.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, config.getTableName());
 
                 if (entriesLeftBehind.isEmpty()) {
                     return null;

@@ -151,7 +151,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
         });
 
         final long ini = System.nanoTime();
-        final int resultCount = queueSqlDao.claimEntries(recordIds, now, owner, nextAvailable, config.getTableName());
+        final int resultCount = queueSqlDao.claimEntries(recordIds, owner, nextAvailable, config.getTableName());
         rawClaimEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
 
         // We should ALWAYS see the same number since we are in STICKY_POLLING mode and there is only one thread claiming entries.
@@ -204,7 +204,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
         final Date nextAvailable = now.plus(config.getClaimedTime().getMillis()).toDate();
 
         final long ini = System.nanoTime();
-        final int claimEntry = queueSqlDao.claimEntry(entry.getRecordId(), now.toDate(), CreatorName.get(), nextAvailable, config.getTableName());
+        final int claimEntry = queueSqlDao.claimEntry(entry.getRecordId(), CreatorName.get(), nextAvailable, config.getTableName());
         rawClaimEntryTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
 
         final boolean claimed = (claimEntry == 1);
