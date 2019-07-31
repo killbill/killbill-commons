@@ -59,16 +59,8 @@ public class TestReaperIntegration extends TestSetup {
 
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        System.setProperty("org.killbill.queue.reap.schedule", "1s");
-
         super.beforeClass();
         sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
-    }
-
-    @AfterClass(groups = "slow")
-    public void afterClass() throws Exception {
-        super.afterClass();
-        System.clearProperty("org.killbill.queue.reap.schedule");
     }
 
     @BeforeMethod(groups = "slow")
@@ -439,6 +431,12 @@ public class TestReaperIntegration extends TestSetup {
             @Override
             public int getMaxReDispatchCount() {
                 return 10;
+            }
+
+            @Override
+            public TimeSpan getReapSchedule() {
+                // Aggressive on purpose
+                return new TimeSpan(1, TimeUnit.SECONDS);
             }
         };
     }

@@ -155,7 +155,11 @@ public class TestDBBackedQueueWithInflightQ extends TestSetup {
             public int getMaxReDispatchCount() {
                 return 10;
             }
+
+            @Override
+            public TimeSpan getReapSchedule() {
+                return new TimeSpan(3, TimeUnit.MINUTES);
+            }
         };
     }
-
 }

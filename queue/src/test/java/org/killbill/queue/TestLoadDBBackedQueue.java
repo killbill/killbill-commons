@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2018 Groupon, Inc
- * Copyright 2015-2018 The Billing Project, LLC
+ * Copyright 2015-2019 Groupon, Inc
+ * Copyright 2015-2019 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -282,7 +282,11 @@ public class TestLoadDBBackedQueue extends TestSetup {
             public int getMaxReDispatchCount() {
                 return 10;
             }
+
+            @Override
+            public TimeSpan getReapSchedule() {
+                return new TimeSpan(3, TimeUnit.MINUTES);
+            }
         };
     }
-
 }

@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -26,7 +28,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.killbill.bus.api.PersistentBus;
-
 
 public class TestInMemoryEventBus {
 
@@ -110,6 +111,11 @@ public class TestInMemoryEventBus {
             @Override
             public int getMaxReDispatchCount() {
                 return 10;
+            }
+
+            @Override
+            public TimeSpan getReapSchedule() {
+                return new TimeSpan(3, TimeUnit.MINUTES);
             }
         });
         testEventBusBase = new TestEventBusBase(busService);
