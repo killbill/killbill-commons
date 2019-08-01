@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -54,8 +54,8 @@ public class TestDispatcher {
             @Override
             public Thread newThread(final Runnable r) {
                 return new Thread(new ThreadGroup("TestGrp"),
-                        r,
-                        "test-grp--th");
+                                  r,
+                                  "test-grp--th");
             }
         };
 
@@ -64,7 +64,6 @@ public class TestDispatcher {
                                            null, callback, null);
         this.dispatcher.start();
     }
-
 
     @Test(groups = "fast")
     public void testBlockingRejectionHandler() {
@@ -213,38 +212,47 @@ public class TestDispatcher {
             public boolean isInMemory() {
                 return false;
             }
+
             @Override
             public int getMaxFailureRetries() {
                 return 0;
             }
+
             @Override
             public int getMinInFlightEntries() {
                 return 1;
             }
+
             @Override
             public int getMaxInFlightEntries() {
                 return 1;
             }
+
             @Override
             public int getMaxEntriesClaimed() {
                 return 1;
             }
+
             @Override
             public PersistentQueueMode getPersistentQueueMode() {
                 return PersistentQueueMode.STICKY_EVENTS;
             }
+
             @Override
             public TimeSpan getClaimedTime() {
                 return new TimeSpan("5m");
             }
+
             @Override
             public long getPollingSleepTimeMs() {
                 return 100;
             }
+
             @Override
             public boolean isProcessingOff() {
                 return false;
             }
+
             @Override
             public int geMaxDispatchThreads() {
                 return 1;
@@ -264,23 +272,31 @@ public class TestDispatcher {
             public int getEventQueueCapacity() {
                 return QUEUE_SIZE;
             }
+
             @Override
             public String getTableName() {
                 return "bus_events";
             }
+
             @Override
             public String getHistoryTableName() {
                 return "bus_events_history";
             }
+
             @Override
             public TimeSpan getReapThreshold() {
                 return new TimeSpan(5, TimeUnit.MINUTES);
             }
+
             @Override
             public int getMaxReDispatchCount() {
                 return 10;
             }
+
+            @Override
+            public TimeSpan getReapSchedule() {
+                return new TimeSpan(3, TimeUnit.MINUTES);
+            }
         };
     }
-
 }

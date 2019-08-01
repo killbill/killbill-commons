@@ -20,11 +20,13 @@ package org.killbill.queue;
 
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
@@ -115,6 +117,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
     }
 
     public static class ReadyEntriesWithMetrics<T extends EventEntryModelDao> {
+
         private final List<T> entries;
         private final long time;
 
@@ -249,7 +252,6 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
-
     protected Long safeInsertEntry(final QueueSqlDao<T> transactional, final T entry) {
         return prof.executeWithProfiling(ProfilingFeature.ProfilingFeatureType.DAO, "QueueSqlDao:insert", new Profiling.WithProfilingCallback<Long, RuntimeException>() {
 
@@ -271,27 +273,61 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         });
     }
 
+    // It is a good idea to monitor reapEntries in logs as these entries should rarely happen
     public void reapEntries(final Date reapingDate) {
         executeTransaction(new Transaction<Void, QueueSqlDao<T>>() {
             @Override
             public Void inTransaction(final QueueSqlDao<T> transactional, final TransactionStatus status) throws Exception {
                 final DateTime now = clock.getUTCNow();
+                final String owner = CreatorName.get();
                 final List<T> entriesLeftBehind = transactional.getEntriesLeftBehind(config.getMaxReDispatchCount(), now.toDate(), reapingDate, config.getTableName());
 
-                if (entriesLeftBehind.size() > 0) {
-                    final Iterable<T> entriesToMove = Iterables.transform(entriesLeftBehind, new Function<T, T>() {
-                        @Nullable
-                        @Override
-                        public T apply(@Nullable final T entry) {
-                            entry.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
-                            return entry;
-                        }
-                    });
+                if (entriesLeftBehind.isEmpty()) {
+                    return null;
+                }
 
+                final Collection<T> entriesToMove = new ArrayList<T>(entriesLeftBehind.size());
+                final List<T> entriesToReInsert = new ArrayList<T>(entriesLeftBehind.size());
+                final List<T> stuckEntries = new LinkedList<T>();
+                final List<T> lateEntries = new LinkedList<T>();
+                for (final T entryLeftBehind : entriesLeftBehind) {
+                    // entryIsBeingProcessedByThisNode is a sign of a stuck entry on this node
+                    final boolean entryIsBeingProcessedByThisNode = owner.equals(entryLeftBehind.getProcessingOwner());
+                    // entryCreatedByThisNodeAndNeverProcessed is likely a sign of the queue being late
+                    final boolean entryCreatedByThisNodeAndNeverProcessed = owner.equals(entryLeftBehind.getCreatingOwner()) && entryLeftBehind.getProcessingOwner() == null;
+                    if (entryIsBeingProcessedByThisNode) {
+                        // See https://github.com/killbill/killbill-commons/issues/47
+                        stuckEntries.add(entryLeftBehind);
+                    } else if (entryCreatedByThisNodeAndNeverProcessed) {
+                        lateEntries.addAll(entriesLeftBehind);
+                    } else {
+                        // Fields will be reset appropriately in insertReapedEntriesFromTransaction
+                        entriesToReInsert.add(entryLeftBehind);
+
+                        // Set the status to REAPED in the history table
+                        entryLeftBehind.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
+                        entriesToMove.add(entryLeftBehind);
+                    }
+                }
+
+                if (!stuckEntries.isEmpty()) {
+                    log.warn("{} reapEntries: stuck queue entries {}", DB_QUEUE_LOG_ID, stuckEntries);
+                }
+                if (!lateEntries.isEmpty()) {
+                    log.warn("{} reapEntries: late queue entries {}", DB_QUEUE_LOG_ID, lateEntries);
+                }
+
+                if (!entriesToReInsert.isEmpty()) {
                     moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
-                    insertReapedEntriesFromTransaction(transactional, entriesLeftBehind, now);
-
-                    log.warn("{} {} entries were reaped by {}", DB_QUEUE_LOG_ID, entriesLeftBehind.size(), CreatorName.get());
+                    insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
+                    log.warn("{} reapEntries: {} entries were reaped by {} {}",
+                             DB_QUEUE_LOG_ID, entriesToReInsert.size(), owner, Iterables.<T, UUID>transform(entriesToReInsert,
+                                                                                                            new Function<T, UUID>() {
+                                                                                                                @Override
+                                                                                                                public UUID apply(final T input) {
+                                                                                                                    return input.getUserToken();
+                                                                                                                }
+                                                                                                            }));
                 }
 
                 return null;

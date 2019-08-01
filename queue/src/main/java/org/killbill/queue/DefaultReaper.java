@@ -34,11 +34,7 @@ import org.slf4j.LoggerFactory;
 public abstract class DefaultReaper implements Reaper {
 
     static final long ONE_MINUTES_IN_MSEC = 60000;
-    static final long THREE_MINUTES_IN_MSEC = 3 * ONE_MINUTES_IN_MSEC;
     static final long FIVE_MINUTES_IN_MSEC = 5 * ONE_MINUTES_IN_MSEC;
-
-    static final String REAPER_SCHEDULE_PROP = "org.killbill.queue.reap.schedule";
-
 
     private final DBBackedQueue<?> dao;
     private final PersistentQueueConfig config;
@@ -66,9 +62,8 @@ public abstract class DefaultReaper implements Reaper {
             return;
         }
 
-
         final long reapThresholdMillis = getReapThreshold();
-        final long schedulePeriodMillis = getSchedulePeriod();
+        final long schedulePeriodMillis = config.getReapSchedule().getMillis();
 
         log.info("{}: Starting... reapThresholdMillis={}, schedulePeriodMillis={}",
                  threadScheduledExecutorName, reapThresholdMillis, schedulePeriodMillis);
@@ -129,16 +124,5 @@ public abstract class DefaultReaper implements Reaper {
         }
 
         return threshold;
-    }
-
-    long getSchedulePeriod() {
-        // Undocumented (across bus/notificationQ)
-        final String reapSchedule = System.getProperty(REAPER_SCHEDULE_PROP);
-        if (reapSchedule != null) {
-            final TimeSpan tmp = new TimeSpan(reapSchedule);
-            return tmp.getMillis();
-        } else {
-            return THREE_MINUTES_IN_MSEC;
-        }
     }
 }

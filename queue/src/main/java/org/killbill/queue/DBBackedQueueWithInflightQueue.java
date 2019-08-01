@@ -200,6 +200,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
             entry.setCreatedDate(now);
             entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
             entry.setCreatingOwner(CreatorName.get());
+            entry.setProcessingOwner(null);
             insertEntryFromTransaction(transactional, entry);
         }
     }

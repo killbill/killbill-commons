@@ -70,18 +70,25 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
 
     @Override
     public ReadyEntriesWithMetrics<T> getReadyEntries() {
-
         final long ini = System.nanoTime();
-        final List<T> entriesToClaim = fetchReadyEntries(config.getMaxEntriesClaimed());
+        final List<T> claimedEntries = executeTransaction(new Transaction<List<T>, QueueSqlDao<T>>() {
+            @Override
+            public List<T> inTransaction(final QueueSqlDao<T> queueSqlDao, final TransactionStatus status) throws Exception {
+                final DateTime now = clock.getUTCNow();
 
-        List<T> claimedEntries = ImmutableList.of();
-        if (!entriesToClaim.isEmpty()) {
-            log.debug("{} Entries to claim: {}", DB_QUEUE_LOG_ID, entriesToClaim);
-            claimedEntries = claimEntries(entriesToClaim);
-        }
-        return new ReadyEntriesWithMetrics(claimedEntries, System.nanoTime() - ini);
+                final List<T> entriesToClaim = fetchReadyEntries(now, config.getMaxEntriesClaimed(), queueSqlDao);
+
+                List<T> claimedEntries = ImmutableList.of();
+                if (!entriesToClaim.isEmpty()) {
+                    log.debug("{} Entries to claim: {}", DB_QUEUE_LOG_ID, entriesToClaim);
+                    claimedEntries = claimEntries(now, entriesToClaim, queueSqlDao);
+                }
+
+                return claimedEntries;
+            }
+        });
+        return new ReadyEntriesWithMetrics<T>(claimedEntries, System.nanoTime() - ini);
     }
-
 
     @Override
     public void updateOnError(final T entry) {
@@ -101,87 +108,82 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
                 entry.setCreatedDate(now);
                 entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
                 entry.setCreatingOwner(CreatorName.get());
+                entry.setProcessingOwner(null);
             }
             transactional.insertEntries(entriesLeftBehind, config.getTableName());
         }
     }
 
-    private List<T> fetchReadyEntries(int maxEntries) {
-        final Date now = clock.getUTCNow().toDate();
+    private List<T> fetchReadyEntries(final DateTime now, final int maxEntries, final QueueSqlDao<T> queueSqlDao) {
         final String owner = config.getPersistentQueueMode() == PersistentQueueMode.POLLING ? null : CreatorName.get();
-        return executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
-            @Override
-            public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
-
-                long ini = System.nanoTime();
-                final List<T> result = queueSqlDao.getReadyEntries(now, maxEntries, owner, config.getTableName());
-                rawGetEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
-                return result;
-            }
-        });
+        final long ini = System.nanoTime();
+        final List<T> result = queueSqlDao.getReadyEntries(now.toDate(), maxEntries, owner, config.getTableName());
+        rawGetEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+        return result;
     }
 
-
-    private List<T> claimEntries(final List<T> candidates) {
+    private List<T> claimEntries(final DateTime now, final List<T> candidates, final QueueSqlDao<T> queueSqlDao) {
         switch (config.getPersistentQueueMode()) {
             case POLLING:
-                return sequentialClaimEntries(candidates);
+                return sequentialClaimEntries(now, candidates, queueSqlDao);
 
             case STICKY_POLLING:
-                return batchClaimEntries(candidates);
+                return batchClaimEntries(now, candidates, queueSqlDao);
 
             default:
                 throw new IllegalStateException("Unsupported PersistentQueueMode " + config.getPersistentQueueMode());
         }
     }
 
-    private List<T> batchClaimEntries(final List<T> candidates) {
+    private List<T> batchClaimEntries(final DateTime utcNow, final List<T> candidates, final QueueSqlDao<T> queueSqlDao) {
         if (candidates.isEmpty()) {
             return ImmutableList.of();
         }
-        final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
+
+        final Date now = utcNow.toDate();
+        final Date nextAvailable = utcNow.plus(config.getClaimedTime().getMillis()).toDate();
+        final String owner = CreatorName.get();
         final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
             @Override
             public Long apply(final T input) {
                 return input.getRecordId();
             }
         });
-        final int resultCount = executeQuery(new Query<Integer, QueueSqlDao<T>>() {
-            @Override
-            public Integer execute(final QueueSqlDao<T> queueSqlDao) {
-                long ini = System.nanoTime();
-                final Integer result = queueSqlDao.claimEntries(recordIds, clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
-                rawClaimEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
-                return result;
-            }
-        });
+
+        final long ini = System.nanoTime();
+        final int resultCount = queueSqlDao.claimEntries(recordIds, owner, nextAvailable, config.getTableName());
+        rawClaimEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+
         // We should ALWAYS see the same number since we are in STICKY_POLLING mode and there is only one thread claiming entries.
         // We keep the 2 cases below for safety (code was written when this was MT-threaded), and we log with warn (will eventually remove it in the future)
         if (resultCount == candidates.size()) {
-            log.debug("{} batchClaimEntries claimed: {}", DB_QUEUE_LOG_ID, candidates);
+            log.debug("{} batchClaimEntries claimed (recordIds={}, now={}, nextAvailable={}, owner={}): {}",
+                      DB_QUEUE_LOG_ID, recordIds, now, nextAvailable, owner, candidates);
             return candidates;
-            // Nothing... the synchronized block let go another concurrent thread
-        } else if (resultCount == 0) {
-            log.warn("{} batchClaimEntries see 0 entries", DB_QUEUE_LOG_ID);
-            return ImmutableList.of();
         } else {
-            final List<T> maybeClaimedEntries = executeQuery(new Query<List<T>, QueueSqlDao<T>>() {
-                @Override
-                public List<T> execute(final QueueSqlDao<T> queueSqlDao) {
-                    return queueSqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+            final List<T> maybeClaimedEntries = queueSqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+            final StringBuilder stringBuilder = new StringBuilder();
+            for (int i = 0; i < maybeClaimedEntries.size(); i++) {
+                final T eventEntryModelDao = maybeClaimedEntries.get(i);
+                if (i > 0) {
+                    stringBuilder.append(",");
                 }
-            });
+                stringBuilder.append("[recordId=").append(eventEntryModelDao.getRecordId())
+                             .append(",processingState=").append(eventEntryModelDao.getProcessingState())
+                             .append(",processingOwner=").append(eventEntryModelDao.getProcessingOwner())
+                             .append(",processingAvailableDate").append(eventEntryModelDao.getNextAvailableDate())
+                             .append("]");
+            }
+            log.warn("{} batchClaimEntries only claimed partial entries {}/{} (now={}, nextAvailable={}, owner={}): {}",
+                     DB_QUEUE_LOG_ID, resultCount, candidates.size(), now, nextAvailable, owner, stringBuilder.toString());
+
             final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
                 public boolean apply(final T input) {
-                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && input.getProcessingOwner().equals(CreatorName.get());
+                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && owner.equals(input.getProcessingOwner());
                 }
             });
-
-            final List<T> result = ImmutableList.<T>copyOf(claimed);
-
-            log.warn("{} batchClaimEntries only claimed partial entries {}/{}", DB_QUEUE_LOG_ID, result.size(), candidates.size());
-            return result;
+            return ImmutableList.<T>copyOf(claimed);
         }
     }
 
@@ -189,32 +191,26 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
     // In non sticky mode, we don't optimize claim update because we can't synchronize easily -- we could rely on global lock,
     // but we are looking for performance and that does not the right choice.
     //
-    private List<T> sequentialClaimEntries(final List<T> candidates) {
+    private List<T> sequentialClaimEntries(final DateTime now, final List<T> candidates, final QueueSqlDao<T> queueSqlDao) {
         return ImmutableList.<T>copyOf(Collections2.filter(candidates, new Predicate<T>() {
             @Override
             public boolean apply(final T input) {
-                return claimEntry(input);
+                return claimEntry(now, input, queueSqlDao);
             }
         }));
     }
 
-    private boolean claimEntry(final T entry) {
-        final Date nextAvailable = clock.getUTCNow().plus(config.getClaimedTime().getMillis()).toDate();
-        final int claimEntry = executeQuery(new Query<Integer, QueueSqlDao<T>>() {
-            @Override
-            public Integer execute(final QueueSqlDao<T> queueSqlDao) {
-                long ini = System.nanoTime();
-                final Integer result = queueSqlDao.claimEntry(entry.getRecordId(), clock.getUTCNow().toDate(), CreatorName.get(), nextAvailable, config.getTableName());
-                rawClaimEntryTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
-                return result;
-            }
-        });
-        final boolean claimed = (claimEntry == 1);
+    private boolean claimEntry(final DateTime now, final T entry, final QueueSqlDao<T> queueSqlDao) {
+        final Date nextAvailable = now.plus(config.getClaimedTime().getMillis()).toDate();
 
+        final long ini = System.nanoTime();
+        final int claimEntry = queueSqlDao.claimEntry(entry.getRecordId(), CreatorName.get(), nextAvailable, config.getTableName());
+        rawClaimEntryTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+
+        final boolean claimed = (claimEntry == 1);
         if (claimed) {
             log.debug("{} Claimed entry {}", DB_QUEUE_LOG_ID, entry);
         }
         return claimed;
     }
-
 }

@@ -79,14 +79,12 @@ public interface QueueSqlDao<T extends EventEntryModelDao> extends Transactional
 
     @SqlUpdate
     int claimEntry(@Bind("recordId") Long id,
-                   @Bind("now") Date now,
                    @Bind("owner") String owner,
                    @Bind("nextAvailable") Date nextAvailable,
                    @Define("tableName") final String tableName);
 
     @SqlUpdate
     int claimEntries(@BindIn("record_ids") final Collection<Long> recordIds,
-                     @Bind("now") Date now,
                      @Bind("owner") String owner,
                      @Bind("nextAvailable") Date nextAvailable,
                      @Define("tableName") final String tableName);

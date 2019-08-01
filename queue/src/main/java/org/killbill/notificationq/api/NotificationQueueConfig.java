@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2012 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -22,7 +24,6 @@ import org.skife.config.Description;
 import org.skife.config.TimeSpan;
 
 import org.killbill.queue.api.PersistentQueueConfig;
-
 
 public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
@@ -128,4 +129,10 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Default("10")
     @Description("Max number of notification to be re-dispatched at a time")
     public abstract int getMaxReDispatchCount();
+
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.reapSchedule")
+    @Default("3m")
+    @Description("Reaper schedule period")
+    public abstract TimeSpan getReapSchedule();
 }
