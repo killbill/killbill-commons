@@ -171,7 +171,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
                 stringBuilder.append("[recordId=").append(eventEntryModelDao.getRecordId())
                              .append(",processingState=").append(eventEntryModelDao.getProcessingState())
                              .append(",processingOwner=").append(eventEntryModelDao.getProcessingOwner())
-                             .append(",processingAvailableDate").append(eventEntryModelDao.getNextAvailableDate())
+                             .append(",processingAvailableDate=").append(eventEntryModelDao.getNextAvailableDate())
                              .append("]");
             }
             log.warn("{} batchClaimEntries only claimed partial entries {}/{} (now={}, nextAvailable={}, owner={}): {}",
