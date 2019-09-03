@@ -269,7 +269,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         final InTransaction.InTransactionHandler<PersistentBusSqlDao, Void> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Void>() {
 
             @Override
-            public Void withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+            public Void withSqlDao(final PersistentBusSqlDao transactional) {
                 dao.insertEntryFromTransaction(transactional, entry);
                 return null;
             }
@@ -287,7 +287,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) {
                 return getAvailableBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
@@ -303,7 +303,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableBusEventsFromTransactionForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) {
                 return getAvailableBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
@@ -324,7 +324,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) {
                 return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, null, searchKey1, searchKey2);
             }
         };
@@ -340,7 +340,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public <T extends BusEvent> Iterable<BusEventWithMetadata<T>> getAvailableOrInProcessingBusEventsFromTransactionForSearchKey2(final DateTime maxCreatedDate, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<PersistentBusSqlDao, Iterable<BusEventWithMetadata<T>>>() {
             @Override
-            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) throws Exception {
+            public Iterable<BusEventWithMetadata<T>> withSqlDao(final PersistentBusSqlDao transactional) {
                 return getAvailableOrInProcessingBusEventsForSearchKeysInternal(transactional, maxCreatedDate, null, searchKey2);
             }
         };
