@@ -26,6 +26,7 @@ import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.QueueLifecycle;
 import org.killbill.queue.dao.EventEntryModelDao;
+import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -185,33 +186,38 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                         break;
                     }
 
-                    long ini = System.nanoTime();
-                    long pollSleepTime = 0;
-                    final List<EventEntryModelDao> completed = new ArrayList<>(MAX_COMPLETED_ENTRIES);
-                    completedOrFailedEvents.drainTo(completed, MAX_COMPLETED_ENTRIES);
-                    if (completed.isEmpty()) {
-                        long beforePollTime = System.nanoTime();
-                        final EventEntryModelDao entry = completedOrFailedEvents.poll(MAX_SLEEP_TIME_MS, TimeUnit.MILLISECONDS);
-                        pollSleepTime = System.nanoTime() - beforePollTime;
-                        if (entry != null) {
-                            completed.add(entry);
+                    withHandlingRuntimeException(new RunnableRawCallback() {
+                        @Override
+                        public void callback() throws InterruptedException {
+                            long ini = System.nanoTime();
+                            long pollSleepTime = 0;
+                            final List<EventEntryModelDao> completed = new ArrayList<>(MAX_COMPLETED_ENTRIES);
+                            completedOrFailedEvents.drainTo(completed, MAX_COMPLETED_ENTRIES);
+                            if (completed.isEmpty()) {
+                                long beforePollTime = System.nanoTime();
+                                final EventEntryModelDao entry = completedOrFailedEvents.poll(MAX_SLEEP_TIME_MS, TimeUnit.MILLISECONDS);
+                                pollSleepTime = System.nanoTime() - beforePollTime;
+                                if (entry != null) {
+                                    completed.add(entry);
+                                }
+                            }
+
+                            if (!completed.isEmpty()) {
+                                doProcessCompletedEvents(completed);
+                            }
+
+                            int retried = drainRetriedEvents();
+                            final int completeOrRetried = completed.size() + retried;
+                            if (completeOrRetried > 0) {
+                                completeEntries.update(completeOrRetried);
+                                completeTime.update((System.nanoTime() - ini) - pollSleepTime, TimeUnit.NANOSECONDS);
+                            }
                         }
-                    }
-
-                    if (!completed.isEmpty()) {
-                        doProcessCompletedEvents(completed);
-                    }
-
-                    int retried = drainRetriedEvents();
-                    final int completeOrRetried = completed.size() + retried;
-                    if (completeOrRetried > 0) {
-                        completeEntries.update(completeOrRetried);
-                        completeTime.update((System.nanoTime() - ini) - pollSleepTime, TimeUnit.NANOSECONDS);
-                    }
+                    });
                 }
             } catch (final InterruptedException e) {
                 log.info(String.format("%s: Thread %s got interrupted, exiting... ", svcQName, Thread.currentThread().getName()));
-            } catch (final Throwable e) {
+            } catch (final Error e) {
                 log.error(String.format("%s: Thread %s got an exception, exiting... ", svcQName, Thread.currentThread().getName()), e);
             } finally {
                 log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
@@ -246,20 +252,26 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                         break;
                     }
 
-                    final long beforeLoop = System.nanoTime();
-                    dispatchEvents();
-                    final long afterLoop = System.nanoTime();
+                    withHandlingRuntimeException(new RunnableRawCallback() {
+                        @Override
+                        public void callback() throws InterruptedException {
+                            final long beforeLoop = System.nanoTime();
+                            dispatchEvents();
+                            final long afterLoop = System.nanoTime();
 
-                    sleepSporadically((afterLoop - beforeLoop) / ONE_MILLION);
+                            sleepSporadically((afterLoop - beforeLoop) / ONE_MILLION);
+                        }
+                    });
                 }
             } catch (final InterruptedException e) {
                 log.info(String.format("%s: Thread %s got interrupted, exiting... ", svcQName, Thread.currentThread().getName()));
-            } catch (final Throwable e) {
+            } catch (final Error e) {
                 log.error(String.format("%s: Thread %s got an exception, exiting... ", svcQName, Thread.currentThread().getName()), e);
             } finally {
                 log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
             }
         }
+
 
         private void dispatchEvents() {
 
@@ -288,4 +300,22 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         }
 
     }
+
+
+    private interface RunnableRawCallback {
+        void callback() throws InterruptedException;
+    }
+
+    private void withHandlingRuntimeException(final RunnableRawCallback cb) throws InterruptedException {
+        try {
+            cb.callback();
+        } catch (final DBIException e) {
+            log.warn(String.format("%s: Thread %s got DBIException exception: %s",
+                                   svcQName, Thread.currentThread().getName(), e));
+        } catch (final RuntimeException e) {
+            log.warn(String.format("%s: Thread %s got Runtime exception: %s",
+                                   svcQName, Thread.currentThread().getName(), e));
+        }
+    }
+
 }
