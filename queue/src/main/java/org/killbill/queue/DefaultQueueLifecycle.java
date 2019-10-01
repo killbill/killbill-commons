@@ -100,7 +100,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.executor = Executors.newFixedThreadPool(config.geNbLifecycleDispatchThreads() + config.geNbLifecycleCompleteThreads(),
                                                      config.getTableName() + "-lifecycle-th");
 
-        log.info(String.format("%s: Starting...", svcQName));
+        log.info("{}: Starting...", svcQName);
 
         isProcessingEvents = true;
 
@@ -122,12 +122,12 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            log.info(String.format("%s: Stop sequence has been interrupted", svcQName));
+            log.info("{}: Stop sequence has been interrupted", svcQName);
         } finally {
             int remainingCompleted = completedOrFailedEvents.size();
             int remainingRetried = retriedEvents.size();
             if (remainingCompleted > 0 || remainingRetried > 0) {
-                log.warn(String.format("%s: Stopped queue with %d event/notifications non completed ", svcQName, (remainingCompleted + remainingRetried)));
+                log.warn("{}: Stopped queue with {} event/notifications non completed ", svcQName, (remainingCompleted + remainingRetried));
             }
         }
     }
@@ -175,10 +175,10 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         public void run() {
 
             try {
-                log.info(String.format("%s: Thread %s-completion [%d] starting ",
+                log.info("{}: Thread {}-completion [{}] starting ",
                                        svcQName,
                                        Thread.currentThread().getName(),
-                                       Thread.currentThread().getId()));
+                                       Thread.currentThread().getId());
 
                 while (true) {
 
@@ -216,11 +216,11 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                     });
                 }
             } catch (final InterruptedException e) {
-                log.info(String.format("%s: Thread %s got interrupted, exiting... ", svcQName, Thread.currentThread().getName()));
+                log.info("{}: Thread {} got interrupted, exiting... ", svcQName, Thread.currentThread().getName());
             } catch (final Error e) {
-                log.error(String.format("%s: Thread %s got an exception, exiting... ", svcQName, Thread.currentThread().getName()), e);
+                log.error("{}: Thread {} got an exception, exiting...", svcQName, Thread.currentThread().getName(), e);
             } finally {
-                log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
+                log.info("{}: Thread {} has exited", svcQName, Thread.currentThread().getName());
             }
         }
 
@@ -241,10 +241,10 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         public void run() {
 
             try {
-                log.info(String.format("%s: Thread %s-dispatcher [%d] starting ",
+                log.info("{}: Thread {}-dispatcher [{}] starting ",
                                        svcQName,
                                        Thread.currentThread().getName(),
-                                       Thread.currentThread().getId()));
+                                       Thread.currentThread().getId());
 
                 while (true) {
 
@@ -264,11 +264,11 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                     });
                 }
             } catch (final InterruptedException e) {
-                log.info(String.format("%s: Thread %s got interrupted, exiting... ", svcQName, Thread.currentThread().getName()));
+                log.info("{}: Thread {} got interrupted, exiting... ", svcQName, Thread.currentThread().getName());
             } catch (final Error e) {
-                log.error(String.format("%s: Thread %s got an exception, exiting... ", svcQName, Thread.currentThread().getName()), e);
+                log.error("{}: Thread {} got an exception, exiting... ", svcQName, Thread.currentThread().getName(), e);
             } finally {
-                log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
+                log.info("{}: Thread {} has exited", svcQName, Thread.currentThread().getName());
             }
         }
 
@@ -310,11 +310,11 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         try {
             cb.callback();
         } catch (final DBIException e) {
-            log.warn(String.format("%s: Thread %s got DBIException exception: %s",
-                                   svcQName, Thread.currentThread().getName(), e));
+            log.warn("{}: Thread {} got DBIException exception: ",
+                                   svcQName, Thread.currentThread().getName(), e);
         } catch (final RuntimeException e) {
-            log.warn(String.format("%s: Thread %s got Runtime exception: %s",
-                                   svcQName, Thread.currentThread().getName(), e));
+            log.warn("{}: Thread {} got Runtime exception: ",
+                                   svcQName, Thread.currentThread().getName(), e);
         }
     }
 
