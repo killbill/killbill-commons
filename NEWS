@@ -1,3 +1,6 @@
+0.23.5
+    Fix issue in queue upon exception
+
 0.23.4
     xmlloader: Keep root element
     queue: Small enhancements around exceptions
