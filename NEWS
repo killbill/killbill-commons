@@ -1,3 +1,6 @@
+0.23.6
+    Update to killbill-oss-parent 0.143.43
+
 0.23.5
     Fix issue in queue upon exception
 
