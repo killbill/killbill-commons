@@ -1,21 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" defaultCharsetForPropertiesFiles="UTF-8">
+  <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
     <file url="file://$PROJECT_DIR$" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/automaton" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/automaton/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/clock" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/clock/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/concurrent" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/concurrent/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/embeddeddb" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/embeddeddb/common" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/embeddeddb/common/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/embeddeddb/h2" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/embeddeddb/h2/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/embeddeddb/mysql" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/embeddeddb/mysql/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/embeddeddb/postgresql" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/embeddeddb/postgresql/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/jdbi" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/jdbi/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/locker" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/locker/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/metrics" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/metrics/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/queue" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/queue/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/queue/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/skeleton" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/skeleton/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xmlloader" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xmlloader/src/main/java" charset="UTF-8" />
     <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>
