@@ -1,3 +1,31 @@
+0.23.7
+    Update to killbill-oss-parent 0.143.46
+
+0.23.6
+    Update to killbill-oss-parent 0.143.43
+
+0.23.5
+    Fix issue in queue upon exception
+
+0.23.4
+    xmlloader: Keep root element
+    queue: Small enhancements around exceptions
+
+0.23.3
+    Initial support for Jersey 2
+    jdbi changes for Oracle support
+    Queue improvements (org.killbill.queue.reap.schedule is deprecated)
+    Update to killbill-oss-parent 0.143.28
+
+0.23.2
+    Minor queue fixes for metrics and reaper
+
+0.23.1
+    Queue perf improvements
+
+0.23.0
+    Remork bus and notificationQ (simplify logic, minimize DB queries, improve internal metrics)
+
 0.22.5
     jdbi: PostgreSQL bugfix for @GetGeneratedKeys on batches
 

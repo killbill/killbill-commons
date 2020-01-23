@@ -50,9 +50,6 @@ public class InTransaction {
         try {
             final K transactional = handle.attach(klass);
             return handler.withSqlDao(transactional);
-        } catch (final Exception e) {
-            logger.error("Failed to process transaction", e);
-            return null;
         } finally {
             // We do not release the connection -- client is responsible for closing it
             // h.close();
@@ -83,7 +80,7 @@ public class InTransaction {
 
     public static interface InTransactionHandler<K, R> {
 
-        public R withSqlDao(final K transactional) throws Exception;
+        public R withSqlDao(final K transactional);
     }
 
     private static final class DataSourceWithDelegate implements DataSource {

@@ -1,7 +1,7 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -24,7 +24,6 @@ import org.skife.config.Default;
 import org.skife.config.Description;
 import org.skife.config.TimeSpan;
 
-
 public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
     @Override
@@ -38,6 +37,18 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Default("3")
     @Description("Number of retries for a given event when an exception occurs")
     public abstract int getMaxFailureRetries();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.min")
+    @Default("1")
+    @Description("Min number of bus events to fetch from the database at once (only valid in 'STICKY_EVENTS')")
+    public abstract int getMinInFlightEntries();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.max")
+    @Default("100")
+    @Description("Max number of bus events to fetch from the database at once (only valid in 'STICKY_EVENTS')")
+    public abstract int getMaxInFlightEntries();
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.claimed")
@@ -76,6 +87,18 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     public abstract int geMaxDispatchThreads();
 
     @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.lifecycle.dispatch.nbThreads")
+    @Default("1")
+    @Description("Max number of lifecycle dispatch threads to use")
+    public abstract int geNbLifecycleDispatchThreads();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.lifecycle.complete.nbThreads")
+    @Default("2")
+    @Description("Max number of lifecycle complete threads to use")
+    public abstract int geNbLifecycleCompleteThreads();
+
+    @Override
     @Config("org.killbill.persistent.bus.${instanceName}.queue.capacity")
     @Default("30000")
     @Description("Size of the inflight queue (only valid in STICKY_EVENTS mode)")
@@ -104,4 +127,10 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
     @Default("10")
     @Description("Max number of bus events to be re-dispatched at a time")
     public abstract int getMaxReDispatchCount();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.reapSchedule")
+    @Default("3m")
+    @Description("Reaper schedule period")
+    public abstract TimeSpan getReapSchedule();
 }

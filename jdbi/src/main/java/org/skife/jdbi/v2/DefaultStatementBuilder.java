@@ -34,15 +34,21 @@ public class DefaultStatementBuilder implements StatementBuilder
      *
      * @param conn Used to prepare the statement
      * @param sql  Translated SQL statement
+     * @param columnNames an array of column names indicating the columns
+     *        that should be returned from the inserted row or rows
      * @param ctx  Unused
      *
      * @return a new PreparedStatement
      */
     @Override
-    public PreparedStatement create(Connection conn, String sql, StatementContext ctx) throws SQLException
+    public PreparedStatement create(Connection conn, String sql, String columnNames[], StatementContext ctx) throws SQLException
     {
         if (ctx.isReturningGeneratedKeys()) {
-            return conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            if (columnNames != null && columnNames.length > 0) {
+                return conn.prepareStatement(sql, columnNames);
+            } else {
+                return conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            }
         }
         else {
             return conn.prepareStatement(sql);

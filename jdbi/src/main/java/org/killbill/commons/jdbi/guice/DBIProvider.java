@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -36,6 +36,8 @@ import org.skife.jdbi.v2.TimingCollector;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import org.skife.jdbi.v2.tweak.SQLLog;
+import org.skife.jdbi.v2.tweak.StatementBuilderFactory;
+import org.skife.jdbi.v2.tweak.StatementRewriter;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +58,8 @@ public class DBIProvider implements Provider<IDBI> {
 
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
+    private StatementRewriter statementRewriter;
+    private StatementBuilderFactory statementBuilderFactory;
 
     @Inject
     public DBIProvider(final DaoConfig config, final DataSource ds, final TransactionHandler transactionHandler) {
@@ -97,9 +101,27 @@ public class DBIProvider implements Provider<IDBI> {
         this.timingCollector = timingCollector;
     }
 
+    @Inject(optional = true)
+    public void setStatementRewriter(final StatementRewriter statementRewriter) {
+        this.statementRewriter = statementRewriter;
+    }
+
+    @Inject(optional = true)
+    public void setStatementBuilderFactory(final StatementBuilderFactory statementBuilderFactory) {
+        this.statementBuilderFactory = statementBuilderFactory;
+    }
+
     @Override
     public IDBI get() {
         final DBI dbi = new DBI(ds);
+
+        if (statementRewriter != null) {
+            dbi.setStatementRewriter(statementRewriter);
+        }
+
+        if (statementBuilderFactory != null) {
+            dbi.setStatementBuilderFactory(statementBuilderFactory);
+        }
 
         for (final ArgumentFactory argumentFactory : argumentFactorySet) {
             dbi.registerArgumentFactory(argumentFactory);

@@ -1,6 +1,6 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -54,8 +54,8 @@ public class TestDispatcher {
             @Override
             public Thread newThread(final Runnable r) {
                 return new Thread(new ThreadGroup("TestGrp"),
-                        r,
-                        "test-grp--th");
+                                  r,
+                                  "test-grp--th");
             }
         };
 
@@ -64,7 +64,6 @@ public class TestDispatcher {
                                            null, callback, null);
         this.dispatcher.start();
     }
-
 
     @Test(groups = "fast")
     public void testBlockingRejectionHandler() {
@@ -220,6 +219,16 @@ public class TestDispatcher {
             }
 
             @Override
+            public int getMinInFlightEntries() {
+                return 1;
+            }
+
+            @Override
+            public int getMaxInFlightEntries() {
+                return 1;
+            }
+
+            @Override
             public int getMaxEntriesClaimed() {
                 return 1;
             }
@@ -250,6 +259,16 @@ public class TestDispatcher {
             }
 
             @Override
+            public int geNbLifecycleDispatchThreads() {
+                return 1;
+            }
+
+            @Override
+            public int geNbLifecycleCompleteThreads() {
+                return 1;
+            }
+
+            @Override
             public int getEventQueueCapacity() {
                 return QUEUE_SIZE;
             }
@@ -273,7 +292,11 @@ public class TestDispatcher {
             public int getMaxReDispatchCount() {
                 return 10;
             }
+
+            @Override
+            public TimeSpan getReapSchedule() {
+                return new TimeSpan(3, TimeUnit.MINUTES);
+            }
         };
     }
-
 }

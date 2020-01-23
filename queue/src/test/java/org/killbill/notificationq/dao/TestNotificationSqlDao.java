@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -116,9 +116,9 @@ public class TestNotificationSqlDao extends TestSetup {
 
 
         final DateTime nextAvailable = now.plusMinutes(5);
-        final int res = dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
+        final int res = dao.claimEntry(notification.getRecordId(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
         assertEquals(res, 1);
-        dao.claimEntry(notification.getRecordId(), now.toDate(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
+        dao.claimEntry(notification.getRecordId(), ownerId, nextAvailable.toDate(), notificationQueueConfig.getTableName());
 
         notification = dao.getByRecordId(notification.getRecordId(), notificationQueueConfig.getTableName());
         assertEquals(notification.getEventJson(), eventJson);
@@ -255,8 +255,8 @@ public class TestNotificationSqlDao extends TestSetup {
         return dao.inTransaction(new Transaction<NotificationEventModelDao, QueueSqlDao<NotificationEventModelDao>>() {
             @Override
             public NotificationEventModelDao inTransaction(final QueueSqlDao<NotificationEventModelDao> transactional, final TransactionStatus status) throws Exception {
-                transactional.insertEntry(input, tableName);
-                return transactional.getByRecordId(transactional.getLastInsertId(), notificationQueueConfig.getTableName());
+                final Long recordId = transactional.insertEntry(input, tableName);
+                return transactional.getByRecordId(recordId, notificationQueueConfig.getTableName());
             }
         });
 

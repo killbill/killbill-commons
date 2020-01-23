@@ -8,10 +8,8 @@ extraValuesWithComma() ::= <<
 >>
 
 readyWhereClause(owner) ::= <<
-    processing_state != 'PROCESSED'
-    and processing_state != 'REMOVED'
+    processing_state = 'AVAILABLE'
 <if(owner)>and creating_owner = '<owner>'<endif>
-    and (processing_owner IS NULL OR processing_available_date \<= :now)
 >>
 
 readyOrderByClause() ::= <<
@@ -23,6 +21,19 @@ reapWhereClause() ::= <<
     and processing_state != 'REMOVED'
     and (processing_owner IS NULL OR processing_available_date \<= :now)
     and created_date \<= :reapingDate
+>>
+
+getReadyEntryIds(owner, tableName) ::= <<
+    select
+      record_id
+    from <tableName>
+    where
+      record_id >= :from
+      and <readyWhereClause(owner)>
+    order by
+      <readyOrderByClause()>
+    limit :max
+    ;
 >>
 
 /** Bus Events specific queries **/

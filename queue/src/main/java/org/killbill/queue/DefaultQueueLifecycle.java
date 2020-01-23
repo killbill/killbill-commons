@@ -26,9 +26,14 @@ import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.QueueLifecycle;
 import org.killbill.queue.dao.EventEntryModelDao;
+import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
@@ -39,112 +44,73 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     private static final long ONE_MILLION = 1000L * 1000L;
 
+    private static final long MAX_SLEEP_TIME_MS = 100;
+
+    // Max size of the batch we allow
+    private static final int MAX_COMPLETED_ENTRIES = 15;
+
+
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
-
     private final LinkedBlockingQueue<EventEntryModelDao> completedOrFailedEvents;
     private final LinkedBlockingQueue<EventEntryModelDao> retriedEvents;
-
+    // Time to dispatch entries to Dispatcher threads
+    private final Timer dispatchTime;
+    // Time to move entries to history table (or update entry for retry)
+    private final Timer completeTime;
+    // Nb of entries dispatched at each loop
+    private final Histogram dispatchedEntries;
+    // Nb of entries completed at each loop
+    private final Histogram completeEntries;
+    private final boolean isStickyEvent;
     private volatile boolean isProcessingEvents;
-
     // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
     private ExecutorService executor;
 
-    public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config) {
-        this(svcQName, config, QueueObjectMapper.get());
+    public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final MetricRegistry metricRegistry) {
+        this(svcQName, config, metricRegistry, QueueObjectMapper.get());
     }
-
-    private DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final ObjectMapper objectMapper) {
+    private DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final MetricRegistry metricRegistry, final ObjectMapper objectMapper) {
         this.svcQName = svcQName;
         this.config = config;
         this.isProcessingEvents = false;
         this.objectMapper = objectMapper;
-        this.completedOrFailedEvents = new LinkedBlockingQueue<>(config.getEventQueueCapacity());
-        this.retriedEvents = new LinkedBlockingQueue<>(config.getEventQueueCapacity());
+        this.completedOrFailedEvents = new LinkedBlockingQueue<>();
+        this.retriedEvents = new LinkedBlockingQueue<>();
+        this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
+
+        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchTime"));
+        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeTime"));
+
+        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchedEntries"));
+        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeEntries"));
+
+        metricRegistry.register(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
+            @Override
+            public Integer getValue() {
+                return completedOrFailedEvents.size();
+            }
+        });
     }
 
     @Override
     public boolean startQueue() {
-        this.executor = Executors.newFixedThreadPool(1, config.getTableName() + "-lifecycle-th");
+
+        this.executor = Executors.newFixedThreadPool(config.geNbLifecycleDispatchThreads() + config.geNbLifecycleCompleteThreads(),
+                                                     config.getTableName() + "-lifecycle-th");
+
+        log.info("{}: Starting...", svcQName);
+
         isProcessingEvents = true;
 
-        log.info(String.format("%s: Starting...", svcQName));
+        for (int i = 0; i < config.geNbLifecycleDispatchThreads(); i++) {
+            executor.execute(new DispatcherRunnable());
+        }
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-
-                log.info(String.format("%s: Thread %s [%d] starting",
-                                       svcQName,
-                                       Thread.currentThread().getName(),
-                                       Thread.currentThread().getId()));
-
-                try {
-                    while (true) {
-                        if (!isProcessingEvents) {
-                            break;
-                        }
-
-                        final long beforeLoop = System.nanoTime();
-                        try {
-                            // Fetch ready entries from DB and dispatch them to thread pool
-                            doProcessEvents();
-
-                            // Delete/update completed/errored entries from DB
-                            drainCompletedEvents();
-                            drainRetriedEvents();
-
-                        } catch (final Exception e) {
-                            log.warn(String.format("%s: Thread  %s  [%d] got an exception, catching and moving on...",
-                                                   svcQName,
-                                                   Thread.currentThread().getName(),
-                                                   Thread.currentThread().getId()), e);
-                        } finally {
-                            final long afterLoop = System.nanoTime();
-                            sleepALittle((afterLoop - beforeLoop) / ONE_MILLION);
-                        }
-                    }
-                } catch (final InterruptedException e) {
-                    log.info(String.format("%s: Thread %s got interrupted, exting... ", svcQName, Thread.currentThread().getName()));
-                } catch (final Throwable e) {
-                    log.error(String.format("%s: Thread %s got an exception, exting... ", svcQName, Thread.currentThread().getName()), e);
-                } finally {
-                    log.info(String.format("%s: Thread %s has exited", svcQName, Thread.currentThread().getName()));
-                }
-            }
-
-            // Move completed entries through batches using the same main DB (lifecycle) thread
-            private void drainCompletedEvents() {
-                int curSize = completedOrFailedEvents.size();
-                if (curSize > 0) {
-                    final List<EventEntryModelDao> completed = new ArrayList<>(curSize);
-                    completedOrFailedEvents.drainTo(completed, curSize);
-                    doProcessCompletedEvents(completed);
-                }
-            }
-
-            // Move retried entries using the same main DB (lifecycle) thread
-            private void drainRetriedEvents() {
-                final int curSize = retriedEvents.size();
-                if (curSize > 0) {
-                    final List<EventEntryModelDao> retried = new ArrayList<>(curSize);
-                    retriedEvents.drainTo(retried, curSize);
-                    doProcessRetriedEvents(retried);
-                }
-            }
-
-            private void sleepALittle(final long loopTimeMsec) throws InterruptedException {
-                if (config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS) {
-                    // Disregard config.getPollingSleepTimeMs() in that mode in case this is not correctly configured with 0
-                    return;
-                }
-                final long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
-                if (remainingSleepTime > 0) {
-                    Thread.sleep(remainingSleepTime);
-                }
-            }
-        });
+        for (int i = 0; i < config.geNbLifecycleCompleteThreads(); i++) {
+            executor.execute(new CompletionRunnable());
+        }
         return true;
     }
 
@@ -152,11 +118,17 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     public void stopQueue() {
         this.isProcessingEvents = false;
 
-        executor.shutdownNow();
+        executor.shutdown();
         try {
-            executor.awaitTermination(config.getPollingSleepTimeMs(), TimeUnit.SECONDS);
+            executor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            log.info(String.format("%s: Stop sequence has been interrupted", svcQName));
+            log.info("{}: Stop sequence has been interrupted", svcQName);
+        } finally {
+            int remainingCompleted = completedOrFailedEvents.size();
+            int remainingRetried = retriedEvents.size();
+            if (remainingCompleted > 0 || remainingRetried > 0) {
+                log.warn("{}: Stopped queue with {} event/notifications non completed ", svcQName, (remainingCompleted + remainingRetried));
+            }
         }
     }
 
@@ -168,7 +140,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         retriedEvents.add(event);
     }
 
-    public abstract int doProcessEvents();
+    public abstract DispatchResultMetrics doDispatchEvents();
 
     public abstract void doProcessCompletedEvents(final Iterable<? extends EventEntryModelDao> completed);
 
@@ -177,4 +149,173 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     public ObjectMapper getObjectMapper() {
         return objectMapper;
     }
+
+    public static class DispatchResultMetrics {
+
+        private final int nbEntries;
+        private final long timeNanoSec;
+
+        public DispatchResultMetrics(final int nbEntries, final long timeNanoSec) {
+            this.nbEntries = nbEntries;
+            this.timeNanoSec = timeNanoSec;
+        }
+
+        public int getNbEntries() {
+            return nbEntries;
+        }
+
+        public long getTimeNanoSec() {
+            return timeNanoSec;
+        }
+    }
+
+    private final class CompletionRunnable implements Runnable {
+
+        @Override
+        public void run() {
+
+            try {
+                log.info("{}: Thread {}-completion [{}] starting ",
+                                       svcQName,
+                                       Thread.currentThread().getName(),
+                                       Thread.currentThread().getId());
+
+                while (true) {
+
+                    if (!isProcessingEvents) {
+                        break;
+                    }
+
+                    withHandlingRuntimeException(new RunnableRawCallback() {
+                        @Override
+                        public void callback() throws InterruptedException {
+                            long ini = System.nanoTime();
+                            long pollSleepTime = 0;
+                            final List<EventEntryModelDao> completed = new ArrayList<>(MAX_COMPLETED_ENTRIES);
+                            completedOrFailedEvents.drainTo(completed, MAX_COMPLETED_ENTRIES);
+                            if (completed.isEmpty()) {
+                                long beforePollTime = System.nanoTime();
+                                final EventEntryModelDao entry = completedOrFailedEvents.poll(MAX_SLEEP_TIME_MS, TimeUnit.MILLISECONDS);
+                                pollSleepTime = System.nanoTime() - beforePollTime;
+                                if (entry != null) {
+                                    completed.add(entry);
+                                }
+                            }
+
+                            if (!completed.isEmpty()) {
+                                doProcessCompletedEvents(completed);
+                            }
+
+                            int retried = drainRetriedEvents();
+                            final int completeOrRetried = completed.size() + retried;
+                            if (completeOrRetried > 0) {
+                                completeEntries.update(completeOrRetried);
+                                completeTime.update((System.nanoTime() - ini) - pollSleepTime, TimeUnit.NANOSECONDS);
+                            }
+                        }
+                    });
+                }
+            } catch (final InterruptedException e) {
+                log.info("{}: Thread {} got interrupted, exiting... ", svcQName, Thread.currentThread().getName());
+            } catch (final Error e) {
+                log.error("{}: Thread {} got an exception, exiting...", svcQName, Thread.currentThread().getName(), e);
+            } finally {
+                log.info("{}: Thread {} has exited", svcQName, Thread.currentThread().getName());
+            }
+        }
+
+        private int drainRetriedEvents() {
+            final int curSize = retriedEvents.size();
+            if (curSize > 0) {
+                final List<EventEntryModelDao> retried = new ArrayList<>(curSize);
+                retriedEvents.drainTo(retried, curSize);
+                doProcessRetriedEvents(retried);
+            }
+            return curSize;
+        }
+    }
+
+    private final class DispatcherRunnable implements Runnable {
+
+        @Override
+        public void run() {
+
+            try {
+                log.info("{}: Thread {}-dispatcher [{}] starting ",
+                                       svcQName,
+                                       Thread.currentThread().getName(),
+                                       Thread.currentThread().getId());
+
+                while (true) {
+
+                    if (!isProcessingEvents) {
+                        break;
+                    }
+
+                    withHandlingRuntimeException(new RunnableRawCallback() {
+                        @Override
+                        public void callback() throws InterruptedException {
+                            final long beforeLoop = System.nanoTime();
+                            dispatchEvents();
+                            final long afterLoop = System.nanoTime();
+
+                            sleepSporadically((afterLoop - beforeLoop) / ONE_MILLION);
+                        }
+                    });
+                }
+            } catch (final InterruptedException e) {
+                log.info("{}: Thread {} got interrupted, exiting... ", svcQName, Thread.currentThread().getName());
+            } catch (final Error e) {
+                log.error("{}: Thread {} got an exception, exiting... ", svcQName, Thread.currentThread().getName(), e);
+            } finally {
+                log.info("{}: Thread {} has exited", svcQName, Thread.currentThread().getName());
+            }
+        }
+
+
+        private void dispatchEvents() {
+
+            long ini = System.nanoTime();
+            final DispatchResultMetrics metricsResult = doDispatchEvents();
+            dispatchedEntries.update(metricsResult.getNbEntries());
+            if (isStickyEvent) {
+                dispatchTime.update(metricsResult.getTimeNanoSec(), TimeUnit.NANOSECONDS);
+            } else {
+                dispatchTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
+            }
+        }
+
+        private void sleepSporadically(final long loopTimeMsec) throws InterruptedException {
+            if (isStickyEvent) {
+                // In this mode, the main thread does not sleep, but blocks on the inflightQ to minimize latency.
+                return;
+            }
+
+            long remainingSleepTime = config.getPollingSleepTimeMs() - loopTimeMsec;
+            while (remainingSleepTime > 0) {
+                final long curSleepTime = remainingSleepTime > MAX_SLEEP_TIME_MS ? MAX_SLEEP_TIME_MS : remainingSleepTime;
+                Thread.sleep(curSleepTime);
+                remainingSleepTime -= curSleepTime;
+            }
+        }
+
+    }
+
+
+    private interface RunnableRawCallback {
+        void callback() throws InterruptedException;
+    }
+
+    private void withHandlingRuntimeException(final RunnableRawCallback cb) throws InterruptedException {
+        try {
+            cb.callback();
+        } catch (final DBIException e) {
+            log.warn("{}: Thread {} got DBIException exception: ",
+                                   svcQName, Thread.currentThread().getName(), e);
+        } catch (final RuntimeException e) {
+            log.warn("{}: Thread {} got Runtime exception: ",
+                                   svcQName, Thread.currentThread().getName(), e);
+        }
+    }
+
 }

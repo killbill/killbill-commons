@@ -1,5 +1,4 @@
 /*
- * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2019 Groupon, Inc
  * Copyright 2014-2019 The Billing Project, LLC
  *
@@ -16,27 +15,75 @@
  * under the License.
  */
 
-package org.killbill.bus;
+package org.killbill.queue;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.killbill.CreatorName;
+import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
+import org.killbill.bus.dao.BusEventModelDao;
+import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.skife.config.TimeSpan;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import org.killbill.bus.api.PersistentBus;
+import static org.testng.Assert.assertEquals;
 
-public class TestInMemoryEventBus {
+public class TestDBBackedQueueWithInflightQ extends TestSetup {
 
-    private TestEventBusBase testEventBusBase;
-    private PersistentBus busService;
+    private DBBackedQueueWithInflightQueue<BusEventModelDao> queue;
+    private PersistentBusSqlDao sqlDao;
 
-    @BeforeClass(groups = "fast")
+    @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
-        busService = new InMemoryPersistentBus(new PersistentBusConfig() {
+        super.beforeClass();
+        sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
+    }
+
+    @BeforeMethod(groups = "slow")
+    public void beforeMethod() throws Exception {
+        super.beforeMethod();
+        final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
+        assertEquals(ready.size(), 0);
+    }
+
+    @Test(groups = "slow")
+    public void testInflightQWithExistingEntries() {
+
+        final int NB_ENTRIES = 2345;
+        final PersistentBusConfig config = createConfig();
+        queue = new DBBackedQueueWithInflightQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, "testInflightQWithExistingEntries", metricRegistry, databaseTransactionNotificationApi);
+
+        // Insert entries prior initialization
+        for (int i = 0; i < NB_ENTRIES; i++) {
+            final BusEventModelDao input = createEntry(new Long(i + 5));
+            sqlDao.insertEntry(input, config.getTableName());
+        }
+
+        final long readyEntries = queue.getNbReadyEntries();
+        assertEquals(readyEntries, NB_ENTRIES);
+
+        queue.initialize();
+
+        assertEquals(queue.getInflightQSize(), NB_ENTRIES);
+
+    }
+
+    private BusEventModelDao createEntry(final Long searchKey1, final String owner) {
+        final String json = "json";
+        return new BusEventModelDao(owner, clock.getUTCNow(), String.class.getName(), json, UUID.randomUUID(), searchKey1, 1L);
+    }
+
+    private BusEventModelDao createEntry(final Long searchKey1) {
+        return createEntry(searchKey1, CreatorName.get());
+    }
+
+    private PersistentBusConfig createConfig() {
+        return new PersistentBusConfig() {
             @Override
             public boolean isInMemory() {
                 return false;
@@ -45,31 +92,29 @@ public class TestInMemoryEventBus {
             public int getMaxFailureRetries() {
                 return 0;
             }
-
             @Override
             public int getMinInFlightEntries() {
                 return 1;
             }
             @Override
             public int getMaxInFlightEntries() {
-                return 1;
+                return 100;
             }
             @Override
             public int getMaxEntriesClaimed() {
-                return 0;
+                return 100;
             }
             @Override
             public PersistentQueueMode getPersistentQueueMode() {
-                return PersistentQueueMode.POLLING;
+                return PersistentQueueMode.STICKY_EVENTS;
             }
-
             @Override
             public TimeSpan getClaimedTime() {
-                return null;
+                return new TimeSpan("5m");
             }
             @Override
             public long getPollingSleepTimeMs() {
-                return 0;
+                return -1;
             }
             @Override
             public boolean isProcessingOff() {
@@ -77,7 +122,7 @@ public class TestInMemoryEventBus {
             }
             @Override
             public int geMaxDispatchThreads() {
-                return 0;
+                return 1;
             }
 
             @Override
@@ -92,22 +137,20 @@ public class TestInMemoryEventBus {
 
             @Override
             public int getEventQueueCapacity() {
-                return 0;
+                return -1;
             }
             @Override
             public String getTableName() {
-                return "test";
+                return "bus_events";
             }
             @Override
             public String getHistoryTableName() {
-                return null;
+                return "bus_events_history";
             }
-
             @Override
             public TimeSpan getReapThreshold() {
                 return new TimeSpan(5, TimeUnit.MINUTES);
             }
-
             @Override
             public int getMaxReDispatchCount() {
                 return 10;
@@ -117,39 +160,6 @@ public class TestInMemoryEventBus {
             public TimeSpan getReapSchedule() {
                 return new TimeSpan(3, TimeUnit.MINUTES);
             }
-        });
-        testEventBusBase = new TestEventBusBase(busService);
+        };
     }
-
-    @BeforeMethod(groups = "fast")
-    public void beforeMethod() throws Exception {
-        busService.start();
-    }
-
-    @AfterMethod(groups = "fast")
-    public void afterMethod() throws Exception {
-        busService.stop();
-    }
-
-
-    @Test(groups = "fast")
-    public void testSimple() {
-        testEventBusBase.testSimple();
-    }
-
-    @Test(groups = "fast")
-    public void testDifferentType() {
-        testEventBusBase.testDifferentType();
-    }
-
-    @Test(groups = "slow")
-    public void testSimpleWithExceptionAndRetrySuccess() {
-        testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
-    }
-
-    @Test(groups = "slow")
-    public void testSimpleWithExceptionAndFail() {
-        testEventBusBase.testSimpleWithExceptionAndFail();
-    }
-
 }

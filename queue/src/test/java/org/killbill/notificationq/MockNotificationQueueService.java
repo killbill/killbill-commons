@@ -52,7 +52,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
     }
 
     @Override
-    public int doProcessEvents() {
+    public DispatchResultMetrics doDispatchEvents() {
         int retry = 2;
         do {
             try {
@@ -63,12 +63,12 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
                         result += doProcessEventsForQueue((MockNotificationQueue) cur);
                     }
                 }
-                return result;
+                return new DispatchResultMetrics(result, -1);
             } catch (final ConcurrentModificationException e) {
                 retry--;
             }
         } while (retry > 0);
-        return 0;
+        return new DispatchResultMetrics(0, -1);
     }
 
     private int doProcessEventsForQueue(final MockNotificationQueue queue) {

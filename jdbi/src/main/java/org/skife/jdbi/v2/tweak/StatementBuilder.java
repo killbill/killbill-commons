@@ -39,9 +39,11 @@ public interface StatementBuilder
      *
      * @param conn the JDBC Connection the statement is being created for
      * @param sql the translated SQL which should be prepared
+     * @param columnNames an array of column names indicating the columns
+     *        that should be returned from the inserted row or rows
      * @param ctx Statement context associated with the SQLStatement this is building for
      */
-    PreparedStatement create(Connection conn, String sql, StatementContext ctx) throws SQLException;
+    PreparedStatement create(Connection conn, String sql, String columnNames[], StatementContext ctx) throws SQLException;
 
     /**
      * Called each time a Callable statement needs to be created

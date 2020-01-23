@@ -1,7 +1,9 @@
 /*
- * Copyright 2010-2012 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2019 Groupon, Inc
+ * Copyright 2014-2019 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -23,7 +25,6 @@ import org.skife.config.TimeSpan;
 
 import org.killbill.queue.api.PersistentQueueConfig;
 
-
 public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
@@ -37,6 +38,19 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Default("3")
     @Description("Number retry for a given event when an exception occurs")
     public abstract int getMaxFailureRetries();
+
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.min")
+    @Default("-1")
+    @Description("Min number of bus events to fetch from the database at once (only valid in 'STICKY_EVENTS')")
+    public abstract int getMinInFlightEntries();
+
+    @Override
+    @Config("org.killbill.persistent.bus.${instanceName}.inflight.max")
+    @Default("-1")
+    @Description("Max number of bus events to fetch from the database at once (only valid in 'STICKY_EVENTS')")
+    public abstract int getMaxInFlightEntries();
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.claimed")
@@ -75,6 +89,18 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     public abstract int geMaxDispatchThreads();
 
     @Override
+    @Config("org.killbill.notificationq.${instanceName}.lifecycle.dispatch.nbThreads")
+    @Default("1")
+    @Description("Max number of lifecycle dispatch threads to use")
+    public abstract int geNbLifecycleDispatchThreads();
+
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.lifecycle.complete.nbThreads")
+    @Default("2")
+    @Description("Max number of lifecycle complete threads to use")
+    public abstract int geNbLifecycleCompleteThreads();
+
+    @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.capacity")
     @Default("100")
     @Description("Capacity for the worker queue")
@@ -103,4 +129,10 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
     @Default("10")
     @Description("Max number of notification to be re-dispatched at a time")
     public abstract int getMaxReDispatchCount();
+
+    @Override
+    @Config("org.killbill.notificationq.${instanceName}.reapSchedule")
+    @Default("3m")
+    @Description("Reaper schedule period")
+    public abstract TimeSpan getReapSchedule();
 }

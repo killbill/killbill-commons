@@ -18,7 +18,11 @@
 
 package org.killbill.bus.dao;
 
+import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+
+import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
 import org.killbill.commons.jdbi.statement.SmartFetchSize;
@@ -30,6 +34,15 @@ import org.skife.jdbi.v2.sqlobject.customizers.Define;
 
 @KillBillSqlDaoStringTemplate
 public interface PersistentBusSqlDao extends QueueSqlDao<BusEventModelDao> {
+
+    @SqlQuery
+    List<Long> getReadyEntryIds(@Bind("now") Date now,
+                                @Bind("from") long from,
+                                @Bind("max") int max,
+                                // This is somewhat a hack, should really be a @Bind parameter but we also use it
+                                // for StringTemplate to modify the query based whether value is null or not.
+                                @Nullable @Define("owner") String owner,
+                                @Define("tableName") final String tableName);
 
     @SqlQuery
     @SmartFetchSize(shouldStream = true)

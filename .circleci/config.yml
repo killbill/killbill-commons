@@ -8,7 +8,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: killbill/kbbuild:0.1.0
+      - image: killbill/kbbuild:0.7.0
     steps:
       - checkout
       - restore_cache:
@@ -38,7 +38,7 @@ jobs:
   test-h2:
     <<: *defaults
     docker:
-      - image: killbill/kbbuild:0.1.0
+      - image: killbill/kbbuild:0.7.0
     steps:
       - checkout
       - restore_cache:
@@ -57,7 +57,7 @@ jobs:
   test-mysql:
     <<: *defaults
     docker:
-      - image: killbill/kbbuild:0.1.0
+      - image: killbill/kbbuild:0.7.0
     steps:
       - checkout
       - restore_cache:
@@ -76,7 +76,7 @@ jobs:
   test-postgresql:
     <<: *defaults
     docker:
-      - image: killbill/kbbuild:0.1.0
+      - image: killbill/kbbuild:0.7.0
     steps:
       - checkout
       - restore_cache:

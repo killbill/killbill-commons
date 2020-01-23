@@ -104,14 +104,6 @@ getMaxRecordId(tableName) ::= <<
     ;
 >>
 
-resetLastInsertId() ::= <<
-    select LAST_INSERT_ID(/*! 0 */);
->>
-
-getLastInsertId() ::= <<
-    select LAST_INSERT_ID();
->>
-
 getByRecordId(tableName) ::= <<
     select
       <allTableFields()>
@@ -187,7 +179,7 @@ claimEntry(tableName) ::= <<
       record_id = :recordId
       and processing_state != 'PROCESSED'
       and processing_state != 'REMOVED'
-      and (processing_owner IS NULL OR processing_available_date \<= :now)
+      and processing_owner IS NULL
     ;
 >>
 
@@ -201,7 +193,7 @@ claimEntries(tableName, record_ids) ::= <<
       record_id in (<record_ids>)
       and processing_state != 'PROCESSED'
       and processing_state != 'REMOVED'
-      and (processing_owner IS NULL OR processing_available_date \<= :now)
+      and processing_owner IS NULL
     ;
 >>
 

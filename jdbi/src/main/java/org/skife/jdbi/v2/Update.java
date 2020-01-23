@@ -59,7 +59,7 @@ public class Update extends SQLStatement<Update>
                 {
                     return results.getUpdateCount();
                 }
-            });
+            }, null);
         }
         finally {
             cleanup();
@@ -72,7 +72,8 @@ public class Update extends SQLStatement<Update>
      * @param mapper the mapper to generate the resulting key object
      * @return the generated key or null if none was returned
      */
-    public <GeneratedKeyType> GeneratedKeys<GeneratedKeyType> executeAndReturnGeneratedKeys(final ResultSetMapper<GeneratedKeyType> mapper)
+    public <GeneratedKeyType> GeneratedKeys<GeneratedKeyType> executeAndReturnGeneratedKeys(final ResultSetMapper<GeneratedKeyType> mapper,
+                                                                                            final String... columnNames)
     {
         getConcreteContext().setReturningGeneratedKeys(true);
         return this.internalExecute(new QueryResultMunger<GeneratedKeys<GeneratedKeyType>>() {
@@ -85,7 +86,7 @@ public class Update extends SQLStatement<Update>
                                                            getContext(),
                                                            getContainerMapperRegistry());
             }
-        });
+        }, columnNames);
     }
 
     public GeneratedKeys<Map<String, Object>> executeAndReturnGeneratedKeys()

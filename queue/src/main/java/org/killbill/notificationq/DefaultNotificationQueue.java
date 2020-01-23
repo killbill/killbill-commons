@@ -115,7 +115,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
         final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
             @Override
-            public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Void withSqlDao(final NotificationSqlDao transactional) {
                 dao.insertEntryFromTransaction(transactional, notification);
                 return null;
             }
@@ -142,7 +142,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
         final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, 0L);
         final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
             @Override
-            public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Void withSqlDao(final NotificationSqlDao transactional) {
                 ((NotificationSqlDao) dao.getSqlDao()).updateEntry(recordId, eventJson, searchKey1, searchKey2WithNull, config.getTableName());
                 return null;
             }
@@ -161,7 +161,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>>() {
             @Override
-            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) {
                 return getFutureNotificationsInternal(transactional, null, searchKey1, searchKey2);
             }
         };
@@ -177,7 +177,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureNotificationFromTransactionForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>>() {
             @Override
-            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) {
                 return getFutureNotificationsInternal(transactional, maxEffectiveDate, null, searchKey2);
             }
         };
@@ -198,7 +198,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKeys(final Long searchKey1, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>>() {
             @Override
-            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) {
                 return getFutureOrInProcessingNotificationsInternal(transactional, null, searchKey1, searchKey2);
             }
         };
@@ -214,7 +214,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> getFutureOrInProcessingNotificationFromTransactionForSearchKey2(final DateTime maxEffectiveDate, final Long searchKey2, final Connection connection) {
         final InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Iterable<NotificationEventWithMetadata<T>>>() {
             @Override
-            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Iterable<NotificationEventWithMetadata<T>> withSqlDao(final NotificationSqlDao transactional) {
                 return getFutureOrInProcessingNotificationsInternal(transactional, maxEffectiveDate, null, searchKey2);
             }
         };
@@ -326,7 +326,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public void removeNotificationFromTransaction(final Connection connection, final Long recordId) {
         final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
             @Override
-            public Void withSqlDao(final NotificationSqlDao transactional) throws Exception {
+            public Void withSqlDao(final NotificationSqlDao transactional) {
                 final NotificationEventModelDao existing = transactional.getByRecordId(recordId, config.getTableName());
                 final NotificationEventModelDao removedEntry = new NotificationEventModelDao(existing, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.REMOVED);
                 dao.moveEntryToHistoryFromTransaction(transactional, removedEntry);

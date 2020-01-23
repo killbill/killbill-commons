@@ -27,19 +27,22 @@ import org.killbill.clock.Clock;
 import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.Reaper;
+import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class DefaultReaper implements Reaper {
+
+    static final long ONE_MINUTES_IN_MSEC = 60000;
+    static final long FIVE_MINUTES_IN_MSEC = 5 * ONE_MINUTES_IN_MSEC;
 
     private final DBBackedQueue<?> dao;
     private final PersistentQueueConfig config;
     private final Clock clock;
     private final AtomicBoolean isStarted;
     private final String threadScheduledExecutorName;
-    private ScheduledFuture<?> reapEntriesHandle;
 
-    private final long FIVE_MINUTES = 300000;
+    private ScheduledFuture<?> reapEntriesHandle;
 
     private static final Logger log = LoggerFactory.getLogger(DefaultReaper.class);
 
@@ -59,9 +62,12 @@ public abstract class DefaultReaper implements Reaper {
             return;
         }
 
-        log.info("{}: Starting...", threadScheduledExecutorName);
+        final long reapThresholdMillis = getReapThreshold();
+        final long schedulePeriodMillis = config.getReapSchedule().getMillis();
 
-        final long pendingPeriod = getReapThreshold();
+        log.info("{}: Starting... reapThresholdMillis={}, schedulePeriodMillis={}",
+                 threadScheduledExecutorName, reapThresholdMillis, schedulePeriodMillis);
+
         final Runnable reapEntries = new Runnable() {
             @Override
             public void run() {
@@ -69,12 +75,12 @@ public abstract class DefaultReaper implements Reaper {
             }
 
             private Date getReapingDate() {
-                return clock.getUTCNow().minusMillis((int) pendingPeriod).toDate();
+                return clock.getUTCNow().minusMillis((int) reapThresholdMillis).toDate();
             }
         };
 
         scheduler = Executors.newSingleThreadScheduledExecutor(threadScheduledExecutorName);
-        reapEntriesHandle = scheduler.scheduleWithFixedDelay(reapEntries, pendingPeriod, pendingPeriod, TimeUnit.MILLISECONDS);
+        reapEntriesHandle = scheduler.scheduleWithFixedDelay(reapEntries, schedulePeriodMillis, schedulePeriodMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -104,12 +110,12 @@ public abstract class DefaultReaper implements Reaper {
         return isStarted.get();
     }
 
-    private long getReapThreshold() {
+    long getReapThreshold() {
         final long threshold;
         // if Claim time is greater than reap threshold
         if (config.getClaimedTime().getMillis() >= config.getReapThreshold().getMillis()) {
             // override reap threshold using claim time + 5 minutes
-            threshold = config.getClaimedTime().getMillis() + FIVE_MINUTES;
+            threshold = config.getClaimedTime().getMillis() + FIVE_MINUTES_IN_MSEC;
             log.warn("{}: Reap threshold was mis-configured. Claim time [{}] is greater than reap threshold [{}]",
                                    threadScheduledExecutorName, config.getClaimedTime().toString(), config.getReapThreshold().toString());
 

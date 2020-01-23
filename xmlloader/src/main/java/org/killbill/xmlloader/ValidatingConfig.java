@@ -26,9 +26,16 @@ import javax.xml.bind.annotation.XmlAccessorType;
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class ValidatingConfig<Context> {
 
+    protected Context root;
+
     public abstract ValidationErrors validate(Context root, ValidationErrors errors);
 
     public void initialize(final Context root) {
+        this.root = root;
+    }
+
+    public Context getRoot() {
+        return root;
     }
 
     protected Collection<? extends ValidationError> validateCollection(final Context context,

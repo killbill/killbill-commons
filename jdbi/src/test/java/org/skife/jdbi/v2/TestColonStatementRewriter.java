@@ -104,7 +104,7 @@ public class TestColonStatementRewriter
         rw = new ColonPrefixNamedParamStatementRewriter()
         {
             @Override
-            ParsedStatement parseString(final String sql) throws IllegalArgumentException
+            protected ParsedStatement parseString(final String sql) throws IllegalArgumentException
             {
                 ctr.incrementAndGet();
                 return super.parseString(sql);
