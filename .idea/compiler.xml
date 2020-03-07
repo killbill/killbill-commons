@@ -16,19 +16,20 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="killbill-automaton" />
-        <module name="killbill-clock" />
-        <module name="killbill-concurrent" />
-        <module name="killbill-embeddeddb-common" />
-        <module name="killbill-embeddeddb-h2" />
-        <module name="killbill-embeddeddb-mysql" />
         <module name="killbill-embeddeddb-postgresql" />
-        <module name="killbill-jdbi" />
-        <module name="killbill-locker" />
-        <module name="killbill-metrics" />
+        <module name="killbill-embeddeddb-mysql" />
         <module name="killbill-queue" />
-        <module name="killbill-skeleton" />
         <module name="killbill-xmlloader" />
+        <module name="killbill-concurrent" />
+        <module name="killbill-skeleton" />
+        <module name="killbill-metrics" />
+        <module name="mssql" />
+        <module name="killbill-jdbi" />
+        <module name="killbill-clock" />
+        <module name="killbill-automaton" />
+        <module name="killbill-embeddeddb-h2" />
+        <module name="killbill-embeddeddb-common" />
+        <module name="killbill-locker" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -47,6 +48,7 @@
       <module name="killbill-queue" target="1.8" />
       <module name="killbill-skeleton" target="1.8" />
       <module name="killbill-xmlloader" target="1.8" />
+      <module name="mssql" target="1.8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
@@ -67,6 +69,7 @@
       <module name="killbill-queue" options="" />
       <module name="killbill-skeleton" options="" />
       <module name="killbill-xmlloader" options="" />
+      <module name="mssql" options="" />
     </option>
   </component>
 </project>

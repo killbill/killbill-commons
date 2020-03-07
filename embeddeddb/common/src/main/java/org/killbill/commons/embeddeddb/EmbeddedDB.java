@@ -43,7 +43,8 @@ public abstract class EmbeddedDB {
         GENERIC,
         MYSQL,
         H2,
-        POSTGRESQL
+        POSTGRESQL,
+        MSSQL
     }
     // Not final to allow more flexible implementers
     protected String databaseName;
