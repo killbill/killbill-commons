@@ -142,4 +142,7 @@ public class TestingMsSQLServer implements Closeable {
         }
     }
 
+    public EmbeddedMsSQL getServer() {
+        return server;
+    }
 }

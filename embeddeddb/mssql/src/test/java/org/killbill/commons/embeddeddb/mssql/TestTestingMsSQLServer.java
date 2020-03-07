@@ -35,6 +35,9 @@ public class TestTestingMsSQLServer {
     public void testDatabase()
             throws Exception
     {
+
+        TestingMsSQLServer testTestingMsSQLServer = new TestingMsSQLServer("testuser", "testDB");
+        assertTrue(testTestingMsSQLServer.getServer() != null);
         try (TestingMsSQLServer server = new TestingMsSQLServer("testuser", "testdb")) {
             assertEquals(server.getUser(), "testuser");
             assertEquals(server.getDatabase(), "testdb");
