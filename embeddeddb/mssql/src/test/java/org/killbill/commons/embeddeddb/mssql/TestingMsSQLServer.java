@@ -20,42 +20,22 @@ package org.killbill.commons.embeddeddb.mssql;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.annotation.Nullable;
 
-import org.killbill.bus.api.PersistentBusConfig;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
-import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
-import org.killbill.notificationq.api.NotificationQueueConfig;
-import org.killbill.queue.InTransaction;
-import org.skife.config.ConfigSource;
-import org.skife.config.ConfigurationObjectFactory;
-import org.skife.config.SimplePropertyConfigSource;
-import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Resources;
-import junit.extensions.TestSetup;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 public class TestingMsSQLServer implements Closeable {
 
@@ -144,5 +124,10 @@ public class TestingMsSQLServer implements Closeable {
 
     public EmbeddedMsSQL getServer() {
         return server;
+    }
+
+    @Test(groups = "fast")
+    public void testEmbeddeddb(){
+        assertTrue(server != null);
     }
 }

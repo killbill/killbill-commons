@@ -23,7 +23,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
+
+import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -31,12 +35,15 @@ import static org.testng.Assert.assertTrue;
 
 public class TestTestingMsSQLServer {
 
-    @Test(groups = "slow")
+    private static final Logger log = LoggerFactory.getLogger(TestTestingMsSQLServer.class);
+
+    @Test(groups = "fast")
     public void testDatabase()
             throws Exception
     {
 
-        TestingMsSQLServer testTestingMsSQLServer = new TestingMsSQLServer("testuser", "testDB");
+        log.info("SQLServer Driver", SQLServerDriver.class.getCanonicalName());
+        final TestingMsSQLServer testTestingMsSQLServer = new TestingMsSQLServer("testuser", "testDB");
         assertTrue(testTestingMsSQLServer.getServer() != null);
         try (TestingMsSQLServer server = new TestingMsSQLServer("testuser", "testdb")) {
             assertEquals(server.getUser(), "testuser");

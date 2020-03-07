@@ -35,8 +35,8 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>8.2.0.jre11</version>
-            <scope>test</scope>
+            <version>8.2.1.jre11</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
@@ -47,6 +47,11 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.7.2</version>
         </dependency>
 
         <dependency>
