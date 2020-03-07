@@ -66,6 +66,13 @@
         </dependency>
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
+            <artifactId>mssql</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <version>0.23.8-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-embeddeddb-postgresql</artifactId>
             <type>test-jar</type>
             <scope>test</scope>

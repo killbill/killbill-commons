@@ -23,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
-import org.zapodot.junit.db.internal.EmbeddedDataSource;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 

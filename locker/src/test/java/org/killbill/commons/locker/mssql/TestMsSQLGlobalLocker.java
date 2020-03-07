@@ -17,6 +17,8 @@
 
 package org.killbill.commons.locker.mssql;
 
-public class TestMsSQLGlobalLocker {
+import org.killbill.commons.embeddeddb.mssql.MsSQLEmbeddedDB;
 
+public class TestMsSQLGlobalLocker {
+    private MsSQLEmbeddedDB  msSQLEmbeddedDB;
 }
