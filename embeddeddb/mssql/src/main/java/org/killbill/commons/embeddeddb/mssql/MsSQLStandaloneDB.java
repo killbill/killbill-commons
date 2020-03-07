@@ -23,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
-import org.zapodot.junit.db.internal.EmbeddedDataSource;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
@@ -37,7 +36,7 @@ public class MsSQLStandaloneDB extends GenericStandaloneDB {
     }
 
     public MsSQLStandaloneDB(final String databaseName, final String username, final String password) {
-        this(databaseName, username, password, "jdbc:sqlserver://localhost:1433;dataBasename=" + databaseName + "; integratedSecurity=true");
+        this(databaseName, username, password, "jdbc:sqlserver://localhost:1433;databaseName=" + databaseName + "; integratedSecurity=true");
 
     }
 
