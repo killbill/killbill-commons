@@ -62,7 +62,7 @@ public class EmbeddedMsSQL implements Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(EmbeddedMsSQL.class);
 
-    private static final String JDBC_FORMAT = "jdbc:sqlserver://localhost:%s;databaseName=%s;user=%s; integratedSecurity=true";
+    private static final String JDBC_FORMAT = "jdbc:sqlserver://localhost:%s;databaseName=%s;user=%s";
 
     private static final String SQLSERVER_SUPERUSER = "SA";
 
