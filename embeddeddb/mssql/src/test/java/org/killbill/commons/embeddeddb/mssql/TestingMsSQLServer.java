@@ -20,94 +20,99 @@ package org.killbill.commons.embeddeddb.mssql;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import org.killbill.bus.api.PersistentBusConfig;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
-import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
-import org.killbill.notificationq.api.NotificationQueueConfig;
-import org.killbill.queue.InTransaction;
-import org.skife.config.ConfigSource;
-import org.skife.config.ConfigurationObjectFactory;
-import org.skife.config.SimplePropertyConfigSource;
-import org.skife.jdbi.v2.DBI;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Resources;
-import junit.extensions.TestSetup;
 
-import static org.testng.Assert.assertNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static org.testng.Assert.assertTrue;
 
 public class TestingMsSQLServer implements Closeable {
 
-    protected MsSQLStandaloneDB testDB;
+    private static final Logger log = LoggerFactory.getLogger(TestingMsSQLServer.class);
 
-    protected EmbeddedDB embeddedDB;
+    private final String user;
+    private final String database;
+    private final int port;
+    private final EmbeddedMsSQL server;
 
-    protected DBI dbi;
-    protected PersistentBusConfig persistentBusConfig;
-    protected NotificationQueueConfig notificationQueueConfig;
-    //protected ClockMock clock;
-    protected final MetricRegistry metricRegistry = new MetricRegistry();
-    protected DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
-
-    @BeforeClass(groups = "slow")
-    public void setUp(){
-        embeddedDB = new MsSQLEmbeddedDB("killbillq","killbillq", "killbillq");
+    public TestingMsSQLServer(final String user, final String database) throws Exception {
+        this(user, null, database);
     }
 
-    @BeforeClass(groups = "slow")
-    public void beforeClass() throws Exception {
+    public TestingMsSQLServer(final String user, @Nullable final Integer portOrNull, final String database) throws Exception {
+        // Make sure the driver is registered
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
-        loadSystemPropertiesFromClasspath("/queue.properties");
+        this.user = checkNotNull(user, "user is null");
+        this.database = checkNotNull(database, "database is null");
 
-        //clock = new ClockMock();
+        if (portOrNull == null) {
+            server = new EmbeddedMsSQL();
+        } else {
+            server = new EmbeddedMsSQL(portOrNull);
+        }
+        port = server.getPort();
 
-        embeddedDB = new MsSQLEmbeddedDB("killbillq","killbillq", "killbillq");
+        Connection connection = null;
+        try {
+            connection = server.getMssqlDatabase();
+            Statement statement = null;
+            try {
+                statement = connection.createStatement();
+                execute(statement, format("CREATE ROLE %s WITH LOGIN SUPERUSER", user));
+                execute(statement, format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", database, user));
+            } finally {
+                if (statement != null) {
+                    statement.close();
+                }
+            }
+        } catch (final Exception e) {
+            if (connection != null) {
+                connection.close();
+            }
+            server.close();
+            throw e;
+        }
 
-        embeddedDB.initialize();
-        embeddedDB.start();
-
-        final String ddl = toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
-        embeddedDB.executeScript(ddl);
-
-        embeddedDB.refreshTableNames();
-
-
-        databaseTransactionNotificationApi = new DatabaseTransactionNotificationApi();
-        dbi = new DBI(embeddedDB.getDataSource());
-        InTransaction.setupDBI(dbi);
-        dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
-
-        final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
-        persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                                                                                                 ImmutableMap.<String, String>of("instanceName", "main"));
-        notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                                                                                                     ImmutableMap.<String, String>of("instanceName", "main"));
+        log.info("SQL_SERVER server ready: {}", getJdbcUrl());
     }
 
-    @BeforeMethod(groups = "slow")
-    public void beforeMethod() throws Exception {
-        embeddedDB.cleanupAllTables();
-        //clock.resetDeltaFromReality();
-        metricRegistry.removeMatching(MetricFilter.ALL);
+    private static void execute(final Statement statement, final String sql) throws SQLException {
+        log.debug("Executing: {}", sql);
+        statement.execute(sql);
     }
 
-    @AfterClass(groups = "slow")
-    public void afterClass() throws Exception {
-        embeddedDB.stop();
+    @Override
+    public void close() throws IOException {
+        server.close();
     }
 
+    public String getUser() {
+        return user;
+    }
+
+    public String getDatabase() {
+        return database;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getJdbcUrl() {
+        return server.getJdbcUrl(user, database);
+    }
 
     public static String toString(final InputStream inputStream) throws IOException {
         try {
@@ -117,60 +122,12 @@ public class TestingMsSQLServer implements Closeable {
         }
     }
 
-    public DBI getDBI() {
-        return dbi;
-    }
-
-    public PersistentBusConfig getPersistentBusConfig() {
-        return persistentBusConfig;
-    }
-
-    public NotificationQueueConfig getNotificationQueueConfig() {
-        return notificationQueueConfig;
-    }
-
-    private static void loadSystemPropertiesFromClasspath(final String resource) {
-        final URL url = TestSetup.class.getResource(resource);
-        assertNotNull(url);
-        try {
-            System.getProperties().load(url.openStream());
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-
+    public EmbeddedMsSQL getServer() {
+        return server;
     }
 
     @Test(groups = "fast")
-    public void testConnection(){
-        //test connection
-
-    }
-
-    @Test(groups = "fast")
-    public void testCreateTable(){
-        //test creating a table
-
-    }
-
-    @Test(groups = "fast")
-    public void testReads(){
-        //test reading table
-
-    }
-
-    @Test(groups = "fast")
-    public void testPort(){
-        Assert.assertNull(testDB);
-        //testing connection port
-        Assert.assertEquals(1443, testDB.getPort());
-    }
-
-    @Test(groups = "fast")
-    public void testEmbeddedDB(){
-        Assert.assertTrue(embeddedDB instanceof MsSQLEmbeddedDB);
+    public void testEmbeddeddb(){
+        assertTrue(server != null);
     }
 }
