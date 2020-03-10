@@ -37,11 +37,11 @@ public class MsSQLEmbeddedDB extends EmbeddedDB {
     protected MsSQLEmbeddedDB(final String databaseName, final String username) {
         super(databaseName, username, null, null);
         this.port = getPort();
-        this.jdbcConnectionString = String.format("jdbc:sqlserver://localhost:%s;databaseName=%s;integratedSecurity=true;user=%s", port, databaseName, username);
+        this.jdbcConnectionString = String.format("jdbc:sqlserver://localhost:%s;databaseName=%s;user=%s", port, databaseName, username);
     }
 
     public MsSQLEmbeddedDB(final String databaseName, final String username, final String password) {
-        super(databaseName, username, password, "jdbc:sqlserver://localhost:1433;dataBasename=" + databaseName + "; integratedSecurity=true");
+        super(databaseName, username, password, "jdbc:sqlserver://localhost:1433;databaseName=" + databaseName );
         this.port = 1433;
     }
 

@@ -42,7 +42,7 @@ public class TestTestingMsSQLServer {
             throws Exception
     {
 
-        log.info("SQLServer Driver", SQLServerDriver.class.getCanonicalName());
+//        log.info("SQLServer", SQLServerDriver.class.getCanonicalName());
         final TestingMsSQLServer testTestingMsSQLServer = new TestingMsSQLServer("testuser", "testDB");
         assertTrue(testTestingMsSQLServer.getServer() != null);
         try (TestingMsSQLServer server = new TestingMsSQLServer("testuser", "testdb")) {
