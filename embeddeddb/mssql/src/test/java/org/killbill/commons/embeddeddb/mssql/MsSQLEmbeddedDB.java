@@ -17,16 +17,20 @@
 
 package org.killbill.commons.embeddeddb.mssql;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
-public class MsSQLEmbeddedDB extends EmbeddedDB {
+public class MsSQLEmbeddedDB extends EmbeddedDB implements Closeable {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
@@ -41,13 +45,12 @@ public class MsSQLEmbeddedDB extends EmbeddedDB {
     }
 
     public MsSQLEmbeddedDB(final String databaseName, final String username, final String password) {
-        super(databaseName, username, password, "jdbc:sqlserver://localhost:1433;databaseName=" + databaseName );
+        super(databaseName, username, password,
+              String.format("jdbc:sqlserver://localhost:1433;databaseName=%s;user=%s;password=%s",
+                            databaseName,
+                            username,
+                            password));
         this.port = 1433;
-    }
-
-    public MsSQLEmbeddedDB() {
-        this("database" + UUID.randomUUID().toString().substring(0, 8),
-             "user" + UUID.randomUUID().toString().substring(0, 8));
     }
 
     @Override
@@ -76,7 +79,7 @@ public class MsSQLEmbeddedDB extends EmbeddedDB {
     @Override
     public void stop() throws IOException {
         if (!started.get()) {
-            throw new IOException("PostgreSQL is not running");
+            throw new IOException("SQL Server is not running");
         }
         super.stop();
         stopSQLServer();
@@ -84,7 +87,29 @@ public class MsSQLEmbeddedDB extends EmbeddedDB {
 
     @Override
     public void refreshTableNames() throws IOException {
+        final String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = db_name() AND TABLE_TYPE = 'BASE TABLE'";
+        try {
+            executeQuery(sql, new ResultSetJob() {
+                @Override
+                public void work(final ResultSet resultSet) throws SQLException {
+                    allTables.clear();
+                    while (resultSet.next()) {
+                        allTables.add(resultSet.getString(1));
+                    }
+                }
+            });
+        } catch (final SQLException e) {
+            throw new IOException(e);
+        }
 
+    }
+
+    @Override
+    public DataSource getDataSource() throws IOException {
+        if (!started.get()) {
+            throw new IOException("SQL Server is not running");
+        }
+        return super.getDataSource();
     }
 
     protected void createDataSource() throws IOException {
@@ -98,6 +123,11 @@ public class MsSQLEmbeddedDB extends EmbeddedDB {
             sqlServerDataSource.setURL(jdbcConnectionString);
             dataSource = sqlServerDataSource;
         }
+    }
+
+    @Override
+    public String getCmdLineConnectionString() {
+        return String.format("-P %s -U %s -p %s %s", password, username, port, databaseName);
     }
 
     private void startSQLServer() throws IOException {
@@ -120,4 +150,8 @@ public class MsSQLEmbeddedDB extends EmbeddedDB {
         }
     }
 
+    @Override
+    public void close() throws IOException {
+
+    }
 }

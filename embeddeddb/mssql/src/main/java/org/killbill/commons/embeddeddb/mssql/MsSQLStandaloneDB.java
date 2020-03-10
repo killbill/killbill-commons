@@ -17,6 +17,7 @@
 
 package org.killbill.commons.embeddeddb.mssql;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.sql.ResultSet;
@@ -26,7 +27,7 @@ import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
-public class MsSQLStandaloneDB extends GenericStandaloneDB {
+public class MsSQLStandaloneDB extends GenericStandaloneDB implements Closeable {
 
     private final int port;
 
@@ -41,6 +42,13 @@ public class MsSQLStandaloneDB extends GenericStandaloneDB {
                            databaseName,
                            username,
                            password));
+        try {
+            this.initialize();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -61,7 +69,7 @@ public class MsSQLStandaloneDB extends GenericStandaloneDB {
 
     @Override
     public void refreshTableNames() throws IOException {
-        String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = db_name() AND TABLE_TYPE = 'BASE TABLE'";
+        final String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = db_name() AND TABLE_TYPE = 'BASE TABLE'";
         try {
             executeQuery(sql, new ResultSetJob() {
                 @Override
@@ -84,5 +92,10 @@ public class MsSQLStandaloneDB extends GenericStandaloneDB {
 
     public int getPort(){
         return this.port;
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 }

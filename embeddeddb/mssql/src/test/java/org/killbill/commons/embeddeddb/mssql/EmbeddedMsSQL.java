@@ -39,7 +39,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +48,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.airlift.command.Command;
+import io.airlift.command.CommandFailedException;
+import io.airlift.units.Duration;
 
 import static com.google.common.base.StandardSystemProperty.OS_ARCH;
 import static com.google.common.base.StandardSystemProperty.OS_NAME;
@@ -66,7 +68,9 @@ public class EmbeddedMsSQL implements Closeable {
 
     private static final String SQLSERVER_SUPERUSER = "SA";
 
-    private static final Duration _STARTUP_WAIT = new Duration(10);// new Duration(10, TimeUnit.SECONDS);
+    private static final Duration _STARTUP_WAIT = new Duration(10, TimeUnit.SECONDS);
+    private static final io.airlift.units.Duration COMMAND_TIMEOUT = new io.airlift.units.Duration(30, TimeUnit.SECONDS);
+
 
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("testing-mssql-server-%s"));
     private final Path serverDirectory;
@@ -171,11 +175,11 @@ public class EmbeddedMsSQL implements Closeable {
     }
 
     private void initdb() {
-        /*system(pgBin("initdb"),
+        system(pgBin("initdb"),
                "-A", "trust",
-               "-U", SQLSEREVR_SUPERUSER,
+               "-U", SQLSERVER_SUPERUSER,
                "-D", dataDirectory.toString(),
-               "-E", "UTF-8");*/
+               "-E", "UTF-8");
     }
 
     private Process startPostmaster()
@@ -208,7 +212,7 @@ public class EmbeddedMsSQL implements Closeable {
     private void waitForServerStartup(final Process process) throws IOException {
         Throwable lastCause = null;
         final long start = System.nanoTime();
-        while (Duration.millis(start).compareTo(_STARTUP_WAIT) <= 0) {
+        while (Duration.nanosSince(start).compareTo(_STARTUP_WAIT) <= 0) {
             try {
                 checkReady();
                 log.debug("SQL_SERVER startup finished");
@@ -269,16 +273,16 @@ public class EmbeddedMsSQL implements Closeable {
     }
 
     private void pgStop() {
-        /*system(pgBin("pg_ctl"),
+        system(pgBin("sqlcmd"),
                "stop",
                "-D", dataDirectory.toString(),
                "-m", "fast",
                "-t", "5",
-               "-w");*/
+               "-w");
     }
 
     private String pgBin(final String binaryName) {
-        return serverDirectory.resolve("bin").resolve(binaryName).toString();
+        return serverDirectory.resolve("sqlcmd").resolve(binaryName).toString();
     }
 
     private void startOutputProcessor(final InputStream in) {
@@ -291,6 +295,17 @@ public class EmbeddedMsSQL implements Closeable {
                 }
             }
         });
+    }
+
+    private String system(final String... command) {
+        try {
+            return new Command(command)
+                    .setTimeLimit(COMMAND_TIMEOUT)
+                    .execute(executor)
+                    .getCommandOutput();
+        } catch (final CommandFailedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void unpackSqlserver(final Path target) throws IOException {
