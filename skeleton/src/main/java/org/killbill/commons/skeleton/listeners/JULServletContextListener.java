@@ -41,9 +41,38 @@ public class JULServletContextListener implements ServletContextListener {
                 rootLogger.removeHandler(handler);
             }
         }
+
+        // Remove all handlers attached to root JUL logger
+        removeHandlersForRootLoggerHierarchy();
+
         // And then we let jul-to-sfl4j do its magic so that jersey messages go to sfl4j
         SLF4JBridgeHandler.install();
     }
+
+    //
+    // @See SLF4JBridgeHandler#removeHandlersForRootLogger
+    //
+    // The issue with SLF4JBridgeHandler#removeHandlersForRootLogger is that in
+    // some situations (e.g tomcat deployments), the root logger is *not* actually
+    // the root (e.g it has parents which have CONSOLE handlers attached) and we
+    // end up duplicating the JUL logs to console and bridge
+    //
+    private static void removeHandlersForRootLoggerHierarchy() {
+        java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
+        while (rootLogger != null) {
+            removeHandlersForRootLogger(rootLogger);
+            rootLogger = rootLogger.getParent();
+        }
+    }
+
+
+    private static void removeHandlersForRootLogger(java.util.logging.Logger rootLogger) {
+        java.util.logging.Handler[] handlers = rootLogger.getHandlers();
+        for (int i = 0; i < handlers.length; i++) {
+            rootLogger.removeHandler(handlers[i]);
+        }
+    }
+
 
     @Override
     public void contextDestroyed(final ServletContextEvent event) {
