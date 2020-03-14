@@ -47,7 +47,8 @@ public abstract class GlobalLockerBaseWithDao extends GlobalLockerBase {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            return globalLockDao.isLockFree(connection, lockName);
+            final boolean isFree = globalLockDao.isLockFree(connection, lockName);
+            return isFree;
         } catch (final SQLException e) {
             logger.warn("Unable to check if lock is free", e);
             return false;

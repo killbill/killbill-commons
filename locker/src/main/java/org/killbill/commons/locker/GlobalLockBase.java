@@ -58,7 +58,8 @@ public class GlobalLockBase implements GlobalLock {
                     return null;
                 }
                 try {
-                    lockDao.releaseLock(connection, lockName);
+                    final boolean lockReleased = lockDao.releaseLock(connection, lockName);
+                    System.out.println("Released lock status "+lockReleased);
                 } catch (final SQLException e) {
                     logger.warn("Unable to release lock for " + lockName, e);
                 } finally {

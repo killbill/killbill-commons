@@ -131,6 +131,9 @@ public abstract class EmbeddedDB {
             case H2:
                 dataSourceClassName = "org.h2.jdbcx.JdbcDataSource";
                 break;
+            case MSSQL:
+                dataSourceClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+                break;
             default:
                 dataSourceClassName = null;
                 break;

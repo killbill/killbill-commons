@@ -29,33 +29,27 @@ public class MsSQLGlobalLockDao implements GlobalLockDao {
 
     @Override
     public boolean lock(final Connection connection, final String lockName, final long timeout, final TimeUnit timeUnit) throws SQLException {
-        final String sql = String.format("select request_type from sys.dm_tran_locks where request_session_id = %s;", lockName);
+        final String sql = String.format("SELECT request_type from sys.dm_tran_locks where request_session_id = %d", Integer.valueOf(lockName));
         return executeLockQuery(connection, sql);
     }
 
     @Override
     public boolean releaseLock(final Connection connection, final String lockName) throws SQLException {
-        final String sql = String.format("KILL %s;", lockName);
-        return executeLockQuery(connection, sql);
+        final String releaseLockQuery = String.format("KILL %d; SELECT request_type from sys.dm_tran_locks where request_session_id = %d and (request_status = 'GRANT' )", Integer.valueOf(lockName), Integer.valueOf(lockName), Integer.valueOf(lockName));
+        return executeLockQuery(connection, releaseLockQuery);
     }
 
     @Override
     public boolean isLockFree(final Connection connection, final String lockName) throws SQLException {
-        final String sql = String.format("select request_type from sys.dm_tran_locks where request_session_id = %s and (request_status = 'WAIT' OR request_status = 'LOW_PRIORITY_WAIT');", lockName);
-        return executeLockQuery(connection, sql);
+        final String sql = String.format("SELECT request_type from sys.dm_tran_locks where request_session_id = %d and (request_status = 'GRANT' )", Integer.valueOf(lockName));
+        return !executeLockQuery(connection, sql);
     }
 
     private boolean executeLockQuery(final Connection connection, final String query) throws SQLException {
-        Statement statement = null;
         final String lockTypeValue = "LOCK";
-        try {
-            statement = connection.createStatement();
+        try (final Statement statement = connection.createStatement()) {
             final ResultSet rs = statement.executeQuery(query);
             return rs.next() && (lockTypeValue.equals(rs.getString(1)));
-        } finally {
-            if (statement != null) {
-                statement.close();
-            }
         }
     }
 }

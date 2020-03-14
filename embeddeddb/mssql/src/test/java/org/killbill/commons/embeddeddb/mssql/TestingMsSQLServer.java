@@ -20,94 +20,104 @@ package org.killbill.commons.embeddeddb.mssql;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import org.killbill.bus.api.PersistentBusConfig;
-import org.killbill.commons.embeddeddb.EmbeddedDB;
-import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
-import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
-import org.killbill.notificationq.api.NotificationQueueConfig;
-import org.killbill.queue.InTransaction;
-import org.skife.config.ConfigSource;
-import org.skife.config.ConfigurationObjectFactory;
-import org.skife.config.SimplePropertyConfigSource;
-import org.skife.jdbi.v2.DBI;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Resources;
-import junit.extensions.TestSetup;
 
-import static org.testng.Assert.assertNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static org.testng.Assert.assertTrue;
 
 public class TestingMsSQLServer implements Closeable {
 
-    protected MsSQLStandaloneDB testDB;
+    private static final Logger log = LoggerFactory.getLogger(TestingMsSQLServer.class);
 
-    protected EmbeddedDB embeddedDB;
+    private final String user;
+    private final String password;
+    private final String database;
+    private final int port;
+    private final MsSQLStandaloneDB server;
 
-    protected DBI dbi;
-    protected PersistentBusConfig persistentBusConfig;
-    protected NotificationQueueConfig notificationQueueConfig;
-    //protected ClockMock clock;
-    protected final MetricRegistry metricRegistry = new MetricRegistry();
-    protected DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
-
-    @BeforeClass(groups = "slow")
-    public void setUp(){
-        embeddedDB = new MsSQLEmbeddedDB("killbillq","killbillq", "killbillq");
+    public TestingMsSQLServer(final String user, final String password, final String database) throws Exception {
+        this(user, password, null, database);
     }
 
-    @BeforeClass(groups = "slow")
-    public void beforeClass() throws Exception {
+    public TestingMsSQLServer(final String user, final String password, @Nullable final Integer portOrNull, final String database) throws Exception {
+        // Make sure the driver is registered
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
-        loadSystemPropertiesFromClasspath("/queue.properties");
+        this.user = checkNotNull(user, "user is null");
+        this.password = checkNotNull(password, "Password is Null");
+        this.database = checkNotNull(database, "database is null");
+        server = new MsSQLStandaloneDB(database,user,password);
+        port = server.getPort();
 
-        //clock = new ClockMock();
+        Connection connection = null;
+        try {
+            connection = server.getDataSource().getConnection();
+            Statement statement = null;
+            try {
+                statement = connection.createStatement();
+                execute(statement, format("DROP DATABASE IF EXISTS %s ", "killbill"));
+                execute(statement, format("DROP LOGIN %s ", "killbill"));
+                execute(statement, format("DROP USER %s ", "killbill"));
+                execute(statement, format("CREATE LOGIN %s WITH PASSWORD = '%s'", "killbill", "killbill123*"));
+                execute(statement, format("CREATE USER %s FOR LOGIN %s", "killbill", "killbill"));
+                execute(statement, format("GRANT ALTER, CONTROL TO %s", "killbill"));
+            } finally {
+                if (statement != null) {
+                    statement.close();
+                }
+            }
+        } catch (final Exception e) {
+            if (connection != null) {
+                connection.close();
+            }
+            server.close();
+            throw e;
+        }
 
-        embeddedDB = new MsSQLEmbeddedDB("killbillq","killbillq", "killbillq");
-
-        embeddedDB.initialize();
-        embeddedDB.start();
-
-        final String ddl = toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
-        embeddedDB.executeScript(ddl);
-
-        embeddedDB.refreshTableNames();
-
-
-        databaseTransactionNotificationApi = new DatabaseTransactionNotificationApi();
-        dbi = new DBI(embeddedDB.getDataSource());
-        InTransaction.setupDBI(dbi);
-        dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
-
-        final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
-        persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                                                                                                 ImmutableMap.<String, String>of("instanceName", "main"));
-        notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                                                                                                     ImmutableMap.<String, String>of("instanceName", "main"));
+        log.info("SQL_SERVER server ready: {}", getJdbcUrl());
     }
 
-    @BeforeMethod(groups = "slow")
-    public void beforeMethod() throws Exception {
-        embeddedDB.cleanupAllTables();
-        //clock.resetDeltaFromReality();
-        metricRegistry.removeMatching(MetricFilter.ALL);
+    private static void execute(final Statement statement, final String sql) throws SQLException {
+        log.debug("Executing: {}", sql);
+        statement.execute(sql);
     }
 
-    @AfterClass(groups = "slow")
-    public void afterClass() throws Exception {
-        embeddedDB.stop();
+    @Override
+    public void close() throws IOException {
+        server.close();
     }
 
+    public String getUser() {
+        return user;
+    }
+
+    public String getDatabase() {
+        return database;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getJdbcUrl() {
+        return server.getJdbcConnectionString();
+    }
 
     public static String toString(final InputStream inputStream) throws IOException {
         try {
@@ -117,60 +127,7 @@ public class TestingMsSQLServer implements Closeable {
         }
     }
 
-    public DBI getDBI() {
-        return dbi;
-    }
-
-    public PersistentBusConfig getPersistentBusConfig() {
-        return persistentBusConfig;
-    }
-
-    public NotificationQueueConfig getNotificationQueueConfig() {
-        return notificationQueueConfig;
-    }
-
-    private static void loadSystemPropertiesFromClasspath(final String resource) {
-        final URL url = TestSetup.class.getResource(resource);
-        assertNotNull(url);
-        try {
-            System.getProperties().load(url.openStream());
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-
-    }
-
-    @Test(groups = "fast")
-    public void testConnection(){
-        //test connection
-
-    }
-
-    @Test(groups = "fast")
-    public void testCreateTable(){
-        //test creating a table
-
-    }
-
-    @Test(groups = "fast")
-    public void testReads(){
-        //test reading table
-
-    }
-
-    @Test(groups = "fast")
-    public void testPort(){
-        Assert.assertNull(testDB);
-        //testing connection port
-        Assert.assertEquals(1443, testDB.getPort());
-    }
-
-    @Test(groups = "fast")
-    public void testEmbeddedDB(){
-        Assert.assertTrue(embeddedDB instanceof MsSQLEmbeddedDB);
+    public MsSQLStandaloneDB getServer() {
+        return server;
     }
 }

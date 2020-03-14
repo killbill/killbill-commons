@@ -29,8 +29,12 @@ import org.killbill.commons.locker.ResetReentrantLockCallback;
 
 public class MsSQLGlobalLocker extends GlobalLockerBaseWithDao implements GlobalLocker {
 
-    public MsSQLGlobalLocker(final DataSource dataSource, final GlobalLockDao globalLockDao, final long timeout, final TimeUnit timeUnit) {
-        super(dataSource, globalLockDao, timeout, timeUnit);
+    public MsSQLGlobalLocker(final DataSource dataSource, final long timeout, final TimeUnit timeUnit) {
+        super(dataSource, new MsSQLGlobalLockDao(), timeout, timeUnit);
+    }
+
+    public MsSQLGlobalLocker(final DataSource dataSource){
+        this(dataSource, DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -40,6 +44,7 @@ public class MsSQLGlobalLocker extends GlobalLockerBaseWithDao implements Global
 
     @Override
     protected String getLockName(final String service, final String lockKey) {
-        return service.concat("-").concat(lockKey);
+        //return service.concat("-").concat(lockKey);
+        return (lockKey);
     }
 }

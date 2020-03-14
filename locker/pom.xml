@@ -69,7 +69,6 @@
             <artifactId>mssql</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
-            <version>0.23.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
@@ -82,6 +81,13 @@
                     <groupId>com.google.guava</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>mssql</artifactId>
+            <version>0.23.8-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
