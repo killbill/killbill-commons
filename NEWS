@@ -1,3 +1,6 @@
+0.23.8
+    Fix duplication of JUL logs in certain situations
+
 0.23.7
     Update to killbill-oss-parent 0.143.46
 
