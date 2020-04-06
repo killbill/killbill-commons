@@ -31,7 +31,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
-import org.killbill.billing.catalog.api.InvalidConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -62,7 +61,7 @@ public class XMLLoader {
         return getObjectFromStream(UriAccessor.accessUri(uri), objectType);
     }
 
-    public static <T extends ValidatingConfig<T>> T getObjectFromStream(final InputStream stream, final Class<T> clazz) throws SAXException, InvalidConfigException, JAXBException, IOException, TransformerException, ValidationException {
+    public static <T extends ValidatingConfig<T>> T getObjectFromStream(final InputStream stream, final Class<T> clazz) throws SAXException, JAXBException, IOException, TransformerException, ValidationException {
         if (stream == null) {
             return null;
         }
@@ -82,7 +81,7 @@ public class XMLLoader {
         }
     }
 
-    public static <T> T getObjectFromStreamNoValidation(final InputStream stream, final Class<T> clazz) throws SAXException, InvalidConfigException, JAXBException, IOException, TransformerException {
+    public static <T> T getObjectFromStreamNoValidation(final InputStream stream, final Class<T> clazz) throws SAXException, JAXBException, IOException, TransformerException {
         final Object o = unmarshaller(clazz).unmarshal(stream);
         if (clazz.isInstance(o)) {
             @SuppressWarnings("unchecked") final T castObject = (T) o;

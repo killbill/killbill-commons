@@ -26,7 +26,6 @@ import java.net.URISyntaxException;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
 
-import org.killbill.billing.catalog.api.InvalidConfigException;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
@@ -42,7 +41,7 @@ public class TestXMLLoader {
             "</xmlTestClass>";
 
     @Test(groups = "fast")
-    public void test() throws SAXException, InvalidConfigException, JAXBException, IOException, TransformerException, URISyntaxException, ValidationException {
+    public void test() throws SAXException, JAXBException, IOException, TransformerException, ValidationException {
         final InputStream is = new ByteArrayInputStream(TEST_XML.getBytes());
         final XmlTestClass test = XMLLoader.getObjectFromStream(is, XmlTestClass.class);
         assertEquals(test.getFoo(), "foo");
