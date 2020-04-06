@@ -1,3 +1,6 @@
+0.23.9
+    remove unused killbill-api dependency
+
 0.23.8
     Fix duplication of JUL logs in certain situations
 
