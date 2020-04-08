@@ -33,7 +33,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
 
   test-h2:
     <<: *defaults
@@ -42,7 +42,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
       - run: mvn clean install -Ptravis
       - run:
           name: Save test results
@@ -61,7 +61,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
       - run: mvn clean install -Pmysql
       - run:
           name: Save test results
@@ -80,7 +80,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
       - run: mvn clean install -Ppostgresql
       - run:
           name: Save test results
