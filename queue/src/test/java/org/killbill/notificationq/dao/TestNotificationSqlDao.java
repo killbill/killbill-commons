@@ -31,6 +31,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
+import org.killbill.clock.DefaultClock;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.jdbi.v2.Handle;
@@ -90,7 +91,8 @@ public class TestNotificationSqlDao extends TestSetup {
         final String ownerId = UUID.randomUUID().toString();
 
         final String eventJson = UUID.randomUUID().toString();
-        final DateTime effDt = new DateTime();
+        // ms will be truncated in the database
+        final DateTime effDt = DefaultClock.truncateMs(new DateTime());
 
         final NotificationEventModelDao notif = new NotificationEventModelDao(hostname, clock.getUTCNow(), eventJson.getClass().getName(),
                 eventJson, UUID.randomUUID(), searchKey1, SEARCH_KEY_2,
@@ -99,7 +101,8 @@ public class TestNotificationSqlDao extends TestSetup {
         dao.insertEntry(notif, notificationQueueConfig.getTableName());
 
         Thread.sleep(1000);
-        final DateTime now = new DateTime();
+        // ms will be truncated in the database
+        final DateTime now = DefaultClock.truncateMs(new DateTime());
         final List<NotificationEventModelDao> notifications = dao.getReadyEntries(now.toDate(), 3, hostname, notificationQueueConfig.getTableName());
         assertNotNull(notifications);
         assertEquals(notifications.size(), 1);

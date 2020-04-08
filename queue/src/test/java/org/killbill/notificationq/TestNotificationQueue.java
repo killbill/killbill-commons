@@ -30,6 +30,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.killbill.TestSetup;
 import org.killbill.billing.util.queue.QueueRetryException;
+import org.killbill.clock.DefaultClock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -191,9 +192,9 @@ public class TestNotificationQueue extends TestSetup {
 
         queue.startQueue();
 
-        final DateTime now = new DateTime();
+        // ms will be truncated in the database
+        final DateTime now = DefaultClock.truncateMs(new DateTime());
         final DateTime readyTime = now.plusMillis(2000);
-
 
         final DBI dbi = getDBI();
         dbi.inTransaction(new TransactionCallback<Object>() {
