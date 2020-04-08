@@ -74,12 +74,12 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
     @BeforeMethod(groups = "load")
     public void beforeMethod() throws Exception {
         super.beforeMethod();
-        eventBus.start();
+        eventBus.startQueue();
     }
 
     @AfterMethod(groups = "load")
     public void afterMethod() throws Exception {
-        eventBus.stop();
+        eventBus.stopQueue();
     }
 
     @Test(groups = "load")

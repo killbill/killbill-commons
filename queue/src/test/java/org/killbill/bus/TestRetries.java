@@ -65,12 +65,12 @@ public class TestRetries extends TestSetup {
         super.beforeMethod();
         queueService = new DefaultNotificationQueueService(getDBI(), clock, getNotificationQueueConfig(), metricRegistry);
         busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry, databaseTransactionNotificationApi);
-        busService.start();
+        busService.startQueue();
     }
 
     @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
-        busService.stop();
+        busService.stopQueue();
     }
 
     @Test(groups = "slow")

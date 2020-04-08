@@ -230,6 +230,11 @@ public class MockNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    public boolean initQueue() {
+        return true;
+    }
+
+    @Override
     public boolean startQueue() {
         isStarted = true;
         queueService.startQueue();

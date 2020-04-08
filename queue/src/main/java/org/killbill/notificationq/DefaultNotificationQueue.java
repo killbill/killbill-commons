@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 
@@ -43,6 +44,7 @@ import org.killbill.notificationq.dao.NotificationSqlDao;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.InTransaction;
 import org.killbill.queue.QueueObjectMapper;
+import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dispatching.CallableCallbackBase;
@@ -73,7 +75,8 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private final NotificationQueueConfig config;
     private final Profiling<Iterable<NotificationEventModelDao>, RuntimeException> prof;
 
-    private volatile boolean isStarted;
+    private AtomicBoolean isInitialized;
+    private AtomicBoolean isStarted;
 
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
                                     final DBI dbi, final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
@@ -84,6 +87,8 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public DefaultNotificationQueue(final String svcName, final String queueName, final NotificationQueueHandler handler,
                                     final DBI dbi, final DBBackedQueue<NotificationEventModelDao> dao, final NotificationQueueService notificationQueueService,
                                     final Clock clock, final NotificationQueueConfig config, final ObjectMapper objectMapper) {
+        this.isStarted = new AtomicBoolean(false);
+        this.isInitialized = new AtomicBoolean(false);
         this.dbi = dbi;
         this.svcName = svcName;
         this.queueName = queueName;
@@ -396,26 +401,44 @@ public class DefaultNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    public boolean initQueue() {
+        if (config.isProcessingOff()) {
+            return false;
+        }
+
+        if (!isInitialized.compareAndSet(false, true)) {
+            return notificationQueueService.initQueue();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean startQueue() {
         if (config.isProcessingOff()) {
             return false;
         }
-        notificationQueueService.startQueue();
-        isStarted = true;
 
-        return true;
+        if (isStarted.compareAndSet(false, true)) {
+            notificationQueueService.startQueue();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public void stopQueue() {
-        // Order matters...
-        isStarted = false;
-        notificationQueueService.stopQueue();
+        if (isStarted.compareAndSet(true, false)) {
+            isInitialized.set(false);
+            notificationQueueService.stopQueue();
+            return;
+        }
     }
 
     @Override
     public boolean isStarted() {
-        return isStarted;
+        return isStarted.get();
     }
 
     @Override
