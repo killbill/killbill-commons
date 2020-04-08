@@ -12,7 +12,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v2-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
       - run:
           name: Setup dependencies
           command: |
