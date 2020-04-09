@@ -277,7 +277,7 @@ public class HackedEmbeddedMySql implements Closeable {
     private void unpackMySql(final Path target)
             throws IOException {
         final String archiveName = format("/mysql-%s.tar.gz", getPlatform());
-        final URL url = EmbeddedMySql.class.getResource(archiveName);
+        final URL url = HackedEmbeddedMySql.class.getResource(archiveName);
         if (url == null) {
             throw new RuntimeException("archive not found: " + archiveName);
         }
