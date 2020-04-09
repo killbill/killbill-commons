@@ -118,11 +118,10 @@ public abstract class EmbeddedDB {
 
     // Only used in tests (embedded versions)
     protected DataSource createHikariDataSource() throws IOException {
-
         final String dataSourceClassName;
         switch(getDBEngine()) {
             case MYSQL:
-                dataSourceClassName = "org.mariadb.jdbc.MySQLDataSource";
+                dataSourceClassName = "org.mariadb.jdbc.MariaDbDataSource";
                 break;
             case POSTGRESQL:
                 dataSourceClassName = "org.postgresql.ds.PGSimpleDataSource";

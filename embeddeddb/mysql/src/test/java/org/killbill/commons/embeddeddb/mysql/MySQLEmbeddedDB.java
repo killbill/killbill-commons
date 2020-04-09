@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,14 +18,9 @@
 
 package org.killbill.commons.embeddeddb.mysql;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,20 +28,16 @@ import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.mariadb.jdbc.MariaDbDataSource;
-import org.slf4j.event.Level;
 
-import com.mysql.management.HackedMysqldResource;
-import com.mysql.management.MysqldResourceI;
+import com.google.common.base.Preconditions;
+import io.airlift.testing.mysql.HackedEmbeddedMySql;
+import io.airlift.testing.mysql.HackedTestingMySqlServer;
 
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    protected final int port;
-
-    private File dbDir;
-    private File dataDir;
-    private HackedMysqldResource mysqldResource;
+    private final HackedTestingMySqlServer mysqldResource;
 
     public MySQLEmbeddedDB() {
         // Avoid dashes - MySQL doesn't like them
@@ -57,10 +48,15 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     public MySQLEmbeddedDB(final String databaseName, final String username, final String password) {
         super(databaseName, username, password, null);
-        this.port = getPort();
-        this.jdbcConnectionString = "jdbc:mysql://localhost:" + port + "/" + databaseName + "?createDatabaseIfNotExist=true&allowMultiQueries=true";
+        final int port;
+        try {
+            port = HackedEmbeddedMySql.randomPort();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+        mysqldResource = new HackedTestingMySqlServer(username, password, port, databaseName);
+        this.jdbcConnectionString = mysqldResource.getJdbcUrl(databaseName);
     }
-
 
     @Override
     public DBEngine getDBEngine() {
@@ -77,7 +73,11 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             throw new IOException("MySQL is already running: " + jdbcConnectionString);
         }
 
-        startMysql();
+        try {
+            startMysql();
+        } catch (final Exception e) {
+            throw new IOException(e);
+        }
 
         createDataSource();
 
@@ -121,10 +121,12 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     @Override
     public String getCmdLineConnectionString() {
-        return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, port, dataDir, databaseName);
+        Preconditions.checkState(started.get(), "MySQL isn't running");
+        return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, mysqldResource.getPort(), mysqldResource.getServer().getServerDirectory(), databaseName);
     }
 
     protected void createDataSource() throws IOException, SQLException {
+        Preconditions.checkState(started.get(), "MySQL isn't running");
         if (useConnectionPooling()) {
             dataSource = createHikariDataSource();
         } else {
@@ -137,82 +139,27 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
             mariaDBDataSource.setDatabaseName(databaseName);
             mariaDBDataSource.setUser(username);
             mariaDBDataSource.setPassword(password);
-            mariaDBDataSource.setPort(port);
+            mariaDBDataSource.setPort(mysqldResource.getPort());
             dataSource = mariaDBDataSource;
         }
     }
 
-
-    private void startMysql() throws IOException {
-        dbDir = File.createTempFile("mysqldb", "");
-        if (!dbDir.delete()) {
-            logger.warn("Unable to delete " + dbDir.getAbsolutePath());
-        }
-        if (!dbDir.mkdir()) {
-            throw new IOException("Unable to create " + dbDir.getAbsolutePath());
-        }
-
-        dataDir = File.createTempFile("mysqldata", "");
-        if (!dataDir.delete()) {
-            logger.warn("Unable to delete " + dataDir.getAbsolutePath());
-        }
-        if (!dataDir.mkdir()) {
-            throw new IOException("Unable to create " + dataDir.getAbsolutePath());
-        }
-
-        final PrintStream out = new PrintStream(new LoggingOutputStream(logger, Level.INFO), true);
-        final PrintStream err = new PrintStream(new LoggingOutputStream(logger, Level.WARN), true);
-        final PrintStream debug = new PrintStream(new LoggingOutputStream(logger, Level.DEBUG), true);
-        mysqldResource = new HackedMysqldResource(dbDir, dataDir, null, out, err, debug);
-
-        final Map<String, String> dbOpts = new HashMap<String, String>();
-        dbOpts.put(MysqldResourceI.PORT, Integer.toString(port));
-        dbOpts.put(MysqldResourceI.INITIALIZE_USER, "true");
-        dbOpts.put(MysqldResourceI.INITIALIZE_PASSWORD, password);
-        dbOpts.put(MysqldResourceI.INITIALIZE_USER_NAME, username);
-        dbOpts.put("default-time-zone", "+00:00");
-
-        mysqldResource.start("test-mysqld-thread", dbOpts);
-        if (!mysqldResource.isRunning()) {
-            throw new IllegalStateException("MySQL did not start.");
-        } else {
-            started.set(true);
-            logger.info("MySQL started: " + getCmdLineConnectionString());
-        }
+    private void startMysql() throws Exception {
+        mysqldResource.start();
+        started.set(true);
+        logger.info("MySQL started: " + getCmdLineConnectionString());
     }
 
     private void stopMysql() throws IOException {
         if (mysqldResource != null) {
             try {
-                mysqldResource.shutdown();
+                mysqldResource.close();
             } catch (final NullPointerException npe) {
                 logger.warn("Failed to shutdown mysql properly ", npe);
             }
-            try {
-                deleteRecursive(dataDir);
-                deleteRecursive(dbDir);
-            } catch (final FileNotFoundException e) {
-                throw new IOException(e);
-            }
 
             started.set(false);
-            logger.info("MySQL stopped: " + getCmdLineConnectionString());
+            logger.info("MySQL stopped");
         }
-    }
-
-    private static boolean deleteRecursive(final File path) throws FileNotFoundException {
-        if (!path.exists()) {
-            throw new FileNotFoundException(path.getAbsolutePath());
-        }
-        boolean ret = true;
-        if (path.isDirectory()) {
-            final File[] files = path.listFiles();
-            if (files != null) {
-                for (final File f : files) {
-                    ret = ret && deleteRecursive(f);
-                }
-            }
-        }
-        return ret && path.delete();
     }
 }
