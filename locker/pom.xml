@@ -28,6 +28,12 @@
     <name>Kill Bill distributed locking library</name>
     <dependencies>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <!-- Technically, test-runtime -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>testing-mysql-server</artifactId>
             <!-- Technically, test-runtime -->
