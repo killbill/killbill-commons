@@ -41,14 +41,6 @@ public class InMemoryPersistentBus implements PersistentBus {
     private final EventBusDelegate delegate;
     private final AtomicBoolean isInitialized;
 
-    @Override
-    public boolean startQueue() {
-        return true;
-    }
-
-    @Override
-    public void stopQueue() {
-    }
 
     @Override
     public boolean isStarted() {
@@ -116,10 +108,18 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public void start() {
+    public boolean initQueue() {
+        return false;
+    }
+
+
+    @Override
+    public boolean startQueue() {
         if (isInitialized.compareAndSet(false, true)) {
             log.info("InMemoryPersistentBus started...");
-
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -131,7 +131,7 @@ public class InMemoryPersistentBus implements PersistentBus {
     }
 
     @Override
-    public void stop() {
+    public void stopQueue() {
         if (isInitialized.compareAndSet(true, false)) {
             log.info("InMemoryPersistentBus stopping...");
             delegate.completeDispatch();

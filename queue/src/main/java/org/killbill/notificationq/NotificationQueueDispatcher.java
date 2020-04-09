@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.joda.time.DateTime;
 import org.killbill.clock.Clock;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -52,7 +51,6 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 
@@ -74,7 +72,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     // We could event have one per queue is required...
     private final Dispatcher<NotificationEvent, NotificationEventModelDao> dispatcher;
-    private final AtomicBoolean isStarted;
+    private final AtomicBoolean isInitialized;
+
+    private volatile boolean isStarted;
+    private volatile int activeQueues;
 
     private final NotificationCallableCallback notificationCallableCallback;
 
@@ -108,7 +109,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.perQueueProcessingTime = new HashMap<String, Histogram>();
 
         this.metricRegistry = metricRegistry;
-        this.isStarted = new AtomicBoolean(false);
+        this.isInitialized = new AtomicBoolean(false);
+        this.isStarted = false;
+        this.activeQueues = 0;
+
         this.reaper = new NotificationReaper(this.dao, config, clock);
 
         this.notificationCallableCallback = new NotificationCallableCallback(this);
@@ -117,50 +121,66 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     }
 
     @Override
-    public boolean startQueue() {
-        if (isStarted.compareAndSet(false, true)) {
+    public boolean initQueue() {
+        if (isInitialized.compareAndSet(false, true)) {
             dao.initialize();
             dispatcher.start();
-            super.startQueue();
             return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean startQueue() {
+
+        if (!isInitialized.get()) {
+            // Make it easy for our tests, so they simply call startQueue
+            initQueue();
         }
 
-        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
-            reaper.start();
+        //
+        // The first DefaultNotificationQueue#startQueue will call this method and start the reaper and lifecycle dispatch thread pool
+        // All subsequent DefaultNotificationQueue#startQueue will simply increment the # activeQueues
+        //
+        synchronized (queues) {
+            // Increment number of active queues
+            activeQueues++;
+
+            if (!isStarted) {
+                if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
+                    reaper.start();
+                }
+                super.startQueue();
+                isStarted = true;
+                return true;
+            } else {
+                return false;
+            }
         }
-        return false;
     }
 
     @Override
     public void stopQueue() {
-        if (!isStarted()) {
-            return;
-        }
-
-        // If there are no active queues left, stop the processing for the queues
-        // (This is not intended to be robust against a system that would stop and start queues at the same time,
-        // for a a normal shutdown sequence)
-        //
-        int nbQueueStarted = 0;
         synchronized (queues) {
-            for (final NotificationQueue cur : queues.values()) {
-                if (cur.isStarted()) {
-                    nbQueueStarted++;
-                }
+            activeQueues--;
+            //
+            // The last DefaultNotificationQueue#stopQueue will call this method and stop the reaper and lifecycle dispatch thread pool
+            //
+            if (activeQueues == 0) {
+                isInitialized.set(false);
+                reaper.stop();
+                super.stopQueue();
+                dispatcher.stop();
+                dao.close();
+                isStarted = false;
             }
         }
-        if (nbQueueStarted == 0) {
-            dispatcher.stop();
-            super.stopQueue();
-            isStarted.set(false);
-        }
-
-        reaper.stop();
     }
 
     @Override
     public boolean isStarted() {
-        return isStarted.get();
+        return isStarted;
     }
 
     @Override

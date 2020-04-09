@@ -16,6 +16,9 @@
 package org.killbill.queue.api;
 
 public interface QueueLifecycle {
+
+    boolean initQueue();
+
     /**
      * Starts the queue
      */

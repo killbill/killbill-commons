@@ -51,15 +51,6 @@ public interface PersistentBus extends QueueLifecycle {
         }
     }
 
-    /**
-     * Start accepting events and dispatching them
-     */
-    void start();
-
-    /**
-     * Stop accepting events and flush event queue before it returns.
-     */
-    void stop();
 
     /**
      * Registers all handler methods on {@code object} to receive events.
