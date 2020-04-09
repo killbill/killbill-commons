@@ -69,7 +69,7 @@ public class TestReaperIntegration extends TestSetup {
 
         config = createConfig();
         bus = new DefaultPersistentBus(dbi, clock, config, metricRegistry, databaseTransactionNotificationApi);
-        bus.start();
+        bus.startQueue();
 
         handler = new DummyHandler();
         bus.register(handler);
@@ -77,7 +77,7 @@ public class TestReaperIntegration extends TestSetup {
 
     @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
-        bus.stop();
+        bus.stopQueue();
     }
 
     @Test(groups = "slow")

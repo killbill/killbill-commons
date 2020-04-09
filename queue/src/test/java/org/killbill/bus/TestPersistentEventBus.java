@@ -47,12 +47,12 @@ public class TestPersistentEventBus extends TestSetup {
         // Reinitialize to restart the pool
         busService = new DefaultPersistentBus(getDBI(), clock, getPersistentBusConfig(), metricRegistry, databaseTransactionNotificationApi);
         testEventBusBase = new TestEventBusBase(busService);
-        busService.start();
+        busService.startQueue();
     }
 
     @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
-        busService.stop();
+        busService.stopQueue();
     }
 
     @Test(groups = "slow")

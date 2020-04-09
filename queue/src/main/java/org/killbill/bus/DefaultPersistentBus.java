@@ -141,35 +141,55 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
              new MetricRegistry(), new DatabaseTransactionNotificationApi());
     }
 
-    @Override
-    public void start() {
 
+    @Override
+    public boolean initQueue() {
         if (config.isProcessingOff()) {
-            log.warn("PersistentBus processing is off, does not start");
-            return;
+            log.warn("PersistentBus processing is off, cannot be initialized");
+            return false;
         }
 
         if (isInitialized.compareAndSet(false, true)) {
             dao.initialize();
             dispatcher.start();
-            startQueue();
-
-            if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING || config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
-                reaper.start();
-            }
-            isStarted.set(true);
+            return true;
+        } else {
+            return false;
         }
-
     }
 
     @Override
-    public void stop() {
+    public boolean startQueue() {
+
+        if (config.isProcessingOff()) {
+            log.warn("PersistentBus processing is off, cannot be started");
+            return false;
+        }
+
+        if (!isInitialized.get()) {
+            // Make it easy for our tests, so they simply call startQueue
+            initQueue();
+        }
+
+        if (isStarted.compareAndSet(false, true)) {
+            if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING || config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
+                reaper.start();
+            }
+            super.startQueue();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void stopQueue() {
         if (isStarted.compareAndSet(true, false)) {
             isInitialized.set(false);
-            dao.close();
-            stopQueue();
-            dispatcher.stop();
             reaper.stop();
+            super.stopQueue();
+            dispatcher.stop();
+            dao.close();
         }
     }
 
@@ -210,7 +230,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public void register(final Object handlerInstance) throws EventBusException {
-        if (isStarted.get()) {
+        if (isInitialized.get()) {
             eventBusDelegate.register(handlerInstance);
         } else {
             log.warn("Attempting to register handler " + handlerInstance + " in a non initialized bus");
@@ -219,7 +239,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public void unregister(final Object handlerInstance) throws EventBusException {
-        if (isStarted.get()) {
+        if (isInitialized.get()) {
             eventBusDelegate.unregister(handlerInstance);
         } else {
             log.warn("Attempting to unregister handler " + handlerInstance + " in a non initialized bus");
@@ -229,7 +249,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     @Override
     public void post(final BusEvent event) throws EventBusException {
         try {
-            if (isStarted.get()) {
+            if (isInitialized.get()) {
                 final String json = objectMapper.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), json,
                                                                     event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
@@ -245,7 +265,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     @Override
     public void postFromTransaction(final BusEvent event, final Connection connection) throws EventBusException {
-        if (!isStarted.get()) {
+        if (!isInitialized.get()) {
             log.warn("Attempting to post event " + event + " in a non initialized bus");
             return;
         }

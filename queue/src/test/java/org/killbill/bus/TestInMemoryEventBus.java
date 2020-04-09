@@ -123,12 +123,12 @@ public class TestInMemoryEventBus {
 
     @BeforeMethod(groups = "fast")
     public void beforeMethod() throws Exception {
-        busService.start();
+        busService.startQueue();
     }
 
     @AfterMethod(groups = "fast")
     public void afterMethod() throws Exception {
-        busService.stop();
+        busService.stopQueue();
     }
 
 

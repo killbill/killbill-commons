@@ -82,12 +82,12 @@ public class TestPersistentBusDemo {
     @BeforeMethod(groups = "slow")
     public void beforeMethod() throws Exception {
         embeddedDB.cleanupAllTables();
-        bus.start();
+        bus.startQueue();
     }
 
     @AfterMethod(groups = "slow")
     public void afterMethod() throws Exception {
-        bus.stop();
+        bus.stopQueue();
     }
 
     @Test(groups = "slow")
