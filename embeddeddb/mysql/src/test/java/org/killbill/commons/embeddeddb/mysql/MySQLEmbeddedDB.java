@@ -30,13 +30,14 @@ import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.mariadb.jdbc.MariaDbDataSource;
 
 import com.google.common.base.Preconditions;
+import io.airlift.testing.mysql.HackedEmbeddedMySql;
 import io.airlift.testing.mysql.HackedTestingMySqlServer;
 
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    private HackedTestingMySqlServer mysqldResource;
+    private final HackedTestingMySqlServer mysqldResource;
 
     public MySQLEmbeddedDB() {
         // Avoid dashes - MySQL doesn't like them
@@ -47,6 +48,14 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
 
     public MySQLEmbeddedDB(final String databaseName, final String username, final String password) {
         super(databaseName, username, password, null);
+        final int port;
+        try {
+            port = HackedEmbeddedMySql.randomPort();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+        mysqldResource = new HackedTestingMySqlServer(username, password, port, databaseName);
+        this.jdbcConnectionString = mysqldResource.getJdbcUrl(databaseName);
     }
 
     @Override
@@ -136,8 +145,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     }
 
     private void startMysql() throws Exception {
-        mysqldResource = new HackedTestingMySqlServer(username, password, databaseName);
-        jdbcConnectionString = mysqldResource.getJdbcUrl(databaseName);
+        mysqldResource.start();
         started.set(true);
         logger.info("MySQL started: " + getCmdLineConnectionString());
     }

@@ -42,22 +42,27 @@ public class HackedTestingMySqlServer implements Closeable {
     private final String password;
     private final Set<String> databases;
     private final int port;
-    private final String version;
-    private final HackedEmbeddedMySql server;
 
-    public HackedTestingMySqlServer(final String user, final String password, final String... databases)
-            throws Exception {
-        this(user, password, ImmutableList.copyOf(databases));
+    private String version;
+    private HackedEmbeddedMySql server;
+
+    // PIERRE: allow the port to be configured
+    public HackedTestingMySqlServer(final String user, final String password, final int port, final String... databases) {
+        this(user, password, port, ImmutableList.copyOf(databases));
     }
 
-    public HackedTestingMySqlServer(final String user, final String password, final Iterable<String> databases)
-            throws Exception {
+    // PIERRE: allow the port to be configured
+    public HackedTestingMySqlServer(final String user, final String password, final int port,  final Iterable<String> databases) {
         this.user = requireNonNull(user, "user is null");
         this.password = requireNonNull(password, "password is null");
         this.databases = ImmutableSet.copyOf(requireNonNull(databases, "databases is null"));
 
-        server = new HackedEmbeddedMySql();
-        port = server.getPort();
+        this.port = port;
+    }
+
+    // PIERRE: defer start
+    public void start() throws Exception {
+        server = new HackedEmbeddedMySql(port);
 
         try (final Connection connection = server.getMySqlDatabase()) {
             version = connection.getMetaData().getDatabaseProductVersion();

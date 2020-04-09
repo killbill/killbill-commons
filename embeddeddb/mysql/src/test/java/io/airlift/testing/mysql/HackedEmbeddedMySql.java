@@ -71,12 +71,14 @@ public class HackedEmbeddedMySql implements Closeable {
 
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("testing-mysql-server-%s"));
     private final Path serverDirectory;
-    private final int port = randomPort();
+    private final int port;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final Process mysqld;
 
-    public HackedEmbeddedMySql()
+    // PIERRE: allow the port to be configured
+    public HackedEmbeddedMySql(final int port)
             throws IOException {
+        this.port = port;
         serverDirectory = createTempDirectory("testing-mysql-server");
 
         // PIERRE: SLF4J syntax
@@ -152,7 +154,8 @@ public class HackedEmbeddedMySql implements Closeable {
                 .toString();
     }
 
-    private static int randomPort()
+    // PIERRE: visibility
+    public static int randomPort()
             throws IOException {
         try (final ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
