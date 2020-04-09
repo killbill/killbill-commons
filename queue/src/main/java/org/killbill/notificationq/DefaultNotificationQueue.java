@@ -416,6 +416,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     @Override
     public boolean startQueue() {
         if (config.isProcessingOff()) {
+            logger.warn("Not starting queue {} because of xxx.notification.off config", getFullQName());
             return false;
         }
 

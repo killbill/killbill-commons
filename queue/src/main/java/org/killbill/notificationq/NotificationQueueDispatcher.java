@@ -158,7 +158,6 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
                 return false;
             }
         }
-
     }
 
     @Override
@@ -170,9 +169,10 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             //
             if (activeQueues == 0) {
                 isInitialized.set(false);
-                super.stopQueue();
                 reaper.stop();
+                super.stopQueue();
                 dispatcher.stop();
+                dao.close();
                 isStarted = false;
             }
         }

@@ -186,10 +186,10 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public void stopQueue() {
         if (isStarted.compareAndSet(true, false)) {
             isInitialized.set(false);
-            super.stopQueue();
             reaper.stop();
-            dao.close();
+            super.stopQueue();
             dispatcher.stop();
+            dao.close();
         }
     }
 
