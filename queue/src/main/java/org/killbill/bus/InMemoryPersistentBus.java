@@ -109,18 +109,23 @@ public class InMemoryPersistentBus implements PersistentBus {
 
     @Override
     public boolean initQueue() {
-        return false;
-    }
-
-
-    @Override
-    public boolean startQueue() {
         if (isInitialized.compareAndSet(false, true)) {
-            log.info("InMemoryPersistentBus started...");
+            log.info("InMemoryPersistentBus initialized");
             return true;
         } else {
             return false;
         }
+    }
+
+    @Override
+    public boolean startQueue() {
+        if (!isInitialized.get()) {
+            // Make it easy for our tests, so they simply call startQueue
+            initQueue();
+        }
+
+        log.info("InMemoryPersistentBus started");
+        return true;
     }
 
     private void checkInitialized(final String operation) throws EventBusException {
