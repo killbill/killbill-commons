@@ -1,7 +1,7 @@
 /*
  * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -40,7 +40,7 @@ public class InMemoryPersistentBus implements PersistentBus {
 
     private final EventBusDelegate delegate;
     private final AtomicBoolean isInitialized;
-
+    private final PersistentBusConfig config;
 
     @Override
     public boolean isStarted() {
@@ -68,9 +68,7 @@ public class InMemoryPersistentBus implements PersistentBus {
 
     @Inject
     public InMemoryPersistentBus(final PersistentBusConfig config) {
-
-        final ThreadGroup group = new ThreadGroup(EVENT_BUS_GROUP_NAME);
-
+        this.config = config;
         this.delegate = new EventBusDelegate();
         this.isInitialized = new AtomicBoolean(false);
     }
@@ -109,6 +107,11 @@ public class InMemoryPersistentBus implements PersistentBus {
 
     @Override
     public boolean initQueue() {
+        if (config.isProcessingOff()) {
+            log.warn("InMemoryPersistentBus processing is off, cannot be initialized");
+            return false;
+        }
+
         if (isInitialized.compareAndSet(false, true)) {
             log.info("InMemoryPersistentBus initialized");
             return true;
@@ -119,6 +122,11 @@ public class InMemoryPersistentBus implements PersistentBus {
 
     @Override
     public boolean startQueue() {
+        if (config.isProcessingOff()) {
+            log.warn("InMemoryPersistentBus processing is off, cannot be started");
+            return false;
+        }
+
         if (!isInitialized.get()) {
             // Make it easy for our tests, so they simply call startQueue
             initQueue();
