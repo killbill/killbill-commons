@@ -1,3 +1,6 @@
+0.23.11
+    queue: fix InMemoryPersistentBus init sequence
+
 0.23.10
     Split queue start sequence into initQueue() and startQueue()
     Move to airlift embeddeddb stack for the tests
