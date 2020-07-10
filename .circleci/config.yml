@@ -24,6 +24,8 @@ jobs:
                   git clone https://github.com/killbill/$i.git /home/killbill/$i
                   pushd /home/killbill/$i
                   git checkout -b ${CIRCLE_BRANCH} origin/${CIRCLE_BRANCH}
+                  echo "*** Last commit"
+                  git show
                   mvn clean install -DskipTests=true
                   popd
                 fi
