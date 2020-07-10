@@ -11,8 +11,6 @@ jobs:
       - image: killbill/kbbuild:0.7.0
     steps:
       - checkout
-      - restore_cache:
-          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
       - run:
           name: Setup dependencies
           command: |
@@ -25,7 +23,7 @@ jobs:
                   pushd /home/killbill/$i
                   git checkout -b ${CIRCLE_BRANCH} origin/${CIRCLE_BRANCH}
                   echo "*** Last commit"
-                  git show
+                  git --no-pager show -s
                   mvn clean install -DskipTests=true
                   popd
                 fi
@@ -35,7 +33,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v4-dependencies-{{ .Revision }}
 
   test-h2:
     <<: *defaults
@@ -44,7 +42,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v4-dependencies-{{ .Revision }}
       - run: mvn clean install -Ptravis
       - run:
           name: Save test results
@@ -63,7 +61,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v4-dependencies-{{ .Revision }}
       - run: mvn clean install -Pmysql
       - run:
           name: Save test results
@@ -82,7 +80,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v3-dependencies-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: v4-dependencies-{{ .Revision }}
       - run: mvn clean install -Ppostgresql
       - run:
           name: Save test results
