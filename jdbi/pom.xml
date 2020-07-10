@@ -48,6 +48,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.mchange</groupId>
@@ -166,12 +167,8 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -222,6 +219,16 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- Don't run JUnit tests -->
+                        <exclude>org/skife/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -241,6 +248,10 @@
                         </dependencies>
                         <configuration>
                             <groups>org.skife.jdbi.v2.JDBITests</groups>
+                            <excludes>
+                                <!-- Don't run TestNG tests -->
+                                <exclude>org/killbill/**</exclude>
+                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.base.Predicate;
@@ -68,7 +69,7 @@ public class ProfilingData {
         }
         return Lists.newArrayList(Iterables.filter(rawData, new Predicate<ProfilingDataItem>() {
             @Override
-            public boolean apply(final ProfilingDataItem input) {
+            public boolean apply(@Nonnull final ProfilingDataItem input) {
                 return profileFeature.isDefined(input.getProfileType());
             }
         }));

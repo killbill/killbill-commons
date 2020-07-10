@@ -29,6 +29,10 @@
     <name>Kill Bill library of java.util.concurrent wrappers</name>
     <dependencies>
         <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -43,6 +47,7 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
+            <!-- Cannot use slf4j-simple with the way our tests are written today -->
             <artifactId>slf4j-log4j12</artifactId>
             <scope>test</scope>
         </dependency>
