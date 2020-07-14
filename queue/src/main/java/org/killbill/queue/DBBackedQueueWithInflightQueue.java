@@ -280,7 +280,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         }
 
         // Internal structure to keep track of recordId per queue
-        private final class RowRef {
+        private static final class RowRef {
 
             private final int queueId;
             private final List<Long> rowIds;

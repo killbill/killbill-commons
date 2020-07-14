@@ -40,7 +40,7 @@ public class UUIDArgumentFactory implements ArgumentFactory<UUID> {
         return new UUIDArgument(value);
     }
 
-    public class UUIDArgument implements Argument {
+    public static class UUIDArgument implements Argument {
 
         private final UUID value;
 

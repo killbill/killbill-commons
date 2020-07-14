@@ -229,10 +229,10 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         final Iterable<Long> toBeRemovedRecordIds = Iterables.<T, Long>transform(entries, new Function<T, Long>() {
             @Override
             public Long apply(final T input) {
-                return input.getRecordId();
+                return input == null ? Long.valueOf(-1) : input.getRecordId();
             }
         });
-        long ini = System.nanoTime();
+        final long ini = System.nanoTime();
         transactional.insertEntries(entries, config.getHistoryTableName());
         transactional.removeEntries(ImmutableList.<Long>copyOf(toBeRemovedRecordIds), config.getTableName());
         rawDeleteEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
@@ -326,7 +326,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                                                                                                             new Function<T, UUID>() {
                                                                                                                 @Override
                                                                                                                 public UUID apply(final T input) {
-                                                                                                                    return input.getUserToken();
+                                                                                                                    return input == null ? null : input.getUserToken();
                                                                                                                 }
                                                                                                             }));
                 }

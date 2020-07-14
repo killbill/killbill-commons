@@ -37,7 +37,9 @@ import org.killbill.xmlloader.ValidationErrors;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @XmlRootElement(name = "stateMachineConfig")
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultStateMachineConfig extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachineConfig, Externalizable {
@@ -116,7 +118,8 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
             return Iterables.tryFind(ImmutableList.<LinkStateMachine>copyOf(linkStateMachines), new Predicate<LinkStateMachine>() {
                 @Override
                 public boolean apply(final LinkStateMachine input) {
-                    return input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
+                    return input != null &&
+                           input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
                            input.getInitialState().getName().equals(srcState.getName()) &&
                            input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
                 }

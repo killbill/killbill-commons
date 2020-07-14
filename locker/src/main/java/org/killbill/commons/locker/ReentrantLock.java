@@ -106,10 +106,8 @@ public class ReentrantLock {
                 throw new IllegalStateException(String.format("ReentrantLock createLock %s : lock already current request = %s, owner request = %s", lockName, requestId, lockHolder.getRequestId()));
             }
 
-            if (lockHolder == null) {
-                lockHolder = new LockHolder(requestId, originalLock);
-                lockTable.put(lockName, lockHolder);
-            }
+            lockHolder = new LockHolder(requestId, originalLock);
+            lockTable.put(lockName, lockHolder);
             lockHolder.increment();
         }
     }

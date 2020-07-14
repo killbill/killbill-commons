@@ -40,6 +40,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
 
     private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
@@ -98,6 +100,7 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
         }
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void dispatch(final M modelDao) {
         log.debug("Dispatching entry {}", modelDao);
         final CallableQueueHandler<E, M> entry = new CallableQueueHandler<E, M>(modelDao, handlerCallback, parentLifeCycle, clock, maxFailureRetries);

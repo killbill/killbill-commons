@@ -48,7 +48,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         return true;
     }
 
-    public class EventBusDelegate extends EventBusThatThrowsException {
+    public static class EventBusDelegate extends EventBusThatThrowsException {
 
         public EventBusDelegate() {
             super("Bus");

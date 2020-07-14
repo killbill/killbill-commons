@@ -148,7 +148,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
         final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
             @Override
             public Long apply(final T input) {
-                return input.getRecordId();
+                return input == null ? Long.valueOf(-1) : input.getRecordId();
             }
         });
 
@@ -182,7 +182,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
             final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
                 public boolean apply(final T input) {
-                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && owner.equals(input.getProcessingOwner());
+                    return input != null && input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && owner.equals(input.getProcessingOwner());
                 }
             });
             return ImmutableList.<T>copyOf(claimed);

@@ -41,6 +41,7 @@ import org.stringtemplate.v4.misc.STMessage;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 
 public class ST4StatementLocator implements StatementLocator {
 
@@ -110,7 +111,7 @@ public class ST4StatementLocator implements StatementLocator {
             stg = computeIfAbsent(CACHE, url.toString(), new Function<String, STGroup>() {
                 @Override
                 public STGroup apply(final String u) {
-                    return urlToSTGroup(u);
+                    return u == null ? null : urlToSTGroup(u);
                 }
             });
         } else {

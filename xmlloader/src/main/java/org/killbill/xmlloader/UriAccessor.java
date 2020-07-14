@@ -30,6 +30,8 @@ import java.util.Scanner;
 
 import com.google.common.io.Resources;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class UriAccessor {
 
     private static final String URI_SCHEME_FOR_ARCHIVE_FILE = "jar:file";
@@ -91,6 +93,6 @@ public class UriAccessor {
 
     public static String accessUriAsString(final URI uri) throws IOException, URISyntaxException {
         final InputStream stream = accessUri(uri);
-        return new Scanner(stream).useDelimiter("\\A").next();
+        return new Scanner(stream, UTF_8.name()).useDelimiter("\\A").next();
     }
 }

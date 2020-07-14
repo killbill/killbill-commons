@@ -34,6 +34,8 @@ import org.skife.jdbi.v2.tweak.StatementLocator;
 import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 // Similar to StringTemplate3StatementLocator, but safe to use in conjunction with dbi#setStatementLocator
 public class ReusableStringTemplate3StatementLocator implements StatementLocator {
 
@@ -67,7 +69,7 @@ public class ReusableStringTemplate3StatementLocator implements StatementLocator
                                             + templateGroupFilePathOnClasspath
                                             + " on classpath");
         } else {
-            final InputStreamReader reader = new InputStreamReader(ins);
+            final InputStreamReader reader = new InputStreamReader(ins, UTF_8);
             try {
                 this.group = new StringTemplateGroup(reader, AngleBracketTemplateLexer.class);
                 reader.close();

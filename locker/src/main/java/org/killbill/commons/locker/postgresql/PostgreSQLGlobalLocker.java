@@ -34,6 +34,8 @@ import org.killbill.commons.locker.ResetReentrantLockCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class PostgreSQLGlobalLocker extends GlobalLockerBaseWithDao implements GlobalLocker {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgreSQLGlobalLocker.class);
@@ -55,7 +57,7 @@ public class PostgreSQLGlobalLocker extends GlobalLockerBaseWithDao implements G
         final String lockName = service + "-" + lockKey;
         try {
             final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-            final byte[] bytes = messageDigest.digest(lockName.getBytes());
+            final byte[] bytes = messageDigest.digest(lockName.getBytes(UTF_8));
             return String.valueOf(ByteBuffer.wrap(bytes).getLong());
         } catch (final NoSuchAlgorithmException e) {
             logger.warn("Unable to allocate MessageDigest", e);

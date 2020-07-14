@@ -219,18 +219,10 @@ public abstract class EmbeddedDB {
     }
 
     protected void executeQuery(final String query, final ResultSetJob job) throws SQLException, IOException {
-        final Connection connection = getConnection();
-
-        Statement statement = null;
-        try {
-            statement = connection.createStatement();
-            final ResultSet rs = statement.executeQuery(query);
+        try (final Connection connection = getConnection();
+             final Statement statement = connection.createStatement();
+             final ResultSet rs = statement.executeQuery(query)) {
             job.work(rs);
-        } finally {
-            if (statement != null) {
-                statement.close();
-            }
-            connection.close();
         }
     }
 

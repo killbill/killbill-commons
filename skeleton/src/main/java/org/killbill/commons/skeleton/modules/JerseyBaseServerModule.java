@@ -91,12 +91,12 @@ public class JerseyBaseServerModule extends BaseServerModule {
 
     @Override
     protected void configureResources() {
-        for (final String urlPattern : jaxrsServlets.keySet()) {
-            serve(urlPattern).with(jaxrsServlets.get(urlPattern), jerseyParams.build());
+        for (final Entry<String, Class<? extends HttpServlet>> entry : jaxrsServlets.entrySet()) {
+            serve(entry.getKey()).with(entry.getValue(), jerseyParams.build());
         }
 
-        for (final String urlPattern : jaxrsServletsRegex.keySet()) {
-            serveRegex(urlPattern).with(jaxrsServletsRegex.get(urlPattern), jerseyParams.build());
+        for (final Entry<String, Class<? extends HttpServlet>> entry : jaxrsServletsRegex.entrySet()) {
+            serveRegex(entry.getKey()).with(entry.getValue(), jerseyParams.build());
         }
 
         // Catch-all resources

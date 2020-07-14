@@ -54,7 +54,9 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("VO_VOLATILE_INCREMENT")
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     protected static final Logger log = LoggerFactory.getLogger(NotificationQueueDispatcher.class);

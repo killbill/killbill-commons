@@ -69,8 +69,8 @@ public class ProfilingData {
         }
         return Lists.newArrayList(Iterables.filter(rawData, new Predicate<ProfilingDataItem>() {
             @Override
-            public boolean apply(@Nonnull final ProfilingDataItem input) {
-                return profileFeature.isDefined(input.getProfileType());
+            public boolean apply(final ProfilingDataItem input) {
+                return input != null && profileFeature.isDefined(input.getProfileType());
             }
         }));
     }

@@ -19,8 +19,6 @@
 
 package org.killbill.xmlloader;
 
-import java.util.Collection;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
@@ -39,12 +37,11 @@ public abstract class ValidatingConfig<Context> {
         return root;
     }
 
-    protected Collection<? extends ValidationError> validateCollection(final Context context,
-                                                                       final ValidationErrors errors,
-                                                                       final ValidatingConfig<Context>[] configs) {
+    protected void validateCollection(final Context context,
+                                      final ValidationErrors errors,
+                                      final ValidatingConfig<Context>[] configs) {
         for (final ValidatingConfig<Context> config : configs) {
             config.validate(context, errors);
         }
-        return errors;
     }
 }

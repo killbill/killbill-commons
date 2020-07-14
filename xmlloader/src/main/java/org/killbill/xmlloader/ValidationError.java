@@ -53,6 +53,6 @@ public class ValidationError {
     }
 
     public String toString() {
-        return String.format("%s (%s:%s)\n", description, objectType, objectName);
+        return String.format("%s (%s:%s)%n", description, objectType, objectName);
     }
 }

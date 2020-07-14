@@ -49,15 +49,9 @@ public class PostgreSQLGlobalLockDao implements GlobalLockDao {
     }
 
     private boolean executeLockQuery(final Connection connection, final String query) throws SQLException {
-        Statement statement = null;
-        try {
-            statement = connection.createStatement();
-            final ResultSet rs = statement.executeQuery(query);
+        try (final Statement statement = connection.createStatement();
+             final ResultSet rs = statement.executeQuery(query)) {
             return rs.next() && (rs.getBoolean(1));
-        } finally {
-            if (statement != null) {
-                statement.close();
-            }
         }
     }
 }

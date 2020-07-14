@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class XMLWriter<T> {
     private static final int MAX_XML_SIZE_IN_BYTES = 100000;
 
@@ -35,6 +37,6 @@ public class XMLWriter<T> {
 
         marshaller.marshal(object, output);
 
-        return new String(output.toByteArray());
+        return new String(output.toByteArray(), UTF_8);
     }
 }

@@ -120,6 +120,6 @@ public class XMLLoader {
 
     private static boolean shouldDisableValidation() {
         final String disableValidationProp = System.getProperty(DISABLE_VALIDATION_PROP);
-        return (Strings.isNullOrEmpty(disableValidationProp) || Boolean.valueOf(disableValidationProp) == Boolean.FALSE) ? false : true;
+        return Boolean.parseBoolean(disableValidationProp);
     }
 }

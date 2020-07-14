@@ -28,7 +28,9 @@ import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
 import com.google.inject.servlet.ServletModule;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
 public class BaseServerModule extends ServletModule {
 
     private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filters;

@@ -61,16 +61,13 @@ public class RestartTransactionRunner extends DelegatingTransactionHandler imple
         while (true) {
             try {
                 return getDelegate().inTransaction(handle, callback);
-            } catch (final Exception e) {
+            } catch (final RuntimeException e) {
                 if (!isSqlState(configuration.serializationFailureSqlStates, e) || --retriesRemaining <= 0) {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
-                    }
-                    throw new TransactionFailedException(e);
+                    throw e;
                 }
 
-                if (e instanceof SQLException) {
-                    final String sqlState = ((SQLException) e).getSQLState();
+                if (e.getCause() instanceof SQLException) {
+                    final String sqlState = ((SQLException) e.getCause()).getSQLState();
                     log.warn("Restarting transaction due to SQLState {}, retries remaining {}", sqlState, retriesRemaining);
                 } else {
                     log.warn("Restarting transaction due to {}, retries remaining {}", e.toString(), retriesRemaining);

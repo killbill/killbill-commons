@@ -106,7 +106,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String eventJson = objectMapper.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
-        final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, new Long(0));
+        final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, 0L);
         final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
         dao.insertEntry(notification);
     }

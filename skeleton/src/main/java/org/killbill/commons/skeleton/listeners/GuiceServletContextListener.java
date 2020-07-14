@@ -30,6 +30,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Start up the base module when the server comes up. This gets configured in web.xml:
@@ -41,6 +42,7 @@ import com.google.inject.Stage;
  *  &lt;/context-param&gt;
  * </pre>
  */
+@SuppressFBWarnings("NM_SAME_SIMPLE_NAME_AS_SUPERCLASS")
 public class GuiceServletContextListener extends com.google.inject.servlet.GuiceServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(GuiceServletContextListener.class);

@@ -40,7 +40,7 @@ public class DateTimeZoneArgumentFactory implements ArgumentFactory<DateTimeZone
         return new DateTimeZoneArgument(value);
     }
 
-    public class DateTimeZoneArgument implements Argument {
+    public static class DateTimeZoneArgument implements Argument {
 
         private final DateTimeZone value;
 

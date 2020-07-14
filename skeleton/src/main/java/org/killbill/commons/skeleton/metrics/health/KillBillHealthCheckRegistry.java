@@ -19,6 +19,7 @@
 
 package org.killbill.commons.skeleton.metrics.health;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -67,8 +68,9 @@ public class KillBillHealthCheckRegistry extends HealthCheckRegistry {
     }
 
     private void logUnHealthyResults(final Map<String, Result> results) {
-        for (final String healthCheckName : results.keySet()) {
-            final Result result = results.get(healthCheckName);
+        for (final Map.Entry<String, Result> entry : results.entrySet()) {
+            final String healthCheckName = entry.getKey();
+            final Result result = entry.getValue();
             logUnHealthyResult(healthCheckName, result);
         }
     }
