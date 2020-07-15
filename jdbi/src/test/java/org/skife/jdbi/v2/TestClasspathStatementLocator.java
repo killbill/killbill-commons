@@ -33,8 +33,8 @@ import org.skife.jdbi.v2.sqlobject.stringtemplate.TestingStatementContext;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

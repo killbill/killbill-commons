@@ -46,7 +46,8 @@ public class TestXMLLoader {
         final InputStream is = new ByteArrayInputStream(TEST_XML.getBytes());
         final XmlTestClass test = XMLLoader.getObjectFromStream(is, XmlTestClass.class);
         assertEquals(test.getFoo(), "foo");
-        assertEquals(test.getBar(), 1.0);
-        assertEquals(test.getLala(), 42);
+        //noinspection RedundantCast
+        assertEquals((double) test.getBar(), 1.0);
+        assertEquals((double) test.getLala(), 42);
     }
 }

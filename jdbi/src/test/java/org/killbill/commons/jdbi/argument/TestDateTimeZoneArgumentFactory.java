@@ -21,6 +21,7 @@ package org.killbill.commons.jdbi.argument;
 
 import java.io.IOException;
 
+import org.h2.jdbc.JdbcSQLDataException;
 import org.h2.jdbc.JdbcSQLException;
 import org.joda.time.DateTimeZone;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
@@ -48,7 +49,7 @@ public class TestDateTimeZoneArgumentFactory extends JDBITestBase {
             somethingSqlDao.create(1, "pierre", DateTimeZone.UTC);
             Assert.fail();
         } catch (final UnableToExecuteStatementException e) {
-            Assert.assertTrue(e.getCause() instanceof JdbcSQLException);
+            Assert.assertTrue(e.getCause() instanceof JdbcSQLDataException);
         }
     }
 

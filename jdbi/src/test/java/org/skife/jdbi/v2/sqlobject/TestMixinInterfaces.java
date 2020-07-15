@@ -42,9 +42,9 @@ import org.skife.jdbi.v2.util.StringMapper;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 
 @Category(JDBITests.class)
 public class TestMixinInterfaces
@@ -56,7 +56,7 @@ public class TestMixinInterfaces
     public void setUp() throws Exception
     {
         JdbcDataSource ds = new JdbcDataSource();
-        ds.setURL(String.format("jdbc:h2:mem:%s;MVCC=TRUE", UUID.randomUUID()));
+        ds.setURL(String.format("jdbc:h2:mem:%s", UUID.randomUUID()));
         dbi = new DBI(ds);
         handle = dbi.open();
 

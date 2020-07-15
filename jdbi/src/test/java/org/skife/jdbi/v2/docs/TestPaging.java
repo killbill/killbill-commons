@@ -43,7 +43,7 @@ import java.util.UUID;
 import com.google.common.collect.ImmutableList;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Category(JDBIQuarantineTests.class) // Feature disabled
 public class TestPaging

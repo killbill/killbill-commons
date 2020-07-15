@@ -66,8 +66,7 @@ public class TestOnDemandSqlObject
     public void setUp() throws Exception
     {
         ds = new JdbcDataSource();
-        // in MVCC mode h2 doesn't shut down immediately on all connections closed, so need random db name
-        ds.setURL(String.format("jdbc:h2:mem:%s;MVCC=TRUE", UUID.randomUUID()));
+        ds.setURL(String.format("jdbc:h2:mem:%s", UUID.randomUUID()));
         dbi = new DBI(ds);
         handle = dbi.open();
 

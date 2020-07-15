@@ -220,7 +220,7 @@ public class TestDataSourceProvider {
         if (DataSourceProvider.DatabaseType.MYSQL.equals(databaseType)) {
             properties.put("org.killbill.dao.url", "jdbc:mysql://127.0.0.1:3306/killbill");
         } else if (DataSourceProvider.DatabaseType.H2.equals(databaseType)) {
-            properties.put("org.killbill.dao.url", "jdbc:h2:file:/var/tmp/killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;MVCC=true;DB_CLOSE_ON_EXIT=FALSE");
+            properties.put("org.killbill.dao.url", "jdbc:h2:file:/var/tmp/killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         } else {
             properties.put("org.killbill.dao.url", "jdbc:test:@myhost:1521:orcl");
 

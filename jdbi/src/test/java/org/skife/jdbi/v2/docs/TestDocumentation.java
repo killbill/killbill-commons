@@ -53,7 +53,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.skife.jdbi.v2.ExtraMatchers.equalsOneOf;
 
 @Category(JDBITests.class)

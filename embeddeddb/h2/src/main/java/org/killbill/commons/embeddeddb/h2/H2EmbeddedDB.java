@@ -55,7 +55,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
     }
 
     public H2EmbeddedDB(final String databaseName, final String username, final String password) {
-        this(databaseName, username, password, "jdbc:h2:mem:" + databaseName + ";MODE=MYSQL;DB_CLOSE_DELAY=-1;MVCC=true");
+        this(databaseName, username, password, "jdbc:h2:mem:" + databaseName + ";MODE=MYSQL;DB_CLOSE_DELAY=-1");
     }
 
     public H2EmbeddedDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
@@ -99,7 +99,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
 
     @Override
     public void refreshTableNames() throws IOException {
-        final String query = String.format("select table_name from information_schema.tables where table_catalog = '%s' and table_type = 'TABLE';", databaseName);
+        final String query = String.format("select table_name from information_schema.tables where table_catalog = '%s' and table_type = 'TABLE';", databaseName.toUpperCase());
         try {
             executeQuery(query, new ResultSetJob() {
                 @Override
@@ -154,8 +154,8 @@ public class H2EmbeddedDB extends EmbeddedDB {
             info.put("password", password);
             final ConnectionInfo ci = new ConnectionInfo(jdbcConnectionString, info);
             final Session session = Engine.getInstance().createSession(ci);
-            if (session.getDatabase() != null && session.getDatabase().getMvStore() != null) {
-                session.getDatabase().getMvStore().close(0);
+            if (session.getDatabase() != null) {
+                session.getDatabase().shutdownImmediately();
             }
         }
         started.set(false);

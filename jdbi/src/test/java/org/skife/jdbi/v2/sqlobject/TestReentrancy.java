@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 @Category(JDBITests.class)
@@ -125,8 +125,7 @@ public class TestReentrancy
     public void setUp() throws Exception
     {
         JdbcDataSource ds = new JdbcDataSource();
-        // in MVCC mode h2 doesn't shut down immediately on all connections closed, so need random db name
-        ds.setURL(String.format("jdbc:h2:mem:%s;MVCC=TRUE", UUID.randomUUID()));
+        ds.setURL(String.format("jdbc:h2:mem:%s", UUID.randomUUID()));
 
         dbi = new DBI(ds);
 

@@ -42,8 +42,8 @@ import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.skife.jdbi.v2.TransactionIsolationLevel.READ_UNCOMMITTED;
 
 public class TestModifiers
