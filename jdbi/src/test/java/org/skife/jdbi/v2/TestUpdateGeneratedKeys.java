@@ -84,7 +84,9 @@ public class TestUpdateGeneratedKeys extends DBITestCase
         update.bind("name", "Tom");
         Long id2 = update.executeAndReturnGeneratedKeys(LongMapper.FIRST).first();
 
-        Assert.assertNull(id2);
+        // https://issues.apache.org/jira/browse/DERBY-6742
+        //Assert.assertNull(id2);
+        Assert.assertEquals(0, (long) id2);
     }
 
     @Test

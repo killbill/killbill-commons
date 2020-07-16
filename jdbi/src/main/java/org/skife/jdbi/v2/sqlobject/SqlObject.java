@@ -172,7 +172,7 @@ class SqlObject
         final Handler handler = handlers.get(method);
 
         // If there is no handler, pretend we are just an Object and don't open a connection (Issue #82)
-        if (handler == null) {
+        if (handler == null || handler instanceof PassThroughHandler) {
             return mp.invokeSuper(proxy, args);
         }
 
