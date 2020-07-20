@@ -22,7 +22,7 @@
     <parent>
         <artifactId>killbill-commons</artifactId>
         <groupId>org.kill-bill.commons</groupId>
-        <version>0.24.1</version>
+        <version>0.24.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-queue</artifactId>
