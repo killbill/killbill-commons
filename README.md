@@ -14,6 +14,19 @@ Kill Bill reusable Java components:
 * **skeleton**: framework to build web services
 * **xmlloader**: library to load, parse and validate XML files
 
+## Kill Bill compatibility
+
+| Commons version | Kill Bill version |
+| --------------: | ----------------: |
+| 0.15.y          | 0.16.z            |
+| 0.20.y          | 0.18.z            |
+| 0.21.y          | 0.19.z            |
+| 0.22.y          | 0.20.z            |
+| 0.23.y          | 0.22.z            |
+| 0.24.y          | 0.22.z            |
+
+We've upgraded numerous dependencies in 0.24.x (required for Java 11 support).
+
 ## Usage
 
 Add the relevant submodule(s) to a project:
@@ -80,19 +93,6 @@ Add the relevant submodule(s) to a project:
     <version>... release version ...</version>
 </dependency>
 ```
-
-## Kill Bill compatibility
-
-| Commons version | Kill Bill version |
-| --------------: | ----------------: |
-| 0.15.y          | 0.16.z            |
-| 0.20.y          | 0.18.z            |
-| 0.21.y          | 0.19.z            |
-| 0.22.y          | 0.20.z            |
-| 0.23.y          | 0.22.z            |
-| 0.24.y          | 0.22.z            |
-
-We've upgraded numerous dependencies in 0.24.x (required for Java 11 support).
 
 ## About
 
