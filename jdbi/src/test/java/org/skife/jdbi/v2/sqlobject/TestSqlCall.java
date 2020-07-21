@@ -28,7 +28,6 @@ import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.logging.PrintStreamLog;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

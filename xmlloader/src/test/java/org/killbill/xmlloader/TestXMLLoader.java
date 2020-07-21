@@ -22,7 +22,6 @@ package org.killbill.xmlloader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;

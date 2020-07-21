@@ -22,9 +22,6 @@ package org.killbill.commons.profiling;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-
 public class ProfilingFeature {
 
     private static final int JAXRS_MASK = 0x1;

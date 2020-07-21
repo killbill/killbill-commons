@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.sql.DataSource;
-
 public class GenericStandaloneDB extends EmbeddedDB {
 
     protected final AtomicBoolean started = new AtomicBoolean(false);

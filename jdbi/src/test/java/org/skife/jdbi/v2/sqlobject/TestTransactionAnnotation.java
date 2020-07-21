@@ -29,7 +29,6 @@ import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.exceptions.TransactionFailedException;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 
 import java.io.IOException;
 import java.util.UUID;

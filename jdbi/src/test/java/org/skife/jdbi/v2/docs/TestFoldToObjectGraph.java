@@ -30,7 +30,6 @@ import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
-import org.skife.jdbi.v2.sqlobject.helpers.MapResultAsBean;
 import org.skife.jdbi.v2.tweak.BeanMapperFactory;
 
 import java.sql.SQLException;

@@ -19,7 +19,6 @@
 
 package org.killbill.commons.skeleton.metrics.health;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;

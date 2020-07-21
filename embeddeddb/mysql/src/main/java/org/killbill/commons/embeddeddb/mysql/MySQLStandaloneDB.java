@@ -24,8 +24,6 @@ import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.sql.DataSource;
-
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 import org.mariadb.jdbc.MariaDbDataSource;
 

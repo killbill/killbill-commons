@@ -36,8 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import com.google.common.base.Strings;
-
 public class XMLLoader {
 
     private static final String DISABLE_VALIDATION_PROP = "org.killbill.xmlloader.disable.validation";

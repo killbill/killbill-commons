@@ -22,7 +22,6 @@ package org.killbill.commons.jdbi.argument;
 import java.io.IOException;
 
 import org.h2.jdbc.JdbcSQLDataException;
-import org.h2.jdbc.JdbcSQLException;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;

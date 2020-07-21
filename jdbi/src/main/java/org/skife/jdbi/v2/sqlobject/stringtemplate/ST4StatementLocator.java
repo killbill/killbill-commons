@@ -41,7 +41,6 @@ import org.stringtemplate.v4.misc.STMessage;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 
 public class ST4StatementLocator implements StatementLocator {
 

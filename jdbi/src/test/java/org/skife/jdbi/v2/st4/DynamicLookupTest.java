@@ -22,22 +22,13 @@ package org.skife.jdbi.v2.st4;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.JDBIQuarantineTests;
-import org.skife.jdbi.v2.JDBITests;
-import org.skife.jdbi.v2.StatementContext;
-import org.skife.jdbi.v2.sqlobject.stringtemplate.ST4StatementLocator;
 import org.skife.jdbi.v2.util.IntegerMapper;
-import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupString;
-
-import com.google.common.base.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

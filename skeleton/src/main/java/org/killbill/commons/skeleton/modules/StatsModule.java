@@ -19,8 +19,6 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import java.util.Set;
-
 import org.killbill.commons.skeleton.metrics.TimedResourceListener;
 import org.killbill.commons.skeleton.metrics.health.KillBillHealthCheckRegistry;
 
@@ -29,8 +27,6 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;

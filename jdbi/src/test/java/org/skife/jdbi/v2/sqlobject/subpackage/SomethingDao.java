@@ -21,10 +21,8 @@ package org.skife.jdbi.v2.sqlobject.subpackage;
 
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.sqlobject.Bind;
-import org.skife.jdbi.v2.sqlobject.SomethingMapper;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 
 public abstract class SomethingDao
 {

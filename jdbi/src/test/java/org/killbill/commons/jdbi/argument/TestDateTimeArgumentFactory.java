@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.sql.Timestamp;
 
 import org.h2.jdbc.JdbcSQLDataException;
-import org.h2.jdbc.JdbcSQLException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.killbill.commons.jdbi.JDBITestBase;

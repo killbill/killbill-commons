@@ -29,7 +29,6 @@ import org.killbill.clock.Clock;
 import org.killbill.commons.concurrent.Executors;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.Reaper;
-import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
