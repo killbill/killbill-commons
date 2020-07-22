@@ -182,6 +182,7 @@
     <build>
         <plugins>
             <plugin>
+                <!-- For third party projects directly using our queue -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
@@ -205,6 +206,14 @@
                                     <include>org.kill-bill.commons:killbill-queue</include>
                                 </includes>
                             </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>org.kill-bill.commons:killbill-jdbi</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
