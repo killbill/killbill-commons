@@ -89,6 +89,7 @@ local.properties
 .settings/
 .loadpath
 .recommenders
+.classpath
 
 # External tool builders
 .externalToolBuilders/
@@ -137,7 +138,7 @@ local.properties
 
 # Uncomment this line if you wish to ignore the project description file.
 # Typically, this file would be tracked if it contains build/dependency configurations:
-#.project
+.project
 
 #
 # https://github.com/github/gitignore/blob/6651bca9c83572f908474fc6206ed8a80df91290/Maven.gitignore
