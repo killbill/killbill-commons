@@ -80,8 +80,8 @@ public class ClasspathStatementLocator implements StatementLocator
      */
     @Override
     @SuppressWarnings("PMD.EmptyCatchBlock")
-    @SuppressFBWarnings("DM_STRING_CTOR")
-    public String locate(String name, StatementContext ctx)
+    @SuppressFBWarnings({"DM_STRING_CTOR", "DE_MIGHT_IGNORE"})
+    public String locate(String name, StatementContext ctx) throws Exception
     {
         final String cache_key;
         if (ctx.getSqlObjectType() != null) {
