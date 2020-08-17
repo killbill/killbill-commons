@@ -66,7 +66,7 @@ public class TestSetup {
     @BeforeClass(groups = "slow")
     public void beforeClass() throws Exception {
 
-        loadSystemPropertiesFromClasspath("/queue.properties");
+        loadSystemPropertiesFromClasspath("/org/killbill/queue/queue.properties");
 
         clock = new ClockMock();
 

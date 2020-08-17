@@ -59,7 +59,7 @@ public class TestPersistentBusDemo {
         final String ddl = TestSetup.toString(Resources.getResource("org/killbill/queue/ddl.sql").openStream());
         embeddedDB.executeScript(ddl);
 
-        final String ddlTest = TestSetup.toString(Resources.getResource("queue/ddl_test.sql").openStream());
+        final String ddlTest = TestSetup.toString(Resources.getResource("org/killbill/queue/ddl_test.sql").openStream());
         embeddedDB.executeScript(ddlTest);
 
         embeddedDB.refreshTableNames();

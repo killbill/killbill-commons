@@ -34,7 +34,7 @@ public class TestStateMachine {
 
     @Test(groups = "fast")
     public void testStateMachine() throws Exception {
-        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
+        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("org/killbill/automaton/PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
 
         Assert.assertEquals(sms.getStateMachines().length, 2);
 
@@ -98,7 +98,7 @@ public class TestStateMachine {
 
     @Test(groups = "fast")
     public void testStateTransition() throws Exception {
-        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
+        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("org/killbill/automaton/PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
 
         final DefaultStateMachine sm1 = sms.getStateMachines()[1];
         final State state = sm1.getState("CAPTURE_INIT");
@@ -182,7 +182,7 @@ public class TestStateMachine {
     @Test(groups = "fast")
     public void testLinkedStateMachines() throws Exception {
 
-        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
+        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("org/killbill/automaton/PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
 
         final DefaultStateMachine sm1 = sms.getStateMachines()[0];
         final State state = sm1.getState("AUTH_SUCCESS");
