@@ -1,7 +1,10 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -18,7 +21,7 @@ package org.killbill.commons.jdbi.argument;
 
 import java.io.IOException;
 
-import org.h2.jdbc.JdbcSQLException;
+import org.h2.jdbc.JdbcSQLDataException;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
@@ -46,7 +49,7 @@ public class TestLocalDateArgumentFactory extends JDBITestBase {
             somethingSqlDao.create(1, "pierre", new LocalDate(DateTimeZone.UTC));
             Assert.fail();
         } catch (final UnableToExecuteStatementException e) {
-            Assert.assertTrue(e.getCause() instanceof JdbcSQLException);
+            Assert.assertTrue(e.getCause() instanceof JdbcSQLDataException);
         }
     }
 

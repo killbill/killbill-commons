@@ -1,6 +1,8 @@
 /*
- * Copyright 2015 Groupon, Inc
- * Copyright 2015 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -104,10 +106,8 @@ public class ReentrantLock {
                 throw new IllegalStateException(String.format("ReentrantLock createLock %s : lock already current request = %s, owner request = %s", lockName, requestId, lockHolder.getRequestId()));
             }
 
-            if (lockHolder == null) {
-                lockHolder = new LockHolder(requestId, originalLock);
-                lockTable.put(lockName, lockHolder);
-            }
+            lockHolder = new LockHolder(requestId, originalLock);
+            lockTable.put(lockName, lockHolder);
             lockHolder.increment();
         }
     }

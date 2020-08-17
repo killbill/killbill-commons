@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -37,6 +39,8 @@ import org.killbill.queue.retry.RetryableInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
 
@@ -96,6 +100,7 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
         }
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void dispatch(final M modelDao) {
         log.debug("Dispatching entry {}", modelDao);
         final CallableQueueHandler<E, M> entry = new CallableQueueHandler<E, M>(modelDao, handlerCallback, parentLifeCycle, clock, maxFailureRetries);

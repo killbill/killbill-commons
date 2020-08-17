@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2019 Groupon, Inc
- * Copyright 2014-2019 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -146,7 +148,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
         final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
             @Override
             public Long apply(final T input) {
-                return input.getRecordId();
+                return input == null ? Long.valueOf(-1) : input.getRecordId();
             }
         });
 
@@ -180,7 +182,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
             final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
                 @Override
                 public boolean apply(final T input) {
-                    return input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && owner.equals(input.getProcessingOwner());
+                    return input != null && input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && owner.equals(input.getProcessingOwner());
                 }
             });
             return ImmutableList.<T>copyOf(claimed);

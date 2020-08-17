@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -21,7 +23,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.net.URI;
 import java.util.Arrays;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -35,7 +36,9 @@ import org.killbill.xmlloader.ValidationErrors;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @XmlRootElement(name = "stateMachineConfig")
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultStateMachineConfig extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachineConfig, Externalizable {
@@ -114,7 +117,8 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
             return Iterables.tryFind(ImmutableList.<LinkStateMachine>copyOf(linkStateMachines), new Predicate<LinkStateMachine>() {
                 @Override
                 public boolean apply(final LinkStateMachine input) {
-                    return input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
+                    return input != null &&
+                           input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
                            input.getInitialState().getName().equals(srcState.getName()) &&
                            input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
                 }

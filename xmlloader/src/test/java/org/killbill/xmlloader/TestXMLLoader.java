@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -21,7 +22,6 @@ package org.killbill.xmlloader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
@@ -45,7 +45,8 @@ public class TestXMLLoader {
         final InputStream is = new ByteArrayInputStream(TEST_XML.getBytes());
         final XmlTestClass test = XMLLoader.getObjectFromStream(is, XmlTestClass.class);
         assertEquals(test.getFoo(), "foo");
-        assertEquals(test.getBar(), 1.0);
-        assertEquals(test.getLala(), 42);
+        //noinspection RedundantCast
+        assertEquals((double) test.getBar(), 1.0);
+        assertEquals((double) test.getLala(), 42);
     }
 }

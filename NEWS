@@ -1,3 +1,23 @@
+0.24.5
+    Update to killbill-oss-parent 0.144.19
+    Namespace all resources files
+
+0.24.4
+    Update to killbill-oss-parent 0.144.8
+
+0.24.3
+    Update to killbill-oss-parent 0.144.6
+
+0.24.2
+    Update to killbill-oss-parent 0.144.4
+
+0.24.1
+    Update to killbill-oss-parent 0.144.3
+
+0.24.0
+    Update to killbill-oss-parent 0.144.2
+    MVCC=true should be removed from H2 jdbc urls (the default MVSTore is a MVCC engine)
+
 0.23.11
     queue: fix InMemoryPersistentBus init sequence
 

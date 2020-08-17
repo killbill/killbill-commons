@@ -1,7 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -21,13 +22,13 @@ package org.killbill.commons.skeleton.modules;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
 
 public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
@@ -37,7 +38,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         builder.addJaxrsResource("org.killbill.commons.skeleton.modules");
         final Server server = startServer(builder.build(), new HelloModule());
 
-        final AsyncHttpClient client = new AsyncHttpClient();
+        final AsyncHttpClient client = new DefaultAsyncHttpClient();
         final Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
         final String body = responseFuture.get().getResponseBody();
         Assert.assertEquals(body, "Hello alhuile");

@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -28,6 +29,8 @@ import java.net.URL;
 import java.util.Scanner;
 
 import com.google.common.io.Resources;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class UriAccessor {
 
@@ -90,6 +93,6 @@ public class UriAccessor {
 
     public static String accessUriAsString(final URI uri) throws IOException, URISyntaxException {
         final InputStream stream = accessUri(uri);
-        return new Scanner(stream).useDelimiter("\\A").next();
+        return new Scanner(stream, UTF_8.name()).useDelimiter("\\A").next();
     }
 }

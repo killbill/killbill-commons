@@ -1,7 +1,10 @@
 /*
- * Copyright 2014 Groupon, Inc
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Groupon licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -31,7 +34,7 @@ public class TestStateMachine {
 
     @Test(groups = "fast")
     public void testStateMachine() throws Exception {
-        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
+        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("org/killbill/automaton/PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
 
         Assert.assertEquals(sms.getStateMachines().length, 2);
 
@@ -95,7 +98,7 @@ public class TestStateMachine {
 
     @Test(groups = "fast")
     public void testStateTransition() throws Exception {
-        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
+        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("org/killbill/automaton/PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
 
         final DefaultStateMachine sm1 = sms.getStateMachines()[1];
         final State state = sm1.getState("CAPTURE_INIT");
@@ -179,7 +182,7 @@ public class TestStateMachine {
     @Test(groups = "fast")
     public void testLinkedStateMachines() throws Exception {
 
-        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
+        final DefaultStateMachineConfig sms = XMLLoader.getObjectFromString(Resources.getResource("org/killbill/automaton/PaymentStates.xml").toExternalForm(), DefaultStateMachineConfig.class);
 
         final DefaultStateMachine sm1 = sms.getStateMachines()[0];
         final State state = sm1.getState("AUTH_SUCCESS");

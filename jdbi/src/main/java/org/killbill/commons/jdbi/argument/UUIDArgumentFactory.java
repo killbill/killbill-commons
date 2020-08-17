@@ -1,7 +1,10 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -37,7 +40,7 @@ public class UUIDArgumentFactory implements ArgumentFactory<UUID> {
         return new UUIDArgument(value);
     }
 
-    public class UUIDArgument implements Argument {
+    public static class UUIDArgument implements Argument {
 
         private final UUID value;
 

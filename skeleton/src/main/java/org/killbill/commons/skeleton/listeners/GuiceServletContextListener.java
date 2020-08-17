@@ -1,7 +1,10 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -27,6 +30,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Start up the base module when the server comes up. This gets configured in web.xml:
@@ -38,6 +42,7 @@ import com.google.inject.Stage;
  *  &lt;/context-param&gt;
  * </pre>
  */
+@SuppressFBWarnings("NM_SAME_SIMPLE_NAME_AS_SUPERCLASS")
 public class GuiceServletContextListener extends com.google.inject.servlet.GuiceServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(GuiceServletContextListener.class);

@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -21,7 +23,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.net.URI;
 import java.util.Arrays;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -36,7 +37,9 @@ import org.killbill.xmlloader.ValidationErrors;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachine, Externalizable {
 
@@ -126,7 +129,7 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
         return Iterables.filter(ImmutableList.copyOf(transitions), new Predicate<Transition>() {
             @Override
             public boolean apply(final Transition input) {
-                return input.getInitialState().getName().equals(initState);
+                return input != null && input.getInitialState().getName().equals(initState);
             }
         }).iterator().hasNext();
     }
@@ -157,7 +160,8 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
             return Iterables.tryFind(ImmutableList.<DefaultTransition>copyOf(transitions), new Predicate<DefaultTransition>() {
                 @Override
                 public boolean apply(final DefaultTransition input) {
-                    return input.getInitialState().getName().equals(initialState.getName()) &&
+                    return input != null &&
+                           input.getInitialState().getName().equals(initialState.getName()) &&
                            input.getOperation().getName().equals(operation.getName()) &&
                            input.getOperationResult().equals(operationResult);
                 }

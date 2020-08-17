@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2015 Groupon, Inc
- * Copyright 2014-2015 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -53,15 +54,9 @@ public class MysqlGlobalLockDao implements GlobalLockDao {
     }
 
     private boolean executeLockQuery(final Connection connection, final String query) throws SQLException {
-        Statement statement = null;
-        try {
-            statement = connection.createStatement();
-            final ResultSet rs = statement.executeQuery(query);
+        try (final Statement statement = connection.createStatement();
+             final ResultSet rs = statement.executeQuery(query)) {
             return rs.next() && (rs.getByte(1) == 1);
-        } finally {
-            if (statement != null) {
-                statement.close();
-            }
         }
     }
 }

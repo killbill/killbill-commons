@@ -1,7 +1,10 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -30,6 +33,8 @@ import org.skife.jdbi.v2.tweak.StatementLocator;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 // Similar to StringTemplate3StatementLocator, but safe to use in conjunction with dbi#setStatementLocator
 public class ReusableStringTemplate3StatementLocator implements StatementLocator {
@@ -64,7 +69,7 @@ public class ReusableStringTemplate3StatementLocator implements StatementLocator
                                             + templateGroupFilePathOnClasspath
                                             + " on classpath");
         } else {
-            final InputStreamReader reader = new InputStreamReader(ins);
+            final InputStreamReader reader = new InputStreamReader(ins, UTF_8);
             try {
                 this.group = new StringTemplateGroup(reader, AngleBracketTemplateLexer.class);
                 reader.close();

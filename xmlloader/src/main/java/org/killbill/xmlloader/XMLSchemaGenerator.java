@@ -1,7 +1,10 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -40,6 +43,8 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class XMLSchemaGenerator {
     private static final int MAX_SCHEMA_SIZE_IN_BYTES = 100000;
 
@@ -54,9 +59,7 @@ public class XMLSchemaGenerator {
 
         final JAXBContext context = JAXBContext.newInstance(clazz);
         String xsdFileName = "Schema.xsd";
-        if (args.length != 0) {
-            xsdFileName = args[0] + "/" + xsdFileName;
-        }
+        xsdFileName = args[0] + "/" + xsdFileName;
         final FileOutputStream s = new FileOutputStream(xsdFileName);
         pojoToXSD(context, s);
     }
@@ -70,7 +73,7 @@ public class XMLSchemaGenerator {
         final ByteArrayOutputStream output = new ByteArrayOutputStream(MAX_SCHEMA_SIZE_IN_BYTES);
         final JAXBContext context = JAXBContext.newInstance(clazz);
         pojoToXSD(context, output);
-        return new String(output.toByteArray());
+        return new String(output.toByteArray(), UTF_8);
     }
 
     public static InputStream xmlSchema(final Class<?> clazz) throws IOException, TransformerException, JAXBException {

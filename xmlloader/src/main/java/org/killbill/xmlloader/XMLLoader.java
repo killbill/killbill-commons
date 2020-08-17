@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -34,8 +35,6 @@ import javax.xml.validation.SchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-
-import com.google.common.base.Strings;
 
 public class XMLLoader {
 
@@ -119,6 +118,6 @@ public class XMLLoader {
 
     private static boolean shouldDisableValidation() {
         final String disableValidationProp = System.getProperty(DISABLE_VALIDATION_PROP);
-        return (Strings.isNullOrEmpty(disableValidationProp) || Boolean.valueOf(disableValidationProp) == Boolean.FALSE) ? false : true;
+        return Boolean.parseBoolean(disableValidationProp);
     }
 }

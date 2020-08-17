@@ -1,7 +1,10 @@
 /*
- * Copyright 2010-2011 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -21,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class XMLWriter<T> {
     private static final int MAX_XML_SIZE_IN_BYTES = 100000;
 
@@ -32,6 +37,6 @@ public class XMLWriter<T> {
 
         marshaller.marshal(object, output);
 
-        return new String(output.toByteArray());
+        return new String(output.toByteArray(), UTF_8);
     }
 }

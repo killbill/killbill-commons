@@ -1,13 +1,14 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -24,6 +25,7 @@ import java.util.Iterator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.MoreExecutors;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Bus exceptions in the guava framework are swallowed and that sucks.
@@ -34,6 +36,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  * They closed the bug, but i am still not seeing any way to get those exceptions back, so since we REALLY
  * need it, we have to hack the code.
  */
+@SuppressFBWarnings("NM_CLASS_NOT_EXCEPTION")
 public class EventBusThatThrowsException extends EventBus {
 
     @VisibleForTesting

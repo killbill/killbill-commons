@@ -1,7 +1,8 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -40,8 +41,9 @@ public class TestXMLWriter {
         final InputStream is = new ByteArrayInputStream(TEST_XML.getBytes());
         final XmlTestClass test = XMLLoader.getObjectFromStream(is, XmlTestClass.class);
         assertEquals(test.getFoo(), "foo");
-        assertEquals(test.getBar(), 1.0);
-        assertEquals(test.getLala(), 42);
+        //noinspection RedundantCast
+        assertEquals((double) test.getBar(), 1.0);
+        assertEquals((double) test.getLala(), 42);
 
         final String output = XMLWriter.writeXML(test, XmlTestClass.class);
         //System.out.println(output);

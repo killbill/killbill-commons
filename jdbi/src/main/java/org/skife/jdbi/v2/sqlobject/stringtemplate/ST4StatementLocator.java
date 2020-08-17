@@ -1,6 +1,9 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2004-2014 Brian McCallister
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -107,7 +110,7 @@ public class ST4StatementLocator implements StatementLocator {
             stg = computeIfAbsent(CACHE, url.toString(), new Function<String, STGroup>() {
                 @Override
                 public STGroup apply(final String u) {
-                    return urlToSTGroup(u);
+                    return u == null ? null : urlToSTGroup(u);
                 }
             });
         } else {

@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -218,7 +220,7 @@ public class TestDataSourceProvider {
         if (DataSourceProvider.DatabaseType.MYSQL.equals(databaseType)) {
             properties.put("org.killbill.dao.url", "jdbc:mysql://127.0.0.1:3306/killbill");
         } else if (DataSourceProvider.DatabaseType.H2.equals(databaseType)) {
-            properties.put("org.killbill.dao.url", "jdbc:h2:file:/var/tmp/killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;MVCC=true;DB_CLOSE_ON_EXIT=FALSE");
+            properties.put("org.killbill.dao.url", "jdbc:h2:file:/var/tmp/killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         } else {
             properties.put("org.killbill.dao.url", "jdbc:test:@myhost:1521:orcl");
 

@@ -1,7 +1,10 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
- * Ning licenses this file to you under the Apache License, version 2.0
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
  *
@@ -21,7 +24,6 @@ import java.sql.SQLException;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
-import org.skife.jdbi.v2.exceptions.TransactionFailedException;
 import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.skife.jdbi.v2.tweak.transactions.DelegatingTransactionHandler;
 import org.slf4j.Logger;
@@ -58,16 +60,13 @@ public class RestartTransactionRunner extends DelegatingTransactionHandler imple
         while (true) {
             try {
                 return getDelegate().inTransaction(handle, callback);
-            } catch (final Exception e) {
+            } catch (final RuntimeException e) {
                 if (!isSqlState(configuration.serializationFailureSqlStates, e) || --retriesRemaining <= 0) {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
-                    }
-                    throw new TransactionFailedException(e);
+                    throw e;
                 }
 
-                if (e instanceof SQLException) {
-                    final String sqlState = ((SQLException) e).getSQLState();
+                if (e.getCause() instanceof SQLException) {
+                    final String sqlState = ((SQLException) e.getCause()).getSQLState();
                     log.warn("Restarting transaction due to SQLState {}, retries remaining {}", sqlState, retriesRemaining);
                 } else {
                     log.warn("Restarting transaction due to {}, retries remaining {}", e.toString(), retriesRemaining);

@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2019 Groupon, Inc
- * Copyright 2014-2019 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -278,7 +280,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         }
 
         // Internal structure to keep track of recordId per queue
-        private final class RowRef {
+        private static final class RowRef {
 
             private final int queueId;
             private final List<Long> rowIds;
