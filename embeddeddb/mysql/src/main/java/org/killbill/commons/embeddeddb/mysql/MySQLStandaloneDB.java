@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 import org.mariadb.jdbc.MariaDbDataSource;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.mysql.cj.jdbc.MysqlDataSource;
 
 /**
  * Delegates to a real MySQL database. This can be used for debugging.
