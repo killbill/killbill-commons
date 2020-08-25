@@ -41,6 +41,8 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
 
     @Override
     public void setUrl(final String url) throws SQLException {
+        this.url = url;
+        super.setUrl(url);
         // If called by PropertyElf.setTargetFromProperties (HikariCP), we need to take into account our extra properties
         updateUrlIfNeeded();
     }
