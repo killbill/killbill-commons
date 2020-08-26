@@ -320,7 +320,7 @@ public class DataSourceProvider implements Provider<DataSource> {
                 if (useMariaDB) {
                     driverClassName = "org.mariadb.jdbc.Driver";
                 } else {
-                    driverClassName = "com.mysql.jdbc.Driver";
+                    driverClassName = "com.mysql.cj.jdbc.Driver";
                 }
             }
         } else if ("h2".equals(uri.getScheme()) && ("mem".equals(schemeLocation) || "file".equals(schemeLocation))) {
