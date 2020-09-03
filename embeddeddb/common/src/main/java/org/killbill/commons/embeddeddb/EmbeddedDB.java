@@ -86,7 +86,7 @@ public abstract class EmbeddedDB {
     public void stop() throws IOException {
         final DataSource dataSource = getDataSource();
         if (dataSource instanceof HikariDataSource) {
-            ((HikariDataSource) dataSource).shutdown();
+            ((HikariDataSource) dataSource).close();
         }
     }
 

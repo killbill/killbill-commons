@@ -43,6 +43,8 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
     public void setUrl(final String url) throws SQLException {
         this.url = url;
         super.setUrl(url);
+        // If called by PropertyElf.setTargetFromProperties (HikariCP), we need to take into account our extra properties
+        updateUrlIfNeeded();
     }
 
     // See HikariDataSourceBuilder and https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
@@ -70,14 +72,15 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
 
     private void updateUrlIfNeeded() throws SQLException {
         if (url == null) {
-            final UrlParser urlParser = getUrlParser();
+            final UrlParser urlParser = initializeAndGetUrlParser();
             if (urlParser != null) {
                 url = urlParser.getInitialUrl();
             }
         }
 
         if (url != null) {
-            setUrl(buildUpdatedUrl(url));
+            this.url = buildUpdatedUrl(this.url);
+            super.setUrl(url);
         }
     }
 

@@ -50,7 +50,7 @@ import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.killbill.commons.embeddeddb.mysql.KillBillMariaDbDataSource;
 import org.killbill.commons.jdbi.guice.DataSourceProvider.DatabaseType;
-import org.mariadb.jdbc.internal.util.Options;
+import org.mariadb.jdbc.util.Options;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -182,7 +182,7 @@ public class TestDataSourceProvider {
 
         final HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
         final HikariPool hikariPool = new HikariPool(hikariDataSource);
-        final DataSource wrappedDataSource = hikariPool.getDataSource();
+        final DataSource wrappedDataSource = hikariPool.getUnwrappedDataSource();
         assertTrue(wrappedDataSource instanceof KillBillMariaDbDataSource);
 
         final KillBillMariaDbDataSource mariaDbDataSource = (KillBillMariaDbDataSource) wrappedDataSource;

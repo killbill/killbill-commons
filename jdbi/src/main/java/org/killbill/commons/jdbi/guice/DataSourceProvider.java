@@ -41,7 +41,7 @@ import com.google.inject.Provider;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import com.zaxxer.hikari.pool.PoolInitializationException;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class DataSourceProvider implements Provider<DataSource> {
 
@@ -166,7 +166,7 @@ public class DataSourceProvider implements Provider<DataSource> {
             if (initSQL != null && !initSQL.isEmpty()) {
                 hikariConfig.setConnectionInitSql(initSQL);
             }
-            hikariConfig.setInitializationFailFast(config.isInitializationFailFast());
+            hikariConfig.setInitializationFailTimeout(config.isInitializationFailFast() ? 1 : -1);
 
             hikariConfig.setTransactionIsolation(config.getTransactionIsolationLevel());
 
@@ -320,7 +320,7 @@ public class DataSourceProvider implements Provider<DataSource> {
                 if (useMariaDB) {
                     driverClassName = "org.mariadb.jdbc.Driver";
                 } else {
-                    driverClassName = "com.mysql.jdbc.Driver";
+                    driverClassName = "com.mysql.cj.jdbc.Driver";
                 }
             }
         } else if ("h2".equals(uri.getScheme()) && ("mem".equals(schemeLocation) || "file".equals(schemeLocation))) {
