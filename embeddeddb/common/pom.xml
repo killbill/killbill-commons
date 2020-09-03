@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-embeddeddb</artifactId>
-        <version>0.24.6-SNAPSHOT</version>
+        <version>0.24.6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-common</artifactId>
