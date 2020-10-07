@@ -324,6 +324,18 @@ public class ST4StatementLocator implements StatementLocator {
 
         @Override
         public CompiledST lookupTemplate(String name) {
+            final ClassLoader initialContextClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                if (initialContextClassLoader ==  null) {
+                    Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+                }
+                return lookupTemplateInternal(name);
+            } finally {
+                Thread.currentThread().setContextClassLoader(initialContextClassLoader);
+            }
+        }
+
+        private CompiledST lookupTemplateInternal(String name) {
             if (name.charAt(0) != '/') {
                 name = "/" + name;
             }
