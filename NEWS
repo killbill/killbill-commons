@@ -1,3 +1,6 @@
+0.24.7
+    Harden jdbi string template (set a context class loader when none is specififed to avoid corrupting cache with null value)
+
 0.24.6
     Update to killbill-oss-parent 0.144.24
 
