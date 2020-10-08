@@ -1,3 +1,6 @@
+0.24.8
+    Update parent pom.xml
+
 0.24.7
     Harden jdbi string template (set a context class loader when none is specififed to avoid corrupting cache with null value)
 
