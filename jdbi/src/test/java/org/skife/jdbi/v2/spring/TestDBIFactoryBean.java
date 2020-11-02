@@ -27,7 +27,7 @@ import org.skife.jdbi.derby.DerbyHelper;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.IDBI;
-import org.skife.jdbi.v2.JDBITests;
+import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.util.IntegerMapper;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 
@@ -36,7 +36,7 @@ import javax.sql.DataSource;
 /**
  *
  */
-@Category(JDBITests.class)
+@Category(JDBIQuarantineTests.class) // Spring 2.5 doesn't support Java 8
 public class TestDBIFactoryBean extends AbstractDependencyInjectionSpringContextTests
 {
     static {
