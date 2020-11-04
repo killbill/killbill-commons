@@ -34,8 +34,7 @@ public class BaseServerModuleBuilder {
 
     public enum JaxrsImplementation {
         NONE,
-        JERSEY,
-        JERSEY2_COMPAT
+        JERSEY
     }
 
     // By default, proxy all requests to the Guice/Jax-RS servlet
@@ -164,17 +163,6 @@ public class BaseServerModuleBuilder {
                                                   jaxrsResources,
                                                   jerseyFilters,
                                                   jerseyParams);
-            case JERSEY2_COMPAT:
-                return new Jersey2CompatServerModule(filters,
-                                                     filtersRegex,
-                                                     servlets,
-                                                     servletsRegex,
-                                                     jaxrsServlets,
-                                                     jaxrsServletsRegex,
-                                                     jaxrsUriPattern,
-                                                     jaxrsResources,
-                                                     jerseyFilters,
-                                                     jerseyParams);
             default:
                 throw new IllegalArgumentException();
         }

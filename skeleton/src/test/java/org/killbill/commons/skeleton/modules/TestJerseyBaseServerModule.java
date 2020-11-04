@@ -36,7 +36,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
     public void testJerseyIntegration() throws Exception {
         final BaseServerModuleBuilder builder = new BaseServerModuleBuilder();
         builder.addJaxrsResource("org.killbill.commons.skeleton.modules");
-        final Server server = startServer(builder.build(), new HelloModule());
+        final Server server = startServer(builder.build());
 
         final AsyncHttpClient client = new DefaultAsyncHttpClient();
         final Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
@@ -52,7 +52,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         final JerseyBaseServerModule module1 = (JerseyBaseServerModule) builder1.build();
         final Map<String, String> jerseyParams1 = module1.getJerseyParams().build();
         Assert.assertEquals(jerseyParams1.size(), 1);
-        Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "true");
+        Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
 
         final BaseServerModuleBuilder builder2 = new BaseServerModuleBuilder();
         builder2.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
@@ -61,7 +61,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         Assert.assertEquals(jerseyParams2.size(), 3);
         Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS), "filter1;filter2;filter3");
         Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS), "filter3;filter2;filter1");
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "true");
+        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
 
         final BaseServerModuleBuilder builder3 = new BaseServerModuleBuilder();
         builder3.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
@@ -71,13 +71,13 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         Assert.assertEquals(jerseyParams3.size(), 4);
         Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS), "bar;filter1;filter2;filter3");
         Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS), "filter3;filter2;filter1");
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "true");
+        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
         Assert.assertEquals(jerseyParams3.get("foo"), "qux");
 
         final BaseServerModuleBuilder builder4 = new BaseServerModuleBuilder();
         builder4.addJerseyParam(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS, "bar")
                 .addJerseyParam(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS, "bar2")
-                .addJerseyParam(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING, "false")
+                .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY, "PAYLOAD_TEXT")
                 .addJerseyParam("foo", "qux");
         builder4.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
         final JerseyBaseServerModule module4 = (JerseyBaseServerModule) builder4.build();
@@ -85,7 +85,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         Assert.assertEquals(jerseyParams4.size(), 4);
         Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS), "bar;filter1;filter2;filter3");
         Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS), "bar2;filter3;filter2;filter1");
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "false");
+        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "PAYLOAD_TEXT");
         Assert.assertEquals(jerseyParams4.get("foo"), "qux");
     }
 }

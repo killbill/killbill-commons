@@ -28,26 +28,29 @@ import java.util.Map.Entry;
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
+import org.glassfish.jersey.servlet.ServletContainer;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class JerseyBaseServerModule extends BaseServerModule {
 
     private static final Joiner joiner = Joiner.on(";");
 
     @VisibleForTesting
-    static final String JERSEY_CONTAINER_REQUEST_FILTERS = "com.sun.jersey.spi.container.ContainerRequestFilters";
+    static final String JERSEY_CONTAINER_REQUEST_FILTERS = "javax.ws.rs.container.ContainerRequestFilter";
     @VisibleForTesting
-    static final String JERSEY_CONTAINER_RESPONSE_FILTERS = "com.sun.jersey.spi.container.ContainerResponseFilters";
+    static final String JERSEY_CONTAINER_RESPONSE_FILTERS = "javax.ws.rs.container.ContainerResponseFilter";
     @VisibleForTesting
-    static final String JERSEY_DISABLE_ENTITYLOGGING = "com.sun.jersey.config.feature.logging.DisableEntitylogging";
+    static final String JERSEY_LOGGING_VERBOSITY = "jersey.config.logging.verbosity";
+    @VisibleForTesting
+    static final String JAXRS_APPLICATION_CLASS = "javax.ws.rs.Application";
 
-    // See com.sun.jersey.api.core.ResourceConfig
+    // See org.glassfish.jersey.servlet.ServletProperties and org.glassfish.jersey.logging.LoggingFeature
     protected final ImmutableMap.Builder<String, String> jerseyParams;
 
     public JerseyBaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
@@ -84,9 +87,14 @@ public class JerseyBaseServerModule extends BaseServerModule {
         }
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
-        final String disableEntityLogging = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_DISABLE_ENTITYLOGGING)), "true");
-        this.jerseyParams.put(JERSEY_DISABLE_ENTITYLOGGING, disableEntityLogging)
+        final String jerseyLoggingVerbosity = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
+        this.jerseyParams.put(JERSEY_LOGGING_VERBOSITY, jerseyLoggingVerbosity)
                          .putAll(jerseyParams);
+
+        final String jaxrsApplicationClassName = Strings.emptyToNull(jerseyParams.remove(JERSEY_CONTAINER_REQUEST_FILTERS));
+        if (jaxrsApplicationClassName != null) {
+            this.jerseyParams.put(JERSEY_CONTAINER_REQUEST_FILTERS, jaxrsApplicationClassName);
+        }
     }
 
     @Override
@@ -101,13 +109,14 @@ public class JerseyBaseServerModule extends BaseServerModule {
 
         // Catch-all resources
         if (!jaxrsResources.isEmpty()) {
-            jerseyParams.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
+            jerseyParams.put("jersey.config.server.provider.packages", joiner.join(jaxrsResources));
             serveJaxrsResources();
         }
     }
 
     protected void serveJaxrsResources() {
-        serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
+        bind(GuiceServletContainer.class).asEagerSingleton();
+        serveRegex(jaxrsUriPattern).with(GuiceServletContainer.class, jerseyParams.build());
     }
 
     @VisibleForTesting

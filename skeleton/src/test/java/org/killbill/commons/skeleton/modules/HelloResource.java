@@ -19,12 +19,24 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
+import org.testng.Assert;
+
+import com.google.inject.Injector;
+
 @Path("hello")
 public class HelloResource {
+
+    @Inject
+    public HelloResource(final SomeGuiceyDependency someGuiceyDependency, final Injector guiceInjector) {
+        // HelloResource is being created by HK2 but these injections come from Guice
+        // (my understanding is that HK2 won't do JIT binding by default: https://javaee.github.io/hk2/getting-started.html#automatic-service-population)
+        Assert.assertEquals(someGuiceyDependency, guiceInjector.getInstance(SomeGuiceyDependency.class));
+    }
 
     @GET
     @Path("/{name}")

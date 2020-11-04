@@ -32,11 +32,10 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
+import org.glassfish.jersey.spi.ExceptionMappers;
 import org.killbill.commons.metrics.MetricTag;
 
 import com.codahale.metrics.MetricRegistry;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import com.sun.jersey.spi.container.ExceptionMapperContext;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
@@ -46,18 +45,18 @@ import org.aopalliance.intercept.MethodInvocation;
 public class TimedResourceInterceptor implements MethodInterceptor {
 
     private final Map<String, Map<String, Object>> metricTagsByMethod = new ConcurrentHashMap<String, Map<String, Object>>();
-    private final Provider<GuiceContainer> jerseyContainer;
+    private final Provider<ExceptionMappers> exceptionMappers;
     private final Provider<MetricRegistry> metricRegistry;
     private final String resourcePath;
     private final String metricName;
     private final String httpMethod;
 
-    public TimedResourceInterceptor(final Provider<GuiceContainer> jerseyContainer,
+    public TimedResourceInterceptor(final Provider<ExceptionMappers> exceptionMappers,
                                     final Provider<MetricRegistry> metricRegistry,
                                     final String resourcePath,
                                     final String metricName,
                                     final String httpMethod) {
-        this.jerseyContainer = jerseyContainer;
+        this.exceptionMappers = exceptionMappers;
         this.metricRegistry = metricRegistry;
         this.resourcePath = resourcePath;
         this.metricName = metricName;
@@ -96,8 +95,8 @@ public class TimedResourceInterceptor implements MethodInterceptor {
     }
 
     private int mapException(final Throwable e) throws Exception {
-        final ExceptionMapperContext exceptionMapperContext = jerseyContainer.get().getWebApplication().getExceptionMapperContext();
-        @SuppressWarnings("unchecked") final ExceptionMapper<Throwable> exceptionMapper = exceptionMapperContext.find(e.getClass());
+        final ExceptionMappers actualMappers = exceptionMappers.get();
+        final ExceptionMapper<Throwable> exceptionMapper = (actualMappers != null) ? actualMappers.findMapping(e) : null;
 
         if (exceptionMapper != null) {
             return exceptionMapper.toResponse(e).getStatus();

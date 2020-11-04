@@ -27,19 +27,20 @@ import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
-import com.codahale.metrics.Timer;
+import org.glassfish.jersey.spi.ExceptionMappers;
 import org.killbill.commons.metrics.MetricTag;
 import org.killbill.commons.metrics.TimedResource;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.matcher.Matchers;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 @Test(groups = "fast")
 public class TestTimedResourceInterceptor {
@@ -181,12 +182,11 @@ public class TestTimedResourceInterceptor {
     public static class TestResourceModule extends AbstractModule {
         @Override
         protected void configure() {
-            bind(GuiceContainer.class);
+            bind(ExceptionMappers.class).toInstance(Mockito.mock(ExceptionMappers.class));
             bind(TestResource.class).asEagerSingleton();
             bind(MetricRegistry.class).asEagerSingleton();
 
-            final TimedResourceListener timedResourceTypeListener =
-                    new TimedResourceListener(getProvider(GuiceContainer.class), getProvider(MetricRegistry.class));
+            final TimedResourceListener timedResourceTypeListener = new TimedResourceListener(getProvider(ExceptionMappers.class), getProvider(MetricRegistry.class));
             bindListener(Matchers.any(), timedResourceTypeListener);
         }
     }

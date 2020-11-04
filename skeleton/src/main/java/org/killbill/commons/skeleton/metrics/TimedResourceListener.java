@@ -26,6 +26,7 @@ import javax.inject.Provider;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.Path;
 
+import org.glassfish.jersey.spi.ExceptionMappers;
 import org.killbill.commons.metrics.TimedResource;
 
 import com.codahale.metrics.MetricRegistry;
@@ -33,20 +34,19 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 /**
  * A listener which adds method interceptors to timed resource methods.
  */
 public class TimedResourceListener implements TypeListener {
 
-    private final Provider<GuiceContainer> guiceContainer;
+    private final Provider<ExceptionMappers> exceptionMappers;
 
     private final Provider<MetricRegistry> metricRegistry;
 
-    public TimedResourceListener(final Provider<GuiceContainer> guiceContainer,
+    public TimedResourceListener(final Provider<ExceptionMappers> exceptionMappers,
                                  final Provider<MetricRegistry> metricRegistry) {
-        this.guiceContainer = guiceContainer;
+        this.exceptionMappers = exceptionMappers;
         this.metricRegistry = metricRegistry;
     }
 
@@ -68,8 +68,11 @@ public class TimedResourceListener implements TypeListener {
                         } else {
                             metricName = method.getName();
                         }
-                        final TimedResourceInterceptor timedResourceInterceptor = new TimedResourceInterceptor(
-                                guiceContainer, metricRegistry, resourcePath, metricName, httpMethod.value());
+                        final TimedResourceInterceptor timedResourceInterceptor = new TimedResourceInterceptor(exceptionMappers,
+                                                                                                               metricRegistry,
+                                                                                                               resourcePath,
+                                                                                                               metricName,
+                                                                                                               httpMethod.value());
                         encounter.bindInterceptor(Matchers.only(method), timedResourceInterceptor);
                     }
                 }

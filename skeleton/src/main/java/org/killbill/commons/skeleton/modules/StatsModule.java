@@ -19,6 +19,7 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import org.glassfish.jersey.spi.ExceptionMappers;
 import org.killbill.commons.skeleton.metrics.TimedResourceListener;
 import org.killbill.commons.skeleton.metrics.health.KillBillHealthCheckRegistry;
 
@@ -30,7 +31,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class StatsModule extends AbstractModule {
 
@@ -80,8 +80,7 @@ public class StatsModule extends AbstractModule {
         install(new AdminServletModule(healthCheckUri, metricsUri, pingUri, threadsUri));
 
         // Metrics/Jersey integration
-        final TimedResourceListener timedResourceTypeListener =
-                new TimedResourceListener(getProvider(GuiceContainer.class), getProvider(MetricRegistry.class));
+        final TimedResourceListener timedResourceTypeListener = new TimedResourceListener(getProvider(ExceptionMappers.class), getProvider(MetricRegistry.class));
         bindListener(Matchers.any(), timedResourceTypeListener);
 
         bind(HealthCheckRegistry.class).toInstance(createHealthCheckRegistry());
