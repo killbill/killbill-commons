@@ -20,14 +20,19 @@ package org.killbill.commons.skeleton.modules;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.ServletException;
+import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.WebConfig;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
 
 @Singleton
 public class GuiceServletContainer extends ServletContainer {
@@ -42,12 +47,26 @@ public class GuiceServletContainer extends ServletContainer {
 
     @Override
     protected void init(final WebConfig webConfig) throws ServletException {
+        // This will instantiate a new instance of ResourceConfig (see WebComponent#createResourceConfig) initialized with the Jersey parameters we specified (see JerseyBaseServerModule)
         super.init(webConfig);
 
         // HK2 will instantiate the Jersey resources, but will delegate injection of the bindings it doesn't know about to Guice
-        final ServiceLocator serviceLocator = getApplicationHandler().getInjectionManager().getInstance(ServiceLocator.class);
+        final InjectionManager injectionManager = getApplicationHandler().getInjectionManager();
+        final ServiceLocator serviceLocator = injectionManager.getInstance(ServiceLocator.class);
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);
         final GuiceIntoHK2Bridge guiceBridge = serviceLocator.getService(GuiceIntoHK2Bridge.class);
         guiceBridge.bridgeGuiceInjector(injector);
+
+        final boolean hasObjectMapperBinding = !injector.findBindingsByType(TypeLiteral.get(ObjectMapper.class)).isEmpty();
+        if (hasObjectMapperBinding) {
+            // JacksonJsonProvider is constructed by HK2, but we need to inject the ObjectMapper we constructed via Guice
+            final ObjectMapper objectMapper = injector.getInstance(ObjectMapper.class);
+            for (final MessageBodyWriter messageBodyWriter : injectionManager.<MessageBodyWriter>getAllInstances(MessageBodyWriter.class)) {
+                if (messageBodyWriter instanceof JacksonJsonProvider) {
+                    ((JacksonJsonProvider) messageBodyWriter).setMapper(objectMapper);
+                    break;
+                }
+            }
+        }
     }
 }

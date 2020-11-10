@@ -19,20 +19,34 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import java.util.Map;
+
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 
+import org.joda.time.LocalDate;
 import org.testng.Assert;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 
 @Path("hello")
+@Singleton
 public class HelloResource {
+
+    private static boolean initialized = false;
 
     @Inject
     public HelloResource(final SomeGuiceyDependency someGuiceyDependency, final Injector guiceInjector) {
+        // Verify it's indeed a Singleton
+        Assert.assertFalse(initialized);
+        initialized = true;
+
         // HelloResource is being created by HK2 but these injections come from Guice
         // (my understanding is that HK2 won't do JIT binding by default: https://javaee.github.io/hk2/getting-started.html#automatic-service-population)
         Assert.assertEquals(someGuiceyDependency, guiceInjector.getInstance(SomeGuiceyDependency.class));
@@ -42,5 +56,11 @@ public class HelloResource {
     @Path("/{name}")
     public String hello(@PathParam("name") final String name) {
         return "Hello " + name;
+    }
+
+    @POST
+    @Produces("application/json")
+    public Map<String, ?> hello() {
+        return ImmutableMap.<String, Object>of("key", "hello", "date", new LocalDate("2010-01-01"));
     }
 }

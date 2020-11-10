@@ -21,35 +21,29 @@ package org.killbill.commons.skeleton.modules;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
-import org.glassfish.jersey.servlet.ServletContainer;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 public class JerseyBaseServerModule extends BaseServerModule {
 
     private static final Joiner joiner = Joiner.on(";");
 
     @VisibleForTesting
-    static final String JERSEY_CONTAINER_REQUEST_FILTERS = "javax.ws.rs.container.ContainerRequestFilter";
-    @VisibleForTesting
-    static final String JERSEY_CONTAINER_RESPONSE_FILTERS = "javax.ws.rs.container.ContainerResponseFilter";
+    static final String JERSEY_PROVIDER_CLASSNAMES = "jersey.config.server.provider.classnames";
     @VisibleForTesting
     static final String JERSEY_LOGGING_VERBOSITY = "jersey.config.logging.verbosity";
-    @VisibleForTesting
-    static final String JAXRS_APPLICATION_CLASS = "javax.ws.rs.Application";
+    static final String JERSEY_LOGGING_LEVEL = "jersey.config.logging.logger.level";
 
+    protected final Collection<String> jerseyResourcesAndProvidersPackages;
     // See org.glassfish.jersey.servlet.ServletProperties and org.glassfish.jersey.logging.LoggingFeature
     protected final ImmutableMap.Builder<String, String> jerseyParams;
 
@@ -60,41 +54,31 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServlets,
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
                                   final String jaxrsUriPattern,
-                                  final Collection<String> jaxrsResources,
-                                  final List<String> jerseyFilters,
+                                  final Collection<String> jerseyResourcesAndProvidersPackages,
+                                  final Collection<String> jerseyFilters,
                                   final Map<String, String> jerseyParams) {
-        super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern, jaxrsResources);
-
-        String manuallySpecifiedRequestFilters = Strings.nullToEmpty(jerseyParams.remove(JERSEY_CONTAINER_REQUEST_FILTERS));
-        String manuallySpecifiedResponseFilters = Strings.nullToEmpty(jerseyParams.remove(JERSEY_CONTAINER_RESPONSE_FILTERS));
-        if (!jerseyFilters.isEmpty()) {
-            if (!manuallySpecifiedRequestFilters.isEmpty()) {
-                manuallySpecifiedRequestFilters += ";";
-            }
-            if (!manuallySpecifiedResponseFilters.isEmpty()) {
-                manuallySpecifiedResponseFilters += ";";
-            }
-        }
-        final String containerRequestFilters = manuallySpecifiedRequestFilters + joiner.join(jerseyFilters);
-        final String containerResponseFilters = manuallySpecifiedResponseFilters + joiner.join(Lists.reverse(jerseyFilters));
-
+        super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern);
+        this.jerseyResourcesAndProvidersPackages = jerseyResourcesAndProvidersPackages;
         this.jerseyParams = new ImmutableMap.Builder<String, String>();
-        if (!containerRequestFilters.isEmpty()) {
-            this.jerseyParams.put(JERSEY_CONTAINER_REQUEST_FILTERS, containerRequestFilters);
+
+        String jerseyResourcesAndProvidersClasses = Strings.nullToEmpty(jerseyParams.remove(JERSEY_PROVIDER_CLASSNAMES));
+        if (!jerseyFilters.isEmpty()) {
+            if (!jerseyResourcesAndProvidersClasses.isEmpty()) {
+                jerseyResourcesAndProvidersClasses += ";";
+            }
         }
-        if (!containerResponseFilters.isEmpty()) {
-            this.jerseyParams.put(JERSEY_CONTAINER_RESPONSE_FILTERS, containerResponseFilters);
+        final String allJerseyResourcesAndProvidersClasses = jerseyResourcesAndProvidersClasses + joiner.join(jerseyFilters);
+        if (!allJerseyResourcesAndProvidersClasses.isEmpty()) {
+            this.jerseyParams.put(JERSEY_PROVIDER_CLASSNAMES, allJerseyResourcesAndProvidersClasses);
         }
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
         final String jerseyLoggingVerbosity = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
+        final String jerseyLoggingLevel = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_LEVEL)), "INFO");
         this.jerseyParams.put(JERSEY_LOGGING_VERBOSITY, jerseyLoggingVerbosity)
-                         .putAll(jerseyParams);
+                         .put(JERSEY_LOGGING_LEVEL, jerseyLoggingLevel);
 
-        final String jaxrsApplicationClassName = Strings.emptyToNull(jerseyParams.remove(JERSEY_CONTAINER_REQUEST_FILTERS));
-        if (jaxrsApplicationClassName != null) {
-            this.jerseyParams.put(JERSEY_CONTAINER_REQUEST_FILTERS, jaxrsApplicationClassName);
-        }
+        this.jerseyParams.putAll(jerseyParams);
     }
 
     @Override
@@ -108,8 +92,8 @@ public class JerseyBaseServerModule extends BaseServerModule {
         }
 
         // Catch-all resources
-        if (!jaxrsResources.isEmpty()) {
-            jerseyParams.put("jersey.config.server.provider.packages", joiner.join(jaxrsResources));
+        if (!jerseyResourcesAndProvidersPackages.isEmpty()) {
+            jerseyParams.put("jersey.config.server.provider.packages", joiner.join(jerseyResourcesAndProvidersPackages));
             serveJaxrsResources();
         }
     }

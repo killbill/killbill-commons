@@ -150,8 +150,7 @@ public class BaseServerModuleBuilder {
                                             servletsRegex,
                                             jaxrsServlets,
                                             jaxrsServletsRegex,
-                                            jaxrsUriPattern,
-                                            jaxrsResources);
+                                            jaxrsUriPattern);
             case JERSEY:
                 return new JerseyBaseServerModule(filters,
                                                   filtersRegex,

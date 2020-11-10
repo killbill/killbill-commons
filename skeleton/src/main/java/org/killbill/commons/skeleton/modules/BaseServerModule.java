@@ -20,7 +20,6 @@
 package org.killbill.commons.skeleton.modules;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -42,7 +41,6 @@ public class BaseServerModule extends ServletModule {
     final Map<String, Class<? extends HttpServlet>> jaxrsServlets;
     final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex;
     final String jaxrsUriPattern;
-    final Collection<String> jaxrsResources = new ArrayList<String>();
 
     public BaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
                             final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex,
@@ -50,8 +48,7 @@ public class BaseServerModule extends ServletModule {
                             final Map<String, Class<? extends HttpServlet>> servletsRegex,
                             final Map<String, Class<? extends HttpServlet>> jaxrsServlets,
                             final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
-                            final String jaxrsUriPattern,
-                            final Collection<String> jaxrsResources) {
+                            final String jaxrsUriPattern) {
         this.filters = filters;
         this.filtersRegex = filtersRegex;
         this.servlets = servlets;
@@ -59,7 +56,6 @@ public class BaseServerModule extends ServletModule {
         this.jaxrsServlets = jaxrsServlets;
         this.jaxrsServletsRegex = jaxrsServletsRegex;
         this.jaxrsUriPattern = jaxrsUriPattern;
-        this.jaxrsResources.addAll(jaxrsResources);
     }
 
     @Override
