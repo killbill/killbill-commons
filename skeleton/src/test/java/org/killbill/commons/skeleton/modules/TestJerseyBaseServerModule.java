@@ -41,9 +41,9 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
     @Test(groups = "slow")
     public void testJerseyIntegration() throws Exception {
         final BaseServerModuleBuilder builder = new BaseServerModuleBuilder();
-        builder.addJaxrsResource("org.killbill.commons.skeleton.modules");
-        builder.addJerseyFilter(HelloFilter.class.getName());
-        builder.addJerseyFilter(JacksonJsonProvider.class.getName());
+        builder.addJerseyResourcePackage("org.killbill.commons.skeleton.modules");
+        builder.addJerseyResourceClass(HelloFilter.class.getName());
+        builder.addJerseyResourceClass(JacksonJsonProvider.class.getName());
         final Server server = startServer(builder.build(), new AbstractModule() {
             @Override
             protected void configure() {
@@ -83,37 +83,14 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "INFO");
 
         final BaseServerModuleBuilder builder2 = new BaseServerModuleBuilder();
-        builder2.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
+        builder2.addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY, "PAYLOAD_TEXT")
+                .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL, "FINE")
+                .addJerseyParam("foo", "qux");
         final JerseyBaseServerModule module2 = (JerseyBaseServerModule) builder2.build();
         final Map<String, String> jerseyParams2 = module2.getJerseyParams().build();
         Assert.assertEquals(jerseyParams2.size(), 3);
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_PROVIDER_CLASSNAMES), "filter1;filter2;filter3");
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "INFO");
-
-        final BaseServerModuleBuilder builder3 = new BaseServerModuleBuilder();
-        builder3.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
-        builder3.addJerseyParam(JerseyBaseServerModule.JERSEY_PROVIDER_CLASSNAMES, "bar").addJerseyParam("foo", "qux");
-        final JerseyBaseServerModule module3 = (JerseyBaseServerModule) builder3.build();
-        final Map<String, String> jerseyParams3 = module3.getJerseyParams().build();
-        Assert.assertEquals(jerseyParams3.size(), 4);
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_PROVIDER_CLASSNAMES), "bar;filter1;filter2;filter3");
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "INFO");
-        Assert.assertEquals(jerseyParams3.get("foo"), "qux");
-
-        final BaseServerModuleBuilder builder4 = new BaseServerModuleBuilder();
-        builder4.addJerseyParam(JerseyBaseServerModule.JERSEY_PROVIDER_CLASSNAMES, "bar")
-                .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY, "PAYLOAD_TEXT")
-                .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL, "FINE")
-                .addJerseyParam("foo", "qux");
-        builder4.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
-        final JerseyBaseServerModule module4 = (JerseyBaseServerModule) builder4.build();
-        final Map<String, String> jerseyParams4 = module4.getJerseyParams().build();
-        Assert.assertEquals(jerseyParams4.size(), 4);
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_PROVIDER_CLASSNAMES), "bar;filter1;filter2;filter3");
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "PAYLOAD_TEXT");
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "FINE");
-        Assert.assertEquals(jerseyParams4.get("foo"), "qux");
+        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "PAYLOAD_TEXT");
+        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "FINE");
+        Assert.assertEquals(jerseyParams2.get("foo"), "qux");
     }
 }

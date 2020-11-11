@@ -27,6 +27,8 @@ import java.util.Map.Entry;
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
+import org.glassfish.jersey.server.ServerProperties;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -38,12 +40,11 @@ public class JerseyBaseServerModule extends BaseServerModule {
     private static final Joiner joiner = Joiner.on(";");
 
     @VisibleForTesting
-    static final String JERSEY_PROVIDER_CLASSNAMES = "jersey.config.server.provider.classnames";
-    @VisibleForTesting
     static final String JERSEY_LOGGING_VERBOSITY = "jersey.config.logging.verbosity";
     static final String JERSEY_LOGGING_LEVEL = "jersey.config.logging.logger.level";
 
     protected final Collection<String> jerseyResourcesAndProvidersPackages;
+    protected final Collection<String> jerseyResourcesAndProvidersClasses;
     // See org.glassfish.jersey.servlet.ServletProperties and org.glassfish.jersey.logging.LoggingFeature
     protected final ImmutableMap.Builder<String, String> jerseyParams;
 
@@ -55,22 +56,12 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
                                   final String jaxrsUriPattern,
                                   final Collection<String> jerseyResourcesAndProvidersPackages,
-                                  final Collection<String> jerseyFilters,
+                                  final Collection<String> jerseyResourcesAndProvidersClasses,
                                   final Map<String, String> jerseyParams) {
         super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern);
         this.jerseyResourcesAndProvidersPackages = jerseyResourcesAndProvidersPackages;
+        this.jerseyResourcesAndProvidersClasses = jerseyResourcesAndProvidersClasses;
         this.jerseyParams = new ImmutableMap.Builder<String, String>();
-
-        String jerseyResourcesAndProvidersClasses = Strings.nullToEmpty(jerseyParams.remove(JERSEY_PROVIDER_CLASSNAMES));
-        if (!jerseyFilters.isEmpty()) {
-            if (!jerseyResourcesAndProvidersClasses.isEmpty()) {
-                jerseyResourcesAndProvidersClasses += ";";
-            }
-        }
-        final String allJerseyResourcesAndProvidersClasses = jerseyResourcesAndProvidersClasses + joiner.join(jerseyFilters);
-        if (!allJerseyResourcesAndProvidersClasses.isEmpty()) {
-            this.jerseyParams.put(JERSEY_PROVIDER_CLASSNAMES, allJerseyResourcesAndProvidersClasses);
-        }
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
         final String jerseyLoggingVerbosity = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
@@ -93,7 +84,8 @@ public class JerseyBaseServerModule extends BaseServerModule {
 
         // Catch-all resources
         if (!jerseyResourcesAndProvidersPackages.isEmpty()) {
-            jerseyParams.put("jersey.config.server.provider.packages", joiner.join(jerseyResourcesAndProvidersPackages));
+            jerseyParams.put(ServerProperties.PROVIDER_PACKAGES, joiner.join(jerseyResourcesAndProvidersPackages));
+            jerseyParams.put(ServerProperties.PROVIDER_CLASSNAMES, joiner.join(jerseyResourcesAndProvidersClasses));
             serveJaxrsResources();
         }
     }
