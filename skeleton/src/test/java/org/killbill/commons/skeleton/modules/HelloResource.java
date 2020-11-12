@@ -30,6 +30,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import org.joda.time.LocalDate;
+import org.killbill.commons.metrics.TimedResource;
 import org.testng.Assert;
 
 import com.google.common.collect.ImmutableMap;
@@ -52,12 +53,14 @@ public class HelloResource {
         Assert.assertEquals(someGuiceyDependency, guiceInjector.getInstance(SomeGuiceyDependency.class));
     }
 
+    @TimedResource
     @GET
     @Path("/{name}")
     public String hello(@PathParam("name") final String name) {
         return "Hello " + name;
     }
 
+    @TimedResource
     @POST
     @Produces("application/json")
     public Map<String, ?> hello() {

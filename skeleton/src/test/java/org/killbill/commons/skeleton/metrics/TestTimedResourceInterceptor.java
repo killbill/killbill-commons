@@ -19,7 +19,9 @@
 
 package org.killbill.commons.skeleton.metrics;
 
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.List;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -27,9 +29,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.glassfish.hk2.api.InterceptionService;
 import org.glassfish.jersey.spi.ExceptionMappers;
 import org.killbill.commons.metrics.MetricTag;
 import org.killbill.commons.metrics.TimedResource;
+import org.killbill.commons.skeleton.modules.TimedInterceptionService;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -37,10 +42,14 @@ import org.testng.annotations.Test;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
 
 @Test(groups = "fast")
 public class TestTimedResourceInterceptor {
@@ -57,7 +66,7 @@ public class TestTimedResourceInterceptor {
 
     public void testResourceWithResponse() {
         final Response response = interceptedResource.createOk();
-        Assert.assertEquals(200,  response.getStatus());
+        Assert.assertEquals(200, response.getStatus());
 
         final Timer timer = registry.getTimers().get("kb_resource.path.createOk.POST.2xx.200");
         Assert.assertNotNull(timer);
@@ -121,7 +130,7 @@ public class TestTimedResourceInterceptor {
         try {
             interceptedResource.createWebApplicationException();
             Assert.fail();
-        } catch(final WebApplicationException e) {
+        } catch (final WebApplicationException e) {
             final Timer timer = registry.getTimers().get("kb_resource.path.createWebApplicationException.POST.4xx.404");
             Assert.assertNotNull(timer);
             Assert.assertEquals(1, timer.getCount());
@@ -129,6 +138,7 @@ public class TestTimedResourceInterceptor {
     }
 
     public static class Payment {
+
         private final String type;
 
         public Payment(final String type) {
@@ -179,15 +189,29 @@ public class TestTimedResourceInterceptor {
         }
     }
 
+    // In practice, this is done by HK2, not Guice, but for convenience, we use Guice here
     public static class TestResourceModule extends AbstractModule {
+
         @Override
         protected void configure() {
-            bind(ExceptionMappers.class).toInstance(Mockito.mock(ExceptionMappers.class));
             bind(TestResource.class).asEagerSingleton();
-            bind(MetricRegistry.class).asEagerSingleton();
+            final MetricRegistry metricRegistry = new MetricRegistry();
+            bind(MetricRegistry.class).toInstance(metricRegistry);
 
-            final TimedResourceListener timedResourceTypeListener = new TimedResourceListener(getProvider(ExceptionMappers.class), getProvider(MetricRegistry.class));
-            bindListener(Matchers.any(), timedResourceTypeListener);
+            final InterceptionService timedInterceptionService = new TimedInterceptionService(ImmutableSet.<String>of(this.getClass().getPackage().getName()),
+                                                                                              Mockito.mock(ExceptionMappers.class),
+                                                                                              metricRegistry);
+            bindListener(Matchers.any(), new TypeListener() {
+                @Override
+                public <I> void hear(final TypeLiteral<I> literal, final TypeEncounter<I> encounter) {
+                    for (final Method method : literal.getRawType().getMethods()) {
+                        final List<MethodInterceptor> methodInterceptors = timedInterceptionService.getMethodInterceptors(method);
+                        if (methodInterceptors != null) {
+                            encounter.bindInterceptor(Matchers.only(method), methodInterceptors.get(0));
+                        }
+                    }
+                }
+            });
         }
     }
 }

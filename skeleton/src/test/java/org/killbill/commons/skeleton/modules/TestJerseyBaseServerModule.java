@@ -30,11 +30,14 @@ import org.eclipse.jetty.server.Server;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
@@ -44,32 +47,46 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         builder.addJerseyResourcePackage("org.killbill.commons.skeleton.modules");
         builder.addJerseyResourceClass(HelloFilter.class.getName());
         builder.addJerseyResourceClass(JacksonJsonProvider.class.getName());
-        final Server server = startServer(builder.build(), new AbstractModule() {
-            @Override
-            protected void configure() {
-                final ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.registerModule(new JodaModule());
-                objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-                binder().bind(ObjectMapper.class).toInstance(objectMapper);
-            }
-        });
+        builder.setJaxrsUriPattern("/hello|/hello/.*");
+
+        final Injector injector = Guice.createInjector(builder.build(),
+                                                       new StatsModule(),
+                                                       new AbstractModule() {
+                                                           @Override
+                                                           protected void configure() {
+                                                               final ObjectMapper objectMapper = new ObjectMapper();
+                                                               objectMapper.registerModule(new JodaModule());
+                                                               objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                                                               binder().bind(ObjectMapper.class).toInstance(objectMapper);
+                                                           }
+                                                       });
+        final Server server = startServer(injector);
+
+        final AsyncHttpClient client = new DefaultAsyncHttpClient();
+        Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/1.0/ping").execute();
+        String body = responseFuture.get().getResponseBody();
+        Assert.assertEquals(body, "pong\n");
+
+        final MetricRegistry metricRegistry = injector.getInstance(MetricRegistry.class);
+        Assert.assertEquals(metricRegistry.getMetrics().size(), 0);
 
         Assert.assertEquals(HelloFilter.invocations, 0);
 
         // Do multiple passes to verify Singleton pattern
         for (int i = 0; i < 5; i++) {
-            final AsyncHttpClient client = new DefaultAsyncHttpClient();
-            final Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
-            final String body = responseFuture.get().getResponseBody();
+            responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
+            body = responseFuture.get().getResponseBody();
             Assert.assertEquals(body, "Hello alhuile");
             Assert.assertEquals(HelloFilter.invocations, i + 1);
         }
 
-        final AsyncHttpClient client = new DefaultAsyncHttpClient();
-        final Future<Response> responseFuture = client.preparePost("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello").execute();
-        final String body = responseFuture.get().getResponseBody();
+        responseFuture = client.preparePost("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello").execute();
+        body = responseFuture.get().getResponseBody();
         Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
 
+        Assert.assertEquals(metricRegistry.getMetrics().size(), 2);
+        Assert.assertNotNull(metricRegistry.getMetrics().get("kb_resource.hello.hello.POST.2xx.200"));
+        Assert.assertNotNull(metricRegistry.getMetrics().get("kb_resource.hello.hello.GET.2xx.200"));
         server.stop();
     }
 

@@ -47,7 +47,6 @@ import java.lang.annotation.Target;
  * MetricTag annotations in the method's parameters
  *
  * @see MetricTag
- * @see javax.ws.rs.Path
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

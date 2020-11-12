@@ -23,14 +23,22 @@ import javax.servlet.ServletException;
 import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.glassfish.jersey.internal.inject.InjectionManager;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.WebConfig;
+import org.glassfish.jersey.spi.ExceptionMappers;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 
@@ -47,7 +55,8 @@ public class GuiceServletContainer extends ServletContainer {
 
     @Override
     protected void init(final WebConfig webConfig) throws ServletException {
-        // This will instantiate a new instance of ResourceConfig (see WebComponent#createResourceConfig) initialized with the Jersey parameters we specified (see JerseyBaseServerModule)
+        // This will instantiate a new instance of ResourceConfig (see WebComponent#createResourceConfig) initialized
+        // with the Jersey parameters we specified (see JerseyBaseServerModule)
         super.init(webConfig);
 
         // HK2 will instantiate the Jersey resources, but will delegate injection of the bindings it doesn't know about to Guice
@@ -57,6 +66,20 @@ public class GuiceServletContainer extends ServletContainer {
         final GuiceIntoHK2Bridge guiceBridge = serviceLocator.getService(GuiceIntoHK2Bridge.class);
         guiceBridge.bridgeGuiceInjector(injector);
 
+        // Metrics integration
+        final String scannedResourcePackagesString = webConfig.getInitParameter(ServerProperties.PROVIDER_PACKAGES);
+        if (Strings.emptyToNull(scannedResourcePackagesString) != null) {
+            final ImmutableSet<String> scannedResourcePackages = ImmutableSet.<String>copyOf(Splitter.on(CharMatcher.anyOf(" ,;\n"))
+                                                                                                     .split(scannedResourcePackagesString));
+            ServiceLocatorUtilities.addOneConstant(serviceLocator,
+                                                   new TimedInterceptionService(scannedResourcePackages,
+                                                                                // From HK2
+                                                                                injectionManager.<ExceptionMappers>getInstance(ExceptionMappers.class),
+                                                                                // From Guice
+                                                                                injector.getInstance(MetricRegistry.class)));
+        }
+
+        // Jackson integration
         final boolean hasObjectMapperBinding = !injector.findBindingsByType(TypeLiteral.get(ObjectMapper.class)).isEmpty();
         if (hasObjectMapperBinding) {
             // JacksonJsonProvider is constructed by HK2, but we need to inject the ObjectMapper we constructed via Guice

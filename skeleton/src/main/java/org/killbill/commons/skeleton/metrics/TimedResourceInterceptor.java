@@ -27,17 +27,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Provider;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.glassfish.jersey.spi.ExceptionMappers;
 import org.killbill.commons.metrics.MetricTag;
 
 import com.codahale.metrics.MetricRegistry;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 
 /**
  * A method interceptor which times the execution of the annotated resource method.
@@ -45,14 +44,14 @@ import org.aopalliance.intercept.MethodInvocation;
 public class TimedResourceInterceptor implements MethodInterceptor {
 
     private final Map<String, Map<String, Object>> metricTagsByMethod = new ConcurrentHashMap<String, Map<String, Object>>();
-    private final Provider<ExceptionMappers> exceptionMappers;
-    private final Provider<MetricRegistry> metricRegistry;
+    private final ExceptionMappers exceptionMappers;
+    private final MetricRegistry metricRegistry;
     private final String resourcePath;
     private final String metricName;
     private final String httpMethod;
 
-    public TimedResourceInterceptor(final Provider<ExceptionMappers> exceptionMappers,
-                                    final Provider<MetricRegistry> metricRegistry,
+    public TimedResourceInterceptor(final ExceptionMappers exceptionMappers,
+                                    final MetricRegistry metricRegistry,
                                     final String resourcePath,
                                     final String metricName,
                                     final String httpMethod) {
@@ -95,8 +94,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
     }
 
     private int mapException(final Throwable e) throws Exception {
-        final ExceptionMappers actualMappers = exceptionMappers.get();
-        final ExceptionMapper<Throwable> exceptionMapper = (actualMappers != null) ? actualMappers.findMapping(e) : null;
+        final ExceptionMapper<Throwable> exceptionMapper = (exceptionMappers != null) ? exceptionMappers.findMapping(e) : null;
 
         if (exceptionMapper != null) {
             return exceptionMapper.toResponse(e).getStatus();
@@ -108,7 +106,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
     private ResourceTimer timer(final MethodInvocation invocation) {
         final Map<String, Object> metricTags = metricTags(invocation);
 
-        return new ResourceTimer(resourcePath, metricName, httpMethod, metricTags, metricRegistry.get());
+        return new ResourceTimer(resourcePath, metricName, httpMethod, metricTags, metricRegistry);
     }
 
     private Map<String, Object> metricTags(final MethodInvocation invocation) {
@@ -159,7 +157,7 @@ public class TimedResourceInterceptor implements MethodInterceptor {
         }
 
         try {
-            final String[] methodNames = {"get" + capitalize(property), "is" + capitalize(property), property };
+            final String[] methodNames = {"get" + capitalize(property), "is" + capitalize(property), property};
             Method propertyMethod = null;
             for (final String methodName : methodNames) {
                 try {
