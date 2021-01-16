@@ -94,6 +94,20 @@ Add the relevant submodule(s) to a project:
 </dependency>
 ```
 
+## Releases
+
+To trigger a release:
+
+```
+# Optional: bump killbill-oss-parent
+mvn versions:update-parent && git add pom.xml && git commit -m "pom.xml: update parent pom"
+mvn release:clean && mvn release:prepare
+```
+
+This will create the new tag and push the changes.
+
+GitHub Actions will automatically push the artifact to Maven Central.
+
 ## About
 
 Kill Bill is the leading Open-Source Subscription Billing & Payments Platform. For more information about the project, go to https://killbill.io/.

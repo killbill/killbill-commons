@@ -1,0 +1,33 @@
+name: release
+
+on:
+  push:
+    tags:
+      - killbill-commons-*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Configure Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+          server-id: ossrh-releases
+          server-username: OSSRH_USER
+          server-password: OSSRH_PASS
+          gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+      - name: Download Java dependencies
+        run: |
+          mvn -B --no-transfer-progress dependency:resolve -Psonatype-oss-release
+          mvn -B --no-transfer-progress dependency:resolve-plugins -Psonatype-oss-release
+      - name: Release artifacts
+        env:
+          OSSRH_USER: ${{ secrets.OSSRH_USER }}
+          OSSRH_PASS: ${{ secrets.OSSRH_PASS }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mvn -B --no-transfer-progress release:perform -DconnectionUrl=scm:git:git@github.com:killbill/killbill-commons.git -Dtag=${GITHUB_REF#refs/*/}
