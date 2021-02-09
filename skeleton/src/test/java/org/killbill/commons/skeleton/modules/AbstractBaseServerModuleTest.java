@@ -22,11 +22,18 @@ package org.killbill.commons.skeleton.modules;
 import java.io.IOException;
 import java.net.ServerSocket;
 
+import javax.servlet.ServletContextEvent;
+
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.testng.Assert;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.servlet.InstrumentedFilter;
+import com.codahale.metrics.servlets.HealthCheckServlet;
+import com.codahale.metrics.servlets.MetricsServlet;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -37,13 +44,27 @@ public abstract class AbstractBaseServerModuleTest {
 
     protected Server startServer(final Module... modules) throws Exception {
         final Injector injector = Guice.createInjector(modules);
+        return startServer(injector);
+    }
 
+    protected Server startServer(final Injector injector) throws Exception {
         final Server server = new Server(getPort());
         final ServletContextHandler servletContextHandler = new ServletContextHandler();
         servletContextHandler.addEventListener(new GuiceServletContextListener() {
             @Override
             protected Injector getInjector() {
                 return injector;
+            }
+
+            @Override
+            public void contextInitialized(final ServletContextEvent servletContextEvent) {
+                super.contextInitialized(servletContextEvent);
+
+                // For Kill Bill, this is done in KillbillPlatformGuiceListener
+                final MetricRegistry metricRegistry = injector.getInstance(MetricRegistry.class);
+                servletContextEvent.getServletContext().setAttribute(HealthCheckServlet.HEALTH_CHECK_REGISTRY, injector.getInstance(HealthCheckRegistry.class));
+                servletContextEvent.getServletContext().setAttribute(MetricsServlet.METRICS_REGISTRY, metricRegistry);
+                servletContextEvent.getServletContext().setAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE, metricRegistry);
             }
         });
 

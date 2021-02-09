@@ -21,33 +21,31 @@ package org.killbill.commons.skeleton.modules;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
+import org.glassfish.jersey.server.ServerProperties;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class JerseyBaseServerModule extends BaseServerModule {
 
     private static final Joiner joiner = Joiner.on(";");
 
     @VisibleForTesting
-    static final String JERSEY_CONTAINER_REQUEST_FILTERS = "com.sun.jersey.spi.container.ContainerRequestFilters";
-    @VisibleForTesting
-    static final String JERSEY_CONTAINER_RESPONSE_FILTERS = "com.sun.jersey.spi.container.ContainerResponseFilters";
-    @VisibleForTesting
-    static final String JERSEY_DISABLE_ENTITYLOGGING = "com.sun.jersey.config.feature.logging.DisableEntitylogging";
+    static final String JERSEY_LOGGING_VERBOSITY = "jersey.config.logging.verbosity";
+    static final String JERSEY_LOGGING_LEVEL = "jersey.config.logging.logger.level";
 
-    // See com.sun.jersey.api.core.ResourceConfig
+    protected final Collection<String> jerseyResourcesAndProvidersPackages;
+    protected final Collection<String> jerseyResourcesAndProvidersClasses;
+    // See org.glassfish.jersey.servlet.ServletProperties and org.glassfish.jersey.logging.LoggingFeature
     protected final ImmutableMap.Builder<String, String> jerseyParams;
 
     public JerseyBaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
@@ -57,36 +55,21 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServlets,
                                   final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
                                   final String jaxrsUriPattern,
-                                  final Collection<String> jaxrsResources,
-                                  final List<String> jerseyFilters,
+                                  final Collection<String> jerseyResourcesAndProvidersPackages,
+                                  final Collection<String> jerseyResourcesAndProvidersClasses,
                                   final Map<String, String> jerseyParams) {
-        super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern, jaxrsResources);
-
-        String manuallySpecifiedRequestFilters = Strings.nullToEmpty(jerseyParams.remove(JERSEY_CONTAINER_REQUEST_FILTERS));
-        String manuallySpecifiedResponseFilters = Strings.nullToEmpty(jerseyParams.remove(JERSEY_CONTAINER_RESPONSE_FILTERS));
-        if (!jerseyFilters.isEmpty()) {
-            if (!manuallySpecifiedRequestFilters.isEmpty()) {
-                manuallySpecifiedRequestFilters += ";";
-            }
-            if (!manuallySpecifiedResponseFilters.isEmpty()) {
-                manuallySpecifiedResponseFilters += ";";
-            }
-        }
-        final String containerRequestFilters = manuallySpecifiedRequestFilters + joiner.join(jerseyFilters);
-        final String containerResponseFilters = manuallySpecifiedResponseFilters + joiner.join(Lists.reverse(jerseyFilters));
-
+        super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern);
+        this.jerseyResourcesAndProvidersPackages = jerseyResourcesAndProvidersPackages;
+        this.jerseyResourcesAndProvidersClasses = jerseyResourcesAndProvidersClasses;
         this.jerseyParams = new ImmutableMap.Builder<String, String>();
-        if (!containerRequestFilters.isEmpty()) {
-            this.jerseyParams.put(JERSEY_CONTAINER_REQUEST_FILTERS, containerRequestFilters);
-        }
-        if (!containerResponseFilters.isEmpty()) {
-            this.jerseyParams.put(JERSEY_CONTAINER_RESPONSE_FILTERS, containerResponseFilters);
-        }
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
-        final String disableEntityLogging = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_DISABLE_ENTITYLOGGING)), "true");
-        this.jerseyParams.put(JERSEY_DISABLE_ENTITYLOGGING, disableEntityLogging)
-                         .putAll(jerseyParams);
+        final String jerseyLoggingVerbosity = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
+        final String jerseyLoggingLevel = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_LEVEL)), "INFO");
+        this.jerseyParams.put(JERSEY_LOGGING_VERBOSITY, jerseyLoggingVerbosity)
+                         .put(JERSEY_LOGGING_LEVEL, jerseyLoggingLevel);
+
+        this.jerseyParams.putAll(jerseyParams);
     }
 
     @Override
@@ -100,14 +83,16 @@ public class JerseyBaseServerModule extends BaseServerModule {
         }
 
         // Catch-all resources
-        if (!jaxrsResources.isEmpty()) {
-            jerseyParams.put("com.sun.jersey.config.property.packages", joiner.join(jaxrsResources));
+        if (!jerseyResourcesAndProvidersPackages.isEmpty()) {
+            jerseyParams.put(ServerProperties.PROVIDER_PACKAGES, joiner.join(jerseyResourcesAndProvidersPackages));
+            jerseyParams.put(ServerProperties.PROVIDER_CLASSNAMES, joiner.join(jerseyResourcesAndProvidersClasses));
             serveJaxrsResources();
         }
     }
 
     protected void serveJaxrsResources() {
-        serveRegex(jaxrsUriPattern).with(GuiceContainer.class, jerseyParams.build());
+        bind(GuiceServletContainer.class).asEagerSingleton();
+        serveRegex(jaxrsUriPattern).with(GuiceServletContainer.class, jerseyParams.build());
     }
 
     @VisibleForTesting

@@ -30,19 +30,63 @@ import org.eclipse.jetty.server.Server;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
     @Test(groups = "slow")
     public void testJerseyIntegration() throws Exception {
         final BaseServerModuleBuilder builder = new BaseServerModuleBuilder();
-        builder.addJaxrsResource("org.killbill.commons.skeleton.modules");
-        final Server server = startServer(builder.build(), new HelloModule());
+        builder.addJerseyResourcePackage("org.killbill.commons.skeleton.modules");
+        builder.addJerseyResourceClass(HelloFilter.class.getName());
+        builder.addJerseyResourceClass(JacksonJsonProvider.class.getName());
+        builder.setJaxrsUriPattern("/hello|/hello/.*");
+
+        final Injector injector = Guice.createInjector(builder.build(),
+                                                       new StatsModule(),
+                                                       new AbstractModule() {
+                                                           @Override
+                                                           protected void configure() {
+                                                               final ObjectMapper objectMapper = new ObjectMapper();
+                                                               objectMapper.registerModule(new JodaModule());
+                                                               objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                                                               binder().bind(ObjectMapper.class).toInstance(objectMapper);
+                                                           }
+                                                       });
+        final Server server = startServer(injector);
 
         final AsyncHttpClient client = new DefaultAsyncHttpClient();
-        final Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
-        final String body = responseFuture.get().getResponseBody();
-        Assert.assertEquals(body, "Hello alhuile");
+        Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/1.0/ping").execute();
+        String body = responseFuture.get().getResponseBody();
+        Assert.assertEquals(body, "pong\n");
 
+        final MetricRegistry metricRegistry = injector.getInstance(MetricRegistry.class);
+        Assert.assertEquals(metricRegistry.getMetrics().size(), 0);
+
+        Assert.assertEquals(HelloFilter.invocations, 0);
+
+        // Do multiple passes to verify Singleton pattern
+        for (int i = 0; i < 5; i++) {
+            responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
+            body = responseFuture.get().getResponseBody();
+            Assert.assertEquals(body, "Hello alhuile");
+            Assert.assertEquals(HelloFilter.invocations, i + 1);
+        }
+
+        responseFuture = client.preparePost("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello").execute();
+        body = responseFuture.get().getResponseBody();
+        Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
+
+        Assert.assertEquals(metricRegistry.getMetrics().size(), 2);
+        Assert.assertNotNull(metricRegistry.getMetrics().get("kb_resource.hello.hello.POST.2xx.200"));
+        Assert.assertNotNull(metricRegistry.getMetrics().get("kb_resource.hello.hello.GET.2xx.200"));
         server.stop();
     }
 
@@ -51,41 +95,19 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         final BaseServerModuleBuilder builder1 = new BaseServerModuleBuilder();
         final JerseyBaseServerModule module1 = (JerseyBaseServerModule) builder1.build();
         final Map<String, String> jerseyParams1 = module1.getJerseyParams().build();
-        Assert.assertEquals(jerseyParams1.size(), 1);
-        Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "true");
+        Assert.assertEquals(jerseyParams1.size(), 2);
+        Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
+        Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "INFO");
 
         final BaseServerModuleBuilder builder2 = new BaseServerModuleBuilder();
-        builder2.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
+        builder2.addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY, "PAYLOAD_TEXT")
+                .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL, "FINE")
+                .addJerseyParam("foo", "qux");
         final JerseyBaseServerModule module2 = (JerseyBaseServerModule) builder2.build();
         final Map<String, String> jerseyParams2 = module2.getJerseyParams().build();
         Assert.assertEquals(jerseyParams2.size(), 3);
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS), "filter1;filter2;filter3");
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS), "filter3;filter2;filter1");
-        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "true");
-
-        final BaseServerModuleBuilder builder3 = new BaseServerModuleBuilder();
-        builder3.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
-        builder3.addJerseyParam(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS, "bar").addJerseyParam("foo", "qux");
-        final JerseyBaseServerModule module3 = (JerseyBaseServerModule) builder3.build();
-        final Map<String, String> jerseyParams3 = module3.getJerseyParams().build();
-        Assert.assertEquals(jerseyParams3.size(), 4);
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS), "bar;filter1;filter2;filter3");
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS), "filter3;filter2;filter1");
-        Assert.assertEquals(jerseyParams3.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "true");
-        Assert.assertEquals(jerseyParams3.get("foo"), "qux");
-
-        final BaseServerModuleBuilder builder4 = new BaseServerModuleBuilder();
-        builder4.addJerseyParam(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS, "bar")
-                .addJerseyParam(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS, "bar2")
-                .addJerseyParam(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING, "false")
-                .addJerseyParam("foo", "qux");
-        builder4.addJerseyFilter("filter1").addJerseyFilter("filter2").addJerseyFilter("filter3");
-        final JerseyBaseServerModule module4 = (JerseyBaseServerModule) builder4.build();
-        final Map<String, String> jerseyParams4 = module4.getJerseyParams().build();
-        Assert.assertEquals(jerseyParams4.size(), 4);
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_CONTAINER_REQUEST_FILTERS), "bar;filter1;filter2;filter3");
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_CONTAINER_RESPONSE_FILTERS), "bar2;filter3;filter2;filter1");
-        Assert.assertEquals(jerseyParams4.get(JerseyBaseServerModule.JERSEY_DISABLE_ENTITYLOGGING), "false");
-        Assert.assertEquals(jerseyParams4.get("foo"), "qux");
+        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "PAYLOAD_TEXT");
+        Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "FINE");
+        Assert.assertEquals(jerseyParams2.get("foo"), "qux");
     }
 }

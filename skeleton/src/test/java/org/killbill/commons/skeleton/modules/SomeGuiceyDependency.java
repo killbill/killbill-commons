@@ -1,6 +1,4 @@
 /*
- * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2020 Groupon, Inc
  * Copyright 2020-2020 Equinix, Inc
  * Copyright 2014-2020 The Billing Project, LLC
  *
@@ -19,12 +17,8 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import com.google.inject.Binder;
-import com.google.inject.Module;
+import javax.inject.Singleton;
 
-public class HelloModule implements Module {
-
-    public void configure(final Binder binder) {
-        binder.bind(HelloResource.class).asEagerSingleton();
-    }
+@Singleton
+public class SomeGuiceyDependency {
 }

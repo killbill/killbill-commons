@@ -19,7 +19,6 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import org.killbill.commons.skeleton.metrics.TimedResourceListener;
 import org.killbill.commons.skeleton.metrics.health.KillBillHealthCheckRegistry;
 
 import com.codahale.metrics.MetricRegistry;
@@ -27,10 +26,8 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
-import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class StatsModule extends AbstractModule {
 
@@ -78,11 +75,6 @@ public class StatsModule extends AbstractModule {
             healthChecksBinder.addBinding().to(healthCheckClass).asEagerSingleton();
         }
         install(new AdminServletModule(healthCheckUri, metricsUri, pingUri, threadsUri));
-
-        // Metrics/Jersey integration
-        final TimedResourceListener timedResourceTypeListener =
-                new TimedResourceListener(getProvider(GuiceContainer.class), getProvider(MetricRegistry.class));
-        bindListener(Matchers.any(), timedResourceTypeListener);
 
         bind(HealthCheckRegistry.class).toInstance(createHealthCheckRegistry());
     }

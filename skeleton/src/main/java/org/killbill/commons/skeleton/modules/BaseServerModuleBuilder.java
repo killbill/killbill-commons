@@ -28,20 +28,16 @@ import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
 import com.google.common.collect.Maps;
-import com.google.inject.Module;
 
 public class BaseServerModuleBuilder {
 
     public enum JaxrsImplementation {
         NONE,
-        JERSEY,
-        JERSEY2_COMPAT
+        JERSEY
     }
 
     // By default, proxy all requests to the Guice/Jax-RS servlet
     private String jaxrsUriPattern = "/.*";
-    private final List<String> jaxrsResources = new ArrayList<String>();
-    private final List<Module> modules = new ArrayList<Module>();
     private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filters = new HashMap<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>>();
     private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex = new HashMap<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>>();
     private final Map<String, Class<? extends HttpServlet>> jaxrsServlets = new HashMap<String, Class<? extends HttpServlet>>();
@@ -49,8 +45,9 @@ public class BaseServerModuleBuilder {
     private final Map<String, Class<? extends HttpServlet>> servlets = new HashMap<String, Class<? extends HttpServlet>>();
     private final Map<String, Class<? extends HttpServlet>> servletsRegex = new HashMap<String, Class<? extends HttpServlet>>();
 
-    // Specific filters called by jersey
-    private final List<String> jerseyFilters = new ArrayList<String>();
+    // Jersey specific
+    private final List<String> jerseyResourcesAndProvidersPackages = new ArrayList<String>();
+    private final List<String> jerseyResourcesAndProvidersClasses = new ArrayList<String>();
     private final Map<String, String> jerseyParams = new HashMap<String, String>();
 
     private JaxrsImplementation jaxrsImplementation = JaxrsImplementation.JERSEY;
@@ -104,8 +101,14 @@ public class BaseServerModuleBuilder {
         return this;
     }
 
-    public BaseServerModuleBuilder addJerseyFilter(final String filterClassName) {
-        this.jerseyFilters.add(filterClassName);
+    /**
+     * Add a class for the Guice/Jersey servlet
+     *
+     * @param resource class to scan
+     * @return the current module builder
+     */
+    public BaseServerModuleBuilder addJerseyResourceClass(final String resource) {
+        this.jerseyResourcesAndProvidersClasses.add(resource);
         return this;
     }
 
@@ -119,7 +122,6 @@ public class BaseServerModuleBuilder {
      *
      * @param jaxrsUriPattern Any Java-style regular expression
      * @return the current module builder
-     * @see BaseServerModuleBuilder#addJaxrsResource
      */
     public BaseServerModuleBuilder setJaxrsUriPattern(final String jaxrsUriPattern) {
         this.jaxrsUriPattern = jaxrsUriPattern;
@@ -132,8 +134,8 @@ public class BaseServerModuleBuilder {
      * @param resource package to scan
      * @return the current module builder
      */
-    public BaseServerModuleBuilder addJaxrsResource(final String resource) {
-        this.jaxrsResources.add(resource);
+    public BaseServerModuleBuilder addJerseyResourcePackage(final String resource) {
+        this.jerseyResourcesAndProvidersPackages.add(resource);
         return this;
     }
 
@@ -151,8 +153,7 @@ public class BaseServerModuleBuilder {
                                             servletsRegex,
                                             jaxrsServlets,
                                             jaxrsServletsRegex,
-                                            jaxrsUriPattern,
-                                            jaxrsResources);
+                                            jaxrsUriPattern);
             case JERSEY:
                 return new JerseyBaseServerModule(filters,
                                                   filtersRegex,
@@ -161,20 +162,9 @@ public class BaseServerModuleBuilder {
                                                   jaxrsServlets,
                                                   jaxrsServletsRegex,
                                                   jaxrsUriPattern,
-                                                  jaxrsResources,
-                                                  jerseyFilters,
+                                                  jerseyResourcesAndProvidersPackages,
+                                                  jerseyResourcesAndProvidersClasses,
                                                   jerseyParams);
-            case JERSEY2_COMPAT:
-                return new Jersey2CompatServerModule(filters,
-                                                     filtersRegex,
-                                                     servlets,
-                                                     servletsRegex,
-                                                     jaxrsServlets,
-                                                     jaxrsServletsRegex,
-                                                     jaxrsUriPattern,
-                                                     jaxrsResources,
-                                                     jerseyFilters,
-                                                     jerseyParams);
             default:
                 throw new IllegalArgumentException();
         }
