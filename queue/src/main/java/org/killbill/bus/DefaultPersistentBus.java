@@ -173,9 +173,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         }
 
         if (isStarted.compareAndSet(false, true)) {
-            if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING || config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS) {
-                reaper.start();
-            }
+            reaper.start();
             super.startQueue();
             return true;
         } else {
