@@ -151,9 +151,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
             activeQueues++;
 
             if (!isStarted) {
-                if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
-                    reaper.start();
-                }
+                reaper.start();
                 super.startQueue();
                 isStarted = true;
                 return true;
