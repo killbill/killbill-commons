@@ -8,8 +8,6 @@ name: "CodeQL"
 on:
   push:
     branches: [master]
-  schedule:
-    - cron: '0 16 * * 6'
 
 jobs:
   analyze:
@@ -19,6 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        java-version:
+          - 8
         # Override automatic language detection by changing the below list
         # Supported options are ['csharp', 'cpp', 'go', 'java', 'javascript', 'python']
         language: ['java']
@@ -32,6 +32,16 @@ jobs:
         # We must fetch at least the immediate parents so that if this is
         # a pull request then we can checkout the head.
         fetch-depth: 2
+
+    - name: Setup Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java-version }}
+    - name: Configure Sonatype mirror
+      uses: s4u/maven-settings-action@v2.3.0
+      # Go to Sonatype directly to avoid delay syncs (could get rid of this if actions/setup-java were to support mirrors).
+      with:
+        mirrors: '[{"id": "oss-releases", "name": "Sonatype releases", "mirrorOf": "*", "url": "https://oss.sonatype.org/content/repositories/releases/"}]'
 
     # If this run was triggered by a pull request event, then checkout
     # the head of the pull request instead of the merge commit.
