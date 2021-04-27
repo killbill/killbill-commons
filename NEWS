@@ -1,3 +1,9 @@
+0.24.14
+    Update to killbill-oss-parent 0.144.49
+
+0.24.13
+    Fix https://github.com/killbill/killbill-commons/issues/90
+
 0.24.12
     Update to killbill-oss-parent 0.144.44 (Jersey 2.x)
 
