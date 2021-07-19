@@ -127,8 +127,8 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>javax.servlet</artifactId>
                     <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
