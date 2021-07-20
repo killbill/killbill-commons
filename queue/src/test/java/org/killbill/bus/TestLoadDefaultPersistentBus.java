@@ -55,7 +55,8 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
 
     PersistentBus eventBus;
 
-    @BeforeClass(groups = "load")
+    // Need to explicitly disable these as they are somehow picked up on CI with specific JDKs
+    @BeforeClass(groups = "load", enabled = false)
     public void beforeClass() throws Exception {
         super.beforeClass();
 
@@ -73,18 +74,18 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
         eventBus = new DefaultPersistentBus(dbi, clock, busConfig, metricRegistry, databaseTransactionNotificationApi);
     }
 
-    @BeforeMethod(groups = "load")
+    @BeforeMethod(groups = "load", enabled = false)
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         eventBus.startQueue();
     }
 
-    @AfterMethod(groups = "load")
+    @AfterMethod(groups = "load", enabled = false)
     public void afterMethod() throws Exception {
         eventBus.stopQueue();
     }
 
-    @Test(groups = "load")
+    @Test(groups = "load", enabled = false)
     public void testMultiThreadedLoad() throws Exception {
         final LoadHandler consumer = new LoadHandler();
         eventBus.register(consumer);

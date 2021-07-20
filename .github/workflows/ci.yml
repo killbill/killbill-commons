@@ -5,7 +5,7 @@ on:
   - workflow_dispatch
 
 env:
-  MAVEN_FLAGS: "-B --no-transfer-progress"
+  MAVEN_FLAGS: "-e -B --no-transfer-progress"
   MAVEN_OPTS: "-Xmx2G -XX:+ExitOnOutOfMemoryError -Dmaven.wagon.rto=60000 -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3"
 
 jobs:
