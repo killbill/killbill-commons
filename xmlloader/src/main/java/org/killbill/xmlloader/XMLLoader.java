@@ -24,9 +24,9 @@ import java.io.InputStream;
 import java.net.URI;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;

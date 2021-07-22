@@ -21,8 +21,8 @@ package org.killbill.xmlloader;
 
 import java.io.ByteArrayOutputStream;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Marshaller;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

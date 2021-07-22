@@ -41,11 +41,6 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
@@ -53,6 +48,11 @@
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
