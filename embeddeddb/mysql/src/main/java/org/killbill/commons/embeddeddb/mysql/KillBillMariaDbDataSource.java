@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -20,6 +20,7 @@
 package org.killbill.commons.embeddeddb.mysql;
 
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 
 import org.mariadb.jdbc.MariaDbDataSource;
@@ -27,6 +28,7 @@ import org.mariadb.jdbc.UrlParser;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSortedMap;
 
 public class KillBillMariaDbDataSource extends MariaDbDataSource {
 
@@ -107,7 +109,8 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
         final int paramIndex = urlSecondPart.indexOf("?");
 
         final String baseUrl = paramIndex > 0 ? url.substring(0, separator + 2 + paramIndex) : url;
-        return props.isEmpty() ? baseUrl : baseUrl + "?" + mapJoiner.join(props);
+        // Note: the ordering is mostly for tests, to ensure a predictable order regardless of the JDK
+        return props.isEmpty() ? baseUrl : baseUrl + "?" + mapJoiner.join(ImmutableSortedMap.copyOf(props));
     }
 
     @VisibleForTesting

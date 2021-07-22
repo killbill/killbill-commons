@@ -56,7 +56,7 @@ public class PostgreSQLGlobalLocker extends GlobalLockerBaseWithDao implements G
     protected String getLockName(final String service, final String lockKey) {
         final String lockName = service + "-" + lockKey;
         try {
-            final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
             final byte[] bytes = messageDigest.digest(lockName.getBytes(UTF_8));
             return String.valueOf(ByteBuffer.wrap(bytes).getLong());
         } catch (final NoSuchAlgorithmException e) {

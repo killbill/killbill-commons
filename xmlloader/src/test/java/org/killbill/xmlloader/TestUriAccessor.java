@@ -21,7 +21,6 @@ package org.killbill.xmlloader;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,7 +31,7 @@ import org.testng.annotations.Test;
 
 public class TestUriAccessor {
 
-    private static final Pattern GUAVA_PATTERN = Pattern.compile(".*/guava-(\\d{2}.\\d-jre).jar$");
+    private static final Pattern GUAVA_PATTERN = Pattern.compile(".*/guava-(\\d{2}.\\d(\\.\\d+)?-jre).jar$");
 
     private URL guavaUrl = null;
     private String guavaVersion = null;
@@ -40,12 +39,11 @@ public class TestUriAccessor {
     @BeforeClass(groups = "fast")
     public void setUp() throws Exception {
         // Find the Guava Jar on the filesystem
-        final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-        final URL[] urls = ((URLClassLoader) systemClassLoader).getURLs();
-        for (final URL url : urls) {
-            final Matcher matcher = GUAVA_PATTERN.matcher(url.toString());
+        final String[] urls = System.getProperty("java.class.path").split(":");
+        for (final String url : urls) {
+            final Matcher matcher = GUAVA_PATTERN.matcher(url);
             if (matcher.matches()) {
-                guavaUrl = url;
+                guavaUrl = new URL("file:" + url);
                 guavaVersion = matcher.group(1);
                 break;
             }
