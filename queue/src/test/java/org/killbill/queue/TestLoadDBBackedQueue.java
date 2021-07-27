@@ -56,13 +56,14 @@ public class TestLoadDBBackedQueue extends TestSetup {
     private DBBackedQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;
 
-    @BeforeClass(groups = "load")
+    // Need to explicitly disable these as they are somehow picked up on CI with specific JDKs
+    @BeforeClass(groups = "load", enabled = false)
     public void beforeClass() throws Exception {
         super.beforeClass();
         sqlDao = getDBI().onDemand(PersistentBusSqlDao.class);
     }
 
-    @BeforeMethod(groups = "load")
+    @BeforeMethod(groups = "load", enabled = false)
     public void beforeMethod() throws Exception {
         super.beforeMethod();
         final List<BusEventModelDao> ready = sqlDao.getReadyEntries(clock.getUTCNow().toDate(), 100, null, "bus_events");
@@ -70,7 +71,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
     }
 
 
-    @Test(groups = "load")
+    @Test(groups = "load", enabled = false)
     public void testPollingLoad() {
 
         final int NB_EVENTS = 1000;
@@ -118,7 +119,7 @@ public class TestLoadDBBackedQueue extends TestSetup {
     }
 
 
-    @Test(groups = "load")
+    @Test(groups = "load", enabled = false)
     public void testInflightQLoad() throws InterruptedException {
 
         final int nbEntries = 10000;
