@@ -22,7 +22,7 @@ package org.skife.config;
  * the given type. The interface accepts Class&lt;?&gt; because
  * the type can be {@link java.lang.Object}.
  */
-public interface Coercible<T>
-{
+public interface Coercible<T> {
+
     Coercer<T> accept(Class<?> clazz);
 }

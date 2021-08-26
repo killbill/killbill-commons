@@ -31,12 +31,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class Bully
-{
-    /** All explicit type conversions that config magic knows about. Every new bully will know about those. */
+class Bully {
+
+    /**
+     * All explicit type conversions that config magic knows about. Every new bully will know about those.
+     */
     private static final List<Coercible<?>> TYPE_COERCIBLES;
 
-    /** Catchall converters. These will be run if no specific type coercer was found. */
+    /**
+     * Catchall converters. These will be run if no specific type coercer was found.
+     */
     private static final List<Coercible<?>> DEFAULT_COERCIBLES;
 
     static {
@@ -75,47 +79,41 @@ class Bully
      */
     private final List<Coercible<?>> coercibles = new ArrayList<Coercible<?>>();
 
-    public Bully()
-    {
+    public Bully() {
         coercibles.addAll(TYPE_COERCIBLES);
     }
 
     /**
      * Adds a new Coercible to the list of known coercibles. This also resets the current mappings in this bully.
      */
-    public void addCoercible(final Coercible<?> coercible)
-    {
+    public void addCoercible(final Coercible<?> coercible) {
         coercibles.add(coercible);
         mappings.clear();
     }
 
-    public synchronized Object coerce(Type type, String value, Separator separator) {
+    public synchronized Object coerce(final Type type, final String value, final Separator separator) {
         if (type instanceof Class) {
-            Class<?> clazz = (Class<?>)type;
+            final Class<?> clazz = (Class<?>) type;
 
             if (clazz.isArray()) {
                 return coerceArray(clazz.getComponentType(), value, separator);
-            }
-            else if (Class.class.equals(clazz)) {
+            } else if (Class.class.equals(clazz)) {
                 return coerceClass(type, null, value);
-            }
-            else {
+            } else {
                 return coerce(clazz, value);
             }
-        }
-        else if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType)type;
-            Type rawType = parameterizedType.getRawType();
+        } else if (type instanceof ParameterizedType) {
+            final ParameterizedType parameterizedType = (ParameterizedType) type;
+            final Type rawType = parameterizedType.getRawType();
 
             if (rawType instanceof Class<?>) {
-                Type[] args = parameterizedType.getActualTypeArguments();
+                final Type[] args = parameterizedType.getActualTypeArguments();
 
                 if (args != null && args.length == 1) {
                     if (args[0] instanceof Class<?>) {
-                        return coerceCollection((Class<?>)rawType, (Class<?>)args[0], value, separator);
-                    }
-                    else if (args[0] instanceof WildcardType) {
-                        return coerceClass(type, (WildcardType)args[0], value);
+                        return coerceCollection((Class<?>) rawType, (Class<?>) args[0], value, separator);
+                    } else if (args[0] instanceof WildcardType) {
+                        return coerceClass(type, (WildcardType) args[0], value);
                     }
                 }
             }
@@ -123,17 +121,16 @@ class Bully
         throw new IllegalStateException(String.format("Don't know how to handle a '%s' type for value '%s'", type, value));
     }
 
-    private boolean isAssignableFrom(Type targetType, Class<?> assignedClass) {
+    private boolean isAssignableFrom(final Type targetType, final Class<?> assignedClass) {
         if (targetType instanceof Class) {
-            return ((Class<?>)targetType).isAssignableFrom(assignedClass);
-        }
-        else if (targetType instanceof WildcardType) {
-            WildcardType wildcardType = (WildcardType)targetType;
+            return ((Class<?>) targetType).isAssignableFrom(assignedClass);
+        } else if (targetType instanceof WildcardType) {
+            final WildcardType wildcardType = (WildcardType) targetType;
 
             // Class<? extends Foo>
-            for (Type upperBoundType : wildcardType.getUpperBounds()) {
+            for (final Type upperBoundType : wildcardType.getUpperBounds()) {
                 if (!Object.class.equals(upperBoundType)) {
-                    if ((upperBoundType instanceof Class<?>) && !((Class<?>)upperBoundType).isAssignableFrom(assignedClass)) {
+                    if ((upperBoundType instanceof Class<?>) && !((Class<?>) upperBoundType).isAssignableFrom(assignedClass)) {
                         return false;
                     }
                 }
@@ -142,35 +139,31 @@ class Bully
         return true;
     }
 
-    private Class<?> coerceClass(Type type, WildcardType wildcardType, String value) {
+    private Class<?> coerceClass(final Type type, final WildcardType wildcardType, final String value) {
         if (value == null) {
             return null;
-        }
-        else {
+        } else {
             try {
-                Class<?> clazz = Class.forName(value);
+                final Class<?> clazz = Class.forName(value);
 
                 if (!isAssignableFrom(wildcardType, clazz)) {
                     throw new IllegalArgumentException("Specified class " + clazz + " is not compatible with required type " + type);
                 }
                 return clazz;
-            }
-            catch (Exception ex) {
+            } catch (final Exception ex) {
                 throw new IllegalArgumentException(ex);
             }
         }
     }
 
-    private Object coerceArray(Class<?> elemType, String value, Separator separator) {
+    private Object coerceArray(final Class<?> elemType, final String value, final Separator separator) {
         if (value == null) {
             return null;
-        }
-        else if (value.length() == 0) {
+        } else if (value.length() == 0) {
             return Array.newInstance(elemType, 0);
-        }
-        else {
-            String[] tokens = value.split(separator == null ? Separator.DEFAULT : separator.value());
-            Object targetArray = Array.newInstance(elemType, tokens.length);
+        } else {
+            final String[] tokens = value.split(separator == null ? Separator.DEFAULT : separator.value());
+            final Object targetArray = Array.newInstance(elemType, tokens.length);
 
             for (int idx = 0; idx < tokens.length; idx++) {
                 Array.set(targetArray, idx, coerce(elemType, tokens[idx]));
@@ -179,29 +172,25 @@ class Bully
         }
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private Object coerceCollection(Class<?> containerType, Class<?> elemType, String value, Separator separator) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Object coerceCollection(final Class<?> containerType, final Class<?> elemType, final String value, final Separator separator) {
         if (value == null) {
             return null;
-        }
-        else {
+        } else {
             Collection result = null;
 
             if (Set.class.equals(containerType)) {
                 result = new LinkedHashSet();
-            }
-            else if (Collection.class.equals(containerType) || List.class.equals(containerType)) {
+            } else if (Collection.class.equals(containerType) || List.class.equals(containerType)) {
                 result = new ArrayList();
-            }
-            else if (Collection.class.isAssignableFrom(containerType)) {
+            } else if (Collection.class.isAssignableFrom(containerType)) {
                 try {
                     final Constructor<?> ctor = containerType.getConstructor();
 
                     if (ctor != null) {
-                        result = (Collection)ctor.newInstance();
+                        result = (Collection) ctor.newInstance();
                     }
-                }
-                catch (Exception ex) {
+                } catch (final Exception ex) {
                     // handled below
                 }
             }
@@ -209,7 +198,7 @@ class Bully
                 throw new IllegalStateException(String.format("Don't know how to handle a '%s' container type for value '%s'", containerType, value));
             }
             if (value.length() > 0) {
-                for (String token : value.split(separator == null ? Separator.DEFAULT : separator.value())) {
+                for (final String token : value.split(separator == null ? Separator.DEFAULT : separator.value())) {
                     result.add(coerce(elemType, token));
                 }
             }
@@ -217,7 +206,7 @@ class Bully
         }
     }
 
-    private Object coerce(Class<?> clazz, String value) {
+    private Object coerce(final Class<?> clazz, final String value) {
         Coercer<?> coercer = getCoercerFor(coercibles, clazz);
         if (coercer == null) {
             coercer = getCoercerFor(DEFAULT_COERCIBLES, clazz);
@@ -229,11 +218,10 @@ class Bully
         return coercer.coerce(value);
     }
 
-    private Coercer<?> getCoercerFor(final List<Coercible<?>> coercibles, final Class<?> type)
-    {
+    private Coercer<?> getCoercerFor(final List<Coercible<?>> coercibles, final Class<?> type) {
         Coercer<?> typeCoercer = mappings.get(type);
         if (typeCoercer == null) {
-            for (Coercible<?> coercible : coercibles) {
+            for (final Coercible<?> coercible : coercibles) {
                 final Coercer<?> coercer = coercible.accept(type);
                 if (coercer != null) {
                     mappings.put(type, coercer);

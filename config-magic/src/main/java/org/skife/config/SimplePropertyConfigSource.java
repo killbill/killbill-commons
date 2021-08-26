@@ -19,17 +19,15 @@ package org.skife.config;
 
 import java.util.Properties;
 
-public class SimplePropertyConfigSource implements ConfigSource
-{
+public class SimplePropertyConfigSource implements ConfigSource {
+
     private final Properties props;
 
-    public SimplePropertyConfigSource(Properties props)
-    {
+    public SimplePropertyConfigSource(final Properties props) {
         this.props = props;
     }
 
-    public String getString(String propertyName)
-    {
+    public String getString(final String propertyName) {
         return props.getProperty(propertyName);
     }
 }

@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Description
-{
+public @interface Description {
+
     String value() default ":nodoc:";
 }

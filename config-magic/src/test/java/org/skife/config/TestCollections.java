@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,175 +33,158 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(ConfigMagicTests.class)
-public class TestCollections
-{
+public class TestCollections {
+
     private ConfigurationObjectFactory cof;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         cof = new ConfigurationObjectFactory(new Properties());
     }
 
     @After
-    public void tearDown()
-    {
+    public void tearDown() {
         cof = null;
     }
 
     @Test
-    public void testClassWithListDefault()
-    {
-        EmptyClassList ec = cof.build(EmptyClassList.class);
+    public void testClassWithListDefault() {
+        final EmptyClassList ec = cof.build(EmptyClassList.class);
 
         Assert.assertEquals(Arrays.asList("one", "three", "two"), ec.getValue());
     }
 
     @Test
-    public void testClassWithCollectionDefault()
-    {
-        EmptyClassCollection ec = cof.build(EmptyClassCollection.class);
+    public void testClassWithCollectionDefault() {
+        final EmptyClassCollection ec = cof.build(EmptyClassCollection.class);
 
         Assert.assertEquals(Arrays.asList("one", "three", "two"), ec.getValue());
     }
 
     @Test
-    public void testAbstractClassDefault()
-    {
-    	EmptyAbstractClass ec = cof.build(EmptyAbstractClass.class);
+    public void testAbstractClassDefault() {
+        final EmptyAbstractClass ec = cof.build(EmptyAbstractClass.class);
 
         Assert.assertEquals(new HashSet<TestEnum>(Arrays.asList(TestEnum.TWO, TestEnum.ONE)), ec.getValue());
     }
 
     @Test
-    public void testInterface()
-    {
-        EmptyInterface ec = cof.build(EmptyInterface.class);
+    public void testInterface() {
+        final EmptyInterface ec = cof.build(EmptyInterface.class);
 
         Assert.assertEquals(new LinkedHashSet<String>(Arrays.asList("one", "two")), ec.getValue());
     }
 
     @Test
-    public void testClassDefaultNull()
-    {
-    	EmptyClassDefaultNull ec = cof.build(EmptyClassDefaultNull.class);
+    public void testClassDefaultNull() {
+        final EmptyClassDefaultNull ec = cof.build(EmptyClassDefaultNull.class);
 
         Assert.assertNull(ec.getValue());
     }
 
     @Test
-    public void testAbstractClassDefaultNull()
-    {
-    	EmptyAbstractClassDefaultNull ec = cof.build(EmptyAbstractClassDefaultNull.class);
-
-    	Assert.assertNull(ec.getValue());
-    }
-
-    @Test
-    public void testInterfaceDefaultNull()
-    {
-        EmptyInterfaceDefaultNull ec = cof.build(EmptyInterfaceDefaultNull.class);
+    public void testAbstractClassDefaultNull() {
+        final EmptyAbstractClassDefaultNull ec = cof.build(EmptyAbstractClassDefaultNull.class);
 
         Assert.assertNull(ec.getValue());
     }
 
     @Test
-    public void testInterfaceDefaultEmptyString()
-    {
-        EmptyInterfaceEmptyString ec = cof.build(EmptyInterfaceEmptyString.class);
+    public void testInterfaceDefaultNull() {
+        final EmptyInterfaceDefaultNull ec = cof.build(EmptyInterfaceDefaultNull.class);
+
+        Assert.assertNull(ec.getValue());
+    }
+
+    @Test
+    public void testInterfaceDefaultEmptyString() {
+        final EmptyInterfaceEmptyString ec = cof.build(EmptyInterfaceEmptyString.class);
 
         Assert.assertEquals(Collections.emptyList(), ec.getValue());
     }
 
     @Test
-    public void testDifferentSeparator()
-    {
-        DifferentSeparator ec = cof.build(DifferentSeparator.class);
+    public void testDifferentSeparator() {
+        final DifferentSeparator ec = cof.build(DifferentSeparator.class);
 
         Assert.assertEquals(new HashSet<TestEnum>(Arrays.asList(TestEnum.TWO, TestEnum.ONE)), ec.getValue());
     }
 
-    public static enum TestEnum
-    {
+    public enum TestEnum {
         ONE,
         TWO,
         THREE
     }
 
-    public static class EmptyClassList
-    {
+    public interface EmptyInterface {
+
+        @Config("value")
+        @Default("one, two")
+        LinkedHashSet<String> getValue();
+    }
+
+    public interface EmptyInterfaceDefaultNull {
+
+        @Config("value")
+        @DefaultNull
+        List<TestEnum> getValue();
+    }
+
+    public interface EmptyInterfaceEmptyString {
+
+        @Config("value")
+        @Default("")
+        List<TestEnum> getValue();
+    }
+
+    public interface DifferentSeparator {
+
+        @Config("value")
+        @Separator("\\s*!\\s*")
+        @Default("TWO ! ONE")
+        Set<TestEnum> getValue();
+    }
+
+    public static class EmptyClassList {
+
         @Config("value")
         @Default("one, three, two")
-        public List<String> getValue()
-        {
+        public List<String> getValue() {
             return Collections.emptyList();
         }
     }
 
-    public static class EmptyClassCollection
-    {
+    public static class EmptyClassCollection {
+
         @Config("value")
         @Default("one, three, two")
-        public Collection<String> getValue()
-        {
+        public Collection<String> getValue() {
             return Collections.emptyList();
         }
     }
 
-    public static abstract class EmptyAbstractClass
-    {
+    public abstract static class EmptyAbstractClass {
+
         @Config("value")
         @Default("TWO, ONE")
         public abstract Set<TestEnum> getValue();
     }
 
-    public static interface EmptyInterface
-    {
-        @Config("value")
-        @Default("one, two")
-        public LinkedHashSet<String> getValue();
-    }
+    public static class EmptyClassDefaultNull {
 
-    public static class EmptyClassDefaultNull
-    {
         @Config("value")
         @DefaultNull
-        public List<Float> getValue()
-        {
+        public List<Float> getValue() {
             return null;
         }
     }
 
-    public static abstract class EmptyAbstractClassDefaultNull
-    {
+    public abstract static class EmptyAbstractClassDefaultNull {
+
         @Config("value")
         @DefaultNull
-        public Set<String> getValue()
-        {
+        public Set<String> getValue() {
             return null;
         }
-    }
-
-    public static interface EmptyInterfaceDefaultNull
-    {
-        @Config("value")
-        @DefaultNull
-        public List<TestEnum> getValue();
-    }
-
-    public static interface EmptyInterfaceEmptyString
-    {
-        @Config("value")
-        @Default("")
-        public List<TestEnum> getValue();
-    }
-
-
-    public static interface DifferentSeparator
-    {
-        @Config("value")
-        @Separator("\\s*!\\s*")
-        @Default("TWO ! ONE")
-        public Set<TestEnum> getValue();
     }
 }

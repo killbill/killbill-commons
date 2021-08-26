@@ -26,77 +26,68 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(ConfigMagicTests.class)
-public class TestEmptyValue
-{
+public class TestEmptyValue {
+
     private ConfigurationObjectFactory cof = null;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         cof = new ConfigurationObjectFactory(new Properties());
     }
 
     @After
-    public void tearDown()
-    {
+    public void tearDown() {
         cof = null;
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testClass()
-    {
+    public void testClass() {
         cof.build(EmptyClass.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testInterface()
-    {
+    public void testInterface() {
         cof.build(EmptyInterface.class);
     }
 
     @Test
-    public void testDefaultClass()
-    {
-        EmptyDefaultClass ec = cof.build(EmptyDefaultClass.class);
+    public void testDefaultClass() {
+        final EmptyDefaultClass ec = cof.build(EmptyDefaultClass.class);
 
         Assert.assertEquals("default-value", ec.getValue());
     }
 
     @Test
-    public void testAbstractDefaultClass()
-    {
-        EmptyAbstractClass ec = cof.build(EmptyAbstractClass.class);
+    public void testAbstractDefaultClass() {
+        final EmptyAbstractClass ec = cof.build(EmptyAbstractClass.class);
 
         Assert.assertEquals("default-value", ec.getValue());
     }
 
-    public static interface EmptyInterface
-    {
+    public interface EmptyInterface {
+
         @Config("value")
         String getValue();
     }
 
-    public static abstract class EmptyClass
-    {
+    public abstract static class EmptyClass {
+
         @Config("value")
         public abstract String getValue();
     }
 
-    public static abstract class EmptyAbstractClass
-    {
+    public abstract static class EmptyAbstractClass {
+
         @Config("value")
-        public String getValue()
-        {
+        public String getValue() {
             return "default-value";
         }
     }
 
+    public static class EmptyDefaultClass {
 
-    public static class EmptyDefaultClass
-    {
         @Config("value")
-        public String getValue()
-        {
+        public String getValue() {
             return "default-value";
         }
     }

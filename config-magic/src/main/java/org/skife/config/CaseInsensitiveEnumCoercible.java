@@ -22,10 +22,9 @@ import java.util.Arrays;
 /**
  * Do case insensitive string comparisons for determination of enum value matches.
  */
-public class CaseInsensitiveEnumCoercible implements Coercible<Object>
-{
-    public Coercer<Object> accept(final Class<?> clazz)
-    {
+public class CaseInsensitiveEnumCoercible implements Coercible<Object> {
+
+    public Coercer<Object> accept(final Class<?> clazz) {
         if (!clazz.isEnum()) {
             return null;
         }
@@ -33,19 +32,16 @@ public class CaseInsensitiveEnumCoercible implements Coercible<Object>
         final Enum<?>[] values;
         try {
             values = (Enum[]) clazz.getMethod("values").invoke(null);
-        }
-        catch (Exception e) {
+        } catch (final Exception e) {
             throw new IllegalStateException("World seems to be broken, unable to access <EnumType>.values() static method", e);
         }
 
-        return new Coercer<Object>()
-        {
-            public Object coerce(String value)
-            {
+        return new Coercer<Object>() {
+            public Object coerce(final String value) {
                 if (value == null) {
                     return null;
                 }
-                for (Object o : values) {
+                for (final Object o : values) {
                     if (value.equalsIgnoreCase(o.toString())) {
                         return o;
                     }

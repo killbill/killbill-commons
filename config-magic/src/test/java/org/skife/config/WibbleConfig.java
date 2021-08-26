@@ -17,9 +17,8 @@
 
 package org.skife.config;
 
+interface WibbleConfig {
 
-interface WibbleConfig
-{
     @Config("the-url")
     Wibble getWibble();
 }

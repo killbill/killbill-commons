@@ -26,14 +26,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(ConfigMagicTests.class)
-public class TestVariousPropertyTypes
-{
+public class TestVariousPropertyTypes {
+
     private ConfigurationObjectFactory c = null;
     private StrangeConfig sc = null;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         final Properties p = new Properties();
         p.setProperty("single-property", "single-property-value");
         p.setProperty("multi.first.property", "multi-first-value");
@@ -44,89 +43,75 @@ public class TestVariousPropertyTypes
         sc = c.buildWithReplacements(StrangeConfig.class, Collections.singletonMap("key", "value"));
     }
 
-
     @Test
-    public void testWithDefault()
-    {
+    public void testWithDefault() {
         Assert.assertEquals("default-is-set", sc.getHasDefault());
     }
 
     @Test
-    public void testWithDefaultNull()
-    {
+    public void testWithDefaultNull() {
         Assert.assertNull(sc.getHasDefaultNull());
     }
 
     @Test
-    public void testCallMethod()
-    {
+    public void testCallMethod() {
         Assert.assertEquals("called getCalledMethod()", sc.getCalledMethod());
     }
 
     @Test
-    public void testMultiProperty()
-    {
+    public void testMultiProperty() {
         Assert.assertEquals("multi-first-value", sc.getMultiProperty());
     }
 
     @Test
-    public void testDoubleProperty()
-    {
+    public void testDoubleProperty() {
         Assert.assertEquals("double-second-value", sc.getDoubleProperty());
     }
 
     @Test
-    public void testKeyedProperty()
-    {
+    public void testKeyedProperty() {
         Assert.assertEquals("test-value-value", sc.getKeyedProperty());
     }
 
-    public static abstract class StrangeConfig
-    {
+    public abstract static class StrangeConfig {
+
         @Config("has-default")
         @Default("default-is-set")
-        public String getHasDefault()
-        {
+        public String getHasDefault() {
             return "called getHasDefault()";
         }
 
         @Config("has-default-null")
         @DefaultNull
-        public String getHasDefaultNull()
-        {
+        public String getHasDefaultNull() {
             return "called getHasDefault()";
         }
 
         @Config("get-called-method")
-        public String getCalledMethod()
-        {
+        public String getCalledMethod() {
             return "called getCalledMethod()";
         }
 
         @Config("single.property")
-        public String getSingleProperty()
-        {
+        public String getSingleProperty() {
             return "called getSingleProperty()";
         }
 
         @Config({"multi.first.property", "multi.second.property"})
-        public String getMultiProperty()
-        {
+        public String getMultiProperty() {
             return "called getMultiProperty()";
         }
 
         @Config({"double.first.property", "double.second.property"})
-        public String getDoubleProperty()
-        {
+        public String getDoubleProperty() {
             return "called getDoubleProperty()";
         }
 
         @Config({"test.${key}.property", "test.default.property"})
-        public String getKeyedProperty()
-        {
+        public String getKeyedProperty() {
             return "called getKeyedProperty()";
         }
-}
+    }
 }
 
 

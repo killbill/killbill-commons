@@ -17,8 +17,8 @@
 
 package org.skife.config;
 
-interface MultiConfig
-{
+interface MultiConfig {
+
     @Config("singleOption")
     @Default("failed!")
     String getSingleOption();

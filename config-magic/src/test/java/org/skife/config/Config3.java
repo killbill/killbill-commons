@@ -17,11 +17,11 @@
 
 package org.skife.config;
 
-interface Config3
-{
+interface Config3 {
+
     // required
     @Config("option")
-    public String getOption();
+    String getOption();
 
-    public abstract String getOption2();
+    String getOption2();
 }

@@ -24,9 +24,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Separator
-{
-    public static String DEFAULT = "\\s*,\\s*";
+public @interface Separator {
+
+    String DEFAULT = "\\s*,\\s*";
 
     String value() default DEFAULT;
 }

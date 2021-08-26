@@ -17,8 +17,8 @@
 
 package org.skife.config;
 
-interface Config1
-{
+interface Config1 {
+
     @Config("stringOption")
     String getStringOption();
 

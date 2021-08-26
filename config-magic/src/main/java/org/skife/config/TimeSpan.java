@@ -22,15 +22,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TimeSpan
-{
-    private final long period;
-    private final TimeUnit unit;
-    private final long millis;
+public class TimeSpan {
 
     private static final Pattern SPLIT = Pattern.compile("^(\\d+)\\s?(\\w+)$");
+    private static final HashMap<String, TimeUnit> UNITS = new HashMap<String, TimeUnit>();
 
-    private static final HashMap<String,TimeUnit> UNITS = new HashMap<String,TimeUnit>();
     static {
         UNITS.put("ms", TimeUnit.MILLISECONDS);
         UNITS.put("millisecond", TimeUnit.MILLISECONDS);
@@ -50,14 +46,17 @@ public class TimeSpan
         UNITS.put("days", TimeUnit.DAYS);
     }
 
-    public TimeSpan(String spec)
-    {
-        Matcher m = SPLIT.matcher(spec);
+    private final long period;
+    private final TimeUnit unit;
+    private final long millis;
+
+    public TimeSpan(final String spec) {
+        final Matcher m = SPLIT.matcher(spec);
         if (!m.matches()) {
             throw new IllegalArgumentException(String.format("%s is not a valid time spec", spec));
         }
-        String number = m.group(1);
-        String type = m.group(2);
+        final String number = m.group(1);
+        final String type = m.group(2);
         period = Long.parseLong(number);
         unit = UNITS.get(type);
         if (unit == null) {
@@ -66,8 +65,7 @@ public class TimeSpan
         millis = TimeUnit.MILLISECONDS.convert(period, unit);
     }
 
-    public TimeSpan(long period, TimeUnit unit)
-    {
+    public TimeSpan(final long period, final TimeUnit unit) {
         this.period = period;
         this.unit = unit;
         this.millis = TimeUnit.MILLISECONDS.convert(period, unit);
@@ -77,19 +75,16 @@ public class TimeSpan
         return millis;
     }
 
-    public long getPeriod()
-    {
+    public long getPeriod() {
         return period;
     }
 
-    public TimeUnit getUnit()
-    {
+    public TimeUnit getUnit() {
         return unit;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         switch (unit) {
             case SECONDS:
                 return period + "s";
@@ -105,14 +100,12 @@ public class TimeSpan
     }
 
     @Override
-    public int hashCode()
-    {
-        return 31 + (int)(millis ^ (millis >>> 32));
+    public int hashCode() {
+        return 31 + (int) (millis ^ (millis >>> 32));
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
@@ -122,7 +115,7 @@ public class TimeSpan
         if (getClass() != obj.getClass()) {
             return false;
         }
-        TimeSpan other = (TimeSpan)obj;
+        final TimeSpan other = (TimeSpan) obj;
 
         return millis == other.millis;
     }

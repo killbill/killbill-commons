@@ -17,14 +17,12 @@
 
 package org.skife.config;
 
-public enum ConfigEnum
-{
+public enum ConfigEnum {
     ONE,
     TWO,
     THREE;
 
-    public String toString()
-    {
+    public String toString() {
         return name().toLowerCase();
     }
 }

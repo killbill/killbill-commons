@@ -26,25 +26,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(ConfigMagicTests.class)
-public class TestDataAmount
-{
+public class TestDataAmount {
+
     private ConfigurationObjectFactory cof;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         cof = new ConfigurationObjectFactory(new Properties());
     }
 
     @After
-    public void tearDown()
-    {
+    public void tearDown() {
         cof = null;
     }
 
     @Test
-    public void testKiloBytes()
-    {
+    public void testKiloBytes() {
         DataAmount amount = new DataAmount("20kB");
         Assert.assertEquals(DataAmountUnit.KILOBYTE, amount.getUnit());
         Assert.assertEquals(20L * 1000, amount.getNumberOfBytes());
@@ -52,16 +49,15 @@ public class TestDataAmount
         amount = new DataAmount("20 kB");
         Assert.assertEquals(DataAmountUnit.KILOBYTE, amount.getUnit());
         Assert.assertEquals(20L * 1000, amount.getNumberOfBytes());
-        
-        ClassWithKilobytes ec = cof.build(ClassWithKilobytes.class);
+
+        final ClassWithKilobytes ec = cof.build(ClassWithKilobytes.class);
 
         Assert.assertEquals(DataAmountUnit.KILOBYTE, ec.getValue().getUnit());
         Assert.assertEquals(10L * 1000, ec.getValue().getNumberOfBytes());
     }
 
     @Test
-    public void testRawBytes()
-    {
+    public void testRawBytes() {
         DataAmount amt = new DataAmount("1024");
         Assert.assertEquals(DataAmountUnit.BYTE, amt.getUnit());
         Assert.assertEquals(1024L, amt.getNumberOfBytes());
@@ -71,8 +67,8 @@ public class TestDataAmount
         Assert.assertEquals(2000L, amt.getNumberOfBytes());
     }
 
-    public static abstract class ClassWithKilobytes
-    {
+    public abstract static class ClassWithKilobytes {
+
         @Config("value")
         @Default("10kB")
         public abstract DataAmount getValue();

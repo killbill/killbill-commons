@@ -17,8 +17,8 @@
 
 package org.skife.config;
 
-interface BadConfig
-{
+interface BadConfig {
+
     @Config({})
     String getBadOption();
 }

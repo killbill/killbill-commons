@@ -19,25 +19,22 @@ package org.skife.config;
 
 import java.util.Properties;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(ConfigMagicTests.class)
-public class TestNoFinal
-{
-    @Test(expected=IllegalArgumentException.class)
-    public void testExplodeOnFinal()
-    {
-        ConfigurationObjectFactory cof = new ConfigurationObjectFactory(new Properties());
+public class TestNoFinal {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExplodeOnFinal() {
+        final ConfigurationObjectFactory cof = new ConfigurationObjectFactory(new Properties());
         cof.build(EmptyClass.class);
     }
 
-    public static final class EmptyClass
-    {
+    public static final class EmptyClass {
+
         @Config("value")
-        public String getValue()
-        {
+        public String getValue() {
             return "default-value";
         }
     }

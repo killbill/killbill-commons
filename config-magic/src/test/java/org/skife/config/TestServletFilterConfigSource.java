@@ -17,8 +17,6 @@
 
 package org.skife.config;
 
-import static org.hamcrest.CoreMatchers.is;
-
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,12 +29,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static org.hamcrest.CoreMatchers.is;
+
 @Category(ConfigMagicTests.class)
-public class TestServletFilterConfigSource
-{
+public class TestServletFilterConfigSource {
+
     @Test
-    public void simpleTest()
-    {
+    public void simpleTest() {
         final MockFilterConfig mfc = new MockFilterConfig();
         mfc.put("foo", "hello, world");
         mfc.put("bar", "23");
@@ -51,12 +50,11 @@ public class TestServletFilterConfigSource
         Assert.assertThat(config.getBar(), is(23));
     }
 
-    private static class MockFilterConfig implements FilterConfig
-    {
+    private static class MockFilterConfig implements FilterConfig {
+
         private final Map<String, String> parameters = new HashMap<String, String>();
 
-        private void put(String key, String value)
-        {
+        private void put(final String key, final String value) {
             parameters.put(key, value);
         }
 
@@ -64,8 +62,8 @@ public class TestServletFilterConfigSource
             return "bogus";
         }
 
-        public String getInitParameter(String name) {
-            return  parameters.get(name);
+        public String getInitParameter(final String name) {
+            return parameters.get(name);
         }
 
         @SuppressWarnings("unchecked")

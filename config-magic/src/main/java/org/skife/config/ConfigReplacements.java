@@ -31,9 +31,9 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface ConfigReplacements
-{
-    static final String DEFAULT_VALUE = "__%%%noValue%%%__";
+public @interface ConfigReplacements {
+
+    String DEFAULT_VALUE = "__%%%noValue%%%__";
 
     /**
      * The key to look up in the replacement map, if any.

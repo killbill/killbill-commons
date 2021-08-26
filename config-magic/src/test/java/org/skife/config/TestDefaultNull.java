@@ -26,67 +26,59 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(ConfigMagicTests.class)
-public class TestDefaultNull
-{
+public class TestDefaultNull {
+
     private ConfigurationObjectFactory cof = null;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         cof = new ConfigurationObjectFactory(new Properties());
     }
 
     @After
-    public void tearDown()
-    {
+    public void tearDown() {
         cof = null;
     }
 
     @Test
-    public void testClass()
-    {
-        EmptyClass ec = cof.build(EmptyClass.class);
+    public void testClass() {
+        final EmptyClass ec = cof.build(EmptyClass.class);
 
         Assert.assertNull(ec.getValue());
     }
 
     @Test
-    public void testInterface()
-    {
-        EmptyInterface ec = cof.build(EmptyInterface.class);
+    public void testInterface() {
+        final EmptyInterface ec = cof.build(EmptyInterface.class);
 
         Assert.assertNull(ec.getValue());
     }
 
-
     @Test(expected = IllegalArgumentException.class)
-    public void testDoubleFeature()
-    {
+    public void testDoubleFeature() {
         cof.build(DoubleFeature.class);
     }
 
-    public static interface EmptyInterface
-    {
+    public interface EmptyInterface {
+
         @Config("value")
         @DefaultNull
         String getValue();
     }
 
-    public static abstract class EmptyClass
-    {
+    public abstract static class EmptyClass {
+
         @Config("value")
         @DefaultNull
         public abstract String getValue();
     }
 
+    public static class DoubleFeature {
 
-    public static class DoubleFeature
-    {
         @Config("value")
         @DefaultNull
         @Default("value-default")
-        public String getValue()
-        {
+        public String getValue() {
             return "default-value";
         }
     }
