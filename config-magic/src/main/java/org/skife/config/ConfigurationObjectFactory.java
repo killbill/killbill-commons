@@ -1,5 +1,23 @@
+/*
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
+ *
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.skife.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
@@ -56,6 +74,7 @@ public class ConfigurationObjectFactory
         return internalBuild(configClass, null);
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private <T> T internalBuild(Class<T> configClass, Map<String, String> mappedReplacements)
     {
         final List<Callback> callbacks = new ArrayList<Callback>();
@@ -221,6 +240,7 @@ public class ConfigurationObjectFactory
         callbacks.add(new ConfigMagicFixedValue(method, assignedFrom, finalValue, useMethod));
     }
 
+    @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
     private String applyReplacements(String propertyName, Map<String, String> mappedReplacements)
     {
         for (String key : mappedReplacements.keySet()) {

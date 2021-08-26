@@ -25,6 +25,7 @@ jobs:
           - mysql
           - postgresql
           - jdbi
+          - config-magic
     steps:
       - name: Checkout killbill-commons
         uses: actions/checkout@v2

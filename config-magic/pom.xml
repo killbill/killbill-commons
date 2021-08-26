@@ -1,76 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020-2021 Equinix, Inc
+  ~ Copyright 2014-2021 The Billing Project, LLC
+  ~
+  ~ The Billing Project licenses this file to you under the Apache License, version 2.0
+  ~ (the "License"); you may not use this file except in compliance with the
+  ~ License.  You may obtain a copy of the License at:
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  ~ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+  ~ License for the specific language governing permissions and limitations
+  ~ under the License.
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.skife.config</groupId>
-    <artifactId>config-magic</artifactId>
-    <packaging>jar</packaging>
-    <version>0.18-SNAPSHOT</version>
-    <name>config-magic</name>
-    <url>http://github.com/brianm/config-magic</url>
-    <description>
-        A configuration object convenience library.
-    </description>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
-    <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
-    <scm>
-        <connection>scm:git:git://github.com/brianm/config-magic.git</connection>
-        <developerConnection>scm:git:git@github.com:brianm/config-magic.git</developerConnection>
-        <url>http://github.com/brianm/config-magic/tree/master</url>
-    </scm>
-
-    <distributionManagement>
-
-        <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-
-        <repository>
-            <id>sonatype-nexus-staging</id>
-            <name>Nexus Release Repository</name>
-            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-
-    </distributionManagement>
-
+    <parent>
+        <groupId>org.kill-bill.commons</groupId>
+        <artifactId>killbill-commons</artifactId>
+        <version>0.24.16-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>killbill-config-magic</artifactId>
+    <name>Kill Bill config-magic</name>
     <dependencies>
-
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib-nodep</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.1</version>
+        </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <version>1.6</version>
             <optional>true</optional>
         </dependency>
-
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
-            <version>2.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.5.6</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.6</version>
-            <optional>true</optional>
-        </dependency>
-
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
@@ -78,184 +52,64 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
-        	<groupId>joda-time</groupId>
-        	<artifactId>joda-time</artifactId>
-        	<version>1.6.2</version>
-        	<scope>test</scope>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <!-- Don't run JUnit tests -->
+                    <groups></groups>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.5</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2.2</version>
-                <configuration>
-                    <tarLongFileMode>gnu</tarLongFileMode>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.2.2</version>
-                <configuration>
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <encoding>UTF-8</encoding>
-                    <maxmemory>1g</maxmemory>
-                    <links>
-                        <link>http://java.sun.com/javase/6/docs/api/</link>
-                    </links>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
-                <configuration>
-                    <attach>true</attach>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>create-source-jar</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>1.5</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>cglib:cglib-nodep</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>net.sf.cglib</pattern>
-                                    <shadedPattern>org.skife.config.cglib</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
-
     <profiles>
         <profile>
-            <id>release-sign-artifacts</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
+            <id>config-magic</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.4</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>org.skife.config.ConfigMagicTests</groups>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.maven.surefire</groupId>
+                                <artifactId>surefire-junit47</artifactId>
+                                <version>3.0.0-M5</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
-
-    <developers>
-        <developer>
-            <id>brianm</id>
-            <name>Brian McCallister</name>
-            <email>brianm@skife.org</email>
-        </developer>
-        <developer>
-            <id>martint</id>
-            <name>Martin Traverso</name>
-        </developer>
-        <developer>
-            <id>arosien</id>
-            <name>Adam Rosien</name>
-        </developer>
-        <developer>
-            <id>hgschmie</id>
-            <name>Henning Schmiedehausen</name>
-        </developer>
-        <developer>
-            <id>cowtowncoder</id>
-            <name>Tatu Saloranta</name>
-            <email>tatu@fasterxml.com</email>
-        </developer>
-    </developers>
-
 </project>
