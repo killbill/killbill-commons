@@ -94,57 +94,6 @@ public class TestConfigurationObjectFactory {
     }
 
     @Test
-    public void testSameConfigObjectClassUsedForEachInstance() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
-            setProperty("hello", "world");
-            setProperty("theValue", "value");
-        }});
-        final Thing t = c.build(Thing.class);
-        final Thing t2 = c.build(Thing.class);
-
-        assertEquals(t.getClass(), t2.getClass());
-    }
-
-    @Test
-    public void testSameConfigObjectClassUsedForEachInstanceEvenWithDifferentCOFs() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
-            setProperty("hello", "world");
-            setProperty("theValue", "value");
-        }});
-
-        final ConfigurationObjectFactory c2 = new ConfigurationObjectFactory(new Properties() {{
-            setProperty("hello", "world");
-            setProperty("theValue", "value");
-        }});
-
-        final Thing t = c.build(Thing.class);
-        final Thing t2 = c2.build(Thing.class);
-
-        assertEquals(t.getClass(), t2.getClass());
-    }
-
-    @Test
-    public void testSameConfigObjectClassUsedForEachInstance2() throws Exception {
-
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
-            setProperty("t1.hello", "world");
-            setProperty("t1.value", "value");
-            setProperty("t2.hello", "brian");
-            setProperty("t2.value", "another-value");
-        }});
-        final ThingParam t1 = c.buildWithReplacements(ThingParam.class, Collections.singletonMap("thing", "t1"));
-        final ThingParam t2 = c.buildWithReplacements(ThingParam.class, Collections.singletonMap("thing", "t2"));
-
-        assertEquals(t1.getClass(), t2.getClass());
-
-        assertEquals("world", t1.getHello());
-        assertEquals("value", t1.getValue());
-
-        assertEquals("brian", t2.getHello());
-        assertEquals("another-value", t2.getValue());
-    }
-
-    @Test
     public void testEnum() throws Exception {
         final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
             setProperty("option.one", "1");

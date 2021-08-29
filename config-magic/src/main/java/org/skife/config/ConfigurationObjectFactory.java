@@ -18,33 +18,32 @@
 package org.skife.config;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umd.cs.findbugs.annotations.Nullable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.CallbackFilter;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.Factory;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
-import net.sf.cglib.proxy.NoOp;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.FixedValue;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.SuperMethodCall;
+import net.bytebuddy.matcher.ElementMatchers;
 
 public class ConfigurationObjectFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationObjectFactory.class);
-    private static final ConcurrentMap<Class<?>, Factory> factories = new ConcurrentHashMap<Class<?>, Factory>();
+
     private final ConfigSource config;
     private final Bully bully;
 
@@ -70,46 +69,32 @@ public class ConfigurationObjectFactory {
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
-    private <T> T internalBuild(final Class<T> configClass, final Map<String, String> mappedReplacements) {
-        final List<Callback> callbacks = new ArrayList<Callback>();
-        final Map<Method, Integer> slots = new HashMap<Method, Integer>();
-        callbacks.add(NoOp.INSTANCE);
+    private <T> T internalBuild(final Class<T> configClass, @Nullable final Map<String, String> mappedReplacements) {
+        Builder<T> bbBuilder = new ByteBuddy().subclass(configClass);
 
-        int count = 1;
-
-        // Hook up a toString method that prints out the settings for that bean if possible.
-        final Method toStringMethod = findToStringMethod(configClass);
-        if (toStringMethod != null) {
-            slots.put(toStringMethod, count++);
-            callbacks.add(new ConfigMagicBeanToString(callbacks));
-        }
-
-        // Now hook up the actual value interceptors.
+        // Hook up the actual value interceptors.
         for (final Method method : configClass.getMethods()) {
             if (method.isAnnotationPresent(Config.class)) {
                 final Config annotation = method.getAnnotation(Config.class);
-                slots.put(method, count++);
 
                 if (method.getParameterTypes().length > 0) {
                     if (mappedReplacements != null) {
                         throw new RuntimeException("Replacements are not supported for parameterized config methods");
                     }
-                    buildParameterized(callbacks, method, annotation);
+                    bbBuilder = buildParameterized(bbBuilder, method, annotation);
                 } else {
-                    buildSimple(callbacks, method, annotation, mappedReplacements, null);
+                    bbBuilder = buildSimple(bbBuilder, method, annotation, mappedReplacements, null);
                 }
             } else if (method.isAnnotationPresent(ConfigReplacements.class)) {
                 final ConfigReplacements annotation = method.getAnnotation(ConfigReplacements.class);
-
-                slots.put(method, count++);
 
                 if (ConfigReplacements.DEFAULT_VALUE.equals(annotation.value())) {
                     final Map<String, String> fixedMap = mappedReplacements == null ?
                                                          Collections.<String, String>emptyMap() : Collections.unmodifiableMap(mappedReplacements);
 
-                    callbacks.add(new ConfigMagicFixedValue(method, "annotation: @ConfigReplacements", fixedMap, false));
+                    bbBuilder = bbBuilder.method(ElementMatchers.is(method)).intercept(FixedValue.value(fixedMap));
                 } else {
-                    buildSimple(callbacks, method, null, mappedReplacements, annotation);
+                    bbBuilder = buildSimple(bbBuilder, method, null, mappedReplacements, annotation);
                 }
             } else if (Modifier.isAbstract(method.getModifiers())) {
                 throw new AbstractMethodError(String.format("Method [%s] is abstract and lacks an @Config annotation",
@@ -117,23 +102,22 @@ public class ConfigurationObjectFactory {
             }
         }
 
-        if (factories.containsKey(configClass)) {
-            final Factory f = factories.get(configClass);
-            return configClass.cast(f.newInstance(callbacks.toArray(new Callback[callbacks.size()])));
-        } else {
-            final Enhancer e = new Enhancer();
-            e.setSuperclass(configClass);
-            e.setCallbackFilter(new ConfigMagicCallbackFilter(slots));
-            e.setCallbacks(callbacks.toArray(new Callback[callbacks.size()]));
-            final T rt = configClass.cast(e.create());
-            factories.putIfAbsent(configClass, (Factory) rt);
-            return rt;
+        final Class<?> loaded = bbBuilder.make()
+                                         .load(configClass.getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+                                         .getLoaded();
+
+        try {
+            return configClass.cast(loaded.getConstructor().newInstance());
+        } catch (final ReflectiveOperationException e) {
+            throw new AssertionError("Failed to instantiate proxy class for " + configClass.getName(), e);
         }
     }
 
-    private void buildSimple(final List<Callback> callbacks, final Method method, final Config annotation,
-                             final Map<String, String> mappedReplacements, final ConfigReplacements mapAnnotation) {
-        String assignedFrom = null;
+    private <T> Builder<T> buildSimple(final Builder<T> bbBuilder,
+                                       final Method method,
+                                       final Config annotation,
+                                       final Map<String, String> mappedReplacements,
+                                       final ConfigReplacements mapAnnotation) {
         String[] propertyNames = new String[0];
         String value = null;
 
@@ -142,7 +126,7 @@ public class ConfigurationObjectFactory {
         if (annotation != null) {
             propertyNames = annotation.value();
 
-            if (propertyNames == null || propertyNames.length == 0) {
+            if (propertyNames.length == 0) {
                 throw new IllegalArgumentException("Method " +
                                                    method.toGenericString() +
                                                    " declares config annotation but no field name!");
@@ -156,7 +140,6 @@ public class ConfigurationObjectFactory {
 
                 // First value found wins
                 if (value != null) {
-                    assignedFrom = "property: '" + propertyName + "'";
                     logger.info("Assigning value [{}] for [{}] on [{}#{}()]",
                                 value, propertyName, method.getDeclaringClass().getName(), method.getName());
                     break;
@@ -170,7 +153,6 @@ public class ConfigurationObjectFactory {
             value = mappedReplacements == null ? null : mappedReplacements.get(key);
 
             if (value != null) {
-                assignedFrom = "@ConfigReplacements: key '" + key + "'";
                 logger.info("Assigning mappedReplacement value [{}] for [{}] on [{}#{}()]",
                             value, key, method.getDeclaringClass().getName(), method.getName());
             }
@@ -197,19 +179,16 @@ public class ConfigurationObjectFactory {
         if (value == null) {
             if (hasDefault) {
                 value = method.getAnnotation(Default.class).value();
-                assignedFrom = "annotation: @Default";
 
                 logger.info("Assigning default value [{}] for {} on [{}#{}()]",
                             value, propertyNames, method.getDeclaringClass().getName(), method.getName());
             } else if (hasDefaultNull) {
                 logger.info("Assigning null default value for {} on [{}#{}()]",
                             propertyNames, method.getDeclaringClass().getName(), method.getName());
-                assignedFrom = "annotation: @DefaultNull";
             } else {
                 // Final try: Is the method is actually callable?
                 if (!Modifier.isAbstract(method.getModifiers())) {
                     useMethod = true;
-                    assignedFrom = "method: '" + method.getName() + "()'";
                     logger.info("Using method itself for {} on [{}#{}()]",
                                 propertyNames, method.getDeclaringClass().getName(), method.getName());
                 } else {
@@ -220,8 +199,16 @@ public class ConfigurationObjectFactory {
             }
         }
 
-        final Object finalValue = bully.coerce(method.getGenericReturnType(), value, method.getAnnotation(Separator.class));
-        callbacks.add(new ConfigMagicFixedValue(method, assignedFrom, finalValue, useMethod));
+        if (useMethod) {
+            return bbBuilder.method(ElementMatchers.is(method)).intercept(SuperMethodCall.INSTANCE);
+        } else {
+            if (value == null) {
+                return bbBuilder.method(ElementMatchers.is(method)).intercept(FixedValue.nullValue());
+            } else {
+                final Object finalValue = bully.coerce(method.getGenericReturnType(), value, method.getAnnotation(Separator.class));
+                return bbBuilder.method(ElementMatchers.is(method)).intercept(FixedValue.value(finalValue));
+            }
+        }
     }
 
     @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
@@ -234,7 +221,9 @@ public class ConfigurationObjectFactory {
         return propertyName;
     }
 
-    private void buildParameterized(final List<Callback> callbacks, final Method method, final Config annotation) {
+    private <T> Builder<T> buildParameterized(final Builder<T> bbBuilder,
+                                              final Method method,
+                                              final Config annotation) {
         String defaultValue = null;
 
         final boolean hasDefault = method.isAnnotationPresent(Default.class);
@@ -272,18 +261,19 @@ public class ConfigurationObjectFactory {
         final Object bulliedDefaultValue = bully.coerce(method.getGenericReturnType(), defaultValue, method.getAnnotation(Separator.class));
         final String[] annotationValues = annotation.value();
 
-        if (annotationValues == null || annotationValues.length == 0) {
+        if (annotationValues.length == 0) {
             throw new IllegalArgumentException("Method " +
                                                method.toGenericString() +
                                                " declares config annotation but no field name!");
         }
 
-        callbacks.add(new ConfigMagicMethodInterceptor(method,
-                                                       config,
-                                                       annotationValues,
-                                                       paramTokenList,
-                                                       bully,
-                                                       bulliedDefaultValue));
+        final ConfigMagicMethodInterceptor invocationHandler = new ConfigMagicMethodInterceptor(method,
+                                                                                                config,
+                                                                                                annotationValues,
+                                                                                                paramTokenList,
+                                                                                                bully,
+                                                                                                bulliedDefaultValue);
+        return bbBuilder.method(ElementMatchers.is(method)).intercept(InvocationHandlerAdapter.of(invocationHandler));
     }
 
     private String makeToken(final String temp) {
@@ -303,7 +293,7 @@ public class ConfigurationObjectFactory {
             }
         }
         sb.append(']');
-        if (mappedReplacements != null && mappedReplacements.size() > 0) {
+        if (mappedReplacements != null && !mappedReplacements.isEmpty()) {
             sb.append(" translated to [");
             for (int i = 0; i < values.length; i++) {
                 sb.append(applyReplacements(values[i], mappedReplacements));
@@ -317,114 +307,7 @@ public class ConfigurationObjectFactory {
         return sb.toString();
     }
 
-    private Method findToStringMethod(final Class<?> clazz) {
-        try {
-            return clazz.getMethod("toString");
-        } catch (final NoSuchMethodException nsme) {
-            try {
-                return Object.class.getMethod("toString");
-            } catch (final NoSuchMethodException nsme2) {
-                throw new IllegalStateException("Could not intercept toString method!", nsme);
-            }
-        }
-    }
-
-    private static final class ConfigMagicFixedValue implements MethodInterceptor {
-
-        private final Method method;
-        private final String assignedFrom;
-
-        private final Handler handler;
-        private transient String toStringValue = null;
-
-        private ConfigMagicFixedValue(final Method method, final String assignedFrom, final Object value, final boolean callSuper) {
-            this.method = method;
-            this.assignedFrom = assignedFrom;
-
-            // This is a workaround for broken cglib
-            if (callSuper) {
-                this.handler = new InvokeSuperHandler();
-            } else {
-                handler = new FixedValueHandler(value);
-            }
-        }
-
-        public Object intercept(final Object o, final Method method, final Object[] objects, final MethodProxy methodProxy) throws Throwable {
-            return handler.handle(methodProxy, o, objects);
-        }
-
-        @Override
-        public String toString() {
-            if (toStringValue == null) {
-                final StringBuilder sb = new StringBuilder(method.getName());
-                sb.append("(): ");
-                sb.append(assignedFrom);
-                sb.append(", ");
-                sb.append(handler.toString());
-                toStringValue = sb.toString();
-            }
-
-            return toStringValue;
-        }
-
-        private interface Handler {
-
-            Object handle(MethodProxy m, Object o, Object[] args) throws Throwable;
-        }
-
-        private static class InvokeSuperHandler implements Handler {
-
-            public Object handle(final MethodProxy m, final Object o, final Object[] args) throws Throwable {
-                return m.invokeSuper(o, args);
-            }
-        }
-
-        private static class FixedValueHandler implements Handler {
-
-            private final Object finalValue;
-            private transient String toStringValue = null;
-
-            public FixedValueHandler(final Object finalValue) {
-                this.finalValue = finalValue;
-            }
-
-            public Object handle(final MethodProxy m, final Object o, final Object[] args) throws Throwable {
-                return finalValue;
-            }
-
-            @Override
-            public String toString() {
-                if (toStringValue == null) {
-                    final StringBuilder sb = new StringBuilder("value: ");
-                    if (finalValue != null) {
-                        sb.append(finalValue.toString());
-                        sb.append(", class: ");
-                        sb.append(finalValue.getClass().getName());
-                    } else {
-                        sb.append("<null>");
-                    }
-                    toStringValue = sb.toString();
-                }
-
-                return toStringValue;
-            }
-        }
-    }
-
-    private static final class ConfigMagicCallbackFilter implements CallbackFilter {
-
-        private final Map<Method, Integer> slots;
-
-        private ConfigMagicCallbackFilter(final Map<Method, Integer> slots) {
-            this.slots = slots;
-        }
-
-        public int accept(final Method method) {
-            return slots.containsKey(method) ? slots.get(method) : 0;
-        }
-    }
-
-    private static final class ConfigMagicMethodInterceptor implements MethodInterceptor {
+    private static final class ConfigMagicMethodInterceptor implements InvocationHandler {
 
         private final Method method;
         private final ConfigSource config;
@@ -448,10 +331,10 @@ public class ConfigurationObjectFactory {
             this.defaultValue = defaultValue;
         }
 
-        public Object intercept(final Object o,
-                                final Method method,
-                                final Object[] args,
-                                final MethodProxy methodProxy) throws Throwable {
+        @Override
+        public Object invoke(final Object o,
+                             final Method method,
+                             final Object[] args) {
             for (String property : properties) {
                 if (args.length == paramTokenList.size()) {
                     for (int i = 0; i < args.length; ++i) {
@@ -476,37 +359,6 @@ public class ConfigurationObjectFactory {
         public String toString() {
             if (toStringValue == null) {
                 toStringValue = method.getName() + ": " + super.toString();
-            }
-
-            return toStringValue;
-        }
-    }
-
-    private static final class ConfigMagicBeanToString implements MethodInterceptor {
-
-        private final List<Callback> callbacks;
-
-        private transient String toStringValue = null;
-
-        private ConfigMagicBeanToString(final List<Callback> callbacks) {
-            this.callbacks = callbacks;
-        }
-
-        public Object intercept(final Object o,
-                                final Method method,
-                                final Object[] args,
-                                final MethodProxy methodProxy) throws Throwable {
-            if (toStringValue == null) {
-                final StringBuilder sb = new StringBuilder();
-
-                for (int i = 2; i < callbacks.size(); i++) {
-                    sb.append(callbacks.get(i).toString());
-
-                    if (i < callbacks.size() - 1) {
-                        sb.append("\n");
-                    }
-                }
-                toStringValue = sb.toString();
             }
 
             return toStringValue;

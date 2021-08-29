@@ -27,12 +27,12 @@
     <name>Kill Bill config-magic</name>
     <dependencies>
         <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -66,7 +66,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- Don't run JUnit tests -->
-                    <groups></groups>
+                    <groups/>
                 </configuration>
             </plugin>
         </plugins>
