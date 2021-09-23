@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -62,8 +62,18 @@ public class TestDispatcher {
         };
 
         this.callback = new TestCallableCallback();
-        this.dispatcher = new Dispatcher<>(1, createConfig(), 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(QUEUE_SIZE), testThreadFactory, new TestBlockingRejectionExecutionHandler(callback),
-                                           null, callback, null);
+        this.dispatcher = new Dispatcher<>(1,
+                                           createConfig(),
+                                           5,
+                                           TimeUnit.MINUTES,
+                                           5,
+                                           TimeUnit.SECONDS,
+                                           new LinkedBlockingQueue<Runnable>(QUEUE_SIZE),
+                                           testThreadFactory,
+                                           new TestBlockingRejectionExecutionHandler(callback),
+                                           null,
+                                           callback,
+                                           null);
         this.dispatcher.start();
     }
 
@@ -298,6 +308,11 @@ public class TestDispatcher {
             @Override
             public TimeSpan getReapSchedule() {
                 return new TimeSpan(3, TimeUnit.MINUTES);
+            }
+
+            @Override
+            public TimeSpan getShutdownTimeout() {
+                return new TimeSpan(5, TimeUnit.SECONDS);
             }
         };
     }

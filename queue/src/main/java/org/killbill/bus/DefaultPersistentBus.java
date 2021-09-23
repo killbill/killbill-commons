@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -132,8 +132,18 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         this.reaper = new BusReaper(this.dao, config, clock);
 
         this.busCallableCallback = new BusCallableCallback(this);
-        this.dispatcher = new Dispatcher<>(1, config, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), busThreadFactory, new BlockingRejectionExecutionHandler(),
-                                           clock, busCallableCallback, this);
+        this.dispatcher = new Dispatcher<>(1,
+                                           config,
+                                           10,
+                                           TimeUnit.MINUTES,
+                                           config.getShutdownTimeout().getPeriod(),
+                                           config.getShutdownTimeout().getUnit(),
+                                           new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()),
+                                           busThreadFactory,
+                                           new BlockingRejectionExecutionHandler(),
+                                           clock,
+                                           busCallableCallback,
+                                           this);
 
     }
 
@@ -182,14 +192,36 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     @Override
-    public void stopQueue() {
-        if (isStarted.compareAndSet(true, false)) {
-            isInitialized.set(false);
-            reaper.stop();
-            super.stopQueue();
-            dispatcher.stop();
-            dao.close();
+    public boolean stopQueue() {
+        if (!isStarted.compareAndSet(true, false)) {
+            return true;
         }
+
+        log.info("Shutting down bus");
+
+        isInitialized.set(false);
+        boolean terminated = true;
+
+        // Stop the reaper first
+        if (!reaper.stop()) {
+            terminated = false;
+        }
+        // Then, the lifecycle dispatcher threads (no new work accepted)
+        if (!super.stopLifecycleDispatcher()) {
+            terminated = false;
+        }
+        // Then, stop the working threads (finish on-going work)
+        if (!dispatcher.stopDispatcher()) {
+            terminated = false;
+        }
+        // Finally, stop the completion threads (cleanup recently finished work)
+        if (!super.stopLifecycleCompletion()) {
+            terminated = false;
+        }
+
+        dao.close();
+
+        return terminated;
     }
 
     @Override

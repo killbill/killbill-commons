@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -119,8 +119,18 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         this.reaper = new NotificationReaper(this.dao, config, clock);
 
         this.notificationCallableCallback = new NotificationCallableCallback(this);
-        this.dispatcher = new Dispatcher<>(1, config, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()), notificationQThreadFactory, new BlockingRejectionExecutionHandler(),
-                                           clock, notificationCallableCallback, this);
+        this.dispatcher = new Dispatcher<>(1,
+                                           config,
+                                           10,
+                                           TimeUnit.MINUTES,
+                                           config.getShutdownTimeout().getPeriod(),
+                                           config.getShutdownTimeout().getUnit(),
+                                           new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()),
+                                           notificationQThreadFactory,
+                                           new BlockingRejectionExecutionHandler(),
+                                           clock,
+                                           notificationCallableCallback,
+                                           this);
     }
 
     @Override
@@ -162,20 +172,42 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
     }
 
     @Override
-    public void stopQueue() {
+    public boolean stopQueue() {
         synchronized (queues) {
+            if (activeQueues == 0) {
+                return true;
+            }
+
             activeQueues--;
             //
             // The last DefaultNotificationQueue#stopQueue will call this method and stop the reaper and lifecycle dispatch thread pool
             //
             if (activeQueues == 0) {
                 isInitialized.set(false);
-                reaper.stop();
-                super.stopQueue();
-                dispatcher.stop();
+                boolean terminated = true;
+
+                // Stop the reaper first
+                if (!reaper.stop()) {
+                    terminated = false;
+                }
+                // Then, the lifecycle dispatcher threads (no new work accepted)
+                if (!super.stopLifecycleDispatcher()) {
+                    terminated = false;
+                }
+                // Then, stop the working threads (finish on-going work)
+                if (!dispatcher.stopDispatcher()) {
+                    terminated = false;
+                }
+                // Finally, stop the completion threads (cleanup recently finished work)
+                if (!super.stopLifecycleCompletion()) {
+                    terminated = false;
+                }
+
                 dao.close();
                 isStarted = false;
+                return terminated;
             }
+            return false;
         }
     }
 
