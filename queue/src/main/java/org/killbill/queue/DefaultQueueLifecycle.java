@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -52,7 +52,6 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     // Max size of the batch we allow
     private static final int MAX_COMPLETED_ENTRIES = 15;
 
-
     protected final String svcQName;
     protected final ObjectMapper objectMapper;
     protected final PersistentQueueConfig config;
@@ -67,17 +66,26 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     // Nb of entries completed at each loop
     private final Histogram completeEntries;
     private final boolean isStickyEvent;
-    private volatile boolean isProcessingEvents;
+    private volatile boolean isDispatchingEvents;
+    private volatile boolean isCompletingEvents;
     // Deferred in start sequence to allow for restart, which is not possible after the shutdown (mostly for test purpose)
-    private ExecutorService executor;
+    private ExecutorService lifecycleDispatcherExecutor;
+    private ExecutorService lifecycleCompletionExecutor;
 
-    public DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final MetricRegistry metricRegistry) {
+    public DefaultQueueLifecycle(final String svcQName,
+                                 final PersistentQueueConfig config,
+                                 final MetricRegistry metricRegistry) {
         this(svcQName, config, metricRegistry, QueueObjectMapper.get());
     }
-    private DefaultQueueLifecycle(final String svcQName, final PersistentQueueConfig config, final MetricRegistry metricRegistry, final ObjectMapper objectMapper) {
+
+    private DefaultQueueLifecycle(final String svcQName,
+                                  final PersistentQueueConfig config,
+                                  final MetricRegistry metricRegistry,
+                                  final ObjectMapper objectMapper) {
         this.svcQName = svcQName;
         this.config = config;
-        this.isProcessingEvents = false;
+        this.isDispatchingEvents = false;
+        this.isCompletingEvents = false;
         this.objectMapper = objectMapper;
         this.completedOrFailedEvents = new LinkedBlockingQueue<>();
         this.retriedEvents = new LinkedBlockingQueue<>();
@@ -99,38 +107,55 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     @Override
     public boolean startQueue() {
-
-        this.executor = Executors.newFixedThreadPool(config.geNbLifecycleDispatchThreads() + config.geNbLifecycleCompleteThreads(),
-                                                     config.getTableName() + "-lifecycle-th");
+        this.lifecycleDispatcherExecutor = Executors.newFixedThreadPool(config.geNbLifecycleDispatchThreads(),
+                                                                        config.getTableName() + "-lifecycle-dispatcher-th");
+        this.lifecycleCompletionExecutor = Executors.newFixedThreadPool(config.geNbLifecycleCompleteThreads(),
+                                                                        config.getTableName() + "-lifecycle-completion-th");
 
         log.info("{}: Starting...", svcQName);
 
-        isProcessingEvents = true;
-
-        for (int i = 0; i < config.geNbLifecycleDispatchThreads(); i++) {
-            executor.execute(new DispatcherRunnable());
-        }
-
+        // Start the completion threads before the dispatcher ones
+        isCompletingEvents = true;
         for (int i = 0; i < config.geNbLifecycleCompleteThreads(); i++) {
-            executor.execute(new CompletionRunnable());
+            lifecycleCompletionExecutor.execute(new CompletionRunnable());
         }
+
+        isDispatchingEvents = true;
+        for (int i = 0; i < config.geNbLifecycleDispatchThreads(); i++) {
+            lifecycleDispatcherExecutor.execute(new DispatcherRunnable());
+        }
+
         return true;
     }
 
-    @Override
-    public void stopQueue() {
-        this.isProcessingEvents = false;
+    // Stop the lifecycle dispatcher threads, which fetch available entries and move them into the dispatch queue
+    protected boolean stopLifecycleDispatcher() {
+        isDispatchingEvents = false;
 
-        executor.shutdown();
+        lifecycleDispatcherExecutor.shutdown();
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            return lifecycleDispatcherExecutor.awaitTermination(config.getShutdownTimeout().getPeriod(), config.getShutdownTimeout().getUnit());
         } catch (final InterruptedException e) {
-            log.info("{}: Stop sequence has been interrupted", svcQName);
+            log.info("{}: Lifecycle dispatcher stop sequence has been interrupted", svcQName);
+            return false;
+        }
+    }
+
+    // Stop the lifecycle completion threads, which move processed and failed entries into the history tables
+    protected boolean stopLifecycleCompletion() {
+        isCompletingEvents = false;
+
+        lifecycleCompletionExecutor.shutdown();
+        try {
+            return lifecycleCompletionExecutor.awaitTermination(config.getShutdownTimeout().getPeriod(), config.getShutdownTimeout().getUnit());
+        } catch (final InterruptedException e) {
+            log.info("{}: Lifecycle completion stop sequence has been interrupted", svcQName);
+            return false;
         } finally {
-            int remainingCompleted = completedOrFailedEvents.size();
-            int remainingRetried = retriedEvents.size();
+            final int remainingCompleted = completedOrFailedEvents.size();
+            final int remainingRetried = retriedEvents.size();
             if (remainingCompleted > 0 || remainingRetried > 0) {
-                log.warn("{}: Stopped queue with {} event/notifications non completed ", svcQName, (remainingCompleted + remainingRetried));
+                log.warn("{}: Stopped queue with {} event/notifications non completed", svcQName, (remainingCompleted + remainingRetried));
             }
         }
     }
@@ -176,16 +201,15 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
         @Override
         public void run() {
-
             try {
-                log.info("{}: Thread {}-completion [{}] starting ",
-                                       svcQName,
-                                       Thread.currentThread().getName(),
-                                       Thread.currentThread().getId());
+                log.info("{}: Completion thread {} [{}] starting ",
+                         svcQName,
+                         Thread.currentThread().getName(),
+                         Thread.currentThread().getId());
 
                 while (true) {
 
-                    if (!isProcessingEvents) {
+                    if (!isCompletingEvents) {
                         break;
                     }
 
@@ -219,11 +243,21 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                     });
                 }
             } catch (final InterruptedException e) {
-                log.info("{}: Thread {} got interrupted, exiting... ", svcQName, Thread.currentThread().getName());
+                log.info("{}: Completion thread {} [{}] got interrupted, exiting... ",
+                         svcQName,
+                         Thread.currentThread().getName(),
+                         Thread.currentThread().getId());
             } catch (final Error e) {
-                log.error("{}: Thread {} got an exception, exiting...", svcQName, Thread.currentThread().getName(), e);
+                log.error("{}: Completion thread {} [{}] got an exception, exiting...",
+                          svcQName,
+                          Thread.currentThread().getName(),
+                          Thread.currentThread().getId(),
+                          e);
             } finally {
-                log.info("{}: Thread {} has exited", svcQName, Thread.currentThread().getName());
+                log.info("{}: Completion thread {} [{}] has exited",
+                         svcQName,
+                         Thread.currentThread().getName(),
+                         Thread.currentThread().getId());
             }
         }
 
@@ -242,16 +276,15 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
         @Override
         public void run() {
-
             try {
-                log.info("{}: Thread {}-dispatcher [{}] starting ",
-                                       svcQName,
-                                       Thread.currentThread().getName(),
-                                       Thread.currentThread().getId());
+                log.info("{}: Dispatching thread {} [{}] starting ",
+                         svcQName,
+                         Thread.currentThread().getName(),
+                         Thread.currentThread().getId());
 
                 while (true) {
 
-                    if (!isProcessingEvents) {
+                    if (!isDispatchingEvents) {
                         break;
                     }
 
@@ -267,11 +300,21 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
                     });
                 }
             } catch (final InterruptedException e) {
-                log.info("{}: Thread {} got interrupted, exiting... ", svcQName, Thread.currentThread().getName());
+                log.info("{}: Dispatching thread {} [{}] got interrupted, exiting... ",
+                         svcQName,
+                         Thread.currentThread().getName(),
+                         Thread.currentThread().getId());
             } catch (final Error e) {
-                log.error("{}: Thread {} got an exception, exiting... ", svcQName, Thread.currentThread().getName(), e);
+                log.error("{}: Dispatching thread {} [{}] got an exception, exiting... ",
+                          svcQName,
+                          Thread.currentThread().getName(),
+                          Thread.currentThread().getId(),
+                          e);
             } finally {
-                log.info("{}: Thread {} has exited", svcQName, Thread.currentThread().getName());
+                log.info("{}: Dispatching thread {} [{}] has exited",
+                         svcQName,
+                         Thread.currentThread().getName(),
+                         Thread.currentThread().getId());
             }
         }
 

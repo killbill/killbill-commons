@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -85,24 +85,23 @@ public abstract class DefaultReaper implements Reaper {
     }
 
     @Override
-    public void stop() {
+    public boolean stop() {
         if (!isStarted.compareAndSet(true, false)) {
-            return;
+            return true;
         }
 
-        log.info("{}: Shutdown...", threadScheduledExecutorName);
+        log.info("{}: Shutting down reaper", threadScheduledExecutorName);
         if (!reapEntriesHandle.isCancelled() || !reapEntriesHandle.isDone()) {
             reapEntriesHandle.cancel(true);
         }
 
-        if (!scheduler.isShutdown()) {
-            scheduler.shutdown();
-            try {
-                scheduler.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (final InterruptedException e) {
-                log.info("{} stop sequence has been interrupted",threadScheduledExecutorName);
-                Thread.currentThread().interrupt();
-            }
+        scheduler.shutdown();
+        try {
+            return scheduler.awaitTermination(config.getShutdownTimeout().getPeriod(), config.getShutdownTimeout().getUnit());
+        } catch (final InterruptedException e) {
+            log.info("{} stop sequence has been interrupted", threadScheduledExecutorName);
+            Thread.currentThread().interrupt();
+            return false;
         }
     }
 

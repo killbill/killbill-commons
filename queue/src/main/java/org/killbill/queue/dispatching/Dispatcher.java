@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2021 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -51,6 +51,8 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
     private final int maximumPoolSize;
     private final long keepAliveTime;
     private final TimeUnit keepAliveTimeUnit;
+    private final long shutdownTimeout;
+    private final TimeUnit shutdownTimeUnit;
     private final BlockingQueue<Runnable> workQueue;
     private final ThreadFactory threadFactory;
     private final RejectedExecutionHandler rejectionHandler;
@@ -67,6 +69,8 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
                       final PersistentQueueConfig config,
                       final long keepAliveTime,
                       final TimeUnit keepAliveTimeUnit,
+                      final long shutdownTimeout,
+                      final TimeUnit shutdownTimeUnit,
                       final BlockingQueue<Runnable> workQueue,
                       final ThreadFactory threadFactory,
                       final RejectedExecutionHandler rejectionHandler,
@@ -77,10 +81,11 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
         this.maximumPoolSize = config.geMaxDispatchThreads();
         this.keepAliveTime = keepAliveTime;
         this.keepAliveTimeUnit = keepAliveTimeUnit;
+        this.shutdownTimeout = shutdownTimeout;
+        this.shutdownTimeUnit = shutdownTimeUnit;
         this.workQueue = workQueue;
         this.threadFactory = threadFactory;
         this.rejectionHandler = rejectionHandler;
-
         this.clock = clock;
         this.maxFailureRetries = config.getMaxFailureRetries();
         this.handlerCallback = handlerCallback;
@@ -91,12 +96,14 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
         this.handlerExecutor = new DynamicThreadPoolExecutorWithLoggingOnExceptions(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, workQueue, threadFactory, rejectionHandler);
     }
 
-    public void stop() {
+    // Stop the dispatcher threads, which are doing the work
+    public boolean stopDispatcher() {
         handlerExecutor.shutdown();
         try {
-            handlerExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            return handlerExecutor.awaitTermination(shutdownTimeout, shutdownTimeUnit);
         } catch (final InterruptedException e) {
             log.info("Stop sequence, handlerExecutor has been interrupted");
+            return false;
         }
     }
 
