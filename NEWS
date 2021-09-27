@@ -1,3 +1,6 @@
+0.24.16
+    queue: make timeout configurable to wait for executors threads to complete
+
 0.24.15
     Add support for JDK 11
     Update to killbill-oss-parent 0.144.53
