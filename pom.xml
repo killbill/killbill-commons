@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.144.53</version>
+        <version>0.144.59</version>
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
@@ -41,6 +41,7 @@
     <modules>
         <module>clock</module>
         <module>concurrent</module>
+        <module>config-magic</module>
         <module>embeddeddb</module>
         <module>jdbi</module>
         <module>locker</module>
@@ -85,6 +86,11 @@
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-concurrent</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-config-magic</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -6,8 +6,9 @@ Kill Bill reusable Java components:
 * **automaton**: framework to build state machines
 * **clock**: clock library
 * **concurrent**: extensions to java.util.concurrent.Executors
+* **config-magic**: fork of [config-magic](https://github.com/brianm/config-magic)
 * **embeddeddb**: library to embed databases
-* **jdbi**: extensions to [jDBI](https://github.com/jdbi/jdbi)
+* **jdbi**: fork of [jDBI](https://github.com/jdbi/jdbi)
 * **locker**: locking library
 * **metrics**: annotation-based metrics
 * **queue**: provides persistent bus events and notifications
@@ -45,6 +46,11 @@ Add the relevant submodule(s) to a project:
 <dependency>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-concurrent</artifactId>
+    <version>... release version ...</version>
+</dependency>
+<dependency>
+    <groupId>org.kill-bill.commons</groupId>
+    <artifactId>killbill-config-magic</artifactId>
     <version>... release version ...</version>
 </dependency>
 <dependency>
