@@ -1,3 +1,6 @@
+0.24.17
+    Fork config-magic
+
 0.24.16
     queue: make timeout configurable to wait for executors threads to complete
 
