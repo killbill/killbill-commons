@@ -29,6 +29,10 @@
     <name>Kill Bill xml utils for loading jaxb xml object tree</name>
     <dependencies>
         <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>

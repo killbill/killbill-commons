@@ -27,6 +27,9 @@
     </parent>
     <artifactId>killbill-queue</artifactId>
     <name>Kill Bill Persistent Queues (bus/notificationQ)</name>
+    <properties>
+        <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

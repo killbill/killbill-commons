@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.144.59</version>
+        <version>0.144.66</version>
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
@@ -161,6 +161,11 @@
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-xmlloader</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <!-- For mariadb-java-client -->
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.core</artifactId>
             </dependency>
         </dependencies>
     </dependencyManagement>

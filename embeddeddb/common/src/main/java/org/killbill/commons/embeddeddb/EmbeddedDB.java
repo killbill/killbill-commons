@@ -33,9 +33,12 @@ import javax.sql.DataSource;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public abstract class EmbeddedDB {
 
     protected static final Logger logger = LoggerFactory.getLogger(EmbeddedDB.class);

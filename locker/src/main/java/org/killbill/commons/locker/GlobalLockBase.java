@@ -28,6 +28,8 @@ import org.killbill.commons.profiling.ProfilingFeature.ProfilingFeatureType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class GlobalLockBase implements GlobalLock {
 
 
@@ -40,7 +42,7 @@ public class GlobalLockBase implements GlobalLock {
     private final ResetReentrantLockCallback resetCallback;
     private final Profiling<Void, RuntimeException> prof;
 
-
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public GlobalLockBase(final Connection connection, final String lockName, final GlobalLockDao lockDao, final ResetReentrantLockCallback resetCallback) {
         this.lockDao = lockDao;
         this.connection = connection;

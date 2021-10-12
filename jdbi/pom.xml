@@ -28,6 +28,8 @@
     <artifactId>killbill-jdbi</artifactId>
     <name>Kill Bill utilities for jdbi</name>
     <properties>
+        <!-- Re-enable once https://issues.apache.org/jira/browse/MENFORCER-393 is fixed -->
+        <check.fail-enforcer>false</check.fail-enforcer>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
     </properties>
     <dependencies>

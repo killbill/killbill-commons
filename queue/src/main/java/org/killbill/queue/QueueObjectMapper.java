@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class QueueObjectMapper {
 
@@ -34,6 +35,7 @@ public class QueueObjectMapper {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
+    @SuppressFBWarnings("MS_EXPOSE_REP")
     public static ObjectMapper get() {
         return objectMapper;
     }
