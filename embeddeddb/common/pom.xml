@@ -29,6 +29,10 @@
     <name>Kill Bill library of embedded dbs: common</name>
     <dependencies>
         <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <exclusions>

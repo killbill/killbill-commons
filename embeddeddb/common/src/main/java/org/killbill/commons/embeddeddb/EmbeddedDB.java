@@ -33,6 +33,8 @@ import javax.sql.DataSource;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,6 +113,7 @@ public abstract class EmbeddedDB {
         return jdbcConnectionString;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public List<String> getAllTables() {
         return allTables;
     }

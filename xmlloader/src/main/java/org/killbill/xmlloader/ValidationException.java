@@ -17,12 +17,15 @@
  * under the License.
  */
 
-
 package org.killbill.xmlloader;
 
 import java.io.PrintStream;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class ValidationException extends Exception {
+
     private final ValidationErrors errors;
 
     ValidationException(final ValidationErrors errors) {
@@ -38,7 +41,5 @@ public class ValidationException extends Exception {
         arg0.print(errors.toString());
         super.printStackTrace(arg0);
     }
-
-
 }
 

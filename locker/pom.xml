@@ -29,6 +29,10 @@
     <name>Kill Bill distributed locking library</name>
     <dependencies>
         <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>testing-mysql-server</artifactId>
             <!-- Technically, test-runtime -->
