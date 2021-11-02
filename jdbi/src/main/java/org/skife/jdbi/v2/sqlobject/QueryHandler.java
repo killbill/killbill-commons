@@ -19,10 +19,10 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import com.fasterxml.classmate.members.ResolvedMethod;
-import net.sf.cglib.proxy.MethodProxy;
 import org.skife.jdbi.v2.ConcreteStatementContext;
 import org.skife.jdbi.v2.Query;
+
+import com.fasterxml.classmate.members.ResolvedMethod;
 
 class QueryHandler extends CustomizingStatementHandler
 {
@@ -39,7 +39,7 @@ class QueryHandler extends CustomizingStatementHandler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args)
     {
         Query q = h.getHandle().createQuery(sql);
         populateSqlObjectData((ConcreteStatementContext) q.getContext());

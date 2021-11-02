@@ -19,8 +19,6 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
-
 class CreateSqlObjectHandler implements Handler
 {
     private final Class<?> sqlObjectTypeToCreate;
@@ -31,7 +29,7 @@ class CreateSqlObjectHandler implements Handler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args)
     {
         return SqlObject.buildSqlObject(sqlObjectTypeToCreate, h);
     }

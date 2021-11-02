@@ -19,12 +19,10 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
-
 class RollbackCheckpointHandler implements Handler
 {
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args)
     {
         h.getHandle().rollback(String.valueOf(args[0]));
         return null;

@@ -19,9 +19,17 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
-
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.concurrent.Callable;
+
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.UsingLookup;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.implementation.bind.annotation.SuperCall;
+
+import static net.bytebuddy.matcher.ElementMatchers.any;
 
 class PassThroughHandler implements Handler
 {
@@ -33,11 +41,31 @@ class PassThroughHandler implements Handler
         this.method = method;
     }
 
+    @RuntimeType
+    public static Object intercept(@SuperCall Callable<?> zuper) throws Exception
+    {
+        return zuper.call();
+    }
+
+    static Object invokeSuper(final Object target) throws ReflectiveOperationException
+    {
+        return new ByteBuddy()
+                .subclass(target.getClass())
+                .method(any())
+                .intercept(MethodDelegation.to(SqlObject.class))
+                .make()
+                .load(target.getClass().getClassLoader(),
+                      UsingLookup.of(MethodHandles.lookup().in(target.getClass())))
+                .getLoaded()
+                .getDeclaredConstructor()
+                .newInstance();
+    }
+
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args)
     {
         try {
-            return mp.invokeSuper(target, args);
+            return invokeSuper(target);
         }
         catch (AbstractMethodError e) {
             throw new AbstractMethodError("Method " + method.getDeclaringClass().getName() + "#" + method.getName() +

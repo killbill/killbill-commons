@@ -19,13 +19,13 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import com.fasterxml.classmate.members.ResolvedMethod;
-import net.sf.cglib.proxy.MethodProxy;
 import org.skife.jdbi.v2.ConcreteStatementContext;
 import org.skife.jdbi.v2.GeneratedKeys;
 import org.skife.jdbi.v2.Update;
 import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
+
+import com.fasterxml.classmate.members.ResolvedMethod;
 
 class UpdateHandler extends CustomizingStatementHandler
 {
@@ -81,7 +81,7 @@ class UpdateHandler extends CustomizingStatementHandler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args)
     {
         Update q = h.getHandle().createStatement(sql);
         populateSqlObjectData((ConcreteStatementContext)q.getContext());
