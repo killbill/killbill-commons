@@ -19,8 +19,6 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +33,7 @@ class ToStringHandler implements Handler
     }
 
     @Override
-    public Object invoke(final HandleDing h, final Object target, final Object[] args, MethodProxy mp)
+    public Object invoke(final HandleDing h, final Object target, final Object[] args)
     {
         return className + '@' + Integer.toHexString(target.hashCode());
     }

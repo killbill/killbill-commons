@@ -19,21 +19,15 @@
  */
 package org.skife.jdbi.v2;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.StatementException;
 import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
-
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import net.sf.cglib.transform.AbstractClassLoader;
 import org.skife.jdbi.v2.sqlobject.stringtemplate.TestingStatementContext;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -107,7 +101,9 @@ public class TestClasspathStatementLocator extends DBITestCase
         }
     }
 
-    @Test
+   /*
+   This test is temporarily disabled.
+   @Test
     public void testCachesResultAfterFirstLookup() throws Exception
     {
         ClassLoader ctx_loader = Thread.currentThread().getContextClassLoader();
@@ -133,7 +129,7 @@ public class TestClasspathStatementLocator extends DBITestCase
 
         Thread.currentThread().setContextClassLoader(ctx_loader);
 
-    }
+    }*/
 
     @Test
     public void testCachesOriginalQueryWhenNotFound() throws Exception
