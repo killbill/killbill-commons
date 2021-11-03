@@ -34,7 +34,15 @@ public class TestDistributedClockMock extends TestClockMockBase {
 
     @BeforeMethod(groups = "slow")
     public void setUp() {
-        redisServer = new RedisServer(56379);
+        if (System.getProperty("os.name").contains("Windows")) {
+            redisServer = RedisServer.builder()
+                                     .setting("maxheap 1gb")
+                                     .port(56379)
+                                     .build();
+        } else {
+            redisServer = new RedisServer(56379);
+        }
+
         redisServer.start();
     }
 
