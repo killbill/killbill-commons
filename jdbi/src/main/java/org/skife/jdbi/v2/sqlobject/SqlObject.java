@@ -35,6 +35,7 @@ import com.fasterxml.classmate.ResolvedTypeWithMembers;
 import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.TypeCache;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.UsingLookup;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
@@ -63,7 +64,8 @@ class SqlObject
     {
         final SqlObject so = new SqlObject(buildHandlersFor(sqlObjectType), handle);
 
-        Class<? extends T> loadedClass = new ByteBuddy()
+        TypeCache<Class<?>> typeCache = new TypeCache<>(TypeCache.Sort.SOFT);
+        Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
                 .method(ElementMatchers.any())
                 .intercept(InvocationHandlerAdapter.of(new InvocationHandler() {
@@ -74,7 +76,7 @@ class SqlObject
                 }))
                 .make()
                 .load(sqlObjectType.getClassLoader(), Default.INJECTION)
-                .getLoaded();
+                .getLoaded());
 
         try {
             return sqlObjectType.cast(loadedClass.getConstructor().newInstance());
