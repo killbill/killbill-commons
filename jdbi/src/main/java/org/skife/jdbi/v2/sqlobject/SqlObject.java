@@ -19,12 +19,10 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,11 +35,7 @@ import com.fasterxml.classmate.members.ResolvedMethod;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.TypeCache;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.UsingLookup;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import static net.bytebuddy.matcher.ElementMatchers.any;
@@ -153,11 +147,6 @@ class SqlObject
         this.ding = ding;
     }
 
-    @RuntimeType
-    public static Object intercept(@SuperCall Callable<?> zuper) throws Exception {
-        return zuper.call();
-    }
-
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
     {
         Handler handler = handlers.get(method);
@@ -167,10 +156,9 @@ class SqlObject
             return new ByteBuddy()
                     .subclass(proxy.getClass())
                     .method(any())
-                    .intercept(MethodDelegation.to(SqlObject.class))
+                    .intercept(InvocationHandlerAdapter.of((objProxy, method1, args1) -> method1.invoke(objProxy, args1)))
                     .make()
-                    .load(proxy.getClass().getClassLoader(),
-                          UsingLookup.of(MethodHandles.lookup().in(proxy.getClass())))
+                    .load(proxy.getClass().getClassLoader(), Default.INJECTION)
                     .getLoaded()
                     .getDeclaredConstructor()
                     .newInstance();
