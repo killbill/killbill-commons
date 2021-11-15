@@ -19,7 +19,6 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 
@@ -29,7 +28,7 @@ import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
 
 import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.UsingLookup;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -58,8 +57,7 @@ class PassThroughTransactionHandler implements Handler
                 .method(any())
                 .intercept(MethodDelegation.to(SqlObject.class))
                 .make()
-                .load(target.getClass().getClassLoader(),
-                      UsingLookup.of(MethodHandles.lookup().in(target.getClass())))
+                .load(target.getClass().getClassLoader(), Default.INJECTION)
                 .getLoaded()
                 .getDeclaredConstructor()
                 .newInstance();

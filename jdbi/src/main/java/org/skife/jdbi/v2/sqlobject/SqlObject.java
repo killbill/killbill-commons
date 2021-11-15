@@ -36,6 +36,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.TypeCache;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import static net.bytebuddy.matcher.ElementMatchers.any;
@@ -50,7 +51,6 @@ class SqlObject
         mixinHandlers.putAll(TransactionalHelper.handlers());
         mixinHandlers.putAll(GetHandleHelper.handlers());
         mixinHandlers.putAll(TransmogrifierHelper.handlers());
-        new ByteBuddy();
     }
 
     @SuppressWarnings("unchecked")
@@ -156,7 +156,7 @@ class SqlObject
             return new ByteBuddy()
                     .subclass(proxy.getClass())
                     .method(any())
-                    .intercept(InvocationHandlerAdapter.of((objProxy, method1, args1) -> method1.invoke(objProxy, args1)))
+                    .intercept(MethodDelegation.to(SampleInterceptor.class))
                     .make()
                     .load(proxy.getClass().getClassLoader(), Default.INJECTION)
                     .getLoaded()

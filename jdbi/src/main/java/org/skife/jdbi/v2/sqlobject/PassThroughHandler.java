@@ -19,15 +19,11 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
-import java.util.concurrent.Callable;
 
 import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.UsingLookup;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.SuperCall;
 
 import static net.bytebuddy.matcher.ElementMatchers.any;
 
@@ -41,21 +37,14 @@ class PassThroughHandler implements Handler
         this.method = method;
     }
 
-    @RuntimeType
-    public static Object intercept(@SuperCall Callable<?> zuper) throws Exception
-    {
-        return zuper.call();
-    }
-
     static Object invokeSuper(final Object target) throws ReflectiveOperationException
     {
         return new ByteBuddy()
                 .subclass(target.getClass())
                 .method(any())
-                .intercept(MethodDelegation.to(SqlObject.class))
+                .intercept(MethodDelegation.to(SampleInterceptor.class))
                 .make()
-                .load(target.getClass().getClassLoader(),
-                      UsingLookup.of(MethodHandles.lookup().in(target.getClass())))
+                .load(target.getClass().getClassLoader(), Default.INJECTION)
                 .getLoaded()
                 .getDeclaredConstructor()
                 .newInstance();
