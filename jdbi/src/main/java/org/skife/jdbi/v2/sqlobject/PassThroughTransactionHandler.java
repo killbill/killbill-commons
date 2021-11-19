@@ -20,20 +20,11 @@
 package org.skife.jdbi.v2.sqlobject;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.Callable;
 
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
-
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.SuperCall;
-
-import static net.bytebuddy.matcher.ElementMatchers.any;
 
 class PassThroughTransactionHandler implements Handler
 {
@@ -44,27 +35,8 @@ class PassThroughTransactionHandler implements Handler
         this.isolation = tx.value();
     }
 
-    @RuntimeType
-    public static Object intercept(@SuperCall Callable<?> zuper) throws Exception
-    {
-        return zuper.call();
-    }
-
-    static Object invokeSuper(final Object target) throws ReflectiveOperationException
-    {
-        return new ByteBuddy()
-                .subclass(target.getClass())
-                .method(any())
-                .intercept(MethodDelegation.to(SqlObject.class))
-                .make()
-                .load(target.getClass().getClassLoader(), Default.INJECTION)
-                .getLoaded()
-                .getDeclaredConstructor()
-                .newInstance();
-    }
-
     @Override
-    public Object invoke(HandleDing ding, final Object target, final Object[] args )
+    public Object invoke(HandleDing ding, final Object target, final Object[] args)
     {
         ding.retain("pass-through-transaction");
         try {
@@ -76,7 +48,8 @@ class PassThroughTransactionHandler implements Handler
                     public Object inTransaction(Handle conn, TransactionStatus status) throws Exception
                     {
                         try {
-                            return invokeSuper(target);
+                            // Signal the SqlObjectInterceptor.class to invoke the super method.
+                            return null;
                         }
                         catch (Throwable throwable) {
                             if (throwable instanceof Exception) {
@@ -96,7 +69,8 @@ class PassThroughTransactionHandler implements Handler
                     public Object inTransaction(Handle conn, TransactionStatus status) throws Exception
                     {
                         try {
-                            return invokeSuper(target);
+                            // Signal the SqlObjectInterceptor.class to invoke the super method.
+                            return null;
                         }
                         catch (Throwable throwable) {
                             if (throwable instanceof Exception) {

@@ -21,12 +21,6 @@ package org.skife.jdbi.v2.sqlobject;
 
 import java.lang.reflect.Method;
 
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
-import net.bytebuddy.implementation.MethodDelegation;
-
-import static net.bytebuddy.matcher.ElementMatchers.any;
-
 class PassThroughHandler implements Handler
 {
 
@@ -37,24 +31,12 @@ class PassThroughHandler implements Handler
         this.method = method;
     }
 
-    static Object invokeSuper(final Object target) throws ReflectiveOperationException
-    {
-        return new ByteBuddy()
-                .subclass(target.getClass())
-                .method(any())
-                .intercept(MethodDelegation.to(SampleInterceptor.class))
-                .make()
-                .load(target.getClass().getClassLoader(), Default.INJECTION)
-                .getLoaded()
-                .getDeclaredConstructor()
-                .newInstance();
-    }
-
     @Override
     public Object invoke(HandleDing h, Object target, Object[] args)
     {
         try {
-            return invokeSuper(target);
+            // Signal the SqlObjectInterceptor.class to invoke the super method.
+            return null;
         }
         catch (AbstractMethodError e) {
             throw new AbstractMethodError("Method " + method.getDeclaringClass().getName() + "#" + method.getName() +

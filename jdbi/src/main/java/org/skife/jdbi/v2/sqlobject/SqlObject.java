@@ -19,7 +19,6 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,11 +34,9 @@ import com.fasterxml.classmate.members.ResolvedMethod;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.TypeCache;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.matcher.ElementMatchers;
 
-import static net.bytebuddy.matcher.ElementMatchers.any;
+import static net.bytebuddy.matcher.ElementMatchers.isDeclaredBy;
 
 class SqlObject
 {
@@ -61,13 +58,8 @@ class SqlObject
         TypeCache<Class<?>> typeCache = new TypeCache<>(TypeCache.Sort.SOFT);
         Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
-                .method(ElementMatchers.any())
-                .intercept(InvocationHandlerAdapter.of(new InvocationHandler() {
-                    @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        return so.invoke(proxy, method, args);
-                    }
-                }))
+                .method(isDeclaredBy(sqlObjectType))
+                .intercept(MethodDelegation.to(new SqlObjectInterceptor(so)))
                 .make()
                 .load(sqlObjectType.getClassLoader(), Default.INJECTION)
                 .getLoaded());
@@ -153,15 +145,8 @@ class SqlObject
 
         // If there is no handler, pretend we are just an Object and don't open a connection (Issue #82)
         if (handler == null || handler instanceof PassThroughHandler) {
-            return new ByteBuddy()
-                    .subclass(proxy.getClass())
-                    .method(any())
-                    .intercept(MethodDelegation.to(SampleInterceptor.class))
-                    .make()
-                    .load(proxy.getClass().getClassLoader(), Default.INJECTION)
-                    .getLoaded()
-                    .getDeclaredConstructor()
-                    .newInstance();
+            // Signal the SqlObjectInterceptor.class to invoke the super method.
+            return null;
         }
 
         Throwable doNotMask = null;
