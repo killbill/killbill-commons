@@ -40,10 +40,6 @@ public class SqlObjectInterceptor {
                             @SuperMethod(nullIfImpossible = true) Method superMethod,
                             @AllArguments Object[] args) throws Throwable {
 
-        if (Objects.isNull(superMethod) && (args.length == 0)) {
-            throw new AbstractMethodError();
-        }
-
         Object handler = so.invoke(target, method, args);
 
         if (Objects.isNull(handler)) {
