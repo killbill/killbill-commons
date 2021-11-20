@@ -36,7 +36,7 @@ import net.bytebuddy.TypeCache;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.MethodDelegation;
 
-import static net.bytebuddy.matcher.ElementMatchers.isDeclaredBy;
+import static net.bytebuddy.matcher.ElementMatchers.any;
 
 class SqlObject
 {
@@ -58,7 +58,7 @@ class SqlObject
         TypeCache<Class<?>> typeCache = new TypeCache<>(TypeCache.Sort.SOFT);
         Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
-                .method(isDeclaredBy(sqlObjectType))
+                .method(any())
                 .intercept(MethodDelegation.to(new SqlObjectInterceptor(so)))
                 .make()
                 .load(sqlObjectType.getClassLoader(), Default.INJECTION)
