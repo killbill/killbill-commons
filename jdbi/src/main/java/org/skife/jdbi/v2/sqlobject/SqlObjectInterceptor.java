@@ -18,7 +18,6 @@
 package org.skife.jdbi.v2.sqlobject;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
@@ -42,10 +41,13 @@ public class SqlObjectInterceptor {
 
         Object handler = so.invoke(target, method, args);
 
-        if (Objects.isNull(handler)) {
-            assert superMethod != null;
+    /*    if (Objects.isNull(handler) && Objects.nonNull(superMethod)) {
             return superMethod.invoke(target, args);
         }
+
+        if (Objects.isNull(superMethod) && Objects.isNull(handler)) {
+            throw new AbstractMethodError();
+        }*/
 
         return handler;
     }
