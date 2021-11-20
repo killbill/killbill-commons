@@ -42,9 +42,11 @@ public class SqlObjectInterceptor {
 
         Object handler = so.invoke(target, method, args);
 
+/*
         if (Objects.isNull(handler)) {
             throw new AbstractMethodError();
         }
+*/
 
         return handler;
     }
