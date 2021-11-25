@@ -20,6 +20,7 @@
 package org.skife.jdbi.v2.sqlobject;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.Callable;
 
 class PassThroughHandler implements Handler
 {
@@ -32,11 +33,10 @@ class PassThroughHandler implements Handler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         try {
-            // Signal the SqlObjectInterceptor.class to invoke the super method.
-            return null;
+            return methodProxy.call();
         }
         catch (AbstractMethodError e) {
             throw new AbstractMethodError("Method " + method.getDeclaringClass().getName() + "#" + method.getName() +

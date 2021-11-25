@@ -19,6 +19,8 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 import org.skife.jdbi.v2.ConcreteStatementContext;
 import org.skife.jdbi.v2.GeneratedKeys;
 import org.skife.jdbi.v2.Update;
@@ -81,7 +83,7 @@ class UpdateHandler extends CustomizingStatementHandler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         Update q = h.getHandle().createStatement(sql);
         populateSqlObjectData((ConcreteStatementContext)q.getContext());

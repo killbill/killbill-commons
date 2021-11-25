@@ -22,11 +22,12 @@ package org.skife.jdbi.v2.sqlobject;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 class EqualsHandler implements Handler
 {
     @Override
-    public Object invoke(final HandleDing h, final Object target, final Object[] args)
+    public Object invoke(final HandleDing h, final Object target, final Object[] args, final Callable<?> methodProxy)
     {
         // basic reference equals for now.
         return target == args[0];

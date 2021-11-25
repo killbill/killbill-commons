@@ -19,6 +19,8 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionCallback;
@@ -27,7 +29,7 @@ import org.skife.jdbi.v2.TransactionStatus;
 class InTransactionHandler implements Handler
 {
     @Override
-    public Object invoke(HandleDing h, final Object target, Object[] args)
+    public Object invoke(HandleDing h, final Object target, Object[] args, Callable<?> methodProxy)
     {
         h.retain("transaction#implicit");
         try {

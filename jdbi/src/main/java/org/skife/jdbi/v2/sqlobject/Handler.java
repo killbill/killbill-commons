@@ -17,9 +17,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.skife.jdbi.v2.sqlobject;
 
-interface Handler
-{
-    Object invoke(HandleDing h, Object target, Object[] args);
+import java.util.concurrent.Callable;
+
+interface Handler {
+
+    Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy);
 }

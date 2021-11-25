@@ -19,6 +19,8 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.skife.jdbi.v2.tweak.HandleCallback;
@@ -26,7 +28,7 @@ import org.skife.jdbi.v2.tweak.HandleCallback;
 class WithHandleHandler implements Handler
 {
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         final Handle handle = h.getHandle();
         final HandleCallback<?> callback = (HandleCallback<?>) args[0];

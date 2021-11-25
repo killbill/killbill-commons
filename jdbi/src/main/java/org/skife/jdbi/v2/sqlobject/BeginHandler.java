@@ -19,10 +19,12 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 class BeginHandler implements Handler
 {
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         h.retain("transaction#explicit");
         h.getHandle().begin();

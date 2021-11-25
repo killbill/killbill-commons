@@ -19,10 +19,12 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 class GetHandleHandler implements Handler
 {
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         return h.getHandle();
     }

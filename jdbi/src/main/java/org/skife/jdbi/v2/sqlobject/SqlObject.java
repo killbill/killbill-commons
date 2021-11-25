@@ -22,6 +22,8 @@ package org.skife.jdbi.v2.sqlobject;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -139,14 +141,18 @@ class SqlObject
         this.ding = ding;
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+    public Object invoke(Object proxy, Method method, Object[] args, Callable<?> methodProxy) throws Throwable
     {
         Handler handler = handlers.get(method);
 
         // If there is no handler, pretend we are just an Object and don't open a connection (Issue #82)
         if (handler == null || handler instanceof PassThroughHandler) {
-            // Signal the SqlObjectInterceptor.class to invoke the super method.
-            return null;
+            if (Objects.isNull(methodProxy)) {
+                throw new AbstractMethodError("Method " + method.getDeclaringClass().getName() + "#" + method.getName() +
+                                              " doesn't make sense -- it probably needs a @Sql* annotation of some kind.");
+            }
+
+            return methodProxy.call();
         }
 
         Throwable doNotMask = null;
@@ -154,7 +160,7 @@ class SqlObject
         final String retainName = String.valueOf(RETAINER.getAndIncrement());
         try {
             ding.retain(retainName);
-            return handler.invoke(ding, proxy, args);
+            return handler.invoke(ding, proxy, args, methodProxy);
         }
         catch (Throwable e) {
             doNotMask = e;

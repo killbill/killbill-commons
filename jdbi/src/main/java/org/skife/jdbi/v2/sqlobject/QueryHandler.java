@@ -19,6 +19,8 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 import org.skife.jdbi.v2.ConcreteStatementContext;
 import org.skife.jdbi.v2.Query;
 
@@ -39,7 +41,7 @@ class QueryHandler extends CustomizingStatementHandler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         Query q = h.getHandle().createQuery(sql);
         populateSqlObjectData((ConcreteStatementContext) q.getContext());

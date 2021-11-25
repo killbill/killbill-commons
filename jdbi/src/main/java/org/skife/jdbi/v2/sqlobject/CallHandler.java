@@ -19,6 +19,8 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 import org.skife.jdbi.v2.Call;
 import org.skife.jdbi.v2.ConcreteStatementContext;
 import org.skife.jdbi.v2.Handle;
@@ -51,7 +53,7 @@ class CallHandler extends CustomizingStatementHandler
     }
 
     @Override
-    public Object invoke(HandleDing ding, Object target, Object[] args)
+    public Object invoke(HandleDing ding, Object target, Object[] args, Callable<?> methodProxy)
     {
         Handle h = ding.getHandle();
         Call call = h.createCall(sql);

@@ -19,10 +19,12 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 class CheckpointHandler implements Handler
 {
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         h.getHandle().checkpoint(String.valueOf(args[0]));
         return null;

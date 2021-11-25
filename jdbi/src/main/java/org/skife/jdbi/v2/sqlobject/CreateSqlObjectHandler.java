@@ -19,6 +19,8 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.util.concurrent.Callable;
+
 class CreateSqlObjectHandler implements Handler
 {
     private final Class<?> sqlObjectTypeToCreate;
@@ -29,7 +31,7 @@ class CreateSqlObjectHandler implements Handler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         return SqlObject.buildSqlObject(sqlObjectTypeToCreate, h);
     }

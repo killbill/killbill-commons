@@ -21,6 +21,11 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
+import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.TransactionCallback;
+import org.skife.jdbi.v2.TransactionIsolationLevel;
+import org.skife.jdbi.v2.TransactionStatus;
+
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -34,30 +39,29 @@ public class SqlObjectInterceptor {
 
     public SqlObjectInterceptor(final SqlObject so) {this.so = so;}
 
+    /**
+     * This method intercepts all abstract methods with any annotations.
+     */
     @RuntimeType
     public Object intercept(@This Object target,
                             @Origin Method method,
                             @SuperMethod(nullIfImpossible = true) Method superMethod,
                             @AllArguments Object[] args) throws Throwable {
 
-        Object handler = so.invoke(target, method, args);
-
-/*
-        if (Objects.isNull(handler)) {
-            throw new AbstractMethodError();
-        }
-*/
-
-        return handler;
+        return so.invoke(target, method, args, null);
     }
 
+    /**
+     * This method intercepts all non-abstract methods.
+     * It passes callable method proxy reference to downstream logic so that the actual super method can be invoked.
+     */
     @RuntimeType
     public Object intercept(@Origin Method method,
-                            @SuperCall Callable<?> proxy,
+                            @SuperCall Callable<?> methodProxy,
                             @SuperMethod(nullIfImpossible = true) Method superMethod,
                             @This Object target,
-                            @AllArguments Object[] args) throws Exception {
+                            @AllArguments Object[] args) throws Throwable {
 
-        return proxy.call();
+        return so.invoke(target, method, args, methodProxy);
     }
 }
