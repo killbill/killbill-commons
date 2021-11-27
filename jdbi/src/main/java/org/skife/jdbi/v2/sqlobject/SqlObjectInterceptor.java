@@ -18,13 +18,7 @@
 package org.skife.jdbi.v2.sqlobject;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.concurrent.Callable;
-
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.TransactionCallback;
-import org.skife.jdbi.v2.TransactionIsolationLevel;
-import org.skife.jdbi.v2.TransactionStatus;
 
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
@@ -48,6 +42,7 @@ public class SqlObjectInterceptor {
                             @SuperMethod(nullIfImpossible = true) Method superMethod,
                             @AllArguments Object[] args) throws Throwable {
 
+        // Method proxy is null as super method invocation is not needed for abstract methods.
         return so.invoke(target, method, args, null);
     }
 

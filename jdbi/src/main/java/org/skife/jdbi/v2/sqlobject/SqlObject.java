@@ -60,6 +60,7 @@ class SqlObject
         TypeCache<Class<?>> typeCache = new TypeCache<>(TypeCache.Sort.SOFT);
         Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
+                .implement(CloseInternalDoNotUseThisClass.class)
                 .method(any())
                 .intercept(MethodDelegation.to(new SqlObjectInterceptor(so)))
                 .make()

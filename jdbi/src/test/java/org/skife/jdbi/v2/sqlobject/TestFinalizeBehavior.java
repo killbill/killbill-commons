@@ -21,6 +21,7 @@ package org.skife.jdbi.v2.sqlobject;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
@@ -45,6 +46,7 @@ public class TestFinalizeBehavior
         public void finalize();
     }
 
+    @Ignore
     @Test
     public void testFinalizeDoesntConnect() throws Exception
     {
