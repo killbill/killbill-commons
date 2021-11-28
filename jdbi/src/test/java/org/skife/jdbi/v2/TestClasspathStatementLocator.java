@@ -19,7 +19,9 @@
  */
 package org.skife.jdbi.v2;
 
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,6 +30,8 @@ import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.sqlobject.stringtemplate.TestingStatementContext;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -101,20 +105,17 @@ public class TestClasspathStatementLocator extends DBITestCase
         }
     }
 
-   /*
-   This test is temporarily disabled.
-   @Test
-    public void testCachesResultAfterFirstLookup() throws Exception
-    {
+    @Test
+    public void testCachesResultAfterFirstLookup() throws Exception {
         ClassLoader ctx_loader = Thread.currentThread().getContextClassLoader();
         final AtomicInteger load_count = new AtomicInteger(0);
-        Thread.currentThread().setContextClassLoader(new AbstractClassLoader(ctx_loader, ctx_loader, null)
-        {
+
+        Thread.currentThread().setContextClassLoader(new ClassLoader() {
             @Override
-            public InputStream getResourceAsStream(String s)
-            {
+            public InputStream getResourceAsStream(final String name) {
+
                 // will be called twice, once for raw name, once for name + .sql
-                InputStream in = super.getResourceAsStream(s);
+                InputStream in = super.getResourceAsStream(name);
                 load_count.incrementAndGet();
                 return in;
             }
@@ -128,8 +129,7 @@ public class TestClasspathStatementLocator extends DBITestCase
         assertThat(load_count.get(), equalTo(2)); // has not increased since previous
 
         Thread.currentThread().setContextClassLoader(ctx_loader);
-
-    }*/
+    }
 
     @Test
     public void testCachesOriginalQueryWhenNotFound() throws Exception
