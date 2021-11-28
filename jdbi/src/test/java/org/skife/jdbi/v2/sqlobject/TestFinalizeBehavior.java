@@ -51,7 +51,7 @@ public class TestFinalizeBehavior
     public void testFinalizeDoesntConnect() throws Exception
     {
         final UselessDao dao = dbi.onDemand(UselessDao.class);
-        dao.finalize(); // Normally GC would do this, but just fake it
+        dao.finalize(); // Normally GC would do this, but just fake it.
     }
 
     @Before
