@@ -30,8 +30,8 @@ public class SqlObjectBuilder
 {
 
     /**
-     * Create a a sql object of the specified type bound to this handle. Any state changes to the handle, or the
-     * sql object, such as transaction status, closing it, etc, will apply to both the object and the handle.
+     * Creates a sql object of the specified type bound to this handle. Any state changes to the handle, or the
+     * sql object, such as transaction status, closing it, etc., will apply to both the object and the handle.
      *
      * @param handle the Handle instance to attach ths sql object to
      * @param sqlObjectType the type of sql object to create

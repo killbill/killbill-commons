@@ -17,11 +17,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
+import java.util.concurrent.Callable;
 
-interface Handler
-{
-    Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp);
+interface Handler {
+
+    Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy);
 }

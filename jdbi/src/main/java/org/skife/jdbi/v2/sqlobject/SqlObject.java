@@ -19,31 +19,32 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.fasterxml.classmate.MemberResolver;
 import com.fasterxml.classmate.ResolvedType;
 import com.fasterxml.classmate.ResolvedTypeWithMembers;
 import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.classmate.members.ResolvedMethod;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.Factory;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.TypeCache;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
+import net.bytebuddy.implementation.MethodDelegation;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+import static net.bytebuddy.matcher.ElementMatchers.any;
 
 class SqlObject
 {
     private static final TypeResolver                                  typeResolver  = new TypeResolver();
     private static final Map<Method, Handler>                          mixinHandlers = new HashMap<Method, Handler>();
     private static final ConcurrentMap<Class<?>, Map<Method, Handler>> handlersCache = new ConcurrentHashMap<Class<?>, Map<Method, Handler>>();
-    private static final ConcurrentMap<Class<?>, Factory>              factories     = new ConcurrentHashMap<Class<?>, Factory>();
 
     static {
         mixinHandlers.putAll(TransactionalHelper.handlers());
@@ -54,49 +55,23 @@ class SqlObject
     @SuppressWarnings("unchecked")
     static <T> T buildSqlObject(final Class<T> sqlObjectType, final HandleDing handle)
     {
-        Factory f;
-        if (factories.containsKey(sqlObjectType)) {
-            f = factories.get(sqlObjectType);
-        }
-        else {
-            Enhancer e = new Enhancer();
-            e.setClassLoader(sqlObjectType.getClassLoader());
-
-            List<Class> interfaces = new ArrayList<Class>();
-            interfaces.add(CloseInternalDoNotUseThisClass.class);
-            if (sqlObjectType.isInterface()) {
-                interfaces.add(sqlObjectType);
-            }
-            else {
-                e.setSuperclass(sqlObjectType);
-            }
-            e.setInterfaces(interfaces.toArray(new Class[interfaces.size()]));
-            final SqlObject so = new SqlObject(buildHandlersFor(sqlObjectType), handle);
-            e.setCallback(new MethodInterceptor()
-            {
-                @Override
-                public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable
-                {
-                    return so.invoke(o, method, objects, methodProxy);
-                }
-            });
-            T t = (T) e.create();
-            T actual = (T) factories.putIfAbsent(sqlObjectType, (Factory) t);
-            if (actual == null) {
-                return t;
-            }
-            f = (Factory) actual;
-        }
-
         final SqlObject so = new SqlObject(buildHandlersFor(sqlObjectType), handle);
-        return (T) f.newInstance(new MethodInterceptor()
-        {
-            @Override
-            public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable
-            {
-                return so.invoke(o, method, objects, methodProxy);
-            }
-        });
+
+        TypeCache<Class<?>> typeCache = new TypeCache<>(TypeCache.Sort.SOFT);
+        Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
+                .subclass(sqlObjectType)
+                .implement(CloseInternalDoNotUseThisClass.class)
+                .method(any())
+                .intercept(MethodDelegation.to(new SqlObjectInterceptor(so)))
+                .make()
+                .load(sqlObjectType.getClassLoader(), Default.INJECTION)
+                .getLoaded());
+
+        try {
+            return sqlObjectType.cast(loadedClass.getConstructor().newInstance());
+        } catch (final ReflectiveOperationException e) {
+            throw new AssertionError("Failed to instantiate proxy class for " + sqlObjectType.getName(), e);
+        }
     }
 
     private static Map<Method, Handler> buildHandlersFor(Class<?> sqlObjectType)
@@ -167,13 +142,18 @@ class SqlObject
         this.ding = ding;
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args, MethodProxy mp) throws Throwable
+    public Object invoke(Object proxy, Method method, Object[] args, Callable<?> methodProxy) throws Throwable
     {
-        final Handler handler = handlers.get(method);
+        Handler handler = handlers.get(method);
 
         // If there is no handler, pretend we are just an Object and don't open a connection (Issue #82)
         if (handler == null || handler instanceof PassThroughHandler) {
-            return mp.invokeSuper(proxy, args);
+            if (Objects.isNull(methodProxy)) {
+                throw new AbstractMethodError("Method " + method.getDeclaringClass().getName() + "#" + method.getName() +
+                                              " doesn't make sense -- it probably needs a @Sql* annotation of some kind.");
+            }
+
+            return methodProxy.call();
         }
 
         Throwable doNotMask = null;
@@ -181,7 +161,7 @@ class SqlObject
         final String retainName = String.valueOf(RETAINER.getAndIncrement());
         try {
             ding.retain(retainName);
-            return handler.invoke(ding, proxy, args, mp);
+            return handler.invoke(ding, proxy, args, methodProxy);
         }
         catch (Throwable e) {
             doNotMask = e;

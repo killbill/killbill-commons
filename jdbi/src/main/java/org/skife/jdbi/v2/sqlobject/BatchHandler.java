@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.skife.jdbi.v2.GeneratedKeys;
 import org.skife.jdbi.v2.Handle;
@@ -44,7 +45,6 @@ import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.fasterxml.classmate.members.ResolvedMethod;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import net.sf.cglib.proxy.MethodProxy;
 
 @SuppressFBWarnings("IT_NO_SUCH_ELEMENT")
 class BatchHandler extends CustomizingStatementHandler
@@ -146,7 +146,7 @@ class BatchHandler extends CustomizingStatementHandler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         boolean foundIterator = false;
         Handle handle = h.getHandle();

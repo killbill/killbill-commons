@@ -19,13 +19,14 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
+import java.lang.reflect.Method;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
-
-import java.lang.reflect.Method;
 
 class PassThroughTransactionHandler implements Handler
 {
@@ -37,11 +38,16 @@ class PassThroughTransactionHandler implements Handler
     }
 
     @Override
-    public Object invoke(HandleDing ding, final Object target, final Object[] args, final MethodProxy mp)
+    public Object invoke(HandleDing ding, final Object target, final Object[] args, Callable<?> methodProxy)
     {
         ding.retain("pass-through-transaction");
         try {
             Handle h = ding.getHandle();
+            if (Objects.isNull(methodProxy)) {
+                throw new AbstractMethodError("Method in " + target.getClass() + " could not be invoked " +
+                                              " -- it probably needs a @Sql* annotation of some kind.");
+            }
+
             if (isolation == TransactionIsolationLevel.INVALID_LEVEL) {
                 return h.inTransaction(new TransactionCallback<Object>()
                 {
@@ -49,7 +55,7 @@ class PassThroughTransactionHandler implements Handler
                     public Object inTransaction(Handle conn, TransactionStatus status) throws Exception
                     {
                         try {
-                            return mp.invokeSuper(target, args);
+                            return methodProxy.call();
                         }
                         catch (Throwable throwable) {
                             if (throwable instanceof Exception) {
@@ -69,7 +75,7 @@ class PassThroughTransactionHandler implements Handler
                     public Object inTransaction(Handle conn, TransactionStatus status) throws Exception
                     {
                         try {
-                            return mp.invokeSuper(target, args);
+                            return methodProxy.call();
                         }
                         catch (Throwable throwable) {
                             if (throwable instanceof Exception) {

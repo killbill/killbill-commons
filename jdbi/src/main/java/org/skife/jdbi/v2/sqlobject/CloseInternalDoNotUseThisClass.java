@@ -19,11 +19,10 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * This is public as we need it to be for some stuff to work. It is an internal api and NOT to be used
@@ -36,7 +35,7 @@ public interface CloseInternalDoNotUseThisClass
     static class CloseHandler implements Handler
     {
         @Override
-        public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+        public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
         {
             h.getHandle().close();
             return null;
