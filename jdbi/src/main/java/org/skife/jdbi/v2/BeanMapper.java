@@ -36,6 +36,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * A result set mapper which maps the fields in a statement into a JavaBean. This uses
  * the JDK's built in bean mapping facilities, so it does not support nested properties.
@@ -62,6 +64,7 @@ public class BeanMapper<T> implements ResultSetMapper<T>
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressFBWarnings(value = "DCN_NULLPOINTER_EXCEPTION", justification = "Historic, unclear where NPE could come from")
     public T map(int row, ResultSet rs, StatementContext ctx)
         throws SQLException
     {
