@@ -44,9 +44,8 @@ import static net.bytebuddy.matcher.ElementMatchers.any;
 class SqlObject
 {
     private static final TypeResolver typeResolver  = new TypeResolver();
-    private static final Map<Method, Handler> mixinHandlers = new HashMap<>();
+    private static final Map<Method, Handler>                          mixinHandlers = new HashMap<>();
     private static final ConcurrentMap<Class<?>, Map<Method, Handler>> handlersCache = new ConcurrentHashMap<>();
-    private static final TypeCache<Class<?>> typeCache = new WithInlineExpunction<>(TypeCache.Sort.SOFT);
 
     static {
         mixinHandlers.putAll(TransactionalHelper.handlers());
@@ -59,6 +58,7 @@ class SqlObject
     {
         final SqlObject so = new SqlObject(buildHandlersFor(sqlObjectType), handle);
 
+        TypeCache<Class<?>> typeCache = new WithInlineExpunction<>(TypeCache.Sort.SOFT);
         Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
                 .implement(CloseInternalDoNotUseThisClass.class)
