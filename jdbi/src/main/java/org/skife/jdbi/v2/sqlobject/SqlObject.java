@@ -35,6 +35,7 @@ import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.TypeCache;
+import net.bytebuddy.TypeCache.WithInlineExpunction;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.MethodDelegation;
 
@@ -42,9 +43,10 @@ import static net.bytebuddy.matcher.ElementMatchers.any;
 
 class SqlObject
 {
-    private static final TypeResolver                                  typeResolver  = new TypeResolver();
-    private static final Map<Method, Handler>                          mixinHandlers = new HashMap<Method, Handler>();
-    private static final ConcurrentMap<Class<?>, Map<Method, Handler>> handlersCache = new ConcurrentHashMap<Class<?>, Map<Method, Handler>>();
+    private static final TypeResolver typeResolver  = new TypeResolver();
+    private static final Map<Method, Handler> mixinHandlers = new HashMap<>();
+    private static final ConcurrentMap<Class<?>, Map<Method, Handler>> handlersCache = new ConcurrentHashMap<>();
+    private static final TypeCache<Class<?>> typeCache = new WithInlineExpunction<>(TypeCache.Sort.SOFT);
 
     static {
         mixinHandlers.putAll(TransactionalHelper.handlers());
@@ -57,7 +59,6 @@ class SqlObject
     {
         final SqlObject so = new SqlObject(buildHandlersFor(sqlObjectType), handle);
 
-        TypeCache<Class<?>> typeCache = new TypeCache<>(TypeCache.Sort.SOFT);
         Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
                 .implement(CloseInternalDoNotUseThisClass.class)
