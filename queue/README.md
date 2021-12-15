@@ -16,6 +16,7 @@ PostgreSQL and H2.
 
 ### Persistent Bus
 
+* Communicate asynchronously on a given node (STICKY) behavior
 * Communicate asynchronously across nodes without an external messaging system (e.g. ActiveMQ).
 
 ## Advantages
