@@ -21,7 +21,7 @@ PostgreSQL and H2.
 
 ## Advantages
 
-* **Performance:** assuming a no-op processing handler, the library can sustain on a single node a rate of 150 events/s
+* **Performance:** assuming a no-op processing handler, the library can sustain on a single node a rate of several 100s events/sec
 with an introduced latency tp99 of 1ms (time between the event is inserted in the queue and the time it is processed).
 * **Battle tested:** the library has successfully processed billions of entries over the years and it is expected to be
 highly resilient towards all kinds of failure scenarii (e.g. nodes going down).
