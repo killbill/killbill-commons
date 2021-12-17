@@ -19,6 +19,7 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,9 @@ import com.fasterxml.classmate.ResolvedTypeWithMembers;
 import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.TypeCache;
+import net.bytebuddy.TypeCache.WithInlineExpunction;
+import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.MethodDelegation;
 
@@ -44,6 +48,7 @@ class SqlObject
     private static final TypeResolver typeResolver  = new TypeResolver();
     private static final Map<Method, Handler> mixinHandlers = new HashMap<>();
     private static final ConcurrentMap<Class<?>, Map<Method, Handler>> handlersCache = new ConcurrentHashMap<>();
+    private static final TypeCache<Class<?>> typeCache = new WithInlineExpunction<>(TypeCache.Sort.SOFT);
 
     static {
         mixinHandlers.putAll(TransactionalHelper.handlers());
@@ -54,22 +59,34 @@ class SqlObject
     @SuppressWarnings("unchecked")
     static <T> T buildSqlObject(final Class<T> sqlObjectType, final HandleDing handle)
     {
-        final SqlObject so = new SqlObject(buildHandlersFor(sqlObjectType), handle);
-
-        final Class<? extends T> loadedClass = new ByteBuddy()
+        final T sqlObjectProxy;
+        final Class<?> loadedClass = typeCache.findOrInsert(sqlObjectType.getClassLoader(), sqlObjectType, () -> new ByteBuddy()
                 .subclass(sqlObjectType)
                 .implement(CloseInternalDoNotUseThisClass.class)
+                .defineField("delegateToSqlObjectInterceptor", SqlObjectInterceptor.class, Visibility.PUBLIC)
                 .method(any())
-                .intercept(MethodDelegation.to(new SqlObjectInterceptor(so)))
+                .intercept(MethodDelegation.toField("delegateToSqlObjectInterceptor"))
                 .make()
                 .load(sqlObjectType.getClassLoader(), Default.INJECTION)
-                .getLoaded();
+                .getLoaded());
 
         try {
-            return sqlObjectType.cast(loadedClass.getConstructor().newInstance());
+            sqlObjectProxy = sqlObjectType.cast(loadedClass.getConstructor().newInstance());
         } catch (final ReflectiveOperationException e) {
             throw new AssertionError("Failed to instantiate proxy class for " + sqlObjectType.getName(), e);
         }
+
+        final SqlObject sqlObject = new SqlObject(buildHandlersFor(sqlObjectType), handle);
+        final SqlObjectInterceptor sqlObjectInterceptor = new SqlObjectInterceptor(sqlObject);
+        try {
+            final Field sqlObjectField = sqlObjectProxy.getClass().getField("delegateToSqlObjectInterceptor");
+            sqlObjectField.setAccessible(true);
+            sqlObjectField.set(sqlObjectProxy, sqlObjectInterceptor);
+        } catch (final NoSuchFieldException | IllegalAccessException e) {
+            throw new AssertionError("Failed to delegate a method call to " + SqlObjectInterceptor.class.getName(), e);
+        }
+
+        return sqlObjectProxy;
     }
 
     private static Map<Method, Handler> buildHandlersFor(Class<?> sqlObjectType)
