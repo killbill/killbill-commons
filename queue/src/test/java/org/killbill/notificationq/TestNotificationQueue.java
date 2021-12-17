@@ -558,7 +558,7 @@ public class TestNotificationQueue extends TestSetup {
             // Move time in the future after the notification effectiveDate
             clock.setDeltaFromReality(3000);
 
-            await().atMost(5, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+            await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
 
