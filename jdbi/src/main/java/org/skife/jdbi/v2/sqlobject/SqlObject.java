@@ -56,7 +56,6 @@ class SqlObject
         mixinHandlers.putAll(TransmogrifierHelper.handlers());
     }
 
-    @SuppressWarnings("unchecked")
     static <T> T buildSqlObject(final Class<T> sqlObjectType, final HandleDing handle)
     {
         final T sqlObjectProxy;

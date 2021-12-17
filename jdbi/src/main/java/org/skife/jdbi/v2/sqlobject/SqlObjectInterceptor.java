@@ -24,7 +24,6 @@ import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
-import net.bytebuddy.implementation.bind.annotation.SuperMethod;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 public class SqlObjectInterceptor {
@@ -39,7 +38,6 @@ public class SqlObjectInterceptor {
     @RuntimeType
     public Object intercept(@This Object target,
                             @Origin Method method,
-                            @SuperMethod(nullIfImpossible = true) Method superMethod,
                             @AllArguments Object[] args) throws Throwable {
 
         // Method proxy is null as super method invocation is not needed for abstract methods.
@@ -53,7 +51,6 @@ public class SqlObjectInterceptor {
     @RuntimeType
     public Object intercept(@Origin Method method,
                             @SuperCall Callable<?> methodProxy,
-                            @SuperMethod(nullIfImpossible = true) Method superMethod,
                             @This Object target,
                             @AllArguments Object[] args) throws Throwable {
 
