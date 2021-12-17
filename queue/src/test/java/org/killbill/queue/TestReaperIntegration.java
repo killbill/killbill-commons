@@ -329,7 +329,7 @@ public class TestReaperIntegration extends TestSetup {
         }
 
         void waitFor(final BusEvent event) {
-            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+            Awaitility.await().atMost(15, TimeUnit.SECONDS).until(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     return receivedEvents.contains(event.getUserToken());
