@@ -44,6 +44,7 @@ import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import com.google.common.base.CaseFormat;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 // Identical to org.skife.jdbi.v2.BeanMapper but maps created_date to createdDate
 public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
@@ -235,6 +236,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
     }
 
     @SuppressWarnings("unchecked")
+    @SuppressFBWarnings(value = "DCN_NULLPOINTER_EXCEPTION", justification = "Historic, unclear where NPE could come from")
     public T map(final int row, final ResultSet rs, final StatementContext ctx) throws SQLException {
         final T bean;
         try {
