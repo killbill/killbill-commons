@@ -105,15 +105,13 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
 
     @Override
     protected void insertReapedEntriesFromTransaction(final QueueSqlDao<T> transactional, final List<T> entriesLeftBehind, final DateTime now) {
-        if (config.getPersistentQueueMode() == PersistentQueueMode.STICKY_POLLING) {
-            for (final T entry : entriesLeftBehind) {
-                entry.setCreatedDate(now);
-                entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
-                entry.setCreatingOwner(CreatorName.get());
-                entry.setProcessingOwner(null);
-            }
-            transactional.insertEntries(entriesLeftBehind, config.getTableName());
+        for (final T entry : entriesLeftBehind) {
+            entry.setCreatedDate(now);
+            entry.setProcessingState(PersistentQueueEntryLifecycleState.AVAILABLE);
+            entry.setCreatingOwner(CreatorName.get());
+            entry.setProcessingOwner(null);
         }
+        transactional.insertEntries(entriesLeftBehind, config.getTableName());
     }
 
     private List<T> fetchReadyEntries(final DateTime now, final int maxEntries, final QueueSqlDao<T> queueSqlDao) {
