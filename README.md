@@ -25,6 +25,7 @@ Kill Bill reusable Java components:
 | 0.23.y          | 0.20.z            |
 | 0.23.y          | 0.22.z            |
 | 0.24.y          | 0.22.z            |
+| 0.25.y          | 0.23.z            |
 
 We've upgraded numerous dependencies in 0.24.x (required for Java 11 support).
 
