@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.25.0</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-config-magic</artifactId>
@@ -66,7 +66,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- Don't run JUnit tests -->
-                    <groups/>
+                    <groups />
                 </configuration>
             </plugin>
         </plugins>
