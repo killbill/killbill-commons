@@ -186,7 +186,9 @@ public class Dispatcher<E extends QueueEvent, M extends EventEntryModelDao> {
                 }
                 return event;
             } finally {
-                MDC.remove(MDC_KB_USER_TOKEN);
+                // Clear all entries in the MDC: when creating an InternalCallContext while processing an event,
+                // Kill Bill will add entries (e.g. kb.accountRecordId) that we don't want to persist in our queue thread pool.
+                MDC.clear();
             }
         }
     }
