@@ -162,11 +162,6 @@
                 <artifactId>killbill-xmlloader</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- For mariadb-java-client -->
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
