@@ -29,18 +29,16 @@ import static java.lang.annotation.ElementType.PARAMETER;
  * This annotation can be used to add tags to your resource metrics based on the value of parameters
  * passed into the resource action.
  * <code>
- *     @TimedResource
- *     public Response create(@MetricTag(tag = "type") String type)
  *
- *     @TimedResource
- *     public Response create(@MetricTag(tag = "type", property="paymentType") Payment type)
+ * @TimedResource public Response create(@MetricTag(tag = "type") String type)
+ * @TimedResource public Response create(@MetricTag(tag = "type", property="paymentType") Payment type)
  * </code>
- *
  * @see TimedResource
  */
 @Target(PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MetricTag {
+
     /**
      * Name of the tag.
      */
