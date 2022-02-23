@@ -32,6 +32,7 @@ import org.testng.Assert;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.codahale.metrics.servlet.InstrumentedFilter;
+import com.codahale.metrics.servlets.AdminServlet;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.google.inject.Guice;
@@ -41,6 +42,11 @@ import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.GuiceServletContextListener;
 
 public abstract class AbstractBaseServerModuleTest {
+
+    final String metricsUri = "/1.0/metrics";
+    final String pingUri = "/1.0/ping";
+    final String threadsUri = "/1.0/threads";
+    final String healthCheckUri = "/1.0/healthcheck";
 
     protected Server startServer(final Module... modules) throws Exception {
         final Injector injector = Guice.createInjector(modules);
@@ -65,6 +71,10 @@ public abstract class AbstractBaseServerModuleTest {
                 servletContextEvent.getServletContext().setAttribute(HealthCheckServlet.HEALTH_CHECK_REGISTRY, injector.getInstance(HealthCheckRegistry.class));
                 servletContextEvent.getServletContext().setAttribute(MetricsServlet.METRICS_REGISTRY, metricRegistry);
                 servletContextEvent.getServletContext().setAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE, metricRegistry);
+                servletContextEvent.getServletContext().setInitParameter(AdminServlet.METRICS_URI_PARAM_KEY, metricsUri);
+                servletContextEvent.getServletContext().setInitParameter(AdminServlet.PING_URI_PARAM_KEY, pingUri);
+                servletContextEvent.getServletContext().setInitParameter(AdminServlet.THREADS_URI_PARAM_KEY, threadsUri);
+                servletContextEvent.getServletContext().setInitParameter(AdminServlet.HEALTHCHECK_URI_PARAM_KEY, healthCheckUri);
             }
         });
 

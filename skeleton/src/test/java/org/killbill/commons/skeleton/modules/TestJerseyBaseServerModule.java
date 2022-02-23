@@ -31,10 +31,12 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -50,7 +52,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         builder.setJaxrsUriPattern("/hello|/hello/.*");
 
         final Injector injector = Guice.createInjector(builder.build(),
-                                                       new StatsModule(),
+                                                       new StatsModule(healthCheckUri, metricsUri, pingUri, threadsUri, ImmutableList.<Class<? extends HealthCheck>>of()),
                                                        new AbstractModule() {
                                                            @Override
                                                            protected void configure() {

@@ -19,9 +19,6 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.codahale.metrics.servlets.AdminServlet;
 import com.google.inject.servlet.ServletModule;
 
@@ -91,12 +88,8 @@ public class AdminServletModule extends ServletModule {
     protected void configureServlets() {
         bind(AdminServlet.class).asEagerSingleton();
 
-        final Map<String, String> initParams = new HashMap<String, String>();
-        initParams.put("metrics-uri", metricsUri);
-        initParams.put("ping-uri", pingUri);
-        initParams.put("threads-uri", threadsUri);
-        initParams.put("healthcheck-uri", healthcheckUri);
-
-        serve(healthcheckUri, metricsUri, pingUri, threadsUri).with(AdminServlet.class, initParams);
+        // Since https://github.com/dropwizard/metrics/pull/1891, configuration of AdminServlet is done via the ServletContext init params,
+        // not the ServletConfig ones. See AbstractBaseServerModuleTest in tests and KillbillPlatformGuiceListener in Kill Bill.
+        serve(healthcheckUri, metricsUri, pingUri, threadsUri).with(AdminServlet.class);
     }
 }
