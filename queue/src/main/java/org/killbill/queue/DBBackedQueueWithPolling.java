@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
@@ -36,7 +37,6 @@ import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
 
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;

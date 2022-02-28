@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.api.PersistentQueueConfig;
@@ -48,8 +50,6 @@ import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -107,12 +107,12 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         this.clock = clock;
         this.prof = new Profiling<Long, RuntimeException>();
 
-        this.rawGetEntriesTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "rawGetEntriesTime"));
-        this.rawInsertEntryTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "rawInsertEntryTime"));
-        this.rawClaimEntriesTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "rawClaimEntriesTime"));
-        this.rawClaimEntryTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "rawClaimEntryTime"));
-        this.rawDeleteEntriesTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "rawDeleteEntriesTime"));
-        this.rawDeleteEntryTime = metricRegistry.timer(MetricRegistry.name(DBBackedQueue.class, dbBackedQId, "rawDeleteEntryTime"));
+        this.rawGetEntriesTime = metricRegistry.timer(String.format("%s.%s.%s", DBBackedQueue.class.getName(), dbBackedQId, "rawGetEntriesTime"));
+        this.rawInsertEntryTime = metricRegistry.timer(String.format("%s.%s.%s", DBBackedQueue.class.getName(), dbBackedQId, "rawInsertEntryTime"));
+        this.rawClaimEntriesTime = metricRegistry.timer(String.format("%s.%s.%s", DBBackedQueue.class.getName(), dbBackedQId, "rawClaimEntriesTime"));
+        this.rawClaimEntryTime = metricRegistry.timer(String.format("%s.%s.%s", DBBackedQueue.class.getName(), dbBackedQId, "rawClaimEntryTime"));
+        this.rawDeleteEntriesTime = metricRegistry.timer(String.format("%s.%s.%s", DBBackedQueue.class.getName(), dbBackedQId, "rawDeleteEntriesTime"));
+        this.rawDeleteEntryTime = metricRegistry.timer(String.format("%s.%s.%s", DBBackedQueue.class.getName(), dbBackedQId, "rawDeleteEntryTime"));
 
         this.DB_QUEUE_LOG_ID = "DBBackedQueue-" + dbBackedQId;
     }

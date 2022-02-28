@@ -29,12 +29,14 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.killbill.commons.health.api.HealthCheckRegistry;
+import org.killbill.commons.jdbi.hikari.KillBillHealthChecker;
+import org.killbill.commons.jdbi.hikari.KillBillMetricsTrackerFactory;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -54,8 +56,8 @@ public class DataSourceProvider implements Provider<DataSource> {
     private String dataSourceClassName;
     private String driverClassName;
 
-    private Object metricRegistry;
-    private Object healthCheckRegistry;
+    private MetricRegistry metricRegistry;
+    private HealthCheckRegistry healthCheckRegistry;
 
     @VisibleForTesting
     static enum DatabaseType {
@@ -78,6 +80,7 @@ public class DataSourceProvider implements Provider<DataSource> {
     public DataSourceProvider(final DaoConfig config, final String poolName, final boolean useMariaDB) {
         this(config, null, poolName, useMariaDB);
     }
+
     public DataSourceProvider(final DaoConfig config, final EmbeddedDB embeddedDB, final String poolName, final boolean useMariaDB) {
         this.config = config;
         this.poolName = poolName;
@@ -86,21 +89,11 @@ public class DataSourceProvider implements Provider<DataSource> {
         parseJDBCUrl();
     }
 
-    /**
-     * Set a Dropwizard MetricRegistry to use for HikariCP.
-     *
-     * @param metricRegistry the Dropwizard MetricRegistry to set
-     */
     @Inject(optional = true)
-    public void setMetricRegistry(final MetricRegistry metricRegistry) {
+    public void setMetricsRegistry(final MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
 
-    /**
-     * Set a Dropwizard HealthCheckRegistry to use for HikariCP.
-     *
-     * @param healthCheckRegistry the Dropwizard HealthCheckRegistry to set
-     */
     @Inject(optional = true)
     public void setHealthCheckRegistry(final HealthCheckRegistry healthCheckRegistry) {
         this.healthCheckRegistry = healthCheckRegistry;
@@ -175,14 +168,7 @@ public class DataSourceProvider implements Provider<DataSource> {
             hikariConfig.setRegisterMbeans(true);
 
             if (metricRegistry != null) {
-                // See https://github.com/brettwooldridge/HikariCP/wiki/Dropwizard-Metrics
-                hikariConfig.setMetricRegistry(metricRegistry);
-            }
-            if (healthCheckRegistry != null) {
-                // See https://github.com/brettwooldridge/HikariCP/wiki/Dropwizard-HealthChecks
-                hikariConfig.addHealthCheckProperty("connectivityCheckTimeoutMs", String.valueOf(toMilliSeconds(config.getHealthCheckConnectionTimeout())));
-                hikariConfig.addHealthCheckProperty("expected99thPercentileMs", String.valueOf(toMilliSeconds(config.getHealthCheckExpected99thPercentile())));
-                hikariConfig.setHealthCheckRegistry(healthCheckRegistry);
+                hikariConfig.setMetricsTrackerFactory(new KillBillMetricsTrackerFactory(metricRegistry));
             }
 
             if (poolName != null) {
@@ -213,7 +199,11 @@ public class DataSourceProvider implements Provider<DataSource> {
             }
 
             try {
-                return new HikariDataSource(hikariConfig);
+                final DataSource hikariDataSource = new HikariDataSource(hikariConfig);
+                if (healthCheckRegistry != null) {
+                    KillBillHealthChecker.registerHealthChecks(hikariDataSource, hikariConfig, healthCheckRegistry);
+                }
+                return hikariDataSource;
             } catch (final PoolInitializationException e) {
                 // When initializationFailFast=true, log the exception to alert the user (the Guice initialization sequence will continue though)
                 logger.error("Unable to initialize the database pool", e);

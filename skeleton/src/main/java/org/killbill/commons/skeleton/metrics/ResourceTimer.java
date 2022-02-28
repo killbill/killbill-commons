@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
 import com.google.common.base.Joiner;
 
 public class ResourceTimer {

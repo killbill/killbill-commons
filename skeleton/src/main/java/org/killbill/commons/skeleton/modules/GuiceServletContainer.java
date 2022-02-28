@@ -31,8 +31,8 @@ import org.glassfish.jersey.servlet.WebConfig;
 import org.glassfish.jersey.spi.ExceptionMappers;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
+import org.killbill.commons.metrics.api.MetricRegistry;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.base.CharMatcher;

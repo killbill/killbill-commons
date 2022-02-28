@@ -33,10 +33,10 @@ import org.glassfish.hk2.api.Descriptor;
 import org.glassfish.hk2.api.Filter;
 import org.glassfish.hk2.api.InterceptionService;
 import org.glassfish.jersey.spi.ExceptionMappers;
-import org.killbill.commons.metrics.TimedResource;
+import org.killbill.commons.metrics.api.annotation.TimedResource;
 import org.killbill.commons.skeleton.metrics.TimedResourceInterceptor;
 
-import com.codahale.metrics.MetricRegistry;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 
 @Singleton

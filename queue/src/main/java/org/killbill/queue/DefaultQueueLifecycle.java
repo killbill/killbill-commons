@@ -26,6 +26,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.killbill.commons.concurrent.Executors;
+import org.killbill.commons.metrics.api.Gauge;
+import org.killbill.commons.metrics.api.Histogram;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.QueueLifecycle;
 import org.killbill.queue.dao.EventEntryModelDao;
@@ -33,10 +37,6 @@ import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
@@ -72,6 +72,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     private ExecutorService lifecycleDispatcherExecutor;
     private ExecutorService lifecycleCompletionExecutor;
 
+    protected final Gauge<Integer> completedOrFailedEventsGauge;
+
     public DefaultQueueLifecycle(final String svcQName,
                                  final PersistentQueueConfig config,
                                  final MetricRegistry metricRegistry) {
@@ -91,13 +93,13 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.retriedEvents = new LinkedBlockingQueue<>();
         this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
 
-        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchTime"));
-        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeTime"));
+        this.dispatchTime = metricRegistry.timer(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "dispatchTime"));
+        this.completeTime = metricRegistry.timer(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completeTime"));
 
-        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchedEntries"));
-        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeEntries"));
+        this.dispatchedEntries = metricRegistry.histogram(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "dispatchedEntries"));
+        this.completeEntries = metricRegistry.histogram(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completeEntries"));
 
-        metricRegistry.register(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
+        this.completedOrFailedEventsGauge = metricRegistry.register(String.format("%s.%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
             @Override
             public Integer getValue() {
                 return completedOrFailedEvents.size();

@@ -45,6 +45,9 @@ import org.killbill.bus.dispatching.BusCallableCallback;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
+import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
 import org.killbill.queue.DBBackedQueue;
@@ -65,8 +68,6 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
@@ -124,7 +125,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             }
         };
 
-        this.busHandlersProcessingTime = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, dbBackedQId, "busHandlersProcessingTime"));
+        this.busHandlersProcessingTime = metricRegistry.timer(String.format("%s.%s.%s", DefaultPersistentBus.class.getName(), dbBackedQId, "busHandlersProcessingTime"));
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isInitialized = new AtomicBoolean(false);
@@ -149,9 +150,8 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, ImmutableMap.<String, String>of("instanceName", "main")),
-             new MetricRegistry(), new DatabaseTransactionNotificationApi());
+             new NoOpMetricRegistry(), new DatabaseTransactionNotificationApi());
     }
-
 
     @Override
     public boolean initQueue() {
@@ -422,11 +422,11 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
-        final Timer.Context dispatchTimerContext = busHandlersProcessingTime.time();
+        final long ini = System.nanoTime();
         try {
             eventBusDelegate.postWithException(event);
         } finally {
-            dispatchTimerContext.stop();
+            busHandlersProcessingTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
         }
     }
 

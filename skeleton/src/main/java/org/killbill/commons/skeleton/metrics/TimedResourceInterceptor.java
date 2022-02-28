@@ -34,9 +34,9 @@ import javax.ws.rs.ext.ExceptionMapper;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.glassfish.jersey.spi.ExceptionMappers;
-import org.killbill.commons.metrics.MetricTag;
+import org.killbill.commons.metrics.api.annotation.MetricTag;
 
-import com.codahale.metrics.MetricRegistry;
+import org.killbill.commons.metrics.api.MetricRegistry;
 
 /**
  * A method interceptor which times the execution of the annotated resource method.

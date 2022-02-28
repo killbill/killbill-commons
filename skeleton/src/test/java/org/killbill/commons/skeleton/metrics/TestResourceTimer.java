@@ -22,9 +22,11 @@ package org.killbill.commons.skeleton.metrics;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
 import com.google.common.collect.ImmutableMap;
+
+import org.killbill.commons.metrics.dropwizard.KillBillCodahaleMetricRegistry;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -38,7 +40,7 @@ public class TestResourceTimer {
 
     @BeforeMethod
     public void setup() {
-        metricRegistry = new MetricRegistry();
+        metricRegistry = new KillBillCodahaleMetricRegistry();
     }
 
     @Test
@@ -52,7 +54,7 @@ public class TestResourceTimer {
         resourceTimer.update(200, 1, TimeUnit.MILLISECONDS);
 
         final String expectedMetricName = expectedMetricName(escapedResourcePath, resourceName, httpMethod, null, "2xx", 200);
-        final Timer timer = (Timer) metricRegistry.getMetrics().get(expectedMetricName);
+        final Timer timer = metricRegistry.getTimers().get(expectedMetricName);
         Assert.assertNotNull(timer, "Failed to create metric with expected name");
         Assert.assertEquals(1, timer.getCount());
     }
@@ -76,7 +78,7 @@ public class TestResourceTimer {
         resourceTimer.update(501, 1, TimeUnit.MILLISECONDS);
 
         final String expectedMetricName = expectedMetricName(escapeResourcePath, resourceName, httpMethod, "AUTHORIZE", "5xx", 501);
-        final Timer timer = (Timer) metricRegistry.getMetrics().get(expectedMetricName);
+        final Timer timer = metricRegistry.getTimers().get(expectedMetricName);
         Assert.assertNotNull(timer, "Failed to create metric with expected name: " + expectedMetricName);
         Assert.assertEquals(1, timer.getCount());
     }
@@ -91,7 +93,7 @@ public class TestResourceTimer {
         resourceTimer.update(200, 1, TimeUnit.MILLISECONDS);
 
         final String expectedMetricName = expectedMetricName(resourcePath, resourceName, httpMethod, null, "2xx", 200);
-        final Timer timer = (Timer) metricRegistry.getMetrics().get(expectedMetricName);
+        final Timer timer = metricRegistry.getTimers().get(expectedMetricName);
         Assert.assertNotNull(timer, "Failed to create metric with expected name");
         Assert.assertEquals(1, timer.getCount());
     }
