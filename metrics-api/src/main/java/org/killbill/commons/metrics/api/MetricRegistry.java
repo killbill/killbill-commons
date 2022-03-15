@@ -35,9 +35,10 @@ public interface MetricRegistry {
      * a new {@link Gauge} if none is registered.
      *
      * @param name the name of the metric
+     * @param supplier the underlying Gauge
      * @return a new or pre-existing {@link Gauge}
      */
-    <T> Gauge<T> gauge(String name);
+    <T> Gauge<T> gauge(String name, Gauge<T> supplier);
 
     /**
      * Return the {@link Histogram} registered under this name; or create and register
@@ -65,17 +66,6 @@ public interface MetricRegistry {
      * @return a new or pre-existing {@link Timer}
      */
     Timer timer(String name);
-
-    /**
-     * Given a metric, registers it under the given name.
-     *
-     * @param name   the name of the metric
-     * @param metric the metric
-     * @param <T>    the type of the metric
-     * @return {@code metric}
-     */
-    @SuppressWarnings("unchecked")
-    <T extends Metric> T register(String name, T metric);
 
     /**
      * Removes the metric with the given name.

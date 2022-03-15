@@ -29,6 +29,8 @@ import org.killbill.commons.metrics.api.Metric;
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
 
+import com.codahale.metrics.MetricRegistry.MetricSupplier;
+
 public class KillBillCodahaleMetricRegistry implements MetricRegistry {
 
     private final com.codahale.metrics.MetricRegistry dwMetricRegistry;
@@ -47,8 +49,14 @@ public class KillBillCodahaleMetricRegistry implements MetricRegistry {
     }
 
     @Override
-    public <T> Gauge<T> gauge(final String name) {
-        return new KillBillCodahaleGauge<T>(dwMetricRegistry.gauge(name));
+    public <T> Gauge<T> gauge(final String name, final Gauge<T> supplier) {
+        return new KillBillCodahaleGauge<T>(dwMetricRegistry.gauge(name,
+                                                                   new MetricSupplier<>() {
+                                                                       @Override
+                                                                       public com.codahale.metrics.Gauge<T> newMetric() {
+                                                                           return new CodahaleGauge(supplier);
+                                                                       }
+                                                                   }));
     }
 
     @Override
@@ -64,25 +72,6 @@ public class KillBillCodahaleMetricRegistry implements MetricRegistry {
     @Override
     public Timer timer(final String name) {
         return new KillBillCodahaleTimer(dwMetricRegistry.timer(name));
-    }
-
-    @Override
-    public <T extends Metric> T register(final String name, final T metric) {
-        if (metric instanceof Counter) {
-            dwMetricRegistry.register(name, new CodahaleCounter((Counter) metric));
-            return metric;
-        } else if (metric instanceof Gauge) {
-            dwMetricRegistry.register(name, new CodahaleGauge((Gauge) metric));
-            return metric;
-        } else if (metric instanceof Histogram) {
-            dwMetricRegistry.register(name, new CodahaleHistogram((Histogram) metric));
-            return metric;
-        } else if (metric instanceof Timer) {
-            dwMetricRegistry.register(name, new CodahaleTimer((Timer) metric));
-            return metric;
-        }
-
-        return null;
     }
 
     @Override
