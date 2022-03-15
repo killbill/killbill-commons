@@ -84,6 +84,8 @@ public class HealthCheckServlet extends HttpServlet {
         } else {
             this.mapper = new ObjectMapper();
         }
+
+        this.mapper.registerModule(new HealthCheckJacksonModule());
     }
 
     @Override
