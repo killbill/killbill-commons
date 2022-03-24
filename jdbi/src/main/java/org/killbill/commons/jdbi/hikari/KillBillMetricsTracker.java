@@ -56,23 +56,23 @@ public class KillBillMetricsTracker implements IMetricsTracker {
         this.connectionCreation = registry.histogram(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_CONNECT));
         this.connectionTimeoutMeter = registry.meter(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_TIMEOUT_RATE));
 
-        registry.register(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_TOTAL_CONNECTIONS),
-                          (Gauge<Integer>) poolStats::getTotalConnections);
+        registry.gauge(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_TOTAL_CONNECTIONS),
+                       poolStats::getTotalConnections);
 
-        registry.register(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_IDLE_CONNECTIONS),
-                          (Gauge<Integer>) poolStats::getIdleConnections);
+        registry.gauge(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_IDLE_CONNECTIONS),
+                       poolStats::getIdleConnections);
 
-        registry.register(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_ACTIVE_CONNECTIONS),
-                          (Gauge<Integer>) poolStats::getActiveConnections);
+        registry.gauge(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_ACTIVE_CONNECTIONS),
+                       poolStats::getActiveConnections);
 
-        registry.register(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_PENDING_CONNECTIONS),
-                          (Gauge<Integer>) poolStats::getPendingThreads);
+        registry.gauge(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_PENDING_CONNECTIONS),
+                       poolStats::getPendingThreads);
 
-        registry.register(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_MAX_CONNECTIONS),
-                          (Gauge<Integer>) poolStats::getMaxConnections);
+        registry.gauge(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_MAX_CONNECTIONS),
+                       poolStats::getMaxConnections);
 
-        registry.register(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_MIN_CONNECTIONS),
-                          (Gauge<Integer>) poolStats::getMinConnections);
+        registry.gauge(String.format("%s.%s.%s", poolName, METRIC_CATEGORY, METRIC_NAME_MIN_CONNECTIONS),
+                       poolStats::getMinConnections);
     }
 
     @Override

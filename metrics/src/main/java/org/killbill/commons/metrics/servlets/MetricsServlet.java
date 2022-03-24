@@ -19,6 +19,7 @@ package org.killbill.commons.metrics.servlets;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -74,6 +75,10 @@ public class MetricsServlet extends HttpServlet {
             } else {
                 this.mapper = new ObjectMapper();
             }
+
+            this.mapper.registerModule(new MetricsJacksonModule(TimeUnit.SECONDS,
+                                                                TimeUnit.SECONDS,
+                                                                false));
         }
     }
 

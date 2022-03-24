@@ -24,7 +24,6 @@ import org.killbill.commons.metrics.api.Counter;
 import org.killbill.commons.metrics.api.Gauge;
 import org.killbill.commons.metrics.api.Histogram;
 import org.killbill.commons.metrics.api.Meter;
-import org.killbill.commons.metrics.api.Metric;
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
 
@@ -44,11 +43,9 @@ public class NoOpMetricRegistry implements MetricRegistry {
     }
 
     @Override
-    public <T> Gauge<T> gauge(final String name) {
-        final Gauge<Object> gauge = new NoOpGauge<Object>(null);
-        //noinspection unchecked
+    public <T> Gauge<T> gauge(final String name, final Gauge<T> gauge) {
         gauges.put(name, gauge);
-        return (Gauge<T>) gauge;
+        return gauge;
     }
 
     @Override
@@ -73,25 +70,6 @@ public class NoOpMetricRegistry implements MetricRegistry {
     }
 
     @Override
-    public <T extends Metric> T register(final String name, final T metric) {
-        if (metric instanceof Counter) {
-            counters.put(name, (Counter) metric);
-            return metric;
-        } else if (metric instanceof Gauge) {
-            gauges.put(name, (Gauge) metric);
-            return metric;
-        } else if (metric instanceof Histogram) {
-            histograms.put(name, (Histogram) metric);
-            return metric;
-        } else if (metric instanceof Timer) {
-            timers.put(name, (Timer) metric);
-            return metric;
-        }
-
-        return null;
-    }
-
-    @Override
     public boolean remove(final String name) {
         if (gauges.remove(name) != null) {
             return true;
@@ -101,10 +79,8 @@ public class NoOpMetricRegistry implements MetricRegistry {
             return true;
         } else if (meters.remove(name) != null) {
             return true;
-        } else if (timers.remove(name) != null) {
-            return true;
         } else {
-            return false;
+            return timers.remove(name) != null;
         }
     }
 

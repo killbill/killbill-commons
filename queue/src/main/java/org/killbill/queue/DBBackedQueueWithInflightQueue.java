@@ -94,7 +94,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         databaseTransactionNotificationApi.registerForNotification(this);
 
         // Metrics the size of the inflightQ
-        this.inflightEventsGauge = metricRegistry.register(String.format("%s.%s.%s.%s", DBBackedQueueWithInflightQueue.class.getName(), dbBackedQId, "inflightQ", "size"), new Gauge<Integer>() {
+        this.inflightEventsGauge = metricRegistry.gauge(String.format("%s.%s.%s.%s", DBBackedQueueWithInflightQueue.class.getName(), dbBackedQId, "inflightQ", "size"), new Gauge<>() {
             @Override
             public Integer getValue() {
                 return inflightEvents.size();

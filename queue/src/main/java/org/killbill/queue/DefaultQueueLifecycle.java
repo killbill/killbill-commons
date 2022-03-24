@@ -99,7 +99,7 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.dispatchedEntries = metricRegistry.histogram(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "dispatchedEntries"));
         this.completeEntries = metricRegistry.histogram(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completeEntries"));
 
-        this.completedOrFailedEventsGauge = metricRegistry.register(String.format("%s.%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
+        this.completedOrFailedEventsGauge = metricRegistry.gauge(String.format("%s.%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
             @Override
             public Integer getValue() {
                 return completedOrFailedEvents.size();
