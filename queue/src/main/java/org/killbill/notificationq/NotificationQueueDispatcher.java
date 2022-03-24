@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.killbill.clock.Clock;
+import org.killbill.commons.metrics.api.Histogram;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
@@ -44,7 +46,6 @@ import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DBBackedQueue.ReadyEntriesWithMetrics;
 import org.killbill.queue.DBBackedQueueWithPolling;
 import org.killbill.queue.DefaultQueueLifecycle;
-import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.Dispatcher;
@@ -52,8 +53,6 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
@@ -261,7 +260,7 @@ public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
         if (perQueueHistogramProcessingTime == null) {
             synchronized (perQueueProcessingTime) {
                 if (!perQueueProcessingTime.containsKey(notification.getQueueName())) {
-                    perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(MetricRegistry.name(NotificationQueueDispatcher.class, metricName)));
+                    perQueueProcessingTime.put(notification.getQueueName(), metricRegistry.histogram(String.format("%s.%s", NotificationQueueDispatcher.class.getName(), metricName)));
                 }
                 perQueueHistogramProcessingTime = perQueueProcessingTime.get(notification.getQueueName());
             }

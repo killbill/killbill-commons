@@ -27,6 +27,7 @@ import javax.inject.Inject;
 
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
@@ -34,9 +35,6 @@ import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.skife.jdbi.v2.DBI;
-
-import com.codahale.metrics.MetricRegistry;
-
 
 public class MockNotificationQueueService extends NotificationQueueServiceBase {
 

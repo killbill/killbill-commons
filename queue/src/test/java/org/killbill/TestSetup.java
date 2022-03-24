@@ -31,6 +31,8 @@ import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
 import org.killbill.commons.embeddeddb.postgresql.PostgreSQLEmbeddedDB;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.queue.InTransaction;
 import org.skife.config.ConfigSource;
@@ -41,8 +43,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
@@ -60,7 +60,7 @@ public class TestSetup {
     protected PersistentBusConfig persistentBusConfig;
     protected NotificationQueueConfig notificationQueueConfig;
     protected ClockMock clock;
-    protected final MetricRegistry metricRegistry = new MetricRegistry();
+    protected final MetricRegistry metricRegistry = new NoOpMetricRegistry();
     protected DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
 
     @BeforeClass(groups = "slow")
@@ -121,7 +121,6 @@ public class TestSetup {
         System.clearProperty(CreatorName.QUEUE_CREATOR_NAME);
         embeddedDB.cleanupAllTables();
         clock.resetDeltaFromReality();
-        metricRegistry.removeMatching(MetricFilter.ALL);
     }
 
     @AfterClass(groups = "slow")

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.145.3-2e00d3a-SNAPSHOT</version>
+        <version>0.145.3-f9e5145-SNAPSHOT</version>
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
@@ -50,6 +50,7 @@
         <module>xmlloader</module>
         <module>automaton</module>
         <module>metrics</module>
+        <module>metrics-api</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
@@ -145,6 +146,11 @@
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-metrics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-metrics-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

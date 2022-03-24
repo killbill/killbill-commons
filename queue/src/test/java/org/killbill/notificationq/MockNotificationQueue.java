@@ -46,6 +46,8 @@ import com.google.common.base.MoreObjects;
 
 public class MockNotificationQueue implements NotificationQueue {
 
+    private final Logger log = LoggerFactory.getLogger("MockNotificationQueue");
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String hostname;
@@ -57,7 +59,6 @@ public class MockNotificationQueue implements NotificationQueue {
     private final MockNotificationQueueService queueService;
 
     private final AtomicLong recordIds;
-
     private volatile boolean isStarted;
 
     public MockNotificationQueue(final Clock clock, final String svcName, final String queueName, final NotificationQueueHandler handler, final MockNotificationQueueService mockNotificationQueueService) {
@@ -224,7 +225,6 @@ public class MockNotificationQueue implements NotificationQueue {
         return queueName;
     }
 
-
     @Override
     public NotificationQueueHandler getHandler() {
         return handler;
@@ -252,8 +252,6 @@ public class MockNotificationQueue implements NotificationQueue {
     public boolean isStarted() {
         return isStarted;
     }
-
-    private final Logger log = LoggerFactory.getLogger("MockNotificationQueue");
 
     public List<NotificationEventModelDao> getReadyNotifications() {
         final List<NotificationEventModelDao> readyNotifications = new ArrayList<NotificationEventModelDao>();

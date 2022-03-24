@@ -30,7 +30,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import org.joda.time.LocalDate;
-import org.killbill.commons.metrics.TimedResource;
+import org.killbill.commons.metrics.api.annotation.TimedResource;
 import org.testng.Assert;
 
 import com.google.common.collect.ImmutableMap;

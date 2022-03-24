@@ -33,6 +33,8 @@ import org.killbill.clock.Clock;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEvent;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionEventType;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.metrics.api.Gauge;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.EventEntryModelDao;
@@ -43,8 +45,6 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -64,6 +64,8 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
     private final LinkedBlockingQueue<Long> inflightEvents;
 
     private final DatabaseTransactionNotificationApi databaseTransactionNotificationApi;
+
+    protected final Gauge<Integer> inflightEventsGauge;
 
     //
     // Per thread information to keep track or recordId while it is accessible and right before
@@ -92,7 +94,7 @@ public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extend
         databaseTransactionNotificationApi.registerForNotification(this);
 
         // Metrics the size of the inflightQ
-        metricRegistry.register(MetricRegistry.name(DBBackedQueueWithInflightQueue.class, dbBackedQId, "inflightQ", "size"), new Gauge<Integer>() {
+        this.inflightEventsGauge = metricRegistry.gauge(String.format("%s.%s.%s.%s", DBBackedQueueWithInflightQueue.class.getName(), dbBackedQId, "inflightQ", "size"), new Gauge<>() {
             @Override
             public Integer getValue() {
                 return inflightEvents.size();
