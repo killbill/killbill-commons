@@ -54,7 +54,7 @@ public class H2Rule extends ExternalResource implements ConnectionFactory {
         final UUID uuid = UUID.randomUUID();
         this.pool = new JdbcDataSource();
 
-        this.pool.setUrl("jdbc:h2:mem:" + uuid.toString() + ";MODE=PostgreSQL");
+        this.pool.setUrl("jdbc:h2:mem:" + uuid.toString() + ";MODE=LEGACY");
         this.pool.setUser("h2");
         this.pool.setPassword("h2");
 

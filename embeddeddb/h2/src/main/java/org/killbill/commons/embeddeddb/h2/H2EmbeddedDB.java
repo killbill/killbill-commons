@@ -20,21 +20,21 @@
 package org.killbill.commons.embeddeddb.h2;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
+import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
 import org.h2.api.ErrorCode;
-import org.h2.engine.ConnectionInfo;
-import org.h2.engine.Engine;
-import org.h2.engine.Session;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.h2.tools.Server;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class H2EmbeddedDB extends EmbeddedDB {
 
@@ -55,7 +55,8 @@ public class H2EmbeddedDB extends EmbeddedDB {
     }
 
     public H2EmbeddedDB(final String databaseName, final String username, final String password) {
-        this(databaseName, username, password, "jdbc:h2:mem:" + databaseName + ";MODE=MYSQL;DB_CLOSE_DELAY=-1");
+        // Use LEGACY compatibility mode to support the SERIAL data type and to allow comparison between numeric and boolean values
+        this(databaseName, username, password, "jdbc:h2:mem:" + databaseName + ";MODE=LEGACY;DB_CLOSE_DELAY=-1");
     }
 
     public H2EmbeddedDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
@@ -80,7 +81,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
 
         try {
             // Start a web server for debugging (http://127.0.0.1:8082/)
-            server = Server.createWebServer(new String[]{}).start();
+            server = Server.createWebServer().start();
             logger.info(String.format("H2 started on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
                                       getJdbcConnectionString(), getUsername(), getPassword()));
         } catch (final SQLException e) {
@@ -99,7 +100,7 @@ public class H2EmbeddedDB extends EmbeddedDB {
 
     @Override
     public void refreshTableNames() throws IOException {
-        final String query = String.format("select table_name from information_schema.tables where table_catalog = '%s' and table_type = 'TABLE';", databaseName.toUpperCase());
+        final String query = "select table_name from information_schema.tables where table_schema = current_schema() and table_type = 'BASE TABLE';";
         try {
             executeQuery(query, new ResultSetJob() {
                 @Override
@@ -134,29 +135,43 @@ public class H2EmbeddedDB extends EmbeddedDB {
         return super.getDataSource();
     }
 
+    @SuppressFBWarnings("ODR_OPEN_DATABASE_RESOURCE")
     @Override
     public void stop() throws IOException {
         if (!started.get()) {
             throw new IOException("H2 is not running");
         }
-        super.stop();
+
+        try {
+            final Connection connection = dataSource.getConnection();
+            if (connection != null) {
+                try {
+                    final Statement stat = connection.createStatement();
+                    // https://github.com/spotbugs/spotbugs/issues/1338 prevents us from using try-with-resource
+                    try {
+                        stat.execute("SHUTDOWN");
+                    } finally {
+                        stat.close();
+                    }
+                } finally {
+                    // No need to close the connection since the database is shutdown already
+                    //connection.close();
+                }
+            }
+        } catch (final Exception e) {
+            logger.warn("Exception while trying to shutdown H2", e);
+        }
 
         if (dataSource instanceof JdbcConnectionPool) {
             ((JdbcConnectionPool) dataSource).dispose();
         }
 
+        // Close the database pool
+        super.stop();
+
         if (server != null) {
             server.stop();
-
-            // Shutdown the MVStore
-            final Properties info = new Properties();
-            info.setProperty("user", username);
-            info.put("password", password);
-            final ConnectionInfo ci = new ConnectionInfo(jdbcConnectionString, info);
-            final Session session = Engine.getInstance().createSession(ci);
-            if (session.getDatabase() != null) {
-                session.getDatabase().shutdownImmediately();
-            }
+            server = null;
         }
         started.set(false);
         logger.info(String.format("H2 stopped on http://127.0.0.1:8082. JDBC=%s, Username=%s, Password=%s",
