@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -50,7 +50,7 @@ import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.killbill.commons.embeddeddb.mysql.KillBillMariaDbDataSource;
 import org.killbill.commons.jdbi.guice.DataSourceProvider.DatabaseType;
-import org.mariadb.jdbc.util.Options;
+import org.mariadb.jdbc.Configuration;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -186,9 +186,9 @@ public class TestDataSourceProvider {
         assertTrue(wrappedDataSource instanceof KillBillMariaDbDataSource);
 
         final KillBillMariaDbDataSource mariaDbDataSource = (KillBillMariaDbDataSource) wrappedDataSource;
-        final Options options = mariaDbDataSource.initializeAndGetUrlParser().getOptions();
-        assertTrue(options.cachePrepStmts);
-        assertTrue(options.useServerPrepStmts);
+        final Configuration configuration = Configuration.parse(mariaDbDataSource.getUrl());
+        assertTrue(configuration.cachePrepStmts());
+        assertTrue(configuration.useServerPrepStmts());
     }
 
     @Test(groups = "fast")
