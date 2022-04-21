@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2021 Equinix, Inc
- * Copyright 2014-2021 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -20,11 +20,10 @@
 package org.killbill.commons.embeddeddb.mysql;
 
 import java.sql.SQLException;
-import java.util.LinkedHashMap;
 import java.util.Properties;
 
+import org.mariadb.jdbc.Configuration;
 import org.mariadb.jdbc.MariaDbDataSource;
-import org.mariadb.jdbc.UrlParser;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -44,9 +43,8 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
     @Override
     public void setUrl(final String url) throws SQLException {
         this.url = url;
-        super.setUrl(url);
         // If called by PropertyElf.setTargetFromProperties (HikariCP), we need to take into account our extra properties
-        updateUrlIfNeeded();
+        updateUrlIfNeeded(); // will call super()
     }
 
     // See HikariDataSourceBuilder and https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
@@ -73,13 +71,6 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
     }
 
     private void updateUrlIfNeeded() throws SQLException {
-        if (url == null) {
-            final UrlParser urlParser = initializeAndGetUrlParser();
-            if (urlParser != null) {
-                url = urlParser.getInitialUrl();
-            }
-        }
-
         if (url != null) {
             this.url = buildUpdatedUrl(this.url);
             super.setUrl(url);
@@ -89,8 +80,13 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
     // No easy way to set MariaDB options at runtime besides updating the JDBC url
     @VisibleForTesting
     String buildUpdatedUrl(final String url) throws SQLException {
+        // See https://mariadb.com/kb/en/mariadb-connector-j-303-release-notes/
+        final Properties propertyWithPermitMysqlScheme = new Properties();
+        propertyWithPermitMysqlScheme.put("permitMysqlScheme", "true");
+        final String baseUrlWithPermitMysqlScheme = buildUpdatedUrl(url, propertyWithPermitMysqlScheme, true);
+
         final Properties props = new Properties();
-        UrlParser.parse(url, props);
+        Configuration.parse(baseUrlWithPermitMysqlScheme, props);
         if (cachePrepStmts != null && !props.containsKey("cachePrepStmts")) {
             props.put("cachePrepStmts", cachePrepStmts);
         }
@@ -104,18 +100,24 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
             props.put("useServerPrepStmts", useServerPrepStmts);
         }
 
+        return buildUpdatedUrl(url, props, false);
+    }
+
+    private String buildUpdatedUrl(final String url, final Properties props, final boolean append) {
+        if (props.isEmpty()) {
+            return url;
+        }
+
         final int separator = url.indexOf("//");
         final String urlSecondPart = url.substring(separator + 2);
         final int paramIndex = urlSecondPart.indexOf("?");
 
-        final String baseUrl = paramIndex > 0 ? url.substring(0, separator + 2 + paramIndex) : url;
         // Note: the ordering is mostly for tests, to ensure a predictable order regardless of the JDK
-        return props.isEmpty() ? baseUrl : baseUrl + "?" + mapJoiner.join(ImmutableSortedMap.copyOf(props));
-    }
-
-    @VisibleForTesting
-    public UrlParser initializeAndGetUrlParser() throws SQLException {
-        super.initialize();
-        return super.getUrlParser();
+        if (append) {
+            return url + (paramIndex > 0 ? "&" : "?") + mapJoiner.join(ImmutableSortedMap.copyOf(props));
+        } else {
+            final String baseUrl = paramIndex > 0 ? url.substring(0, separator + 2 + paramIndex) : url;
+            return baseUrl + "?" + mapJoiner.join(ImmutableSortedMap.copyOf(props));
+        }
     }
 }

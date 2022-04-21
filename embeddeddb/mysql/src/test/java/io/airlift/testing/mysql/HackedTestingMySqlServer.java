@@ -128,6 +128,6 @@ public class HackedTestingMySqlServer implements Closeable {
 
     // PIERRE: allow multi queries
     public String getJdbcUrl(final String database) {
-        return format("jdbc:mysql://localhost:%s/%s?user=%s&password=%s&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true&allowMultiQueries=true", port, database, user, password);
+        return format("jdbc:mysql://localhost:%s/%s?user=%s&password=%s&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true&allowMultiQueries=true&permitMysqlScheme=true", port, database, user, password);
     }
 }
