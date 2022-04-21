@@ -69,12 +69,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <!-- Needed by jmxutils -->
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-multibindings</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-servlet</artifactId>
             <scope>provided</scope>
