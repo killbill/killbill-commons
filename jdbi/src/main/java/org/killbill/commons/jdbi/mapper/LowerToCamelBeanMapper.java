@@ -260,7 +260,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                 // For h2, transform a JdbcBlob into a byte[]
                 if (value instanceof Blob) {
                     final Blob blob = (Blob) value;
-                    value = blob.getBytes(0, (int) blob.length());
+                    value = blob.getBytes(1, (int) blob.length());
                 }
                 if (rs.wasNull() && !type.isPrimitive()) {
                     value = null;
