@@ -20,8 +20,7 @@
 
 package org.skife.jdbi.v2.st4;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import java.util.Objects;
 
 public class Something {
     private int id;
@@ -54,21 +53,18 @@ public class Something {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final Something something = (Something) o;
-
-        return new EqualsBuilder().append(this.id, something.id)
-                                  .append(this.name, something.name)
-                                  .isEquals();
+        return id == something.id && Objects.equals(name, something.name);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(this.id)
-                                          .append(this.name)
-                                          .toHashCode();
+        return Objects.hash(id, name);
     }
 }
