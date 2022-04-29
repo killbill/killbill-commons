@@ -110,6 +110,11 @@
                     <groupId>org.eclipse.jetty.orbit</groupId>
                     <artifactId>javax.servlet</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- https://github.com/eclipse/jetty.project/issues/5943 (somehow not properly inherited in the verify phase) -->
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
