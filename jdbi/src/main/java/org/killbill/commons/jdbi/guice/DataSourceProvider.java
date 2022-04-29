@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -22,8 +22,6 @@ package org.killbill.commons.jdbi.guice;
 import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
@@ -110,9 +107,6 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     private DataSource buildDataSource() {
         switch(config.getConnectionPoolingType()) {
-            case C3P0:
-                loadDriver();
-                return new C3P0DataSourceBuilder().buildDataSource();
             case HIKARICP:
                 if (dataSourceClassName != null) {
                     loadDriver();
@@ -209,58 +203,6 @@ public class DataSourceProvider implements Provider<DataSource> {
                 logger.error("Unable to initialize the database pool", e);
                 throw e;
             }
-        }
-
-    }
-
-    private class C3P0DataSourceBuilder {
-
-        DataSource buildDataSource() {
-            final ComboPooledDataSource cpds = new ComboPooledDataSource();
-            cpds.setJdbcUrl(config.getJdbcUrl());
-            cpds.setUser(config.getUsername());
-            cpds.setPassword(config.getPassword());
-            // http://www.mchange.com/projects/c3p0/#minPoolSize
-            // Minimum number of Connections a pool will maintain at any given time.
-            cpds.setMinPoolSize(config.getMinIdle());
-            // http://www.mchange.com/projects/c3p0/#maxPoolSize
-            // Maximum number of Connections a pool will maintain at any given time.
-            cpds.setMaxPoolSize(config.getMaxActive());
-            // http://www.mchange.com/projects/c3p0/#checkoutTimeout
-            // The number of milliseconds a client calling getConnection() will wait for a Connection to be checked-in or
-            // acquired when the pool is exhausted. Zero means wait indefinitely. Setting any positive value will cause the getConnection()
-            // call to time-out and break with an SQLException after the specified number of milliseconds.
-            cpds.setCheckoutTimeout(toMilliSeconds(config.getConnectionTimeout()));
-            // http://www.mchange.com/projects/c3p0/#maxIdleTime
-            // Seconds a Connection can remain pooled but unused before being discarded. Zero means idle connections never expire.
-            cpds.setMaxIdleTime(toSeconds(config.getIdleMaxAge()));
-            // http://www.mchange.com/projects/c3p0/#maxConnectionAge
-            // Seconds, effectively a time to live. A Connection older than maxConnectionAge will be destroyed and purged from the pool.
-            // This differs from maxIdleTime in that it refers to absolute age. Even a Connection which has not been much idle will be purged
-            // from the pool if it exceeds maxConnectionAge. Zero means no maximum absolute age is enforced.
-            cpds.setMaxConnectionAge(toSeconds(config.getMaxConnectionAge()));
-            // http://www.mchange.com/projects/c3p0/#idleConnectionTestPeriod
-            // If this is a number greater than 0, c3p0 will test all idle, pooled but unchecked-out connections, every this number of seconds.
-            cpds.setIdleConnectionTestPeriod(toSeconds(config.getIdleConnectionTestPeriod()));
-            // The number of PreparedStatements c3p0 will cache for a single pooled Connection.
-            // If both maxStatements and maxStatementsPerConnection are zero, statement caching will not be enabled.
-            // If maxStatementsPerConnection is zero but maxStatements is a non-zero value, statement caching will be enabled,
-            // and a global limit enforced, but otherwise no limit will be set on the number of cached statements for a single Connection.
-            // If set, maxStatementsPerConnection should be set to about the number distinct PreparedStatements that are used
-            // frequently in your application, plus two or three extra so infrequently statements don't force the more common
-            // cached statements to be culled. Though maxStatements is the JDBC standard parameter for controlling statement caching,
-            // users may find maxStatementsPerConnection more intuitive to use.
-            cpds.setMaxStatementsPerConnection(config.getPreparedStatementsCacheSize());
-            cpds.setDataSourceName(poolName);
-
-            final String initSQL = config.getConnectionInitSql();
-            if (initSQL != null && !initSQL.isEmpty()) {
-                final Map<String, Object> extensions = new HashMap<String, Object>(4);
-                extensions.put("initSql", initSQL);
-                cpds.setExtensions(extensions);
-                cpds.setConnectionCustomizerClassName("com.mchange.v2.c3p0.example.InitSqlConnectionCustomizer");
-            }
-            return cpds;
         }
     }
 
