@@ -55,7 +55,6 @@ import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool;
 
@@ -189,21 +188,6 @@ public class TestDataSourceProvider {
         final Configuration configuration = Configuration.parse(mariaDbDataSource.getUrl());
         assertTrue(configuration.cachePrepStmts());
         assertTrue(configuration.useServerPrepStmts());
-    }
-
-    @Test(groups = "fast")
-    public void testDataSourceProviderC3P0() throws Exception {
-        for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
-            for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
-                final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.C3P0, databaseType);
-
-                final String poolName = TEST_POOL_PREFIX + "-" + databaseType + "_C3P0";
-                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB);
-
-                final DataSource dataSource = dataSourceProvider.get();
-                assertTrue(dataSource instanceof ComboPooledDataSource);
-            }
-        }
     }
 
     DaoConfig buildDaoConfig(final DataSourceConnectionPoolingType poolingType, final DataSourceProvider.DatabaseType databaseType) {
