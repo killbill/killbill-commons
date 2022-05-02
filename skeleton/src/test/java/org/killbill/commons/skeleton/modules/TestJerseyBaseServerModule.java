@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,12 +19,12 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Map;
-import java.util.concurrent.Future;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.killbill.commons.health.api.HealthCheck;
@@ -71,11 +71,11 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
                                                        });
         final Server server = startServer(injector);
 
-        final AsyncHttpClient client = new DefaultAsyncHttpClient();
+        final HttpClient client = HttpClient.newHttpClient();
 
         // Verify healthcheck integration
-        Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/1.0/healthcheck").execute();
-        String body = responseFuture.get().getResponseBody();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/1.0/healthcheck")).build();
+        String body = client.send(request, BodyHandlers.ofString()).body();
         final Map<String, Map<String, ?>> deserializedChecks = injector.getInstance(ObjectMapper.class).readValue(body, new TypeReference<>() {});
         Assert.assertEquals(deserializedChecks.get("org.killbill.commons.skeleton.modules.TestJerseyBaseServerModule$TestHealthCheck").get("healthy"), true);
         Assert.assertEquals(deserializedChecks.get("org.killbill.commons.skeleton.modules.TestJerseyBaseServerModule$TestHealthCheck").get("message"), "this is working");
@@ -88,14 +88,14 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
         // Do multiple passes to verify Singleton pattern
         for (int i = 0; i < 5; i++) {
-            responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
-            body = responseFuture.get().getResponseBody();
+            request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/")).build();
+            body = client.send(request, BodyHandlers.ofString()).body();
             Assert.assertEquals(body, "Hello alhuile");
             Assert.assertEquals(HelloFilter.invocations, i + 1);
         }
 
-        responseFuture = client.preparePost("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello").execute();
-        body = responseFuture.get().getResponseBody();
+        request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello")).POST(HttpRequest.BodyPublishers.noBody()).build();
+        body = client.send(request, BodyHandlers.ofString()).body();
         Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
 
         Assert.assertEquals(metricRegistry.getMetrics().size(), 2);
