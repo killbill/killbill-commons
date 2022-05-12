@@ -21,6 +21,7 @@ package org.killbill.commons.embeddeddb.h2;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -142,8 +143,11 @@ public class H2EmbeddedDB extends EmbeddedDB {
             throw new IOException("H2 is not running");
         }
 
+        // Close the database pool ASAP to make sure the database is never re-opened by background threads
+        super.stop();
+
         try {
-            final Connection connection = dataSource.getConnection();
+            final Connection connection = DriverManager.getConnection(jdbcConnectionString, username, password);
             if (connection != null) {
                 try {
                     final Statement stat = connection.createStatement();
@@ -165,9 +169,6 @@ public class H2EmbeddedDB extends EmbeddedDB {
         if (dataSource instanceof JdbcConnectionPool) {
             ((JdbcConnectionPool) dataSource).dispose();
         }
-
-        // Close the database pool
-        super.stop();
 
         if (server != null) {
             server.stop();
