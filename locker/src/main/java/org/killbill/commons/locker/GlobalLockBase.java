@@ -59,10 +59,14 @@ public class GlobalLockBase implements GlobalLock {
 
                 if (resetCallback != null && !resetCallback.reset(lockName)) {
                     // We are not the last one using that lock, bail early (AND don't close the connection)...
+                    logger.info("Skip releasing lock (owner re-entered) for " + lockName);
                     return null;
                 }
                 try {
-                    lockDao.releaseLock(connection, lockName);
+                    final boolean status = lockDao.releaseLock(connection, lockName);
+                    if (!status) {
+                        logger.warn("Failed to release global lock for " + lockName);
+                    }
                 } catch (final SQLException e) {
                     logger.warn("Unable to release lock for " + lockName, e);
                 } finally {

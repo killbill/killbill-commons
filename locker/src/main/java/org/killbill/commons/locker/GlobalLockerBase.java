@@ -73,10 +73,14 @@ public abstract class GlobalLockerBase implements GlobalLocker {
     protected GlobalLock lock(final String lockName) {
         final TryAcquireLockState lockState = lockTable.tryAcquireLockForExistingOwner(lockName);
         if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_OWNER) {
+            logger.info("HELD_OWNER lock for " + lockName);
             return lockState.getOriginalLock();
         }
 
         if (lockState.getLockState() == ReentrantLock.ReentrantLockState.HELD_NOT_OWNER) {
+
+            logger.info("HELD_NOT_OWNER lock for " + lockName);
+
             // In that case, we need to respect the provided timeout value
             try {
                 Thread.sleep(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
