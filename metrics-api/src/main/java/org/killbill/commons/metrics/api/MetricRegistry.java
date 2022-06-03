@@ -17,7 +17,7 @@
 
 package org.killbill.commons.metrics.api;
 
-import java.util.Map;
+import java.util.function.DoubleSupplier;
 
 public interface MetricRegistry {
 
@@ -28,7 +28,7 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return a new or pre-existing {@link Counter}
      */
-    public Counter counter(String name);
+    Counter counter(String name, String ...labelNames);
 
     /**
      * Return the {@link Gauge} registered under this name; or create and register
@@ -38,34 +38,25 @@ public interface MetricRegistry {
      * @param supplier the underlying Gauge
      * @return a new or pre-existing {@link Gauge}
      */
-    <T> Gauge<T> gauge(String name, Gauge<T> supplier);
+    Gauge gauge(String name, String ...labelNames);
+
+    Gauge gauge(String name, DoubleSupplier supplier, String ...labelNames);
 
     /**
      * Return the {@link Histogram} registered under this name; or create and register
-     * a new {@link Histogram} if none is registered.
+     * a new {@link Histogram} if none is registered using the implementation's default
+     * bucket distribution.
      *
      * @param name the name of the metric
      * @return a new or pre-existing {@link Histogram}
      */
-    Histogram histogram(String name);
+    Histogram histogram(String name, String ...labelNames);
 
-    /**
-     * Return the {@link Meter} registered under this name; or create and register
-     * a new {@link Meter} if none is registered.
-     *
-     * @param name the name of the metric
-     * @return a new or pre-existing {@link Meter}
-     */
-    public Meter meter(String name);
+    Histogram histogram(String name, double[] buckets, String ...labelNames);
 
-    /**
-     * Return the {@link Timer} registered under this name; or create and register
-     * a new {@link Timer} if none is registered.
-     *
-     * @param name the name of the metric
-     * @return a new or pre-existing {@link Timer}
-     */
-    Timer timer(String name);
+    Summary summary(String name, String ...labelNames);
+
+    Summary summary(String name, double[] quantiles, String ...labelNames);
 
     /**
      * Removes the metric with the given name.
@@ -73,17 +64,5 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return whether or not the metric was removed
      */
-    boolean remove(String name);
-
-    Map<String, ?> getMetrics();
-
-    Map<String, Counter> getCounters();
-
-    Map<String, Histogram> getHistograms();
-
-    Map<String, Gauge<?>> getGauges();
-
-    Map<String, Meter> getMeters();
-
-    Map<String, Timer> getTimers();
+    boolean remove(String name, String ...labelNames);
 }

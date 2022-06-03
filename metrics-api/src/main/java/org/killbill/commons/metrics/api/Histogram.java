@@ -18,14 +18,14 @@
 package org.killbill.commons.metrics.api;
 
 /**
- * A metric which calculates the distribution of a value.
+ * A metric which calculates the distribution of a value into specific value buckets.
  */
-public interface Histogram extends Metric, Sampling, Counting {
+public interface Histogram extends Metric {
 
     /**
      * Adds a recorded value.
      *
      * @param value the length of the value
      */
-    void update(long value);
+    void update(double value, String ...labels);
 }

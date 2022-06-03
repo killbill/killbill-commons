@@ -20,21 +20,21 @@ package org.killbill.commons.metrics.api;
 /**
  * An incrementing and decrementing counter metric.
  */
-public interface Counter extends Metric, Counting {
+public interface Counter extends Metric {
 
     /**
      * Increment the counter by {@code n}.
      *
      * @param n the amount by which the counter will be increased
      */
-    void inc(long n);
+    void inc(double n, String ...labels);
 
     /**
-     * Decrement the counter by {@code n}.
-     *
-     * @param n the amount by which the counter will be decreased
+     * Increment the counter by 1.
      */
-    default void dec(final long n) {
-        inc(-n);
+    default void inc(String ...labels) {
+        inc(1, labels);
     }
+
+    double get(String... labels);
 }

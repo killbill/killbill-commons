@@ -17,21 +17,10 @@
 
 package org.killbill.commons.metrics.api;
 
-public interface Gauge extends Metric {
+/**
+ * A metric which calculates the distribution of a value into quantiles.
+ */
+public interface Summary extends Metric {
 
-    void set(double value, String ...labels);
-
-    void inc(double value, String... labels);
-
-    default void inc(String ...labels) {
-        inc(1, labels);
-    }
-
-    void dec(double value, String... labels);
-
-    default void dec(String ...labels) {
-        dec(1, labels);
-    }
-
-    double get(String ...labels);
+    void update(double value, String ...labels);
 }
