@@ -51,6 +51,7 @@
         <module>automaton</module>
         <module>metrics</module>
         <module>metrics-api</module>
+        <module>utils</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
