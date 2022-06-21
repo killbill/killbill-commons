@@ -51,6 +51,7 @@
         <module>automaton</module>
         <module>metrics</module>
         <module>metrics-api</module>
+        <module>utils</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
@@ -161,6 +162,11 @@
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-skeleton</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-utils</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
