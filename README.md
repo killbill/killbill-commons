@@ -100,6 +100,11 @@ Add the relevant submodule(s) to a project:
     <artifactId>killbill-skeleton</artifactId>
     <version>... release version ...</version>
 </dependency>
+<dependency>
+<groupId>org.kill-bill.commons</groupId>
+<artifactId>killbill-utils</artifactId>
+<version>... release version ...</version>
+</dependency>
 ```
 
 ## About
