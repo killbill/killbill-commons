@@ -45,7 +45,7 @@ public class TestMultiValueHashMap {
         final MultiValueMap<String, KeyValue> multiValueMap = new MultiValueHashMap<>();
 
         try {
-            multiValueMap.putElement("one", null);
+            multiValueMap.putElement("one", (KeyValue[]) null);
             fail("IllegalArgumentException should be thrown because null element");
         } catch (final IllegalArgumentException ignored) {}
 
