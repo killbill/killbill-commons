@@ -15,13 +15,4 @@
   ~ under the License.
   -->
 
-<FindBugsFilter>
-    <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP"/>
-    </Match>
-    <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP2"/>
-    </Match>
-</FindBugsFilter>
+<FindBugsFilter />
