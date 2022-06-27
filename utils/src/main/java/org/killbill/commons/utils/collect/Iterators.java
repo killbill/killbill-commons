@@ -72,7 +72,7 @@ public final class Iterators {
      */
     public static <F, T> Iterator<T> transform(final Iterator<F> fromIterator, final Function<? super F, ? extends T> function) {
         Preconditions.checkNotNull(function);
-        return new TransformedIterator<F, T>(fromIterator) {
+        return new TransformedIterator<>(fromIterator) {
             @Override
             T transform(final F from) {
                 return function.apply(from);
@@ -158,5 +158,9 @@ public final class Iterators {
      */
     public static <T> T getLast(final Iterator<? extends T> iterator, final T defaultValue) {
         return iterator.hasNext() ? getLast(iterator) : defaultValue;
+    }
+
+    public static <T> Iterator<T> concat(final Iterator<? extends Iterator<? extends T>> inputs) {
+        return new ConcatenatedIterator<>(inputs);
     }
 }
