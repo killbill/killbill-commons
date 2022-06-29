@@ -33,7 +33,7 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBusThatThrowsException;
+import com.google.common.eventbus.EventBus;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -48,7 +48,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         return true;
     }
 
-    public static class EventBusDelegate extends EventBusThatThrowsException {
+    public static class EventBusDelegate extends EventBus {
 
         public EventBusDelegate() {
             super("Bus");

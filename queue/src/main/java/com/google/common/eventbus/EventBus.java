@@ -14,7 +14,6 @@
 
 package com.google.common.eventbus;
 
-import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -23,6 +22,8 @@ import java.util.logging.Logger;
 
 import org.killbill.commons.concurrent.DirectExecutor;
 import org.killbill.commons.utils.Preconditions;
+
+import com.google.common.eventbus.Dispatcher.ImmediateDispatcher;
 
 /**
  * Dispatches events to listeners, and provides ways for listeners to register themselves.
@@ -165,26 +166,27 @@ public class EventBus {
     }
 
     /**
-     * Creates a new EventBus with the given {@code identifier}.
+     * Creates a new EventBus with the given {@code identifier}. Different with original Guava's implementation,
+     * this constructor will use {@link ImmediateDispatcher} and {@link DefaultCatchableSubscriberExceptionsHandler}.
      *
-     * @param identifier a brief name for this bus, for logging purposes. Should be a valid Java
-     *                   identifier.
+     * @param identifier a brief name for this bus.
      */
     public EventBus(final String identifier) {
-        this(identifier, DirectExecutor.INSTANCE, Dispatcher.perThreadDispatchQueue(), LoggingHandler.INSTANCE);
+        this(identifier, DirectExecutor.INSTANCE, Dispatcher.immediate(), new DefaultCatchableSubscriberExceptionsHandler());
     }
 
     /**
-     * Creates a new EventBus with the given {@link SubscriberExceptionHandler}.
+     * Creates a new EventBus with the given {@link SubscriberExceptionHandler}. Different with original Guava's
+     * implementation, this constructor will use {@link ImmediateDispatcher} as default dispatcher.
      *
      * @param exceptionHandler Handler for subscriber exceptions.
      * @since 16.0
      */
     public EventBus(final SubscriberExceptionHandler exceptionHandler) {
-        this("default", DirectExecutor.INSTANCE, Dispatcher.perThreadDispatchQueue(), exceptionHandler);
+        this("default", DirectExecutor.INSTANCE, Dispatcher.immediate(), exceptionHandler);
     }
 
-    EventBus(final String identifier, final Executor executor, final Dispatcher dispatcher, final SubscriberExceptionHandler exceptionHandler) {
+    public EventBus(final String identifier, final Executor executor, final Dispatcher dispatcher, final SubscriberExceptionHandler exceptionHandler) {
         this.identifier = Preconditions.checkNotNull(identifier);
         this.executor = Preconditions.checkNotNull(executor);
         this.dispatcher = Preconditions.checkNotNull(dispatcher);
@@ -263,43 +265,58 @@ public class EventBus {
         }
     }
 
+    /**
+     * <p>Post an event with ability to handle exception, if any.</p>
+     *
+     * <p>Using this method require that when creating {@code EventBus} instance:
+     *   <ul>
+     *       <li>exceptionHandler should be instance of CatchableSubscriberExceptionHandler</li>
+     *       <li>executor should be instance of DirectExecutor</li>
+     *       <li>dispatcher should be instance of ImmediateDispatcher</li>
+     *   </ul>
+     * </p>
+     * @param event event to post.
+     * @throws EventBusException
+     */
+    public void postWithException(final Object event) throws EventBusException {
+        Preconditions.checkState(exceptionHandler instanceof CatchableSubscriberExceptionHandler, "exceptionHandler should be instance of CatchableSubscriberExceptionHandler");
+        Preconditions.checkState(executor instanceof  DirectExecutor, "executor should be instance of DirectExecutor");
+        Preconditions.checkState(dispatcher instanceof ImmediateDispatcher, "dispatcher should be instance of ImmediateDispatcher");
+
+        final CatchableSubscriberExceptionHandler catchableExceptionHandler = (CatchableSubscriberExceptionHandler) exceptionHandler;
+        final Iterator<Subscriber> eventSubscribers = subscribers.getSubscribers(event);
+        if (eventSubscribers.hasNext()) {
+            // Just in case...
+            catchableExceptionHandler.reset();
+
+            RuntimeException guavaException = null;
+            final Exception subscriberException;
+            try {
+                dispatcher.dispatch(event, eventSubscribers);
+            } catch (final RuntimeException e) {
+                guavaException = e;
+            } finally {
+                // This works because we are both using the immediate dispatcher and the direct executor
+                // Note: we always want to dequeue here to avoid any memory leaks
+                subscriberException = catchableExceptionHandler.caughtException();
+            }
+
+            if (guavaException != null) {
+                throw guavaException;
+            }
+            if (subscriberException != null) {
+                throw new EventBusException(subscriberException);
+            }
+        } else if (!(event instanceof DeadEvent)) {
+            // the event had no subscribers and was not itself a DeadEvent
+            post(new DeadEvent(this, event));
+        }
+    }
+
     @Override
     public String toString() {
         return "EventBus {" +
                "identifier='" + identifier + '\'' +
                '}';
-    }
-
-    /**
-     * Simple logging handler for subscriber exceptions.
-     */
-    static final class LoggingHandler implements SubscriberExceptionHandler {
-
-        static final LoggingHandler INSTANCE = new LoggingHandler();
-
-        private static Logger logger(final SubscriberExceptionContext context) {
-            return Logger.getLogger(EventBus.class.getName() + "." + context.getEventBus().identifier());
-        }
-
-        private static String message(final SubscriberExceptionContext context) {
-            final Method method = context.getSubscriberMethod();
-            return "Exception thrown by subscriber method "
-                   + method.getName()
-                   + '('
-                   + method.getParameterTypes()[0].getName()
-                   + ')'
-                   + " on subscriber "
-                   + context.getSubscriber()
-                   + " when dispatching event: "
-                   + context.getEvent();
-        }
-
-        @Override
-        public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
-            final Logger logger = logger(context);
-            if (logger.isLoggable(Level.SEVERE)) {
-                logger.log(Level.SEVERE, message(context), exception);
-            }
-        }
     }
 }

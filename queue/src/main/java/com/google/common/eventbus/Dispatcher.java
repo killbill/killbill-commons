@@ -74,7 +74,7 @@ abstract class Dispatcher {
     /**
      * Implementation of a {@link #perThreadDispatchQueue()} dispatcher.
      */
-    private static final class PerThreadQueuedDispatcher extends Dispatcher {
+    static final class PerThreadQueuedDispatcher extends Dispatcher {
 
         // This dispatcher matches the original dispatch behavior of EventBus.
 
@@ -179,7 +179,7 @@ abstract class Dispatcher {
     /**
      * Implementation of {@link #immediate()}.
      */
-    private static final class ImmediateDispatcher extends Dispatcher {
+    static final class ImmediateDispatcher extends Dispatcher {
 
         private static final ImmediateDispatcher INSTANCE = new ImmediateDispatcher();
 
