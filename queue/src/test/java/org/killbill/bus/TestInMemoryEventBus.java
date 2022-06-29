@@ -148,12 +148,12 @@ public class TestInMemoryEventBus {
         testEventBusBase.testDifferentType();
     }
 
-    @Test(groups = "slow")
+    @Test(groups = "fast")
     public void testSimpleWithExceptionAndRetrySuccess() {
         testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
     }
 
-    @Test(groups = "slow")
+    @Test(groups = "fast")
     public void testSimpleWithExceptionAndFail() {
         testEventBusBase.testSimpleWithExceptionAndFail();
     }

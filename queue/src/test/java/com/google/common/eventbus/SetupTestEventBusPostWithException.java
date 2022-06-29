@@ -20,6 +20,7 @@
 package com.google.common.eventbus;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -31,16 +32,16 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-class TestSetupEventBusThatThrowsException {
+class SetupTestEventBusPostWithException {
 
     static final Random rand = new Random();
 
-    EventBusThatThrowsException eventBus;
+    EventBus eventBus;
     Subscriber subscriberA;
     Subscriber subscriberB;
 
     void busSetup() {
-        eventBus = new EventBusThatThrowsException("testing");
+        eventBus = new EventBus("testing");
 
         subscriberA = new SubscriberA();
         eventBus.register(subscriberA);
@@ -114,7 +115,7 @@ class TestSetupEventBusThatThrowsException {
 
             final MyEvent myEvent = (MyEvent) o;
 
-            return id != null ? id.equals(myEvent.id) : myEvent.id == null;
+            return Objects.equals(id, myEvent.id);
         }
 
         @Override

@@ -1,8 +1,6 @@
 /*
- * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -23,24 +21,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
-public class TestEventBusThatThrowsException extends TestSetupEventBusThatThrowsException {
+/**
+ * Move all test from {@code TestEventBusThatThrowsException} and {@code TestMultiThreadedEventBusThatThrowsException}
+ */
+public class TestEventBusPostWithException extends SetupTestEventBusPostWithException {
 
-    @BeforeMethod(groups = "fast")
-    public void setUp() throws Exception {
+    @BeforeSuite(groups = "fast")
+    public void beforeSuite() {
         busSetup();
     }
 
-    @AfterMethod(groups = "fast")
-    public void tearDown() throws Exception {
-        Assert.assertNull(eventBus.exceptionHandler.lastException.get());
-    }
-
     @Test(groups = "fast")
-    public void testThrowFirstExceptionFromSubscribersV1() throws Exception {
+    public void testThrowFirstExceptionFromSubscribersV1() {
         final MyEvent event = new MyEvent(UUID.randomUUID(), "A");
 
         try {
@@ -57,7 +52,7 @@ public class TestEventBusThatThrowsException extends TestSetupEventBusThatThrows
     }
 
     @Test(groups = "fast")
-    public void testThrowFirstExceptionFromSubscribersV2() throws Exception {
+    public void testThrowFirstExceptionFromSubscribersV2() {
         final MyEvent event = new MyEvent(UUID.randomUUID(), "B");
 
         try {
@@ -74,7 +69,7 @@ public class TestEventBusThatThrowsException extends TestSetupEventBusThatThrows
     }
 
     @Test(groups = "fast")
-    public void testThrowFirstExceptionFromSubscribersV3() throws Exception {
+    public void testThrowFirstExceptionFromSubscribersV3() {
         final MyEvent event = new MyEvent(UUID.randomUUID(), "A", "B");
 
         try {
@@ -89,5 +84,31 @@ public class TestEventBusThatThrowsException extends TestSetupEventBusThatThrows
 
         checkEventsSeen(subscriberA);
         checkEventsSeen(subscriberB);
+    }
+
+
+    // Make sure to use a large enough invocationCount so that threads are re-used
+    @Test(groups = "fast", threadPoolSize = 25, invocationCount = 100, description = "Check that postWithException is thread safe")
+    public void testThrowFirstExceptionMultithreaded() {
+        final int n = rand.nextInt(10000) + 1;
+        final String subscriberMarker = n % 2 == 0 ? "A" : "B";
+        final MyEvent event = new MyEvent(UUID.randomUUID(), subscriberMarker);
+
+        try {
+            eventBus.postWithException(event);
+            Assert.fail();
+        } catch (final EventBusException e) {
+            Assert.assertTrue(e.getCause() instanceof InvocationTargetException);
+            Assert.assertTrue(e.getCause().getCause() instanceof RuntimeException);
+            Assert.assertEquals(e.getCause().getCause().getMessage(), Subscriber.exceptionMarker(subscriberMarker));
+        }
+
+        if ("A".equals(subscriberMarker)) {
+            checkEventsSeen(subscriberA);
+            checkEventsSeen(subscriberB, event);
+        } else {
+            checkEventsSeen(subscriberA, event);
+            checkEventsSeen(subscriberB);
+        }
     }
 }
