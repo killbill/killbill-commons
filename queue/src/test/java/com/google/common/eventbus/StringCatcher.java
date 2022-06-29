@@ -18,7 +18,9 @@ package com.google.common.eventbus;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.checkerframework.checker.nullness.qual.Nullable;
+
+import javax.annotation.Nullable;
+
 import org.testng.Assert;
 
 /**
