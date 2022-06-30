@@ -19,6 +19,7 @@ package com.google.common.eventbus;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.killbill.commons.concurrent.DirectExecutor;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -37,7 +38,8 @@ public class TestReentrantEvents {
 
     @BeforeMethod
     public void beforeMethod() {
-        bus = new EventBus();
+        // to post reentrant-ly, we should use Dispatcher.perThreadDispatchQueue()
+        bus = new EventBus("", DirectExecutor.INSTANCE, Dispatcher.perThreadDispatchQueue(), new DefaultCatchableSubscriberExceptionsHandler());
     }
 
     @Test
