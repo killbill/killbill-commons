@@ -72,7 +72,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import com.google.common.eventbus.EventBus;
+import org.killbill.common.eventbus.EventBus;
 
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
@@ -417,7 +417,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         return sb.toString();
     }
 
-    public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
+    public void dispatchBusEventWithMetrics(final QueueEvent event) throws org.killbill.common.eventbus.EventBusException {
         final long ini = System.nanoTime();
         try {
             eventBusDelegate.postWithException(event);

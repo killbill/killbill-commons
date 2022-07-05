@@ -1,31 +1,35 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.killbill.common.eventbus.DefaultCatchableSubscriberExceptionsHandler;
+import org.killbill.common.eventbus.EventBus;
+import org.killbill.common.eventbus.Subscribe;
 import org.killbill.commons.concurrent.DirectExecutor;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
- * Validate that {@link EventBus} behaves carefully when listeners publish their own events.
+ * Validate that {@link org.killbill.common.eventbus.EventBus} behaves carefully when listeners publish their own events.
  *
  * @author Jesse Wilson
  */
@@ -34,12 +38,12 @@ public class TestReentrantEvents {
     static final String FIRST = "one";
     static final Double SECOND = 2.0d;
 
-    private EventBus bus;
+    private org.killbill.common.eventbus.EventBus bus;
 
     @BeforeMethod
     public void beforeMethod() {
         // to post reentrant-ly, we should use Dispatcher.perThreadDispatchQueue()
-        bus = new EventBus("", DirectExecutor.INSTANCE, Dispatcher.perThreadDispatchQueue(), new DefaultCatchableSubscriberExceptionsHandler());
+        bus = new EventBus("", DirectExecutor.INSTANCE, org.killbill.common.eventbus.Dispatcher.perThreadDispatchQueue(), new DefaultCatchableSubscriberExceptionsHandler());
     }
 
     @Test
@@ -56,7 +60,7 @@ public class TestReentrantEvents {
         boolean ready = true;
         List<Object> eventsReceived = new ArrayList<>();
 
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void listenForStrings(final String event) {
             eventsReceived.add(event);
             ready = false;
@@ -67,7 +71,7 @@ public class TestReentrantEvents {
             }
         }
 
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void listenForDoubles(final Double event) {
             Assert.assertTrue(ready, "I received an event when I wasn't ready!");
             eventsReceived.add(event);
@@ -88,7 +92,7 @@ public class TestReentrantEvents {
     }
 
     public class EventProcessor {
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void listenForStrings(final String ignored) {
             bus.post(SECOND);
         }

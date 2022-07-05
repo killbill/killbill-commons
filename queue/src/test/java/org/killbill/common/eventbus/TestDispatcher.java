@@ -1,20 +1,21 @@
 /*
- * Copyright (C) 2014 The Guava Authors
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -24,36 +25,38 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 
+import org.killbill.common.eventbus.EventBus;
+import org.killbill.common.eventbus.Subscribe;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
- * Tests for {@link Dispatcher} implementations.
+ * Tests for {@link org.killbill.common.eventbus.Dispatcher} implementations.
  *
  * @author Colin Decker
  */
 public class TestDispatcher {
 
-    private final EventBus bus = new EventBus();
+    private final org.killbill.common.eventbus.EventBus bus = new org.killbill.common.eventbus.EventBus();
 
     private final IntegerSubscriber i1 = new IntegerSubscriber("i1");
     private final IntegerSubscriber i2 = new IntegerSubscriber("i2");
     private final IntegerSubscriber i3 = new IntegerSubscriber("i3");
-    private final List<Subscriber> integerSubscribers = List.of(subscriber(bus, i1, "handleInteger", Integer.class),
-                                                                subscriber(bus, i2, "handleInteger", Integer.class),
-                                                                subscriber(bus, i3, "handleInteger", Integer.class));
+    private final List<org.killbill.common.eventbus.Subscriber> integerSubscribers = List.of(subscriber(bus, i1, "handleInteger", Integer.class),
+                                                                                             subscriber(bus, i2, "handleInteger", Integer.class),
+                                                                                             subscriber(bus, i3, "handleInteger", Integer.class));
 
     private final StringSubscriber s1 = new StringSubscriber("s1");
     private final StringSubscriber s2 = new StringSubscriber("s2");
-    private final List<Subscriber> stringSubscribers = List.of(subscriber(bus, s1, "handleString", String.class),
-                                                               subscriber(bus, s2, "handleString", String.class));
+    private final List<org.killbill.common.eventbus.Subscriber> stringSubscribers = List.of(subscriber(bus, s1, "handleString", String.class),
+                                                                                            subscriber(bus, s2, "handleString", String.class));
     private final ConcurrentLinkedQueue<Object> dispatchedSubscribers = Queues.newConcurrentLinkedQueue();
 
-    private Dispatcher dispatcher;
+    private org.killbill.common.eventbus.Dispatcher dispatcher;
 
     @Test
     public void testPerThreadQueuedDispatcher() {
-        dispatcher = Dispatcher.perThreadDispatchQueue();
+        dispatcher = org.killbill.common.eventbus.Dispatcher.perThreadDispatchQueue();
         dispatcher.dispatch(1, integerSubscribers.iterator());
 
         Assert.assertTrue(dispatchedSubscribers.containsAll(List.of(i1, i2, i3, // Integer subscribers are dispatched to first.
@@ -64,7 +67,7 @@ public class TestDispatcher {
 
     @Test
     public void testLegacyAsyncDispatcher() {
-        dispatcher = Dispatcher.legacyAsync();
+        dispatcher = org.killbill.common.eventbus.Dispatcher.legacyAsync();
 
         final CyclicBarrier barrier = new CyclicBarrier(2);
         final CountDownLatch latch = new CountDownLatch(2);
@@ -111,16 +114,16 @@ public class TestDispatcher {
 
     @Test
     public void testImmediateDispatcher() {
-        dispatcher = Dispatcher.immediate();
+        dispatcher = org.killbill.common.eventbus.Dispatcher.immediate();
         dispatcher.dispatch(1, integerSubscribers.iterator());
 
         Assert.assertTrue(dispatchedSubscribers.containsAll(List.of(i1, s1, s2, // Each integer subscriber immediately dispatches to 2 string subscribers.
                                                                     i2, s1, s2, i3, s1, s2)));
     }
 
-    private static Subscriber subscriber(final EventBus bus, final Object target, final String methodName, final Class<?> eventType) {
+    private static org.killbill.common.eventbus.Subscriber subscriber(final EventBus bus, final Object target, final String methodName, final Class<?> eventType) {
         try {
-            return Subscriber.create(bus, target, target.getClass().getMethod(methodName, eventType));
+            return org.killbill.common.eventbus.Subscriber.create(bus, target, target.getClass().getMethod(methodName, eventType));
         } catch (final NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -133,7 +136,7 @@ public class TestDispatcher {
             this.name = name;
         }
 
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void handleInteger(final Integer ignored) {
             dispatchedSubscribers.add(this);
             dispatcher.dispatch("hello", stringSubscribers.iterator());

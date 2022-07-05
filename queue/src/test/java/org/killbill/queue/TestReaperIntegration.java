@@ -45,8 +45,8 @@ import org.testng.annotations.Test;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
+import org.killbill.common.eventbus.AllowConcurrentEvents;
+import org.killbill.common.eventbus.Subscribe;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;

@@ -48,8 +48,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
+import org.killbill.common.eventbus.AllowConcurrentEvents;
+import org.killbill.common.eventbus.Subscribe;
 
 public class DBBackedQueueWithInflightQueue<T extends EventEntryModelDao> extends DBBackedQueue<T> {
 

@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

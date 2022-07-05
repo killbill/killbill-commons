@@ -1,8 +1,6 @@
 /*
- * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,22 +15,17 @@
  * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
-public class EventBusException extends Exception {
+/**
+ * Handler for exceptions thrown by event subscribers.
+ *
+ * @since 16.0
+ */
+public interface SubscriberExceptionHandler {
 
-    public EventBusException() {
-    }
-
-    public EventBusException(final String message) {
-        super(message);
-    }
-
-    public EventBusException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
-
-    public EventBusException(final Throwable cause) {
-        super(cause);
-    }
+    /**
+     * Handles exceptions thrown by subscribers.
+     */
+    void handleException(Throwable exception, SubscriberExceptionContext context);
 }

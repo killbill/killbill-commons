@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;

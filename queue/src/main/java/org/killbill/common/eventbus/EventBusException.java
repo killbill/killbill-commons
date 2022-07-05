@@ -15,14 +15,22 @@
  * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
-/**
- * An implementation of this instance should be used in order to work with {@link EventBus#postWithException(Object)}.
- */
-public interface CatchableSubscriberExceptionHandler extends SubscriberExceptionHandler {
+public class EventBusException extends Exception {
 
-    Exception caughtException();
+    public EventBusException() {
+    }
 
-    void reset();
+    public EventBusException(final String message) {
+        super(message);
+    }
+
+    public EventBusException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
+    public EventBusException(final Throwable cause) {
+        super(cause);
+    }
 }

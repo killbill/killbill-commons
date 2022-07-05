@@ -21,8 +21,8 @@ package org.killbill.bus;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
+import org.killbill.common.eventbus.AllowConcurrentEvents;
+import org.killbill.common.eventbus.Subscribe;
 import com.google.common.io.Resources;
 import org.killbill.TestSetup;
 import org.killbill.bus.api.BusEvent;

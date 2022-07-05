@@ -46,8 +46,8 @@ import org.testng.annotations.Test;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
+import org.killbill.common.eventbus.AllowConcurrentEvents;
+import org.killbill.common.eventbus.Subscribe;
 
 public class TestLoadDefaultPersistentBus extends TestSetup {
 

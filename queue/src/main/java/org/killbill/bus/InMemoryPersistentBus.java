@@ -33,7 +33,7 @@ import org.killbill.bus.api.PersistentBusConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBus;
+import org.killbill.common.eventbus.EventBus;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -91,7 +91,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         checkInitialized("post");
         try {
             delegate.postWithException(event);
-        } catch (final com.google.common.eventbus.EventBusException e) {
+        } catch (final org.killbill.common.eventbus.EventBusException e) {
             throw new EventBusException(e.getMessage(), e);
         }
     }
@@ -101,7 +101,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         checkInitialized("postFromTransaction");
         try {
             delegate.postWithException(event);
-        } catch (final com.google.common.eventbus.EventBusException e) {
+        } catch (final org.killbill.common.eventbus.EventBusException e) {
             throw new EventBusException(e.getMessage(), e);
         }
     }

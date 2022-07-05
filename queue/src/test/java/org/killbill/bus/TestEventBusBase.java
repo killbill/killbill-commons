@@ -21,7 +21,7 @@ package org.killbill.bus;
 
 import java.util.UUID;
 
-import com.google.common.eventbus.AllowConcurrentEvents;
+import org.killbill.common.eventbus.AllowConcurrentEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -31,7 +31,7 @@ import org.killbill.bus.api.PersistentBus;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.eventbus.Subscribe;
+import org.killbill.common.eventbus.Subscribe;
 
 public class TestEventBusBase {
 

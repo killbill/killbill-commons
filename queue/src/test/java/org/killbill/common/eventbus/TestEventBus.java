@@ -1,20 +1,21 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +31,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
- * Test case for {@link EventBus}.
+ * Test case for {@link org.killbill.common.eventbus.EventBus}.
  *
  * @author Cliff Biffle
  */
@@ -38,11 +39,11 @@ public class TestEventBus {
     private static final String EVENT = "Hello";
     private static final String BUS_IDENTIFIER = "test-bus";
 
-    private EventBus bus;
+    private org.killbill.common.eventbus.EventBus bus;
 
     @BeforeMethod
     protected void setUp() {
-        bus = new EventBus(BUS_IDENTIFIER);
+        bus = new org.killbill.common.eventbus.EventBus(BUS_IDENTIFIER);
     }
 
     @Test
@@ -74,7 +75,7 @@ public class TestEventBus {
         final Object objCatcher =
                 new Object() {
                     @SuppressWarnings("unused")
-                    @Subscribe
+                    @org.killbill.common.eventbus.Subscribe
                     public void eat(final Object food) {
                         objectEvents.add(food);
                     }
@@ -84,7 +85,7 @@ public class TestEventBus {
         final Object compCatcher =
                 new Object() {
                     @SuppressWarnings("unused")
-                    @Subscribe
+                    @org.killbill.common.eventbus.Subscribe
                     public void eat(final Comparable<?> food) {
                         compEvents.add(food);
                     }
@@ -121,12 +122,12 @@ public class TestEventBus {
     @Test
     public void testSubscriberThrowsException() throws Exception {
         final RecordingSubscriberExceptionHandler handler = new RecordingSubscriberExceptionHandler();
-        final EventBus eventBus = new EventBus(handler);
+        final org.killbill.common.eventbus.EventBus eventBus = new org.killbill.common.eventbus.EventBus(handler);
         final RuntimeException exception =
                 new RuntimeException("but culottes have a tendency to ride up!");
         final Object subscriber =
                 new Object() {
-                    @Subscribe
+                    @org.killbill.common.eventbus.Subscribe
                     public void throwExceptionOn(final String ignored) {
                         throw exception;
                     }
@@ -145,15 +146,15 @@ public class TestEventBus {
 
     @Test
     public void testSubscriberThrowsExceptionHandlerThrowsException() {
-        final EventBus eventBus = new EventBus(
-                new SubscriberExceptionHandler() {
+        final org.killbill.common.eventbus.EventBus eventBus = new org.killbill.common.eventbus.EventBus(
+                new org.killbill.common.eventbus.SubscriberExceptionHandler() {
                     @Override
-                    public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
+                    public void handleException(final Throwable exception, final org.killbill.common.eventbus.SubscriberExceptionContext context) {
                         throw new RuntimeException();
                     }
                 });
         final Object subscriber = new Object() {
-            @Subscribe
+            @org.killbill.common.eventbus.Subscribe
             public void throwExceptionOn(final String ignored) {
                 throw new RuntimeException();
             }
@@ -174,7 +175,7 @@ public class TestEventBus {
         // A String -- an event for which noone has registered.
         bus.post(EVENT);
 
-        final List<DeadEvent> events = catcher.getEvents();
+        final List<org.killbill.common.eventbus.DeadEvent> events = catcher.getEvents();
         Assert.assertEquals(events.size(), 1, "One dead event should be delivered.");
         Assert.assertEquals(events.get(0).getEvent(), EVENT, "The dead event should wrap the original event.");
     }
@@ -184,9 +185,9 @@ public class TestEventBus {
         final GhostCatcher catcher = new GhostCatcher();
         bus.register(catcher);
 
-        bus.post(new DeadEvent(this, EVENT));
+        bus.post(new org.killbill.common.eventbus.DeadEvent(this, EVENT));
 
-        final List<DeadEvent> events = catcher.getEvents();
+        final List<org.killbill.common.eventbus.DeadEvent> events = catcher.getEvents();
         Assert.assertEquals(events.size(), 1, "The explicit DeadEvent should be delivered.");
         Assert.assertEquals(events.get(0).getEvent(), EVENT, "The dead event must not be re-wrapped.");
     }
@@ -265,7 +266,7 @@ public class TestEventBus {
 
     @Test
     public void testToString() {
-        final EventBus eventBus = new EventBus("a b ; - \" < > / \\ €");
+        final org.killbill.common.eventbus.EventBus eventBus = new org.killbill.common.eventbus.EventBus("a b ; - \" < > / \\ €");
         Assert.assertEquals(eventBus.toString(), "EventBus {identifier='a b ; - \" < > / \\ €'}");
     }
 
@@ -280,7 +281,7 @@ public class TestEventBus {
         final AtomicInteger calls = new AtomicInteger();
         bus.register(
                 new Callback<String>() {
-                    @Subscribe
+                    @org.killbill.common.eventbus.Subscribe
                     @Override
                     public void call(final String s) {
                         calls.incrementAndGet();
@@ -295,7 +296,7 @@ public class TestEventBus {
     @Test
     public void testPrimitiveSubscribeFails() {
         class SubscribesToPrimitive {
-            @Subscribe
+            @org.killbill.common.eventbus.Subscribe
             public void toInt(final int ignored) {}
         }
         try {
@@ -309,7 +310,7 @@ public class TestEventBus {
     private static final class RecordingSubscriberExceptionHandler
             implements SubscriberExceptionHandler {
 
-        public SubscriberExceptionContext context;
+        public org.killbill.common.eventbus.SubscriberExceptionContext context;
         public Throwable exception;
 
         @Override
@@ -321,7 +322,7 @@ public class TestEventBus {
 
     /** Runnable which registers a StringCatcher on an event bus and adds it to a list. */
     private static class Registrator implements Runnable {
-        private final EventBus bus;
+        private final org.killbill.common.eventbus.EventBus bus;
         private final List<StringCatcher> catchers;
 
         Registrator(final EventBus bus, final List<StringCatcher> catchers) {
@@ -343,10 +344,10 @@ public class TestEventBus {
      * @author cbiffle
      */
     public static class GhostCatcher {
-        private final List<DeadEvent> events = new ArrayList<>();
+        private final List<org.killbill.common.eventbus.DeadEvent> events = new ArrayList<>();
 
         @Subscribe
-        public void ohNoesIHaveDied(final DeadEvent event) {
+        public void ohNoesIHaveDied(final org.killbill.common.eventbus.DeadEvent event) {
             events.add(event);
         }
 

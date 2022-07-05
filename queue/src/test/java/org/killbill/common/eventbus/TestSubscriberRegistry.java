@@ -15,11 +15,13 @@
  * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import java.util.Iterator;
 import java.util.Set;
 
+import org.killbill.common.eventbus.EventBus;
+import org.killbill.common.eventbus.Subscribe;
 import org.killbill.commons.utils.collect.Iterators;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -30,17 +32,17 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
- * Tests for {@link SubscriberRegistry}. Taken from Guava's test.
+ * Tests for {@link org.killbill.common.eventbus.SubscriberRegistry}. Taken from Guava's test.
  *
  * @author Colin Decker
  */
 public class TestSubscriberRegistry {
 
-    private SubscriberRegistry registry;
+    private org.killbill.common.eventbus.SubscriberRegistry registry;
 
     @BeforeMethod
     public void beforeMethod() {
-        registry = new SubscriberRegistry(new EventBus());
+        registry = new org.killbill.common.eventbus.SubscriberRegistry(new EventBus());
     }
 
     @Test
@@ -141,7 +143,7 @@ public class TestSubscriberRegistry {
         final StringSubscriber str2 = new StringSubscriber();
         final ObjectSubscriber obj1 = new ObjectSubscriber();
 
-        Iterator<Subscriber> empty = registry.getSubscribers("");
+        Iterator<org.killbill.common.eventbus.Subscriber> empty = registry.getSubscribers("");
         assertFalse(empty.hasNext());
 
         empty = registry.getSubscribers("");
@@ -149,7 +151,7 @@ public class TestSubscriberRegistry {
         registry.register(str1);
         assertFalse(empty.hasNext());
 
-        Iterator<Subscriber> one = registry.getSubscribers("");
+        Iterator<org.killbill.common.eventbus.Subscriber> one = registry.getSubscribers("");
         assertEquals(str1, one.next().target);
         assertFalse(one.hasNext());
 
@@ -158,7 +160,7 @@ public class TestSubscriberRegistry {
         registry.register(str2);
         registry.register(obj1);
 
-        Iterator<Subscriber> three = registry.getSubscribers("");
+        Iterator<org.killbill.common.eventbus.Subscriber> three = registry.getSubscribers("");
         assertEquals(str1, one.next().target);
         assertFalse(one.hasNext());
 
@@ -176,7 +178,7 @@ public class TestSubscriberRegistry {
         assertEquals(obj1, three.next().target);
         assertFalse(three.hasNext());
 
-        final Iterator<Subscriber> two = registry.getSubscribers("");
+        final Iterator<org.killbill.common.eventbus.Subscriber> two = registry.getSubscribers("");
         assertEquals(str1, two.next().target);
         assertEquals(obj1, two.next().target);
         assertFalse(two.hasNext());
@@ -184,13 +186,13 @@ public class TestSubscriberRegistry {
 
     public static class StringSubscriber {
 
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void handle(final String s) {}
     }
 
     public static class IntegerSubscriber {
 
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void handle(final Integer i) {}
     }
 
@@ -208,7 +210,7 @@ public class TestSubscriberRegistry {
                        HierarchyFixtureSubinterface.class,
                        HierarchyFixtureParent.class,
                        HierarchyFixture.class),
-                SubscriberRegistry.flattenHierarchy(HierarchyFixture.class));
+                org.killbill.common.eventbus.SubscriberRegistry.flattenHierarchy(HierarchyFixture.class));
     }
 
     private interface HierarchyFixtureInterface {

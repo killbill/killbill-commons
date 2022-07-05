@@ -27,7 +27,7 @@ import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dispatching.CallableCallbackBase;
 
-import com.google.common.eventbus.EventBusException;
+import org.killbill.common.eventbus.EventBusException;
 
 public class BusCallableCallback extends CallableCallbackBase<BusEvent, BusEventModelDao> {
 

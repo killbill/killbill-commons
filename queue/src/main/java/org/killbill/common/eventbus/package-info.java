@@ -1,15 +1,18 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  */
 
 /**
@@ -34,7 +37,7 @@
  *   <li><strong>...in traditional Java events:</strong> implement an interface defined with the
  *       event &mdash; such as CustomerChangeEventListener.
  *   <li><strong>...with EventBus:</strong> create a method that accepts CustomerChangeEvent as its
- *       sole argument, and mark it with the {@link com.google.common.eventbus.Subscribe}
+ *       sole argument, and mark it with the {@link org.killbill.common.eventbus.Subscribe}
  *       annotation.
  * </ul>
  *
@@ -45,7 +48,7 @@
  *       registerCustomerChangeEventListener} method. These methods are rarely defined in common
  *       interfaces, so in addition to knowing every possible producer, you must also know its type.
  *   <li><strong>...with EventBus:</strong> pass your object to the {@link
- *       com.google.common.eventbus.EventBus#register(Object)} method on an EventBus. You'll need to
+ *       org.killbill.common.eventbus.EventBus#register(Object)} method on an EventBus. You'll need to
  *       make sure that your object shares an EventBus instance with the event producers.
  * </ul>
  *
@@ -63,7 +66,7 @@
  *   <li><strong>...in traditional Java events:</strong> add code to each event-dispatching method
  *       (perhaps using AOP).
  *   <li><strong>...with EventBus:</strong> subscribe to {@link
- *       com.google.common.eventbus.DeadEvent}. The EventBus will notify you of any events that were
+ *       org.killbill.common.eventbus.DeadEvent}. The EventBus will notify you of any events that were
  *       posted but not delivered. (Handy for debugging.)
  * </ul>
  *
@@ -83,7 +86,7 @@
  *   <li><strong>...in traditional Java events:</strong> write a method to dispatch events to each
  *       event listener, including error isolation and (if desired) asynchronicity.
  *   <li><strong>...with EventBus:</strong> pass the event object to an EventBus's {@link
- *       com.google.common.eventbus.EventBus#post(Object)} method.
+ *       org.killbill.common.eventbus.EventBus#post(Object)} method.
  * </ul>
  *
  * <h2>Glossary</h2>
@@ -100,7 +103,7 @@
  *   <dd>An object that wishes to receive events, by exposing <em>subscriber methods</em>.
  *   <dt>Subscriber method
  *   <dd>A public method that the EventBus should use to deliver <em>posted</em> events. Subscriber
- *       methods are marked by the {@link com.google.common.eventbus.Subscribe} annotation.
+ *       methods are marked by the {@link org.killbill.common.eventbus.Subscribe} annotation.
  *   <dt>Posting an event
  *   <dd>Making the event available to any <em>listeners</em> through the EventBus.
  * </dl>
@@ -249,4 +252,4 @@
  * <p>Because subscriber methods on your listener classes are normal methods, you can simply call
  * them from your test code to simulate the EventBus.
  */
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;

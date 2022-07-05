@@ -22,6 +22,7 @@ package org.killbill.bus.api;
 import java.sql.Connection;
 
 import org.joda.time.DateTime;
+import org.killbill.common.eventbus.Subscribe;
 import org.killbill.queue.api.QueueLifecycle;
 
 /**
@@ -55,7 +56,7 @@ public interface PersistentBus extends QueueLifecycle {
 
     /**
      * Registers all handler methods on {@code object} to receive events.
-     * Handler methods need to be Annotated with {@link com.google.common.eventbus.Subscribe}
+     * Handler methods need to be Annotated with {@link Subscribe}
      *
      * @param handlerInstance handler to register
      * @throws EventBusException if bus not been started yet

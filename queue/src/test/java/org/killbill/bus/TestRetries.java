@@ -47,8 +47,8 @@ import org.testng.annotations.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
+import org.killbill.common.eventbus.AllowConcurrentEvents;
+import org.killbill.common.eventbus.Subscribe;
 
 import static org.awaitility.Awaitility.await;
 

@@ -1,8 +1,6 @@
 /*
- * Copyright 2010-2014 Ning, Inc.
- * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,7 +15,7 @@
  * under the License.
  */
 
-package com.google.common.eventbus;
+package org.killbill.common.eventbus;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -25,6 +23,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
+import org.killbill.common.eventbus.EventBus;
+import org.killbill.common.eventbus.Subscribe;
 import org.testng.Assert;
 
 import com.google.common.collect.HashMultimap;
@@ -36,7 +36,7 @@ class SetupTestEventBusPostWithException {
 
     static final Random rand = new Random();
 
-    EventBus eventBus;
+    org.killbill.common.eventbus.EventBus eventBus;
     Subscriber subscriberA;
     Subscriber subscriberB;
 
@@ -78,7 +78,7 @@ class SetupTestEventBusPostWithException {
 
     protected static final class SubscriberA extends Subscriber {
 
-        @Subscribe
+        @org.killbill.common.eventbus.Subscribe
         public void onEvent(final MyEvent event) {
             maybeThrow(event, "A");
             events.put(Thread.currentThread().getId(), event);
