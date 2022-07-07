@@ -13,7 +13,7 @@ Kill Bill reusable Java components:
 * **metrics**: annotation-based metrics
 * **queue**: provides persistent bus events and notifications
 * **skeleton**: framework to build web services
-* **utils**: provides utility methods for core Java(tm) classes (lang, IO, collection)
+* **utils**: provides utility methods for core Java(tm) classes (lang, IO, collection) and Cache
 * **xmlloader**: library to load, parse and validate XML files
 
 ## Kill Bill compatibility
