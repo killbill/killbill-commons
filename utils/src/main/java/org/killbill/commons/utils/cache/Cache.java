@@ -1,0 +1,56 @@
+/*
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
+ *
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.killbill.commons.utils.cache;
+
+import java.util.function.Function;
+
+public interface Cache <K, V> {
+
+    /**
+     * Get the cache value, or null if no value associated with key. Value returned by this method depends on
+     * implementation logic.
+     *
+     * @param key to load the value
+     * @return cache value, or null
+     */
+    V get(K key);
+
+    /**
+     * Get or load the cache. Note that value returned from loader parameter will not update cache.
+     *
+     * Implementation may decide to load it first from any other source/loader before loader paramter called.
+     *
+     * @param key to load the value
+     * @param loader algorithm to load a value if, not exist in cache
+     * @return cache value, or depends on {@code loader} algorithm
+     */
+    V getOrLoad(K key, Function<K, V> loader);
+
+    /**
+     * Add value to cache.
+     * @param key key
+     * @param value value
+     */
+    void put(K key, V value);
+
+    /**
+     * Remove the cache based on its key.
+     * @param key to remove.
+     */
+    void invalidate(K key);
+}
