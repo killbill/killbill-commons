@@ -35,7 +35,7 @@ public class TestInMemoryEventBus {
     private TestEventBusBase testEventBusBase;
     private PersistentBus busService;
 
-    @BeforeClass(groups = "fast", alwaysRun = true)
+    @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
         busService = new InMemoryPersistentBus(new PersistentBusConfig() {
             @Override
