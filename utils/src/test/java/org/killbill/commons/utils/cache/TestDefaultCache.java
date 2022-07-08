@@ -39,6 +39,26 @@ public class TestDefaultCache {
     }
 
     @Test(groups = "fast")
+    public void testConstructorArgs() {
+        try {
+            new DefaultCache<String, String>(0);
+            Assert.fail("maxSize should > 0");
+        } catch (final IllegalArgumentException e) {
+            Assert.assertEquals(e.getMessage(), "cache maxSize should > 0");
+        }
+        try {
+            new DefaultCache<String, String>(1, -1, DefaultCache.noCacheLoader());
+        } catch (final IllegalArgumentException e) {
+            Assert.assertEquals(e.getMessage(), "cache timeoutInSecond should >= 0");
+        }
+        try {
+            new DefaultCache<String, String>(1, DefaultCache.NO_TIMEOUT, null);
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "cacheLoader is null. Use DefaultCache#noCacheLoader() to create a cache without loader");
+        }
+    }
+
+    @Test(groups = "fast")
     public void testPut() {
         final DefaultCache<Integer, String> cache = createDefaultCache();
 
@@ -51,6 +71,20 @@ public class TestDefaultCache {
         Assert.assertNotNull(cache.map.get(2));
         Assert.assertNotNull(cache.map.get(3));
         Assert.assertNotNull(cache.map.get(4));
+
+        try {
+            cache.put(null, "A");
+            Assert.fail("Should throw NPE because key is null");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "key in #put() is null");
+        }
+
+        try {
+            cache.put(5, null);
+            Assert.fail("Should throw NPE because value is null");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "value in #put() is null");
+        }
     }
 
     @Test(groups = "fast")
@@ -118,6 +152,13 @@ public class TestDefaultCache {
         Assert.assertNotNull(cache.get(2));
         Assert.assertNotNull(cache.get(3));
         Assert.assertNotNull(cache.get(4));
+
+        try {
+            cache.get(null);
+            Assert.fail("Should throw NPE because key is null");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "Cannot #get() cache with key = null");
+        }
     }
 
     @Test(groups = "fast")
@@ -192,6 +233,20 @@ public class TestDefaultCache {
 
         Assert.assertNotNull(cache.getOrLoad(1, key -> null));
         Assert.assertNotNull(cache.getOrLoad(2, key -> null));
+
+        try {
+            cache.getOrLoad(null, loader);
+            Assert.fail("Should throw NPE because key is null");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "Cannot #get() cache with key = null");
+        }
+
+        try {
+            cache.getOrLoad(5, null);
+            Assert.fail("Should throw NPE because loader is null");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "loader parameter in #getOrLoad() is null");
+        }
     }
 
     @Test(groups = "fast")
@@ -283,5 +338,24 @@ public class TestDefaultCache {
         cache.put(1, "A");
         cache.get(2); // Needed to trigger eviction
         Assert.assertEquals(cache.map.size(), 1); // Because expired
+    }
+
+    @Test(groups = "fast")
+    public void testInvalidate() {
+        final DefaultCache<Integer, String> cache = createDefaultCacheWithTimeout(1);
+
+        cache.put(1, "A");
+        cache.put(2, "B");
+
+        cache.invalidate(1);
+
+        Assert.assertEquals(cache.map.size(), 1);
+
+        try {
+            cache.invalidate(null);
+            Assert.fail("Cannot invalidate with null key");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "Cannot invalidate. Cache with null key is not allowed");
+        }
     }
 }
