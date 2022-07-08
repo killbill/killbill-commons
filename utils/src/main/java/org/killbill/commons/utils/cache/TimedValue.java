@@ -19,6 +19,8 @@ package org.killbill.commons.utils.cache;
 
 import java.util.Objects;
 
+import org.killbill.commons.utils.Preconditions;
+
 class TimedValue<V> {
 
     private final long expireTime;
@@ -29,7 +31,7 @@ class TimedValue<V> {
      */
     TimedValue(final long timeoutMillis, final V value) {
         this.expireTime = System.currentTimeMillis() + timeoutMillis;
-        this.value = value;
+        this.value = Preconditions.checkNotNull(value, "TimedValue.value cannot be null");
     }
 
     boolean isTimeout() {
