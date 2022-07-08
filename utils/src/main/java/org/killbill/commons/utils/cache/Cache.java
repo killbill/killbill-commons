@@ -27,17 +27,19 @@ public interface Cache <K, V> {
      *
      * @param key to load the value
      * @return cache value, or null
+     * @throws NullPointerException is key is null
      */
     V get(K key);
 
     /**
      * Get or load the cache. Note that value returned from loader parameter will not update cache.
      *
-     * Implementation may decide to load it first from any other source/loader before loader paramter called.
+     * Implementation may decide to load it first from any other source/loader before loader parameter called.
      *
      * @param key to load the value
      * @param loader algorithm to load a value if, not exist in cache
      * @return cache value, or depends on {@code loader} algorithm
+     * @throws NullPointerException if key or loader is null
      */
     V getOrLoad(K key, Function<K, V> loader);
 
@@ -45,12 +47,14 @@ public interface Cache <K, V> {
      * Add value to cache.
      * @param key key
      * @param value value
+     * @throws NullPointerException if key or value is null
      */
     void put(K key, V value);
 
     /**
      * Remove the cache based on its key.
      * @param key to remove.
+     * @throws NullPointerException if key is null
      */
     void invalidate(K key);
 }
