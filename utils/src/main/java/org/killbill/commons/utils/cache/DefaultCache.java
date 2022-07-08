@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import org.killbill.commons.utils.Preconditions;
 import org.killbill.commons.utils.annotation.VisibleForTesting;
 
 /**
@@ -69,8 +70,11 @@ public class DefaultCache<K, V> implements Cache<K, V> {
      *                    anything if value is null.
      */
     public DefaultCache(final int maxSize, final long timeoutInSecond, final Function<K, V> cacheLoader) {
+        Preconditions.checkArgument(maxSize > 0, "cache maxSize should > 0");
+        Preconditions.checkArgument(timeoutInSecond >= 0, "cache timeoutInSecond should >= 0");
+
         this.timeoutMillis = timeoutInSecond * 1_000;
-        this.cacheLoader = cacheLoader;
+        this.cacheLoader = Preconditions.checkNotNull(cacheLoader, "cacheLoader is null. Use DefaultCache#noCacheLoader() to create a cache without loader");
 
         map = new LinkedHashMap<>(16, 0.75f, true) {
             @Override
@@ -106,6 +110,8 @@ public class DefaultCache<K, V> implements Cache<K, V> {
 
     @Override
     public V get(final K key) {
+        Preconditions.checkNotNull(key, "Cannot #get() cache with key = null");
+
         evictExpireEntry(key);
 
         final TimedValue<V> timedValue = map.get(key);
@@ -124,19 +130,22 @@ public class DefaultCache<K, V> implements Cache<K, V> {
 
     @Override
     public V getOrLoad(final K key, final Function<K, V> loader) {
+        Preconditions.checkNotNull(loader, "loader parameter in #getOrLoad() is null");
         final V value = get(key);
         return value == null ? loader.apply(key) : value;
     }
 
     @Override
     public void put(final K key, final V value) {
-        evictExpireEntry(key);
+        Preconditions.checkNotNull(key, "key in #put() is null");
+        Preconditions.checkNotNull(value, "value in #put() is null");
 
         map.put(key, new TimedValue<>(timeoutMillis, value));
     }
 
     @Override
     public void invalidate(final K key) {
+        Preconditions.checkNotNull(key, "Cannot invalidate. Cache with null key is not allowed");
         map.remove(key);
     }
 }
