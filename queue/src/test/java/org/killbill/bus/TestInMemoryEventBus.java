@@ -133,7 +133,7 @@ public class TestInMemoryEventBus {
     }
 
     @AfterMethod(groups = "fast")
-    public void afterMethod() throws Exception {
+    public void afterMethod() {
         busService.stopQueue();
     }
 
@@ -148,12 +148,12 @@ public class TestInMemoryEventBus {
         testEventBusBase.testDifferentType();
     }
 
-    @Test(groups = "slow")
+    @Test(groups = "fast")
     public void testSimpleWithExceptionAndRetrySuccess() {
         testEventBusBase.testSimpleWithExceptionAndRetrySuccess();
     }
 
-    @Test(groups = "slow")
+    @Test(groups = "fast")
     public void testSimpleWithExceptionAndFail() {
         testEventBusBase.testSimpleWithExceptionAndFail();
     }
