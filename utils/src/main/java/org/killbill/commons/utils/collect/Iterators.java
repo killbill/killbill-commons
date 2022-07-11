@@ -159,4 +159,8 @@ public final class Iterators {
     public static <T> T getLast(final Iterator<? extends T> iterator, final T defaultValue) {
         return iterator.hasNext() ? getLast(iterator) : defaultValue;
     }
+
+    public static <T> Iterator<T> concat(final Iterator<? extends Iterator<? extends T>> inputs) {
+        return new ConcatenatedIterator<>(inputs);
+    }
 }
