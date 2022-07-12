@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2007 The Guava Authors
  * Copyright 2020-2022 Equinix, Inc
  * Copyright 2014-2022 The Billing Project, LLC
  *
