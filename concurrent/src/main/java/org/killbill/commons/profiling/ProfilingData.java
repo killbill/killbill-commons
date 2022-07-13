@@ -23,12 +23,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
 public class ProfilingData {
 
@@ -66,12 +63,9 @@ public class ProfilingData {
         if (rawData == null || rawData.isEmpty()) {
             return Collections.emptyList();
         }
-        return Lists.newArrayList(Iterables.filter(rawData, new Predicate<ProfilingDataItem>() {
-            @Override
-            public boolean apply(final ProfilingDataItem input) {
-                return input != null && profileFeature.isDefined(input.getProfileType());
-            }
-        }));
+        return rawData.stream()
+                      .filter(input -> input != null && profileFeature.isDefined(input.getProfileType()))
+                      .collect(Collectors.toList());
     }
 
     public ProfilingFeature getProfileFeature() {
