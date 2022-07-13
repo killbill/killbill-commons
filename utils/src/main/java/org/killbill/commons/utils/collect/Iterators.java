@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2007 The Guava Authors
  * Copyright 2020-2022 Equinix, Inc
  * Copyright 2014-2022 The Billing Project, LLC
  *
@@ -162,5 +163,30 @@ public final class Iterators {
 
     public static <T> Iterator<T> concat(final Iterator<? extends Iterator<? extends T>> inputs) {
         return new ConcatenatedIterator<>(inputs);
+    }
+
+    /**
+     * Returns the single element contained in {@code iterator}.
+     *
+     * @throws NoSuchElementException if the iterator is empty
+     * @throws IllegalArgumentException if the iterator contains multiple elements. The state of the
+     *     iterator is unspecified.
+     */
+    public static <T extends Object> T getOnlyElement(final Iterator<T> iterator) {
+        final T first = iterator.next();
+        if (!iterator.hasNext()) {
+            return first;
+        }
+
+        final StringBuilder sb = new StringBuilder().append("expected one element but was: <").append(first);
+        for (int i = 0; i < 4 && iterator.hasNext(); i++) {
+            sb.append(", ").append(iterator.next());
+        }
+        if (iterator.hasNext()) {
+            sb.append(", ...");
+        }
+        sb.append('>');
+
+        throw new IllegalArgumentException(sb.toString());
     }
 }

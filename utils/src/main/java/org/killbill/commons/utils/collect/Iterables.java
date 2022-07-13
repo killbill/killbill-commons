@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2007 The Guava Authors
  * Copyright 2020-2022 Equinix, Inc
  * Copyright 2014-2022 The Billing Project, LLC
  *
@@ -203,5 +204,18 @@ public final class Iterables {
         } catch (final ClassCastException e) {
             return false;
         }
+    }
+
+    /**
+     * Returns the single element contained in {@code iterable}.
+     *
+     * <p><b>Java 8 users:</b> the {@code Stream} equivalent to this method is {@code
+     * stream.collect(MoreCollectors.onlyElement())}.
+     *
+     * @throws NoSuchElementException if the iterable is empty
+     * @throws IllegalArgumentException if the iterable contains multiple elements
+     */
+    public static <T extends Object> T getOnlyElement(final Iterable<T> iterable) {
+        return Iterators.getOnlyElement(iterable.iterator());
     }
 }
