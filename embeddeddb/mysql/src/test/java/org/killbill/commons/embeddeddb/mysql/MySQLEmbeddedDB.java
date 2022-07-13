@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
+import org.killbill.commons.utils.Preconditions;
 import org.mariadb.jdbc.MariaDbDataSource;
 
-import com.google.common.base.Preconditions;
 import io.airlift.testing.mysql.HackedEmbeddedMySql;
 import io.airlift.testing.mysql.HackedTestingMySqlServer;
 

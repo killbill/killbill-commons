@@ -27,10 +27,10 @@ import java.sql.Statement;
 
 import javax.annotation.Nullable;
 
+import org.killbill.commons.utils.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 // Forked from https://github.com/airlift/testing-postgresql-server (as of 9.6.3-3)
@@ -52,8 +52,8 @@ class KillBillTestingPostgreSqlServer implements Closeable {
         // Make sure the driver is registered
         Class.forName("org.postgresql.Driver");
 
-        this.user = checkNotNull(user, "user is null");
-        this.database = checkNotNull(database, "database is null");
+        this.user = Preconditions.checkNotNull(user, "user is null");
+        this.database = Preconditions.checkNotNull(database, "database is null");
 
         if (portOrNull == null) {
             server = new KillBillEmbeddedPostgreSql();

@@ -33,6 +33,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -41,22 +43,16 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.killbill.commons.utils.Preconditions;
+import org.killbill.commons.utils.StandardSystemProperty;
+import org.killbill.commons.utils.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.airlift.command.Command;
 import io.airlift.command.CommandFailedException;
 import io.airlift.units.Duration;
 
-import static com.google.common.base.StandardSystemProperty.OS_ARCH;
-import static com.google.common.base.StandardSystemProperty.OS_NAME;
-import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createTempDirectory;
@@ -92,11 +88,9 @@ class KillBillEmbeddedPostgreSql implements Closeable {
         serverDirectory = createTempDirectory("testing-postgresql-server");
         dataDirectory = serverDirectory.resolve("data");
 
-        postgresConfig = ImmutableMap.<String, String>builder()
-                                     .put("timezone", "UTC")
-                                     .put("synchronous_commit", "off")
-                                     .put("max_connections", "300")
-                                     .build();
+        postgresConfig = Map.of("timezone", "UTC",
+                                "synchronous_commit", "off",
+                                "max_connections", "300");
 
         try {
             unpackPostgres(serverDirectory);
@@ -111,14 +105,8 @@ class KillBillEmbeddedPostgreSql implements Closeable {
     }
 
     private static int randomPort() throws IOException {
-        ServerSocket socket = null;
-        try {
-            socket = new ServerSocket(0);
+        try (final ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
         }
     }
 
@@ -129,7 +117,7 @@ class KillBillEmbeddedPostgreSql implements Closeable {
     }
 
     private static String getPlatform() {
-        return (OS_NAME.value() + "-" + OS_ARCH.value()).replace(' ', '_');
+        return (StandardSystemProperty.OS_NAME.value() + "-" + StandardSystemProperty.OS_ARCH.value()).replace(' ', '_');
     }
 
     public String getJdbcUrl(final String userName, final String dbName) {
@@ -166,10 +154,10 @@ class KillBillEmbeddedPostgreSql implements Closeable {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                          .add("serverDirectory", serverDirectory)
-                          .add("port", port)
-                          .toString();
+        return "KillBillEmbeddedPostgreSql{" +
+               "serverDirectory=" + serverDirectory +
+               ", port=" + port +
+               '}';
     }
 
     private void pgVersion() {
@@ -186,11 +174,12 @@ class KillBillEmbeddedPostgreSql implements Closeable {
 
     private Process startPostmaster()
             throws IOException {
-        final List<String> args = newArrayList(pgBin("postgres"),
-                                               "-D", dataDirectory.toString(),
-                                               "-p", String.valueOf(port),
-                                               "-i",
-                                               "-F");
+        final List<String> args = Arrays.asList(
+                pgBin("postgres"),
+                "-D", dataDirectory.toString(),
+                "-p", String.valueOf(port),
+                "-i",
+                "-F");
 
         for (final Entry<String, String> config : postgresConfig.entrySet()) {
             args.add("-c");
@@ -245,9 +234,9 @@ class KillBillEmbeddedPostgreSql implements Closeable {
     private void checkReady() throws SQLException {
 
         try {
-            Socket ignored = new Socket("localhost", port);
+            final Socket ignored = new Socket("localhost", port);
             // connect succeeded
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new SQLException(e);
         }
 
@@ -292,8 +281,8 @@ class KillBillEmbeddedPostgreSql implements Closeable {
             @Override
             public void run() {
                 try {
-                    ByteStreams.copy(in, System.err);
-                } catch (IOException ignored) {
+                    in.transferTo(System.err);
+                } catch (final IOException ignored) {
                 }
             }
         });
@@ -375,12 +364,12 @@ class KillBillEmbeddedPostgreSql implements Closeable {
         }
     }
 
-    private static ImmutableList<File> listFiles(final File dir) {
+    private static List<File> listFiles(final File dir) {
         final File[] files = dir.listFiles();
         if (files == null) {
-            return ImmutableList.<File>of();
+            return Collections.emptyList();
         }
-        return ImmutableList.<File>copyOf(files);
+        return List.of(files);
     }
 
     /**

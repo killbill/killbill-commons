@@ -23,13 +23,12 @@ import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Set;
 
+import org.killbill.commons.utils.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -50,14 +49,14 @@ public class HackedTestingMySqlServer implements Closeable {
 
     // PIERRE: allow the port to be configured
     public HackedTestingMySqlServer(final String user, final String password, final int port, final String... databases) {
-        this(user, password, port, ImmutableList.copyOf(databases));
+        this(user, password, port, List.of(databases));
     }
 
     // PIERRE: allow the port to be configured
     public HackedTestingMySqlServer(final String user, final String password, final int port,  final Iterable<String> databases) {
         this.user = requireNonNull(user, "user is null");
         this.password = requireNonNull(password, "password is null");
-        this.databases = ImmutableSet.copyOf(requireNonNull(databases, "databases is null"));
+        this.databases = Iterables.toUnmodifiableSet(requireNonNull(databases, "databases is null"));
 
         this.port = port;
     }

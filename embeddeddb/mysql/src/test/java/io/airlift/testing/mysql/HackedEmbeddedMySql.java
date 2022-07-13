@@ -25,30 +25,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.killbill.commons.utils.StandardSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.io.ByteStreams;
 import io.airlift.command.Command;
 import io.airlift.command.CommandFailedException;
 import io.airlift.units.Duration;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.StandardSystemProperty.OS_ARCH;
-import static com.google.common.base.StandardSystemProperty.OS_NAME;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.io.MoreFiles.deleteRecursively;
-import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static java.io.File.createTempFile;
 import static java.lang.String.format;
@@ -139,7 +136,10 @@ public class HackedEmbeddedMySql implements Closeable {
         }
 
         try {
-            deleteRecursively(serverDirectory, ALLOW_INSECURE);
+            Files.walk(serverDirectory)
+                 .sorted(Comparator.reverseOrder())
+                 .map(Path::toFile)
+                 .forEach(File::delete);
         } catch (final IOException e) {
             // PIERRE: SLF4J syntax
             log.warn("Failed to delete {}", serverDirectory, e);
@@ -150,10 +150,10 @@ public class HackedEmbeddedMySql implements Closeable {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("serverDirectory", serverDirectory)
-                .add("port", port)
-                .toString();
+        return "HackedEmbeddedMySql{" +
+               "serverDirectory=" + serverDirectory +
+               ", port=" + port +
+               '}';
     }
 
     // PIERRE: visibility
@@ -174,7 +174,7 @@ public class HackedEmbeddedMySql implements Closeable {
 
     private Process startMysqld()
             throws IOException {
-        final List<String> args = newArrayList(
+        final List<String> args = Arrays.asList(
                 mysqld(),
                 "--no-defaults",
                 "--skip-ssl",
@@ -263,7 +263,7 @@ public class HackedEmbeddedMySql implements Closeable {
     private void startOutputProcessor(final InputStream in) {
         executor.execute(() -> {
             try {
-                ByteStreams.copy(in, System.out);
+                in.transferTo(System.out);
             } catch (final IOException ignored) {
             }
         });
@@ -302,7 +302,7 @@ public class HackedEmbeddedMySql implements Closeable {
     }
 
     private static String getPlatform() {
-        return (OS_NAME.value() + "-" + OS_ARCH.value()).replace(' ', '_');
+        return (StandardSystemProperty.OS_NAME.value() + "-" + StandardSystemProperty.OS_ARCH.value()).replace(' ', '_');
     }
 }
 
