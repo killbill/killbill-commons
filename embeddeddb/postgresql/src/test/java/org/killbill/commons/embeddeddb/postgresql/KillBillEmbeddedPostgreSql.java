@@ -33,7 +33,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -172,14 +172,14 @@ class KillBillEmbeddedPostgreSql implements Closeable {
                "-E", "UTF-8");
     }
 
-    private Process startPostmaster()
-            throws IOException {
-        final List<String> args = Arrays.asList(
+    private Process startPostmaster() throws IOException {
+        // need to wrap in mutable arraylist because new element will add later in for-each postgresConfig.entrySet() below
+        final List<String> args = new ArrayList<>(List.of(
                 pgBin("postgres"),
                 "-D", dataDirectory.toString(),
                 "-p", String.valueOf(port),
                 "-i",
-                "-F");
+                "-F"));
 
         for (final Entry<String, String> config : postgresConfig.entrySet()) {
             args.add("-c");
