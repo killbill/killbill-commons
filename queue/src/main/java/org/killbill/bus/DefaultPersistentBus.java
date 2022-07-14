@@ -44,6 +44,7 @@ import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.bus.dispatching.BusCallableCallback;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
+import org.killbill.commons.eventbus.EventBus;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
@@ -72,14 +73,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.eventbus.EventBusThatThrowsException;
 
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
 
     private final DBI dbi;
-    private final EventBusThatThrowsException eventBusDelegate;
+    private final EventBus eventBusDelegate;
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
     private final PersistentBusConfig config;
@@ -97,7 +97,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     private final BusCallableCallback busCallableCallback;
 
-    private static final class EventBusDelegate extends EventBusThatThrowsException {
+    private static final class EventBusDelegate extends EventBus {
 
         public EventBusDelegate(final String busName) {
             super(busName);
@@ -421,7 +421,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         return sb.toString();
     }
 
-    public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
+    public void dispatchBusEventWithMetrics(final QueueEvent event) throws org.killbill.commons.eventbus.EventBusException {
         final long ini = System.nanoTime();
         try {
             eventBusDelegate.postWithException(event);
