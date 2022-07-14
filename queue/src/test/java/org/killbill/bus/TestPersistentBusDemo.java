@@ -21,13 +21,14 @@ package org.killbill.bus;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
-import com.google.common.io.Resources;
+
 import org.killbill.TestSetup;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.PersistentBus;
 import org.killbill.commons.embeddeddb.mysql.MySQLEmbeddedDB;
+import org.killbill.commons.eventbus.AllowConcurrentEvents;
+import org.killbill.commons.eventbus.Subscribe;
+import org.killbill.commons.utils.io.Resources;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;

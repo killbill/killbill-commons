@@ -31,6 +31,9 @@ import org.killbill.bus.TestEventBusBase.MyEvent;
 import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.commons.eventbus.AllowConcurrentEvents;
+import org.killbill.commons.eventbus.Subscribe;
+import org.killbill.commons.utils.collect.Iterators;
 import org.killbill.notificationq.DefaultNotificationQueueService;
 import org.killbill.notificationq.api.NotificationQueueService;
 import org.killbill.notificationq.dao.NotificationEventModelDao;
@@ -44,11 +47,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterators;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
 
 import static org.awaitility.Awaitility.await;
 
@@ -91,23 +89,19 @@ public class TestRetries extends TestSetup {
             final NotificationSqlDao notificationSqlDao = dbi.onDemand(NotificationSqlDao.class);
 
             // Make sure all retries are processed
-            await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return Iterators.size(busSqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, persistentBusConfig.getHistoryTableName())) == 1 &&
-                           Iterators.size(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:myEvent-listener", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName())) == 3;
-                }
-            });
+            await().atMost(10, TimeUnit.SECONDS)
+                   .until(() -> Iterators.size(busSqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, persistentBusConfig.getHistoryTableName())) == 1 &&
+                                Iterators.size(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:myEvent-listener", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName())) == 3);
 
             // Initial event was processed once
-            List<BusEventModelDao> historicalEntriesForOriginalEvent = ImmutableList.<BusEventModelDao>copyOf(busSqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, persistentBusConfig.getHistoryTableName()));
+            List<BusEventModelDao> historicalEntriesForOriginalEvent = Iterators.toUnmodifiableList(busSqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, persistentBusConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
             Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
             // State is initially FAILED
             Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
 
             // Retry events
-            List<NotificationEventModelDao> historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:myEvent-listener", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            List<NotificationEventModelDao> historicalEntriesForRetries = Iterators.toUnmodifiableList(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:myEvent-listener", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForRetries.size(), 3);
             for (final NotificationEventModelDao historicalEntriesForRetry : historicalEntriesForRetries) {
                 Assert.assertEquals((long) historicalEntriesForRetry.getErrorCount(), (long) 0);
@@ -129,14 +123,14 @@ public class TestRetries extends TestSetup {
             });
 
             // Initial event was processed once
-            historicalEntriesForOriginalEvent = ImmutableList.<BusEventModelDao>copyOf(busSqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, persistentBusConfig.getHistoryTableName()));
+            historicalEntriesForOriginalEvent = Iterators.toUnmodifiableList(busSqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, persistentBusConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
             Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
             // State is still FAILED
             Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
 
             // Retry events
-            historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:myEvent-listener", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            historicalEntriesForRetries = Iterators.toUnmodifiableList(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:myEvent-listener", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForRetries.size(), 4);
             for (int i = 0; i < historicalEntriesForRetries.size(); i++) {
                 final NotificationEventModelDao historicalEntriesForRetry = historicalEntriesForRetries.get(i);
@@ -169,10 +163,10 @@ public class TestRetries extends TestSetup {
                                                      final NullPointerException exceptionForTests = new NullPointerException("Expected exception for tests");
 
                                                      // 4 retries
-                                                     throw new QueueRetryException(exceptionForTests, ImmutableList.<Period>of(Period.millis(1),
-                                                                                                                               Period.millis(1),
-                                                                                                                               Period.millis(1),
-                                                                                                                               Period.days(1)));
+                                                     throw new QueueRetryException(exceptionForTests, List.of(Period.millis(1),
+                                                                                                              Period.millis(1),
+                                                                                                              Period.millis(1),
+                                                                                                              Period.days(1)));
                                                  }
                                              });
             retryableSubscriber = new RetryableSubscriber(clock, this, subscriberQueueHandler);
