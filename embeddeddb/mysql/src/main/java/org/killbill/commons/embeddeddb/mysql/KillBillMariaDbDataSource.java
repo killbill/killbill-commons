@@ -21,17 +21,16 @@ package org.killbill.commons.embeddeddb.mysql;
 
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.TreeMap;
 
+import org.killbill.commons.utils.MapJoiner;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.mariadb.jdbc.Configuration;
 import org.mariadb.jdbc.MariaDbDataSource;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSortedMap;
-
 public class KillBillMariaDbDataSource extends MariaDbDataSource {
 
-    private static final Joiner.MapJoiner mapJoiner = Joiner.on('&').withKeyValueSeparator("=");
+    private static final MapJoiner mapJoiner = new MapJoiner("=", "&");
 
     private String url;
 
@@ -112,12 +111,12 @@ public class KillBillMariaDbDataSource extends MariaDbDataSource {
         final String urlSecondPart = url.substring(separator + 2);
         final int paramIndex = urlSecondPart.indexOf("?");
 
-        // Note: the ordering is mostly for tests, to ensure a predictable order regardless of the JDK
+        // Note: the ordering (TreeMap) is mostly for tests, to ensure a predictable order regardless of the JDK
         if (append) {
-            return url + (paramIndex > 0 ? "&" : "?") + mapJoiner.join(ImmutableSortedMap.copyOf(props));
+            return url + (paramIndex > 0 ? "&" : "?") + mapJoiner.join(new TreeMap<>(props));
         } else {
             final String baseUrl = paramIndex > 0 ? url.substring(0, separator + 2 + paramIndex) : url;
-            return baseUrl + "?" + mapJoiner.join(ImmutableSortedMap.copyOf(props));
+            return baseUrl + "?" + mapJoiner.join(new TreeMap<>(props));
         }
     }
 }
