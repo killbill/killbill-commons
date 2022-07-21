@@ -26,7 +26,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 import org.slf4j.Logger;
@@ -39,9 +41,6 @@ import org.stringtemplate.v4.compiler.CompiledST;
 import org.stringtemplate.v4.misc.ErrorManager;
 import org.stringtemplate.v4.misc.STMessage;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-
 public class ST4StatementLocator implements StatementLocator {
 
     private static final Logger logger = LoggerFactory.getLogger(ST4StatementLocator.class);
@@ -52,7 +51,7 @@ public class ST4StatementLocator implements StatementLocator {
     private static final String COMPOSITE_KEY_SEPARATOR = "___#___";
 
     @VisibleForTesting
-    final Map<String, String> locatedSqlCache = new ConcurrentHashMap<String, String>();
+    final Map<String, String> locatedSqlCache = new ConcurrentHashMap<>();
 
     private final STGroup group;
 
@@ -100,7 +99,7 @@ public class ST4StatementLocator implements StatementLocator {
      * are seperated in the file name by a '.' not a '$', so com.example.Foo.Bar (Bar is an inner class of Foo) would
      * be at /com/example/Foo.Bar.sql.stg .
      */
-    public static StatementLocator forType(final UseSTGroupCache useCache, final Class sqlObjectType) {
+    public static StatementLocator forType(final UseSTGroupCache useCache, final Class<?> sqlObjectType) {
         return forURL(useCache, classToUrl(sqlObjectType));
     }
 

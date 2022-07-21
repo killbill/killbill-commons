@@ -20,13 +20,14 @@
 
 package org.skife.jdbi.v2.sqlobject.stringtemplate;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.JDBITests;
 import org.stringtemplate.v4.STGroupFile;
-
-import com.google.common.collect.ImmutableMap;
 
 @Category(JDBITests.class)
 public class TestST4StatementLocator {
@@ -36,16 +37,16 @@ public class TestST4StatementLocator {
         final ST4StatementLocator statementLocator = new ST4StatementLocator(new STGroupFile("org/skife/jdbi/v2/sqlobject/stringtemplate/Jun.sql.stg"));
         Assert.assertEquals(0, statementLocator.locatedSqlCache.size());
 
-        Assert.assertEquals("select * from foo where id in ()", statementLocator.locate("get", new TestingStatementContext(ImmutableMap.<String, Object>of())));
+        Assert.assertEquals("select * from foo where id in ()", statementLocator.locate("get", new TestingStatementContext(Collections.emptyMap())));
         Assert.assertEquals(1, statementLocator.locatedSqlCache.size());
         Assert.assertEquals("select * from foo where id in ()", statementLocator.locatedSqlCache.get("get"));
 
         // See @BindIn
-        Assert.assertEquals("select * from foo where id in (:__ids_0)", statementLocator.locate("get", new TestingStatementContext(ImmutableMap.<String, Object>of("ids", ":__ids_0"))));
+        Assert.assertEquals("select * from foo where id in (:__ids_0)", statementLocator.locate("get", new TestingStatementContext(Map.of("ids", ":__ids_0"))));
         Assert.assertEquals(2, statementLocator.locatedSqlCache.size());
         Assert.assertEquals("select * from foo where id in (:__ids_0)", statementLocator.locatedSqlCache.get("get___#___ids___#___:__ids_0"));
 
-        Assert.assertEquals("select * from foo where id in (:__ids_0,:__ids_1)", statementLocator.locate("get", new TestingStatementContext(ImmutableMap.<String, Object>of("ids", ":__ids_0,:__ids_1"))));
+        Assert.assertEquals("select * from foo where id in (:__ids_0,:__ids_1)", statementLocator.locate("get", new TestingStatementContext(Map.of("ids", ":__ids_0,:__ids_1"))));
         Assert.assertEquals(3, statementLocator.locatedSqlCache.size());
         Assert.assertEquals("select * from foo where id in (:__ids_0,:__ids_1)", statementLocator.locatedSqlCache.get("get___#___ids___#___:__ids_0,:__ids_1"));
     }

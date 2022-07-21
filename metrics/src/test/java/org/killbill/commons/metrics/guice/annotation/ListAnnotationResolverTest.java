@@ -18,28 +18,24 @@
 package org.killbill.commons.metrics.guice.annotation;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import org.killbill.commons.metrics.api.annotation.Counted;
 import org.killbill.commons.metrics.api.annotation.Metered;
 import org.killbill.commons.metrics.api.annotation.Timed;
 import org.testng.annotations.Test;
 
-import com.google.common.collect.Lists;
-
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
-class ListAnnotationResolverTest {
+public class ListAnnotationResolverTest {
 
-    @Test
-    void testMixedAnnotations() throws Exception {
+    @Test(groups = "fast")
+    public void testMixedAnnotations() throws Exception {
         final ListAnnotationResolver annotationProvider = new ListAnnotationResolver(
-                Lists.newArrayList(
-                        new MethodAnnotationResolver(),
-                        new ClassAnnotationResolver()
-                                  )
+                List.of(new MethodAnnotationResolver(), new ClassAnnotationResolver())
         );
 
         final Class<MixedAnnotatedClass> klass = MixedAnnotatedClass.class;

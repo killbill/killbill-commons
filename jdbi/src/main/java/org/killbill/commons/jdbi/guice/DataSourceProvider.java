@@ -24,6 +24,7 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
@@ -31,13 +32,14 @@ import org.killbill.commons.health.api.HealthCheckRegistry;
 import org.killbill.commons.jdbi.hikari.KillBillHealthChecker;
 import org.killbill.commons.jdbi.hikari.KillBillMetricsTrackerFactory;
 import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
+// FIXME-1615: Still using guice because metricRegistry and healthCheckRegistry need optional injection
+//   not sure what going to do with this. Probably leave this as is.
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;

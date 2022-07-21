@@ -38,13 +38,15 @@ import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterContainerMapper;
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
 
+import java.util.List;
 import java.util.UUID;
-
-import com.google.common.collect.ImmutableList;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+// FIXME-1615 : java.lang.ClassCastException: class java.util.LinkedList cannot be cast
+//              to class [I (java.util.LinkedList and [I are in module java.base of loader 'bootstrap')
+// This error happened no matter we refactor ImmutableList or not
 @Category(JDBIQuarantineTests.class) // Feature disabled
 public class TestPaging
 {
@@ -79,19 +81,19 @@ public class TestPaging
 
         assertThat(rs, equalTo(new int[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
 
-        ImmutableList<Something> page_one = sql.loadPage(-1, 5);
-        assertThat(page_one, equalTo(ImmutableList.of(new Something(1, "Ami"),
-                                                      new Something(2, "Brian"),
-                                                      new Something(3, "Cora"),
-                                                      new Something(4, "David"),
-                                                      new Something(5, "Eric"))));
+        List<Something> page_one = sql.loadPage(-1, 5);
+        assertThat(page_one, equalTo(List.of(new Something(1, "Ami"),
+                                             new Something(2, "Brian"),
+                                             new Something(3, "Cora"),
+                                             new Something(4, "David"),
+                                             new Something(5, "Eric"))));
 
-        ImmutableList<Something> page_two = sql.loadPage(page_one.get(page_one.size() - 1).getId(), 5);
-        assertThat(page_two, equalTo(ImmutableList.of(new Something(6, "Fernando"),
-                                                      new Something(7, "Greta"),
-                                                      new Something(8, "Holly"),
-                                                      new Something(9, "Inigo"),
-                                                      new Something(10, "Joy"))));
+        List<Something> page_two = sql.loadPage(page_one.get(page_one.size() - 1).getId(), 5);
+        assertThat(page_two, equalTo(List.of(new Something(6, "Fernando"),
+                                             new Something(7, "Greta"),
+                                             new Something(8, "Holly"),
+                                             new Something(9, "Inigo"),
+                                             new Something(10, "Joy"))));
 
     }
 
@@ -103,7 +105,7 @@ public class TestPaging
         public int[] insert(@Bind("id") Iterable<Integer> ids, @Bind("name") Iterable<String> names);
 
         @SqlQuery("select id, name from something where id > :end_of_last_page order by id limit :size")
-        public ImmutableList<Something> loadPage(@Bind("end_of_last_page") int last, @Bind("size") int size);
+        public List<Something> loadPage(@Bind("end_of_last_page") int last, @Bind("size") int size);
     }
 
 

@@ -17,11 +17,13 @@
 
 package org.killbill.commons.metrics.modules;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.killbill.commons.health.api.HealthCheck;
 import org.killbill.commons.health.api.HealthCheckRegistry;
 import org.killbill.commons.metrics.health.KillBillHealthCheckRegistry;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 
@@ -33,15 +35,15 @@ public class StatsModule extends AbstractModule {
     private final Iterable<Class<? extends HealthCheck>> healthChecks;
 
     public StatsModule() {
-        this(ImmutableList.<Class<? extends HealthCheck>>of());
+        this(Collections.emptyList());
     }
 
     public StatsModule(final Class<? extends HealthCheck> healthCheck) {
-        this(ImmutableList.<Class<? extends HealthCheck>>of(healthCheck));
+        this(List.of(healthCheck));
     }
 
     public StatsModule(final Class<? extends HealthCheck>... healthChecks) {
-        this(ImmutableList.<Class<? extends HealthCheck>>copyOf(healthChecks));
+        this(List.of(healthChecks));
     }
 
     public StatsModule(final Iterable<Class<? extends HealthCheck>> healthChecks) {

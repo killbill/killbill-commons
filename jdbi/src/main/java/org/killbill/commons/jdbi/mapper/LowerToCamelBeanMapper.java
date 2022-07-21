@@ -40,18 +40,18 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
+import org.killbill.commons.utils.Strings;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
-import com.google.common.base.CaseFormat;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 // Identical to org.skife.jdbi.v2.BeanMapper but maps created_date to createdDate
 public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
 
     private final Class<T> type;
-    private final Map<String, PropertyDescriptor> properties = new HashMap<String, PropertyDescriptor>();
-    private final Map<String, PropertyMapper> propertiesMappers = new HashMap<String, PropertyMapper>();
+    private final Map<String, PropertyDescriptor> properties = new HashMap<>();
+    private final Map<String, PropertyMapper> propertiesMappers = new HashMap<>();
 
     public LowerToCamelBeanMapper(final Class<T> type) {
         this.type = type;
@@ -59,7 +59,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
             final BeanInfo info = Introspector.getBeanInfo(type);
 
             for (final PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
-                final String key = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, descriptor.getName()).toLowerCase();
+                final String key = Strings.toSnakeCase(descriptor.getName()).toLowerCase();
                 properties.put(key, descriptor);
 
                 final PropertyMapper propertyMapper;
@@ -272,7 +272,7 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                     if (writeMethod != null) {
                         writeMethod.invoke(bean, value);
                     } else {
-                        final String camelCasedName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, name);
+                        final String camelCasedName = Strings.toCamelCase(name, false, '_');
                         final Field field = getField(beanClass, camelCasedName);
                         field.setAccessible(true); // Often private...
                         field.set(bean, value);

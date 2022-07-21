@@ -36,10 +36,10 @@ import org.skife.jdbi.v2.sqlobject.stringtemplate.UseStringTemplate3StatementLoc
 import org.skife.jdbi.v2.tweak.ContainerFactory;
 import org.skife.jdbi.v2.unstable.BindIn;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-
-import com.google.common.collect.ImmutableSet;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -73,44 +73,44 @@ public class TestInClauseExpansion
 
         DAO dao = handle.attach(DAO.class);
 
-        assertThat(dao.findIdsForNames(asList(1, 2)), equalTo(ImmutableSet.of("Brian", "Jeff")));
+        assertThat(dao.findIdsForNames(asList(1, 2)), equalTo(Set.of("Brian", "Jeff")));
     }
 
     @UseStringTemplate3StatementLocator
-    @RegisterContainerMapper(ImmutableSetContainerFactory.class)
+    @RegisterContainerMapper(SetContainerFactory.class)
     public static interface DAO
     {
         @SqlQuery
-        public ImmutableSet<String> findIdsForNames(@BindIn("names") List<Integer> names);
+        public Set<String> findIdsForNames(@BindIn("names") List<Integer> names);
     }
 
-    public static class ImmutableSetContainerFactory implements ContainerFactory<ImmutableSet>
+    public static class SetContainerFactory implements ContainerFactory<Set>
     {
 
         @Override
         public boolean accepts(Class<?> type)
         {
-            return ImmutableSet.class.isAssignableFrom(type);
+            return Set.class.isAssignableFrom(type);
         }
 
         @Override
-        public ContainerBuilder<ImmutableSet> newContainerBuilderFor(Class<?> type)
+        public ContainerBuilder<Set> newContainerBuilderFor(Class<?> type)
         {
-            return new ContainerBuilder<ImmutableSet>()
+            return new ContainerBuilder<Set>()
             {
-                final ImmutableSet.Builder<Object> builder = ImmutableSet.builder();
+                final Set<Object> builder = new HashSet<>();
 
                 @Override
-                public ContainerBuilder<ImmutableSet> add(Object it)
+                public ContainerBuilder<Set> add(Object it)
                 {
                     builder.add(it);
                     return this;
                 }
 
                 @Override
-                public ImmutableSet build()
+                public Set<Object> build()
                 {
-                    return builder.build();
+                    return Set.copyOf(builder);
                 }
             };
         }

@@ -32,16 +32,16 @@ import org.skife.jdbi.v2.sqlobject.customizers.SingleValueResult;
 import org.skife.jdbi.v2.tweak.ContainerFactory;
 import org.skife.jdbi.v2.util.StringMapper;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+// FIXME-1615 : How to run this test?
 @Category(JDBIQuarantineTests.class) // Feature disabled
 public class TestContainerFactory
 {
@@ -99,11 +99,11 @@ public class TestContainerFactory
         h.execute("insert into something (id, name) values (1, 'Coda')");
         h.execute("insert into something (id, name) values (2, 'Brian')");
 
-        ImmutableList<String> rs = h.createQuery("select name from something order by id")
-                                    .map(StringMapper.FIRST)
-                                    .list(ImmutableList.class);
+        final List<String> rs = h.createQuery("select name from something order by id")
+                           .map(StringMapper.FIRST)
+                           .list(List.class);
 
-        assertThat(rs, equalTo(ImmutableList.of("Coda", "Brian")));
+        assertThat(rs, equalTo(List.of("Coda", "Brian")));
     }
 
     @Test
@@ -113,8 +113,8 @@ public class TestContainerFactory
         dao.insert(new Something(1, "Coda"));
         dao.insert(new Something(2, "Brian"));
 
-        ImmutableList<String> rs = dao.findAll();
-        assertThat(rs, equalTo(ImmutableList.of("Coda", "Brian")));
+        List<String> rs = dao.findAll();
+        assertThat(rs, equalTo(List.of("Coda", "Brian")));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class TestContainerFactory
         dao.insert(new Something(2, "Brian"));
 
         Set<String> rs = dao.findAllAsSet();
-        assertThat(rs, equalTo((Set<String>)ImmutableSet.of("Coda", "Brian")));
+        assertThat(rs, equalTo((Set<String>)List.of("Coda", "Brian")));
     }
 
 
@@ -150,7 +150,7 @@ public class TestContainerFactory
     public static interface Dao extends Base<String>
     {
         @SqlQuery("select name from something order by id")
-        public ImmutableList<String> findAll();
+        public List<String> findAll();
 
         @SqlQuery("select name from something order by id")
         public Set<String> findAllAsSet();
@@ -207,33 +207,33 @@ public class TestContainerFactory
         }
     }
 
-    public static class ImmutableListContainerFactory implements ContainerFactory<ImmutableList<?>>
+    public static class ImmutableListContainerFactory implements ContainerFactory<List<?>>
     {
 
         @Override
         public boolean accepts(Class<?> type)
         {
-            return ImmutableList.class.equals(type);
+            return List.class.equals(type);
         }
 
         @Override
-        public ContainerBuilder<ImmutableList<?>> newContainerBuilderFor(Class<?> type)
+        public ContainerBuilder<List<?>> newContainerBuilderFor(Class<?> type)
         {
-            return new ContainerBuilder<ImmutableList<?>>()
+            return new ContainerBuilder<List<?>>()
             {
-                private final ImmutableList.Builder<Object> b = ImmutableList.builder();
+                private final List<Object> b = new ArrayList<>();
 
                 @Override
-                public ContainerBuilder<ImmutableList<?>> add(Object it)
+                public ContainerBuilder<List<?>> add(Object it)
                 {
                     b.add(it);
                     return this;
                 }
 
                 @Override
-                public ImmutableList<?> build()
+                public List<?> build()
                 {
-                    return b.build();
+                    return b;
                 }
             };
         }
