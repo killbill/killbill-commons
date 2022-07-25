@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -78,18 +77,6 @@ public class DaoTest {
     }
 
     @Test
-    @Category(JDBIQuarantineTests.class)
-    public void testUseImportedTemplate() throws Exception {
-        final DBI dbi = new DBI(h2);
-        final OuterDao dao = dbi.onDemand(OuterDao.class);
-        dao.createSomething2();
-        dao.insert2("something", 1, "Paul");
-        final Something s = dao.findById2(1);
-
-        assertThat(s).isEqualTo(new Something(1, "Paul"));
-    }
-
-    @Test
     @Category(JDBITests.class)
     public void testSimpleStatementInnerClass() throws Exception {
         final DBI dbi = new DBI(h2);
@@ -121,19 +108,6 @@ public class DaoTest {
             }
         });
         assertThat(name).isEqualTo("Carlos");
-    }
-
-    @Test
-    @Category(JDBIQuarantineTests.class)
-    public void testUseImportedTemplateInnerClass() throws Exception {
-        final DBI dbi = new DBI(h2);
-        final InnerDao dao = dbi.onDemand(InnerDao.class);
-        dao.createSomething();
-        dao.insert("something", 1, "Paul");
-        final Something s = dao.findById(1);
-
-        assertThat(s).isEqualTo(new Something(1, "Paul"));
-
     }
 
     @Test

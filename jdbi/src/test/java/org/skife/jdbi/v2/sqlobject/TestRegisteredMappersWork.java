@@ -26,11 +26,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.StatementContext;
-import org.skife.jdbi.v2.exceptions.DBIException;
 import org.skife.jdbi.v2.sqlobject.helpers.MapResultAsBean;
 import org.skife.jdbi.v2.sqlobject.mixins.CloseMe;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
@@ -125,39 +123,6 @@ public class TestRegisteredMappersWork
     }
 
     @Test
-    @Category(JDBIQuarantineTests.class) // Feature disabled
-    public void testBeanMapperFactory() throws Exception
-    {
-        BeanMappingDao db = handle.attach(BeanMappingDao.class);
-        db.createBeanTable();
-
-        Bean lima = new Bean();
-        lima.setColor("green");
-        lima.setName("lima");
-
-        db.insertBean(lima);
-
-        Bean another_lima = db.findByName("lima");
-        assertThat(another_lima.getName(), equalTo(lima.getName()));
-        assertThat(another_lima.getColor(), equalTo(lima.getColor()));
-    }
-
-    @Test
-    @Category(JDBIQuarantineTests.class) // Feature disabled
-    public void testRegistered() throws Exception
-    {
-        handle.registerMapper(new SomethingMapper());
-
-        Spiffy s = SqlObjectBuilder.attach(handle, Spiffy.class);
-
-        s.insert(1, "Tatu");
-
-        Something t = s.byId(1);
-        assertEquals(1, t.getId());
-        assertEquals("Tatu", t.getName());
-    }
-
-    @Test
     @Category(JDBITests.class)
     public void testBuiltIn() throws Exception
     {
@@ -179,23 +144,6 @@ public class TestRegisteredMappersWork
         Something henning = bob.find(1);
 
         assertThat(henning, equalTo(new Something(1, "Henning")));
-    }
-
-    @Test(expected = DBIException.class)
-    @Category(JDBIQuarantineTests.class) // Feature disabled
-    public void testNoRootRegistrations() throws Exception
-    {
-        Handle h = dbi.open();
-        h.insert("insert into something (id, name) values (1, 'Henning')");
-        try {
-            Something henning = h.createQuery("select id, name from something where id = 1")
-                                 .mapTo(Something.class)
-                                 .first();
-            fail("should have raised an exception");
-        }
-        finally {
-            h.close();
-        }
     }
 
     @Test

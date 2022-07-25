@@ -28,7 +28,6 @@ import org.skife.jdbi.v2.tweak.Argument;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;
 import org.skife.jdbi.v2.util.StringMapper;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -73,51 +72,6 @@ public class TestArgumentFactory
 
         assertThat(full_name, equalTo("Brian McCallister"));
         h2.close();
-    }
-
-    @Test
-    @Category(JDBIQuarantineTests.class) // Feature disabled
-    public void testRegisterOnHandle() throws Exception
-    {
-        h.registerArgumentFactory(new NameAF());
-        h.createStatement("insert into something (id, name) values (:id, :name)")
-         .bind("id", 7)
-         .bind("name", new Name("Brian", "McCallister"))
-         .execute();
-
-        String full_name = h.createQuery("select name from something where id = 7").map(StringMapper.FIRST).first();
-
-        assertThat(full_name, equalTo("Brian McCallister"));
-    }
-
-    @Test
-    @Category(JDBIQuarantineTests.class) // Feature disabled
-    public void testRegisterOnStatement() throws Exception
-    {
-        h.createStatement("insert into something (id, name) values (:id, :name)")
-         .registerArgumentFactory(new NameAF())
-         .bind("id", 1)
-         .bind("name", new Name("Brian", "McCallister"))
-         .execute();
-    }
-
-    @Test
-    @Category(JDBIQuarantineTests.class) // Feature disabled
-    public void testOnPreparedBatch() throws Exception
-    {
-        PreparedBatch batch = h.prepareBatch("insert into something (id, name) values (:id, :name)");
-        batch.registerArgumentFactory(new NameAF());
-
-        batch.add().bind("id", 1).bind("name", new Name("Brian", "McCallister"));
-        batch.add().bind("id", 2).bind("name", new Name("Henning", "S"));
-        batch.execute();
-
-        List<String> rs = h.createQuery("select name from something order by id")
-                           .map(StringMapper.FIRST)
-                           .list();
-
-        assertThat(rs.get(0), equalTo("Brian McCallister"));
-        assertThat(rs.get(1), equalTo("Henning S"));
     }
 
     public static class NameAF implements ArgumentFactory<Name>
