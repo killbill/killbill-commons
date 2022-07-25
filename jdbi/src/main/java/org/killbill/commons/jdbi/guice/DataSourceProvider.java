@@ -24,6 +24,8 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.sql.DataSource;
 
@@ -37,9 +39,6 @@ import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// FIXME-1615: Still using guice because metricRegistry and healthCheckRegistry need optional injection
-//   not sure what going to do with this. Probably leave this as is.
-import com.google.inject.Inject;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
@@ -88,13 +87,13 @@ public class DataSourceProvider implements Provider<DataSource> {
         parseJDBCUrl();
     }
 
-    @Inject(optional = true)
-    public void setMetricsRegistry(final MetricRegistry metricRegistry) {
+    @Inject
+    public void setMetricsRegistry(@Nullable final MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
 
-    @Inject(optional = true)
-    public void setHealthCheckRegistry(final HealthCheckRegistry healthCheckRegistry) {
+    @Inject
+    public void setHealthCheckRegistry(@Nullable final HealthCheckRegistry healthCheckRegistry) {
         this.healthCheckRegistry = healthCheckRegistry;
     }
 
