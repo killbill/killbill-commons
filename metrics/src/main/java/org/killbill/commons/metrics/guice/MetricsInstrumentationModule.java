@@ -26,13 +26,13 @@ import org.killbill.commons.metrics.api.annotation.Gauge;
 import org.killbill.commons.metrics.api.annotation.Metered;
 import org.killbill.commons.metrics.api.annotation.Timed;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matcher;
 import com.google.inject.matcher.Matchers;
 import org.killbill.commons.metrics.guice.annotation.AnnotationResolver;
 import org.killbill.commons.metrics.guice.annotation.MethodAnnotationResolver;
+import org.killbill.commons.utils.Preconditions;
 
 /**
  * A Guice module which instruments methods annotated with the {@link Metered}, {@link Timed}, {@link Gauge}, {@link

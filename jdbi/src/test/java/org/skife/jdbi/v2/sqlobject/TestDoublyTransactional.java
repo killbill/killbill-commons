@@ -50,8 +50,6 @@ import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
 
-import com.google.common.collect.ImmutableSet;
-
 @Category(JDBITests.class)
 public class TestDoublyTransactional
 {
@@ -121,7 +119,7 @@ public class TestDoublyTransactional
     private static final Set<Method> CHECKED_METHODS;
     static {
         try {
-            CHECKED_METHODS = ImmutableSet.of(Connection.class.getMethod("setTransactionIsolation", int.class));
+            CHECKED_METHODS = Set.of(Connection.class.getMethod("setTransactionIsolation", int.class));
         } catch (final Exception e) {
             throw new ExceptionInInitializerError(e);
         }

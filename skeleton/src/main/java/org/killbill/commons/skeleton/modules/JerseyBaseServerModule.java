@@ -23,16 +23,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
 import org.glassfish.jersey.server.ServerProperties;
+import org.killbill.commons.utils.Joiner;
+import org.killbill.commons.utils.Strings;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
 public class JerseyBaseServerModule extends BaseServerModule {
@@ -64,8 +64,8 @@ public class JerseyBaseServerModule extends BaseServerModule {
         this.jerseyParams = new ImmutableMap.Builder<String, String>();
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
-        final String jerseyLoggingVerbosity = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
-        final String jerseyLoggingLevel = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_LEVEL)), "INFO");
+        final String jerseyLoggingVerbosity = Objects.requireNonNullElse(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
+        final String jerseyLoggingLevel = Objects.requireNonNullElse(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_LEVEL)), "INFO");
         this.jerseyParams.put(JERSEY_LOGGING_VERBOSITY, jerseyLoggingVerbosity)
                          .put(JERSEY_LOGGING_LEVEL, jerseyLoggingLevel);
 

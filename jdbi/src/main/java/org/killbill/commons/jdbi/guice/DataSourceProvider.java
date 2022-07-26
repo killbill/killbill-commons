@@ -24,6 +24,9 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
@@ -31,13 +34,11 @@ import org.killbill.commons.health.api.HealthCheckRegistry;
 import org.killbill.commons.jdbi.hikari.KillBillHealthChecker;
 import org.killbill.commons.jdbi.hikari.KillBillMetricsTrackerFactory;
 import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
@@ -86,13 +87,13 @@ public class DataSourceProvider implements Provider<DataSource> {
         parseJDBCUrl();
     }
 
-    @Inject(optional = true)
-    public void setMetricsRegistry(final MetricRegistry metricRegistry) {
+    @Inject
+    public void setMetricsRegistry(@Nullable final MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
 
-    @Inject(optional = true)
-    public void setHealthCheckRegistry(final HealthCheckRegistry healthCheckRegistry) {
+    @Inject
+    public void setHealthCheckRegistry(@Nullable final HealthCheckRegistry healthCheckRegistry) {
         this.healthCheckRegistry = healthCheckRegistry;
     }
 

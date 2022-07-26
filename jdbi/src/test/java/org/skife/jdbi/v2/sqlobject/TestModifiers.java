@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.Something;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
@@ -148,9 +147,9 @@ public class TestModifiers
         assertEquals(3, things.size());
     }
 
-
+    // Note-1615: This was "@Category(JDBIQuarantineTests.class)". Changed to JDBITests because test passed by default
     @Test
-    @Category(JDBIQuarantineTests.class) // Behavior changed with H2 1.4
+    @Category(JDBITests.class) // Behavior changed with H2 1.4
     public void testIsolationLevelOnMethod() throws Exception
     {
         Spiffy spiffy = dbi.open(Spiffy.class);
@@ -171,8 +170,9 @@ public class TestModifiers
         iso.close();
     }
 
+    // Note-1615: This was "@Category(JDBIQuarantineTests.class)". Changed to JDBITests because test passed by default
     @Test
-    @Category(JDBIQuarantineTests.class) // Behavior changed with H2 1.4
+    @Category(JDBITests.class) // Behavior changed with H2 1.4
     public void testIsolationLevelOnParam() throws Exception
     {
         Spiffy spiffy = dbi.open(Spiffy.class);

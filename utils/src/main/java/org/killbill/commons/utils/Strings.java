@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2021 Apache Software Foundation
+ * Copyright (C) 2010 The Guava Authors
  * Copyright 2020-2022 Equinix, Inc
  * Copyright 2014-2022 The Billing Project, LLC
  *
@@ -18,7 +20,9 @@
 package org.killbill.commons.utils;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -77,5 +81,107 @@ public final class Strings {
             return false;
         }
         return !str.equals(str.toLowerCase());
+    }
+
+    /**
+     * Convert string to camel case, based on {@code delimiter}. Taken from apache common-text
+     * <a href="https://raw.githubusercontent.com/apache/commons-text/master/src/main/java/org/apache/commons/text/CaseUtils.java">CaseUtils</a>
+     */
+    public static String toCamelCase(String str, final boolean capitalizeFirstLetter, final char... delimiters) {
+        if (str == null || str.isBlank()) {
+            return str;
+        }
+        str = str.toLowerCase();
+        final int strLen = str.length();
+        final int[] newCodePoints = new int[strLen];
+        int outOffset = 0;
+        final Set<Integer> delimiterSet = toDelimiterSet(delimiters);
+        boolean capitalizeNext = capitalizeFirstLetter;
+        for (int index = 0; index < strLen; ) {
+            final int codePoint = str.codePointAt(index);
+
+            if (delimiterSet.contains(codePoint)) {
+                capitalizeNext = outOffset != 0;
+                index += Character.charCount(codePoint);
+            } else if (capitalizeNext || outOffset == 0 && capitalizeFirstLetter) {
+                final int titleCaseCodePoint = Character.toTitleCase(codePoint);
+                newCodePoints[outOffset++] = titleCaseCodePoint;
+                index += Character.charCount(titleCaseCodePoint);
+                capitalizeNext = false;
+            } else {
+                newCodePoints[outOffset++] = codePoint;
+                index += Character.charCount(codePoint);
+            }
+        }
+
+        return new String(newCodePoints, 0, outOffset);
+    }
+
+    private static Set<Integer> toDelimiterSet(final char[] delimiters) {
+        final Set<Integer> delimiterHashSet = new HashSet<>();
+        delimiterHashSet.add(Character.codePointAt(new char[]{' '}, 0));
+        if (delimiters == null || delimiters.length == 0) {
+            return delimiterHashSet;
+        }
+
+        for (int index = 0; index < delimiters.length; index++) {
+            delimiterHashSet.add(Character.codePointAt(delimiters, index));
+        }
+        return delimiterHashSet;
+    }
+
+    /**
+     * Replace string from camel case to snake case, eg: "thisIsASentence" to "this_is_a_sentence".
+     */
+    // https://stackoverflow.com/a/57632022
+    public static String toSnakeCase(final String str) {
+        final StringBuilder result = new StringBuilder();
+
+        boolean lastUppercase = false;
+
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            final char lastEntry = i == 0 ? 'X' : result.charAt(result.length() - 1);
+            // ch == ' ' || ch == '_' || ch == '-' || ch == '.'
+            if (ch == '_') {
+                lastUppercase = false;
+
+                if (lastEntry == '_') {
+                    continue;
+                } else {
+                    ch = '_';
+                }
+            } else if (Character.isUpperCase(ch)) {
+                ch = Character.toLowerCase(ch);
+                // is start?
+                if (i > 0) {
+                    if (lastUppercase) {
+                        // test if end of acronym
+                        if (i + 1 < str.length()) {
+                            char next = str.charAt(i + 1);
+                            if (!Character.isUpperCase(next) && Character.isAlphabetic(next)) {
+                                // end of acronym
+                                if (lastEntry != '_') {
+                                    result.append('_');
+                                }
+                            } else {
+                                result.append('_');
+                            }
+                        }
+                    } else {
+                        // last was lowercase, insert _
+                        if (lastEntry != '_') {
+                            result.append('_');
+                        }
+                    }
+                }
+                lastUppercase = true;
+            } else {
+                lastUppercase = false;
+            }
+
+            result.append(ch);
+        }
+        return result.toString();
     }
 }

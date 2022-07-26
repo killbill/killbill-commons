@@ -34,8 +34,6 @@ import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.unstable.BindIn;
 
-import com.google.common.collect.Lists;
-
 @Category(JDBITests.class)
 public class TestStringTemplate3StatementLocatorWithCustomErrorHandler {
 
@@ -64,12 +62,12 @@ public class TestStringTemplate3StatementLocatorWithCustomErrorHandler {
 
   @Test
   public void testWorks() {
-    dao.works(Lists.newArrayList(1L, 2L));
+    dao.works(List.of(1L, 2L));
   }
 
   @Test
   public void testIds() {
-    dao.ids(Lists.newArrayList(1, 2));
+    dao.ids(List.of(1, 2));
   }
 
   @UseStringTemplate3StatementLocator(errorListener=MyTestCustomErrorHandler.class)

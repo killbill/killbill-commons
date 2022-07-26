@@ -33,14 +33,12 @@ import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.tweak.BeanMapperFactory;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -88,8 +86,8 @@ public class TestFoldToObjectGraph
         hogans.getPeople().add(new Person("Kinchloe", "comms"));
         hogans.getPeople().add(new Person("Carter", "bombs"));
 
-        this.expected = ImmutableMap.of("Hogan's Heroes", hogans,
-                                        "A-Team", ateam);
+        this.expected = Map.of("Hogan's Heroes", hogans,
+                               "A-Team", ateam);
 
 
     }
@@ -109,7 +107,7 @@ public class TestFoldToObjectGraph
                                                      "       p.role as role " +
                                                      "from team t inner join person p on (t.name = p.team)")
                                         .map(TeamPersonJoinRow.class)
-                                        .fold(Maps.<String, Team>newHashMap(), new TeamFolder());
+                                        .fold(new HashMap<>(), new TeamFolder());
 
         assertThat(teams, equalTo(expected));
 
@@ -152,7 +150,7 @@ public class TestFoldToObjectGraph
         public Map<String, Team> findAllTeams()
         {
             Iterator<TeamPersonJoinRow> i = findAllTeamsAndPeople();
-            Map<String, Team> acc = Maps.newHashMap();
+            Map<String, Team> acc = new HashMap<>();
             while (i.hasNext()) {
                 TeamPersonJoinRow row = i.next();
                 if (!acc.containsKey(row.getTeamName())) {
