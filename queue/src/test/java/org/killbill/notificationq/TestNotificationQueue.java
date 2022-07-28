@@ -26,12 +26,15 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.killbill.TestSetup;
 import org.killbill.billing.util.queue.QueueRetryException;
 import org.killbill.clock.DefaultClock;
+import org.killbill.commons.utils.collect.Iterables;
+import org.killbill.commons.utils.collect.Iterators;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationEventWithMetadata;
 import org.killbill.notificationq.api.NotificationQueue;
@@ -56,15 +59,10 @@ import org.testng.annotations.Test;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class TestNotificationQueue extends TestSetup {
 
@@ -247,7 +245,7 @@ public class TestNotificationQueue extends TestSetup {
         Assert.assertEquals(Iterables.<NotificationEventWithMetadata<TestNotificationKey>>size(queue.getInProcessingNotifications()), 0);
         Assert.assertEquals(queue.getNbReadyEntries(readyTime), 4);
 
-        final List<NotificationEventWithMetadata> futuresAll = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2));
+        final List<NotificationEventWithMetadata<?>> futuresAll = Iterables.toUnmodifiableList(queue.getFutureNotificationForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2));
         Assert.assertEquals(futuresAll.size(), 2);
         int found = 0;
         for (int i = 0; i < 2; i++) {
@@ -259,7 +257,7 @@ public class TestNotificationQueue extends TestSetup {
         }
         Assert.assertEquals(found, 2);
 
-        final List<NotificationEventWithMetadata> futures2 = ImmutableList.<NotificationEventWithMetadata>copyOf(queue.getFutureNotificationForSearchKey2(null, SEARCH_KEY_2));
+        final List<NotificationEventWithMetadata<?>> futures2 = Iterables.toUnmodifiableList(queue.getFutureNotificationForSearchKey2(null, SEARCH_KEY_2));
         Assert.assertEquals(futures2.size(), 3);
         found = 0;
         for (int i = 0; i < 3; i++) {
@@ -362,12 +360,9 @@ public class TestNotificationQueue extends TestSetup {
         boolean success = false;
         do {
             synchronized (expectedNotifications) {
-                final Collection<Boolean> completed = Collections2.filter(expectedNotifications.values(), new Predicate<Boolean>() {
-                    @Override
-                    public boolean apply(final Boolean input) {
-                        return input;
-                    }
-                });
+                final Collection<Boolean> completed = expectedNotifications.values().stream()
+                        .filter(input -> input)
+                        .collect(Collectors.toUnmodifiableList());
 
                 if (completed.size() == MAX_NOTIFICATIONS) {
                     success = true;
@@ -379,13 +374,8 @@ public class TestNotificationQueue extends TestSetup {
         } while (!success);
 
         queue.stopQueue();
-        log.info("GOT SIZE " + Collections2.filter(expectedNotifications.values(), new Predicate<Boolean>() {
-            @Override
-            public boolean apply(final Boolean input) {
-                return input;
-            }
-        }).size());
-        assertEquals(success, true);
+        log.info("GOT SIZE : {}", expectedNotifications.values().stream().filter(input -> input).collect(Collectors.toUnmodifiableList()));
+        assertTrue(success);
     }
 
     /**
@@ -396,8 +386,8 @@ public class TestNotificationQueue extends TestSetup {
      */
     @Test(groups = "slow")
     public void testMultipleHandlerNotification() throws Exception {
-        final Map<NotificationEvent, Boolean> expectedNotificationsFred = new TreeMap<NotificationEvent, Boolean>();
-        final Map<NotificationEvent, Boolean> expectedNotificationsBarney = new TreeMap<NotificationEvent, Boolean>();
+        final Map<NotificationEvent, Boolean> expectedNotificationsFred = new TreeMap<>();
+        final Map<NotificationEvent, Boolean> expectedNotificationsBarney = new TreeMap<>();
 
         final NotificationQueue queueFred = queueService.createNotificationQueue("UtilTest", "Fred", new NotificationQueueHandler() {
             @Override
@@ -579,10 +569,10 @@ public class TestNotificationQueue extends TestSetup {
     @Test(groups = "slow")
     public void testRetryStateForNotifications() throws Exception {
         // 4 retries
-        final NotificationQueueHandlerWithExceptions handlerDelegate = new NotificationQueueHandlerWithExceptions(ImmutableList.<Period>of(Period.millis(1),
-                                                                                                                                           Period.millis(1),
-                                                                                                                                           Period.millis(1),
-                                                                                                                                           Period.days(1)));
+        final NotificationQueueHandlerWithExceptions handlerDelegate = new NotificationQueueHandlerWithExceptions(List.of(Period.millis(1),
+                                                                                                                          Period.millis(1),
+                                                                                                                          Period.millis(1),
+                                                                                                                          Period.days(1)));
         final NotificationQueueHandler retryableHandler = new RetryableHandler(clock, retryableQueueService, handlerDelegate);
         final NotificationQueue queueWithExceptionAndFailed = queueService.createNotificationQueue("svc", "queueName", retryableHandler);
         try {
@@ -611,14 +601,14 @@ public class TestNotificationQueue extends TestSetup {
             });
 
             // Initial event was processed once
-            List<NotificationEventModelDao> historicalEntriesForOriginalEvent = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            List<NotificationEventModelDao> historicalEntriesForOriginalEvent = Iterators.toUnmodifiableList(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
             Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
             // State is initially FAILED
             Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
 
             // Retry events
-            List<NotificationEventModelDao> historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            List<NotificationEventModelDao> historicalEntriesForRetries = Iterators.toUnmodifiableList(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForRetries.size(), 3);
             for (final NotificationEventModelDao historicalEntriesForRetry : historicalEntriesForRetries) {
                 Assert.assertEquals((long) historicalEntriesForRetry.getErrorCount(), (long) 0);
@@ -640,14 +630,14 @@ public class TestNotificationQueue extends TestSetup {
             });
 
             // Initial event was processed once
-            historicalEntriesForOriginalEvent = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            historicalEntriesForOriginalEvent = Iterators.toUnmodifiableList(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("svc:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForOriginalEvent.size(), 1);
             Assert.assertEquals((long) historicalEntriesForOriginalEvent.get(0).getErrorCount(), (long) 0);
             // State is still FAILED
             Assert.assertEquals(historicalEntriesForOriginalEvent.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.FAILED);
 
             // Retry events
-            historicalEntriesForRetries = ImmutableList.<NotificationEventModelDao>copyOf(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
+            historicalEntriesForRetries = Iterators.toUnmodifiableList(notificationSqlDao.getHistoricalQueueEntriesForSearchKeys("notifications-retries:queueName", SEARCH_KEY_1, SEARCH_KEY_2, notificationQueueConfig.getHistoryTableName()));
             Assert.assertEquals(historicalEntriesForRetries.size(), 4);
             for (int i = 0; i < historicalEntriesForRetries.size(); i++) {
                 final NotificationEventModelDao historicalEntriesForRetry = historicalEntriesForRetries.get(i);

@@ -23,8 +23,8 @@ package org.killbill;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
+import org.killbill.commons.utils.Strings;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 
 public class CreatorName {
 

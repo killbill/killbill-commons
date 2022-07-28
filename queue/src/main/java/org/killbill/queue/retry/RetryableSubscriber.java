@@ -20,22 +20,20 @@
 package org.killbill.queue.retry;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.clock.Clock;
+import org.killbill.commons.utils.cache.Cache;
+import org.killbill.commons.utils.cache.DefaultSynchronizedCache;
 import org.killbill.notificationq.api.NotificationEvent;
 import org.killbill.notificationq.api.NotificationQueueService.NotificationQueueHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.reflect.TypeToken;
 
 public class RetryableSubscriber extends RetryableHandler {
 
@@ -62,18 +60,13 @@ public class RetryableSubscriber extends RetryableHandler {
 
     public static final class SubscriberQueueHandler implements NotificationQueueHandler {
 
-        // Similar to com.google.common.eventbus.SubscriberRegistry
-        private static final LoadingCache<Class<?>, ImmutableSet<Class<?>>> FLATTEN_HIERARCHY_CACHE =
-                CacheBuilder.newBuilder()
-                            .build(
-                                    new CacheLoader<Class<?>, ImmutableSet<Class<?>>>() {
-                                        @Override
-                                        public ImmutableSet<Class<?>> load(final Class<?> concreteClass) {
-                                            return ImmutableSet.<Class<?>>copyOf(TypeToken.of(concreteClass).getTypes().rawTypes());
-                                        }
-                                    });
+        // Similar to org.killbill.commons.eventbus.SubscriberRegistry
+        private static final Cache<Class<?>, Set<Class<?>>> FLATTEN_HIERARCHY_CACHE = new DefaultSynchronizedCache<>(
+                // LinkedHashSet to make sure maintains its order. See
+                // org.killbill.commons.eventbus.SubscriberRegistry comments (on line ~204) to find out more why.
+                key -> new LinkedHashSet<>(org.killbill.commons.utils.TypeToken.getRawTypes(key)));
 
-        private final Map<Class<?>, SubscriberAction<? extends BusEvent>> actions = new HashMap<Class<?>, SubscriberAction<? extends BusEvent>>();
+        private final Map<Class<?>, SubscriberAction<? extends BusEvent>> actions = new HashMap<>();
 
         public SubscriberQueueHandler() {
         }
@@ -89,7 +82,7 @@ public class RetryableSubscriber extends RetryableHandler {
             } else {
                 final BusEvent busEvent = ((SubscriberNotificationEvent) eventJson).getBusEvent();
 
-                final ImmutableSet<Class<?>> eventTypes = FLATTEN_HIERARCHY_CACHE.getUnchecked(busEvent.getClass());
+                final Set<Class<?>> eventTypes = FLATTEN_HIERARCHY_CACHE.get(busEvent.getClass());
                 for (final Class<?> eventType : eventTypes) {
                     final SubscriberAction<BusEvent> next = (SubscriberAction<BusEvent>) actions.get(eventType);
                     if (next != null) {

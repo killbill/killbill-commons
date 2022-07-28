@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.MoreObjects;
 
 public class MockNotificationQueue implements NotificationQueue {
 
@@ -87,7 +87,7 @@ public class MockNotificationQueue implements NotificationQueue {
     @Override
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent eventJson, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
         final String json = objectMapper.writeValueAsString(eventJson);
-        final Long searchKey2WithNull = MoreObjects.firstNonNull(searchKey2, new Long(0));
+        final Long searchKey2WithNull = Objects.requireNonNullElse(searchKey2, 0L);
         final NotificationEventModelDao notification = new NotificationEventModelDao(recordIds.incrementAndGet(), "MockQueue", hostname, clock.getUTCNow(), null, PersistentQueueEntryLifecycleState.AVAILABLE,
                                                                                      eventJson.getClass().getName(), json, 0L, userToken, searchKey1, searchKey2WithNull, UUID.randomUUID(),
                                                                                      futureNotificationTime, "MockQueue");

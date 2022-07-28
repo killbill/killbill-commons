@@ -24,8 +24,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
@@ -40,9 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 
 import static org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import static org.testng.Assert.assertEquals;
@@ -101,12 +97,10 @@ public class TestLoadDBBackedQueue extends TestSetup {
             final long t2 = System.nanoTime();
             cumlGetReadyEntries += (t2 - t1);
 
-            final Iterable<BusEventModelDao> processed = Iterables.transform(ready, new Function<BusEventModelDao, BusEventModelDao>() {
-                @Override
-                public BusEventModelDao apply(@Nullable final BusEventModelDao input) {
-                    return new BusEventModelDao(input, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED);
-                }
-            });
+            final Iterable<BusEventModelDao> processed = ready.stream()
+                    .map(input -> new BusEventModelDao(input, CreatorName.get(), clock.getUTCNow(), PersistentQueueEntryLifecycleState.PROCESSED))
+                    .collect(Collectors.toUnmodifiableList());
+
             final long t3 = System.nanoTime();
             queue.moveEntriesToHistory(processed);
             final long t4 = System.nanoTime();
