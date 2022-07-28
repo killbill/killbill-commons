@@ -24,12 +24,16 @@ import java.util.function.Function;
  */
 public class DefaultSynchronizedCache<K, V> extends DefaultCache<K, V> implements Cache<K, V> {
 
-    public DefaultSynchronizedCache(final int maxSize, final long timeoutInSecond, final Function<K, V> cacheLoader) {
-        super(maxSize, timeoutInSecond, cacheLoader);
-    }
-
     public DefaultSynchronizedCache(final int maxSize) {
         super(maxSize);
+    }
+
+    public DefaultSynchronizedCache(final Function<K, V> cacheLoader) {
+        super(cacheLoader);
+    }
+
+    public DefaultSynchronizedCache(final int maxSize, final long timeoutInSecond, final Function<K, V> cacheLoader) {
+        super(maxSize, timeoutInSecond, cacheLoader);
     }
 
     @Override
