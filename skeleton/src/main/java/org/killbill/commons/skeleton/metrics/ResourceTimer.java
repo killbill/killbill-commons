@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
-import com.google.common.base.Joiner;
+import org.killbill.commons.utils.Joiner;
 
 public class ResourceTimer {
 

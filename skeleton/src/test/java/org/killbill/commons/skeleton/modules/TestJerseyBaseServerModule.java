@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jetty.server.NetworkConnector;
@@ -41,7 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.google.common.collect.ImmutableList;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -57,7 +58,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         builder.setJaxrsUriPattern("/hello|/hello/.*");
 
         final Injector injector = Guice.createInjector(builder.build(),
-                                                       new StatsModule(healthCheckUri, metricsUri, threadsUri, ImmutableList.<Class<? extends HealthCheck>>of(TestHealthCheck.class)),
+                                                       new StatsModule(healthCheckUri, metricsUri, threadsUri, List.of(TestHealthCheck.class)),
                                                        new AbstractModule() {
                                                            @Override
                                                            protected void configure() {
@@ -108,7 +109,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
     public void testJerseyParams() throws Exception {
         final BaseServerModuleBuilder builder1 = new BaseServerModuleBuilder();
         final JerseyBaseServerModule module1 = (JerseyBaseServerModule) builder1.build();
-        final Map<String, String> jerseyParams1 = module1.getJerseyParams().build();
+        final Map<String, String> jerseyParams1 = module1.getJerseyParams();
         Assert.assertEquals(jerseyParams1.size(), 2);
         Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
         Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "INFO");
@@ -118,7 +119,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
                 .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL, "FINE")
                 .addJerseyParam("foo", "qux");
         final JerseyBaseServerModule module2 = (JerseyBaseServerModule) builder2.build();
-        final Map<String, String> jerseyParams2 = module2.getJerseyParams().build();
+        final Map<String, String> jerseyParams2 = module2.getJerseyParams();
         Assert.assertEquals(jerseyParams2.size(), 3);
         Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "PAYLOAD_TEXT");
         Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "FINE");

@@ -19,13 +19,14 @@
 
 package org.killbill.commons.skeleton.listeners;
 
+import java.util.List;
+
 import javax.servlet.ServletContextEvent;
 
+import org.killbill.commons.utils.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -53,7 +54,7 @@ public class GuiceServletContextListener extends com.google.inject.servlet.Guice
     public void contextInitialized(final ServletContextEvent event) {
         // Check if the module was overridden in subclasses
         if (guiceModules == null) {
-            guiceModules = ImmutableList.<Module>of(initializeGuiceModuleFromWebXML(event));
+            guiceModules = List.of(initializeGuiceModuleFromWebXML(event));
         }
 
         super.contextInitialized(event);

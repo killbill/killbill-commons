@@ -26,7 +26,7 @@ import java.io.InputStreamReader;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
 
-import com.google.common.io.CharStreams;
+import org.killbill.commons.utils.io.CharStreams;
 import org.testng.annotations.Test;
 
 public class TestXMLSchemaGenerator  {

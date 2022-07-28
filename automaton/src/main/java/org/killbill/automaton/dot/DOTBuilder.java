@@ -22,16 +22,17 @@ package org.killbill.automaton.dot;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.common.base.Joiner;
 import javax.annotation.Nullable;
+
+import org.killbill.commons.utils.MapJoiner;
 
 public class DOTBuilder {
 
     private static final String INDENT = "    ";
     private static final String NEW_LINE = "\n";
     private static final String SPACE = " ";
-    private static final Joiner SPACE_JOINER = Joiner.on(SPACE);
     private static final String EQUAL = "=";
+    private static final MapJoiner MAP_JOINER = new MapJoiner(EQUAL, SPACE);
     private static final String SEMI_COLON = ";";
 
     private final String name;
@@ -56,7 +57,7 @@ public class DOTBuilder {
 
     public int addNode(final String name, @Nullable final Map<String, String> attributesOrNull) {
         // attributes is for example label="Foo" or shape=box
-        final Map<String, String> attributes = new HashMap<String, String>();
+        final Map<String, String> attributes = new HashMap<>();
         attributes.put("label", name);
         if (attributesOrNull != null) {
             attributes.putAll(attributesOrNull);
@@ -172,7 +173,7 @@ public class DOTBuilder {
 
     private void addAttributesInline(@Nullable final Map<String, String> attributes, final boolean withSpace, final boolean withBrackets) {
         if (attributes != null) {
-            final String attributesSymbol = (withSpace ? SPACE : "") + (withBrackets ? "[" : "") + SPACE_JOINER.withKeyValueSeparator(EQUAL).join(attributes) + (withBrackets ? "]" : "");
+            final String attributesSymbol = (withSpace ? SPACE : "") + (withBrackets ? "[" : "") + MAP_JOINER.join(attributes) + (withBrackets ? "]" : "");
             output.append(attributesSymbol);
         }
         output.append(SEMI_COLON)
