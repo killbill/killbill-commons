@@ -29,13 +29,12 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.commons.utils.collect.Iterators;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import com.google.common.collect.ImmutableList;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -88,7 +87,7 @@ public class TestReaper extends TestSetup {
         assertEquals(readyEntries.get(0).getRecordId(), (Long) 1L);
 
         // Check ready and in processing entries
-        final List<BusEventModelDao> readyOrInProcessingBeforeReaping = ImmutableList.<BusEventModelDao>copyOf(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
+        final List<BusEventModelDao> readyOrInProcessingBeforeReaping = Iterators.toUnmodifiableList(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
         assertEquals(readyOrInProcessingBeforeReaping.size(), 6);
         assertEquals(readyOrInProcessingBeforeReaping.get(0).getRecordId(), (Long) 1L);
         assertEquals(readyOrInProcessingBeforeReaping.get(1).getRecordId(), (Long) 2L);
@@ -107,7 +106,7 @@ public class TestReaper extends TestSetup {
         assertEquals(readyEntriesAfterReaping.get(0).getRecordId(), (Long) 1L);
         assertTrue(readyEntriesAfterReaping.get(1).getRecordId() > (Long) 6L);
 
-        final List<BusEventModelDao> readyOrInProcessingAfterReaping = ImmutableList.<BusEventModelDao>copyOf(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
+        final List<BusEventModelDao> readyOrInProcessingAfterReaping = Iterators.toUnmodifiableList(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
         assertEquals(readyOrInProcessingAfterReaping.size(), 6);
         assertEquals(readyOrInProcessingAfterReaping.get(0).getRecordId(), (Long) 1L);
         assertEquals(readyOrInProcessingAfterReaping.get(1).getRecordId(), (Long) 2L);
@@ -119,7 +118,7 @@ public class TestReaper extends TestSetup {
         assertTrue(readyOrInProcessingAfterReaping.get(5).getRecordId() > (Long) 6L);
 
         // Check history table
-        final List<BusEventModelDao> historicalQueueEntries = ImmutableList.<BusEventModelDao>copyOf(sqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getHistoryTableName()));
+        final List<BusEventModelDao> historicalQueueEntries = Iterators.toUnmodifiableList(sqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getHistoryTableName()));
         assertEquals(historicalQueueEntries.size(), 1);
         assertEquals(historicalQueueEntries.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.REAPED);
         assertEquals(historicalQueueEntries.get(0).getUserToken(), readyOrInProcessingAfterReaping.get(5).getUserToken());

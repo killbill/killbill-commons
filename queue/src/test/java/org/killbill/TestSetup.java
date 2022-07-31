@@ -22,6 +22,8 @@ package org.killbill;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.clock.ClockMock;
@@ -33,6 +35,8 @@ import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi
 import org.killbill.commons.jdbi.transaction.NotificationTransactionHandler;
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
+import org.killbill.commons.utils.io.ByteStreams;
+import org.killbill.commons.utils.io.Resources;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.queue.InTransaction;
 import org.skife.config.ConfigSource;
@@ -42,11 +46,6 @@ import org.skife.jdbi.v2.DBI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Resources;
 
 import static org.testng.Assert.assertNotNull;
 
@@ -109,10 +108,12 @@ public class TestSetup {
         dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
-        persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(PersistentBusConfig.class,
-                ImmutableMap.<String, String>of("instanceName", "main"));
-        notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(NotificationQueueConfig.class,
-                ImmutableMap.<String, String>of("instanceName", "main"));
+        persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(
+                PersistentBusConfig.class,
+                Map.of("instanceName", "main"));
+        notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(
+                NotificationQueueConfig.class,
+                Map.of("instanceName", "main"));
     }
 
     @BeforeMethod(groups = "slow")
@@ -131,7 +132,7 @@ public class TestSetup {
 
     public static String toString(final InputStream inputStream) throws IOException {
         try {
-            return new String(ByteStreams.toByteArray(inputStream), Charsets.UTF_8);
+            return new String(ByteStreams.toByteArray(inputStream), StandardCharsets.UTF_8);
         } finally {
             inputStream.close();
         }

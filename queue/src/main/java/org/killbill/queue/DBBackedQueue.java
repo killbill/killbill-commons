@@ -26,8 +26,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
@@ -36,6 +36,7 @@ import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
+import org.killbill.commons.utils.collect.Iterables;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
@@ -49,10 +50,6 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 /**
  * This class abstract the interaction with the database tables which store the persistent entries for the bus events or
@@ -226,15 +223,13 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
             log.debug("{} Moving entry into history: recordId={}, className={}, json={}", DB_QUEUE_LOG_ID, cur.getRecordId(), cur.getClassName(), cur.getEventJson());
         }
 
-        final Iterable<Long> toBeRemovedRecordIds = Iterables.<T, Long>transform(entries, new Function<T, Long>() {
-            @Override
-            public Long apply(final T input) {
-                return input == null ? Long.valueOf(-1) : input.getRecordId();
-            }
-        });
+        final Collection<Long> toBeRemovedRecordIds = Iterables.toStream(entries)
+                .map(input -> input == null ? Long.valueOf(-1L) : input.getRecordId())
+                .collect(Collectors.toUnmodifiableList());
+
         final long ini = System.nanoTime();
         transactional.insertEntries(entries, config.getHistoryTableName());
-        transactional.removeEntries(ImmutableList.<Long>copyOf(toBeRemovedRecordIds), config.getTableName());
+        transactional.removeEntries(toBeRemovedRecordIds, config.getTableName());
         rawDeleteEntriesTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
     }
 
@@ -322,13 +317,10 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                     moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
                     insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
                     log.warn("{} reapEntries: {} entries were reaped by {} {}",
-                             DB_QUEUE_LOG_ID, entriesToReInsert.size(), owner, Iterables.<T, UUID>transform(entriesToReInsert,
-                                                                                                            new Function<T, UUID>() {
-                                                                                                                @Override
-                                                                                                                public UUID apply(final T input) {
-                                                                                                                    return input == null ? null : input.getUserToken();
-                                                                                                                }
-                                                                                                            }));
+                             DB_QUEUE_LOG_ID,
+                             entriesToReInsert.size(),
+                             owner,
+                             entriesToReInsert.stream().map(input -> input == null ? null : input.getUserToken()));
                 }
 
                 return null;

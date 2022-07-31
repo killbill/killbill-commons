@@ -20,15 +20,13 @@
 package org.killbill.bus;
 
 import org.killbill.TestSetup;
-import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
+import org.killbill.commons.utils.collect.Iterables;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import com.google.common.collect.Iterables;
 
 public class TestPersistentEventBus extends TestSetup {
 
@@ -78,7 +76,7 @@ public class TestPersistentEventBus extends TestSetup {
     }
 
     private void assertNoInProcessingEvent() {
-        Assert.assertEquals(Iterables.<BusEventWithMetadata>size(busService.getInProcessingBusEvents()), 0);
+        Assert.assertEquals(Iterables.size(busService.getInProcessingBusEvents()), 0);
         Assert.assertEquals(busService.getNbReadyEntries(clock.getUTCNow()), 0);
     }
 }

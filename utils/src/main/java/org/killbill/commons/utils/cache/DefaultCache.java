@@ -61,6 +61,17 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     /**
+     * Create cache with {@code maxSize = Integer.MAX_VALUE}, {@code timeoutInSecond = NO_TIMEOUT}, and with supplied
+     * {@code cacheLoader}.
+     *
+     * @param cacheLoader cache loader. Use {@link #noCacheLoader()} to make this cache should not attempt to load
+     *                    anything if value is null.
+     */
+    public DefaultCache(final Function<K, V> cacheLoader) {
+        this(Integer.MAX_VALUE, NO_TIMEOUT, cacheLoader);
+    }
+
+    /**
      * Create cache with maximum entry size, timeout (in second), and cacheLoader capability.
      *
      * @param maxSize cache maximum size. If more entry added, the oldest entry get removed automatically.

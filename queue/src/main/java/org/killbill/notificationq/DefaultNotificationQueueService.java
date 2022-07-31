@@ -19,6 +19,7 @@
 
 package org.killbill.notificationq;
 
+import java.util.Map;
 import java.util.Properties;
 
 import javax.inject.Inject;
@@ -36,8 +37,6 @@ import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
-
-import com.google.common.collect.ImmutableMap;
 
 /**
  * A factory to create notification queues.
@@ -69,7 +68,7 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
     public DefaultNotificationQueueService(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource),
              new DefaultClock(),
-             new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, ImmutableMap.<String, String>of("instanceName", "main")),
+             new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, Map.of("instanceName", "main")),
              new NoOpMetricRegistry());
     }
 
