@@ -38,6 +38,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
@@ -97,7 +98,13 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
         request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello")).POST(HttpRequest.BodyPublishers.noBody()).build();
         body = client.send(request, BodyHandlers.ofString()).body();
-        Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
+        // Assertion was:
+        // Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
+        // Before #1615, HelloResource response was produced using ImmutableMap that maintains insertion order.
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final JsonNode node = objectMapper.readTree(body);
+        Assert.assertEquals(node.get("key").textValue(), "hello");
+        Assert.assertEquals(node.get("date").textValue(), "2010-01-01");
 
         Assert.assertEquals(metricRegistry.getMetrics().size(), 2);
         Assert.assertNotNull(metricRegistry.getMetrics().get("kb_resource.hello.hello.POST.2xx.200"));
