@@ -98,11 +98,10 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
         request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello")).POST(HttpRequest.BodyPublishers.noBody()).build();
         body = client.send(request, BodyHandlers.ofString()).body();
-        // Assertion was:
-        // Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
-        // Before #1615, HelloResource response was produced using ImmutableMap that maintains insertion order.
+
         final ObjectMapper objectMapper = new ObjectMapper();
         final JsonNode node = objectMapper.readTree(body);
+
         Assert.assertEquals(node.get("key").textValue(), "hello");
         Assert.assertEquals(node.get("date").textValue(), "2010-01-01");
 
