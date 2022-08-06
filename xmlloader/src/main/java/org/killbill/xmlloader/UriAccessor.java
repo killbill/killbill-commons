@@ -28,7 +28,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Scanner;
 
-import com.google.common.io.Resources;
+import org.killbill.commons.utils.io.Resources;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

@@ -19,13 +19,14 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import org.skife.config.ConfigSource;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 
 public class ConfigModule extends AbstractModule {
@@ -38,15 +39,15 @@ public class ConfigModule extends AbstractModule {
     }
 
     public ConfigModule(final Properties properties) {
-        this(ImmutableList.<Class>of(), new SimplePropertyConfigSource(properties));
+        this(Collections.emptyList(), new SimplePropertyConfigSource(properties));
     }
 
     public ConfigModule(final Class config) {
-        this(ImmutableList.<Class>of(config));
+        this(List.of(config));
     }
 
     public ConfigModule(final Class... configs) {
-        this(ImmutableList.<Class>copyOf(configs));
+        this(List.of(configs));
     }
 
     public ConfigModule(final Iterable<Class> configs) {

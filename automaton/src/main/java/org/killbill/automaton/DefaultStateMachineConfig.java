@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -33,9 +35,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.killbill.xmlloader.ValidationErrors;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
@@ -114,16 +113,13 @@ public class DefaultStateMachineConfig extends StateMachineValidatingConfig<Defa
     public LinkStateMachine findLinkStateMachine(final StateMachine srcStateMachine, final State srcState, final StateMachine dstStateMachine) throws MissingEntryException {
 
         try {
-            return Iterables.tryFind(ImmutableList.<LinkStateMachine>copyOf(linkStateMachines), new Predicate<LinkStateMachine>() {
-                @Override
-                public boolean apply(final LinkStateMachine input) {
-                    return input != null &&
-                           input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
-                           input.getInitialState().getName().equals(srcState.getName()) &&
-                           input.getFinalStateMachine().getName().equals(dstStateMachine.getName());
-                }
-            }).get();
-        } catch (final IllegalStateException e) {
+            return Stream.of(linkStateMachines)
+                         .filter(input -> input != null &&
+                                          input.getInitialStateMachine().getName().equals(srcStateMachine.getName()) &&
+                                          input.getInitialState().getName().equals(srcState.getName()) &&
+                                          input.getFinalStateMachine().getName().equals(dstStateMachine.getName()))
+                         .findFirst().get();
+        } catch (final NoSuchElementException e) {
             throw new MissingEntryException("Missing transition for srcStateMachine " + srcStateMachine.getName() +
                                             ", srcState = " + srcState.getName() + ", dstStateMachine = " + dstStateMachine.getName(), e);
         }

@@ -37,7 +37,6 @@ import org.killbill.commons.metrics.api.annotation.TimedResource;
 import org.killbill.commons.skeleton.metrics.TimedResourceInterceptor;
 
 import org.killbill.commons.metrics.api.MetricRegistry;
-import com.google.common.collect.ImmutableList;
 
 @Singleton
 public class TimedInterceptionService implements InterceptionService {
@@ -99,7 +98,7 @@ public class TimedInterceptionService implements InterceptionService {
                                                                                         resourcePath,
                                                                                         metricName,
                                                                                         httpMethod.value());
-        return ImmutableList.<MethodInterceptor>of(timedResourceInterceptor);
+        return List.of(timedResourceInterceptor);
     }
 
     private HttpMethod resourceHttpMethod(final Method method) {

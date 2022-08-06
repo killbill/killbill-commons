@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-
-import com.google.common.collect.ImmutableMap;
 import org.killbill.automaton.*;
 import org.killbill.automaton.graph.Helpers;
 
@@ -115,12 +113,12 @@ public class DefaultStateMachineConfigDOTGenerator {
         }
 
         final String label = String.format("<%s<SUB>|%s</SUB>>", transition.getOperation().getName(), transition.getOperationResult().name().charAt(0));
-        dot.addPath(fromNodeId, toNodeId, ImmutableMap.<String, String>of("label", label, "color", color));
+        dot.addPath(fromNodeId, toNodeId, Map.<String, String>of("label", label, "color", color));
     }
 
     private void drawLinkStateMachine(final LinkStateMachine linkStateMachine) {
         final Integer fromNodeId = statesNodeIds.get(linkStateMachine.getInitialState().getName());
         final Integer toNodeId = statesNodeIds.get(linkStateMachine.getFinalState().getName());
-        dot.addPath(fromNodeId, toNodeId, ImmutableMap.<String, String>of("style", "dotted"));
+        dot.addPath(fromNodeId, toNodeId, Map.<String, String>of("style", "dotted"));
     }
 }

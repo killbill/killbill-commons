@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
-import com.google.common.collect.ImmutableMap;
 
 import org.killbill.commons.metrics.dropwizard.KillBillCodahaleMetricRegistry;
 import org.testng.Assert;
@@ -72,7 +71,7 @@ public class TestResourceTimer {
         final String escapeResourcePath = "/1_0/kb/payments";
         final String resourceName = "create";
         final String httpMethod = "POST";
-        final Map<String, Object> tags = ImmutableMap.<String, Object>builder().put("transactionType", "AUTHORIZE").build();
+        final Map<String, Object> tags = Map.of("transactionType", "AUTHORIZE");
 
         final ResourceTimer resourceTimer = new ResourceTimer(resourcePath, resourceName, httpMethod, tags, metricRegistry);
         resourceTimer.update(501, 1, TimeUnit.MILLISECONDS);
