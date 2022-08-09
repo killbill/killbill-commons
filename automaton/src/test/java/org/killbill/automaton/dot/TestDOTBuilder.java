@@ -28,88 +28,88 @@ import org.testng.annotations.Test;
 
 public class TestDOTBuilder {
 
-    @Test(groups = "fast", enabled = true, description = "https://github.com/killbill/killbill-commons/issues/4")
-    public void testGenerator() throws Exception {
+    @Test(groups = "fast")
+    public void testGenerator() {
         final DOTBuilder payment = new DOTBuilder("Payment");
         payment.open(new TreeMap<>(Map.of("splines", "false")));
 
         payment.openCluster("Retry");
-        final int retryInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int retrySuccess = payment.addNode("SUCCESS", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int retryFailed = payment.addNode("FAILED", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        payment.addPath(retryInit, retrySuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(retryInit, retryFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
-        payment.addPath(retryFailed, retryFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
+        final int retryInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int retrySuccess = payment.addNode("SUCCESS", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int retryFailed = payment.addNode("FAILED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        payment.addPath(retryInit, retrySuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(retryInit, retryFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
+        payment.addPath(retryFailed, retryFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
         payment.closeCluster();
 
         payment.openCluster("Transaction");
 
         payment.openCluster("Authorize");
-        final int authInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int authSuccess = payment.addNode("SUCCESS", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int authFailed = payment.addNode("FAILED", new TreeMap(Map.of("color", "grey", "style", "filled")));
+        final int authInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int authSuccess = payment.addNode("SUCCESS", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int authFailed = payment.addNode("FAILED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
         final int authPending = payment.addNode("PENDING");
-        payment.addPath(authInit, authSuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(authInit, authFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
-        payment.addPath(authInit, authPending, new TreeMap(Map.of("label", "\"Op|P\"")));
-        payment.addPath(authPending, authSuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(authPending, authFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
+        payment.addPath(authInit, authSuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(authInit, authFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
+        payment.addPath(authInit, authPending, new TreeMap<>(Map.of("label", "\"Op|P\"")));
+        payment.addPath(authPending, authSuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(authPending, authFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
         payment.closeCluster();
 
         payment.openCluster("Capture");
-        final int captureInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int captureSuccess = payment.addNode("SUCCESS", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int captureFailed = payment.addNode("FAILED", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        payment.addPath(captureInit, captureSuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(captureInit, captureFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
+        final int captureInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int captureSuccess = payment.addNode("SUCCESS", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int captureFailed = payment.addNode("FAILED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        payment.addPath(captureInit, captureSuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(captureInit, captureFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
         payment.closeCluster();
 
         payment.openCluster("Purchase");
-        final int purchaseInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int purchaseSuccess = payment.addNode("SUCCESS", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int purchaseFailed = payment.addNode("FAILED", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        payment.addPath(purchaseInit, purchaseSuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(purchaseInit, purchaseFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
+        final int purchaseInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int purchaseSuccess = payment.addNode("SUCCESS", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int purchaseFailed = payment.addNode("FAILED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        payment.addPath(purchaseInit, purchaseSuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(purchaseInit, purchaseFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
         payment.closeCluster();
 
         payment.openCluster("Void");
-        final int voidInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int voidSuccess = payment.addNode("SUCCESS", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int voidFailed = payment.addNode("FAILED", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        payment.addPath(voidInit, voidSuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(voidInit, voidFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
+        final int voidInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int voidSuccess = payment.addNode("SUCCESS", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int voidFailed = payment.addNode("FAILED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        payment.addPath(voidInit, voidSuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(voidInit, voidFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
         payment.closeCluster();
 
         payment.openCluster("Refund");
-        final int refundInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int refundSuccess = payment.addNode("SUCCESS", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int refundFailed = payment.addNode("FAILED", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        payment.addPath(refundInit, refundSuccess, new TreeMap(Map.of("label", "\"Op|S\"")));
-        payment.addPath(refundInit, refundFailed, new TreeMap(Map.of("label", "\"Op|F\"")));
+        final int refundInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int refundSuccess = payment.addNode("SUCCESS", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int refundFailed = payment.addNode("FAILED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        payment.addPath(refundInit, refundSuccess, new TreeMap<>(Map.of("label", "\"Op|S\"")));
+        payment.addPath(refundInit, refundFailed, new TreeMap<>(Map.of("label", "\"Op|F\"")));
         payment.closeCluster();
 
-        payment.addPath(authSuccess, captureInit, new TreeMap(Map.of("style", "dotted", "label", "CAPTURE_AMOUNT_CHECK")));
-        payment.addPath(authSuccess, voidInit, new TreeMap(Map.of("style", "dotted")));
-        payment.addPath(captureSuccess, voidInit, new TreeMap(Map.of("style", "dotted")));
-        payment.addPath(captureSuccess, refundInit, new TreeMap(Map.of("style", "dotted", "label", "REFUND_AMOUNT_CHECK")));
-        payment.addPath(purchaseSuccess, refundInit, new TreeMap(Map.of("style", "dotted", "label", "REFUND_AMOUNT_CHECK")));
+        payment.addPath(authSuccess, captureInit, new TreeMap<>(Map.of("style", "dotted", "label", "CAPTURE_AMOUNT_CHECK")));
+        payment.addPath(authSuccess, voidInit, new TreeMap<>(Map.of("style", "dotted")));
+        payment.addPath(captureSuccess, voidInit, new TreeMap<>(Map.of("style", "dotted")));
+        payment.addPath(captureSuccess, refundInit, new TreeMap<>(Map.of("style", "dotted", "label", "REFUND_AMOUNT_CHECK")));
+        payment.addPath(purchaseSuccess, refundInit, new TreeMap<>(Map.of("style", "dotted", "label", "REFUND_AMOUNT_CHECK")));
 
         payment.closeCluster(); // Transaction
 
         payment.openCluster("DirectPayment");
 
-        final int directPaymentInit = payment.addNode("INIT", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int directPaymentOpen = payment.addNode("OPEN", new TreeMap(Map.of("color", "grey", "style", "filled")));
-        final int directPaymentClosed = payment.addNode("CLOSED", new TreeMap(Map.of("color", "grey", "style", "filled")));
+        final int directPaymentInit = payment.addNode("INIT", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int directPaymentOpen = payment.addNode("OPEN", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
+        final int directPaymentClosed = payment.addNode("CLOSED", new TreeMap<>(Map.of("color", "grey", "style", "filled")));
         payment.addPath(directPaymentInit, directPaymentOpen);
         payment.addPath(directPaymentOpen, directPaymentClosed);
 
-        payment.addPath(directPaymentInit, authInit, new TreeMap(Map.of("style", "dotted", "color", "blue")));
-        payment.addPath(directPaymentInit, purchaseInit, new TreeMap(Map.of("style", "dotted", "color", "blue")));
-        payment.addPath(directPaymentOpen, authSuccess, new TreeMap(Map.of("style", "dotted", "color", "green")));
-        payment.addPath(directPaymentOpen, captureSuccess, new TreeMap(Map.of("style", "dotted", "color", "green")));
-        payment.addPath(directPaymentClosed, refundSuccess, new TreeMap(Map.of("style", "dotted", "color", "green")));
-        payment.addPath(directPaymentClosed, voidSuccess, new TreeMap(Map.of("style", "dotted", "color", "green")));
+        payment.addPath(directPaymentInit, authInit, new TreeMap<>(Map.of("style", "dotted", "color", "blue")));
+        payment.addPath(directPaymentInit, purchaseInit, new TreeMap<>(Map.of("style", "dotted", "color", "blue")));
+        payment.addPath(directPaymentOpen, authSuccess, new TreeMap<>(Map.of("style", "dotted", "color", "green")));
+        payment.addPath(directPaymentOpen, captureSuccess, new TreeMap<>(Map.of("style", "dotted", "color", "green")));
+        payment.addPath(directPaymentClosed, refundSuccess, new TreeMap<>(Map.of("style", "dotted", "color", "green")));
+        payment.addPath(directPaymentClosed, voidSuccess, new TreeMap<>(Map.of("style", "dotted", "color", "green")));
 
         payment.closeCluster(); // DirectPayment
 
