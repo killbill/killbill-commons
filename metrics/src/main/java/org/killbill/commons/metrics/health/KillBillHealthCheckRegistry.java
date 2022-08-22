@@ -24,14 +24,14 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.inject.Inject;
+
 import org.killbill.commons.health.api.HealthCheck;
 import org.killbill.commons.health.api.HealthCheckRegistry;
 import org.killbill.commons.health.api.Result;
 import org.killbill.commons.health.impl.UnhealthyResultBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 
 public class KillBillHealthCheckRegistry implements HealthCheckRegistry {
 
