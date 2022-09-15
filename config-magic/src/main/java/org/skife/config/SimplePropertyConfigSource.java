@@ -19,15 +19,12 @@ package org.skife.config;
 
 import java.util.Properties;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class SimplePropertyConfigSource implements ConfigSource {
 
     private final Properties props;
 
     public SimplePropertyConfigSource(final Properties props) {
-        this.props = props;
+        this.props = new Properties(props);
     }
 
     public String getString(final String propertyName) {
