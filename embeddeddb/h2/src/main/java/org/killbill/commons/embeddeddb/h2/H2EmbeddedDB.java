@@ -35,8 +35,6 @@ import org.h2.jdbcx.JdbcConnectionPool;
 import org.h2.tools.Server;
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 public class H2EmbeddedDB extends EmbeddedDB {
 
     private final AtomicBoolean started = new AtomicBoolean(false);
@@ -136,7 +134,6 @@ public class H2EmbeddedDB extends EmbeddedDB {
         return super.getDataSource();
     }
 
-    @SuppressFBWarnings("ODR_OPEN_DATABASE_RESOURCE")
     @Override
     public void stop() throws IOException {
         if (!started.get()) {
@@ -146,22 +143,9 @@ public class H2EmbeddedDB extends EmbeddedDB {
         // Close the database pool ASAP to make sure the database is never re-opened by background threads
         super.stop();
 
-        try {
-            final Connection connection = DriverManager.getConnection(jdbcConnectionString, username, password);
-            if (connection != null) {
-                try {
-                    final Statement stat = connection.createStatement();
-                    // https://github.com/spotbugs/spotbugs/issues/1338 prevents us from using try-with-resource
-                    try {
-                        stat.execute("SHUTDOWN");
-                    } finally {
-                        stat.close();
-                    }
-                } finally {
-                    // No need to close the connection since the database is shutdown already
-                    //connection.close();
-                }
-            }
+        try (final Connection connection = DriverManager.getConnection(jdbcConnectionString, username, password);
+             final Statement statement = connection.createStatement()) {
+            statement.execute("SHUTDOWN");
         } catch (final Exception e) {
             logger.warn("Exception while trying to shutdown H2", e);
         }
