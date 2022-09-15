@@ -25,13 +25,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -68,7 +68,6 @@ public class ConfigurationObjectFactory {
         return internalBuild(configClass, null);
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private <T> T internalBuild(final Class<T> configClass, @Nullable final Map<String, String> mappedReplacements) {
         Builder<T> bbBuilder = new ByteBuddy().subclass(configClass);
 
@@ -211,11 +210,10 @@ public class ConfigurationObjectFactory {
         }
     }
 
-    @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
     private String applyReplacements(String propertyName, final Map<String, String> mappedReplacements) {
-        for (final String key : mappedReplacements.keySet()) {
-            final String token = makeToken(key);
-            final String replacement = mappedReplacements.get(key);
+        for (final Entry<String, String> entry : mappedReplacements.entrySet()) {
+            final String token = makeToken(entry.getKey());
+            final String replacement = entry.getValue();
             propertyName = propertyName.replace(token, replacement);
         }
         return propertyName;
