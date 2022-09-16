@@ -38,7 +38,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public abstract class EmbeddedDB {
 
     protected static final Logger logger = LoggerFactory.getLogger(EmbeddedDB.class);
@@ -56,7 +55,7 @@ public abstract class EmbeddedDB {
     protected String jdbcConnectionString;
     protected DataSource dataSource;
 
-    protected List<String> allTables = new LinkedList<String>();
+    protected List<String> allTables = new LinkedList<>();
 
     protected EmbeddedDB(final String databaseName, final String username, final String password, final String jdbcConnectionString) {
         this.databaseName = databaseName;
@@ -77,11 +76,13 @@ public abstract class EmbeddedDB {
 
     public abstract void refreshTableNames() throws IOException;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public DataSource getDataSource() throws IOException {
         return dataSource;
     }
 
     // Delayed initialization for GenericStandaloneDB
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setDataSource(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
@@ -115,7 +116,7 @@ public abstract class EmbeddedDB {
     }
 
     public List<String> getAllTables() {
-        return allTables;
+        return List.copyOf(allTables);
     }
 
     private static final Pattern WHITESPACE_ONLY = Pattern.compile("^\\s*$");
