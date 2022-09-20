@@ -46,7 +46,6 @@ import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-@SuppressFBWarnings("IT_NO_SUCH_ELEMENT")
 class BatchHandler extends CustomizingStatementHandler
 {
     private final String  sql;
@@ -172,6 +171,7 @@ class BatchHandler extends CustomizingStatementHandler
                                    return true;
                                }
 
+                               @SuppressFBWarnings("IT_NO_SUCH_ELEMENT")
                                @Override
                                public Object next() {
                                    // This is the table name for instance (repeated during iteration)
