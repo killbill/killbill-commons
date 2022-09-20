@@ -25,14 +25,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * looks for [name], then [name].sql on the classpath
@@ -41,12 +39,12 @@ public class ClasspathStatementLocator implements StatementLocator
 {
     private static final Pattern MULTILINE_COMMENTS = Pattern.compile("/\\*.*?\\*/");
 
-    private final Map<String, String> found = Collections.synchronizedMap(new WeakHashMap<String, String>());
+    private final Map<String, String> found = Collections.synchronizedMap(new WeakHashMap<>());
 
     /**
      * Very basic sanity test to see if a string looks like it might be sql
      */
-    public static boolean looksLikeSql(String sql)
+    public static boolean looksLikeSql(final String sql)
     {
         final String local = left(stripStart(sql), 8).toLowerCase();
         return local.startsWith("insert ")
@@ -80,14 +78,11 @@ public class ClasspathStatementLocator implements StatementLocator
      */
     @Override
     @SuppressWarnings("PMD.EmptyCatchBlock")
-    @SuppressFBWarnings({"DM_STRING_CTOR", "DE_MIGHT_IGNORE"})
-    public String locate(String name, StatementContext ctx) throws Exception
-    {
+    public String locate(final String name, final StatementContext ctx) throws Exception {
         final String cache_key;
         if (ctx.getSqlObjectType() != null) {
             cache_key = '/' + mungify(ctx.getSqlObjectType().getName() + '.' + name) + ".sql";
-        }
-        else {
+        } else {
             cache_key = name;
         }
 
@@ -108,7 +103,7 @@ public class ClasspathStatementLocator implements StatementLocator
             }
 
             if (in_stream == null && ctx.getSqlObjectType() != null) {
-                String filename = '/' + mungify(ctx.getSqlObjectType().getName() + '.' + name) + ".sql";
+                final String filename = '/' + mungify(ctx.getSqlObjectType().getName() + '.' + name) + ".sql";
                 in_stream = loader.getResourceAsStream(filename);
                 if (in_stream == null) {
                     in_stream = ctx.getSqlObjectType().getResourceAsStream(filename);
@@ -116,14 +111,12 @@ public class ClasspathStatementLocator implements StatementLocator
             }
 
             if (in_stream == null) {
-                // Ensure we don't store an identity map entry which has a hard reference
-                // to the key (through the value) by copying the value, avoids potential memory leak.
-                found.put(cache_key, name == cache_key ? new String(name) : name);
+                found.put(cache_key, name);
                 return name;
             }
 
             final StringBuffer buffer = new StringBuffer();
-            reader = new BufferedReader(new InputStreamReader(in_stream, Charset.forName("UTF-8")));
+            reader = new BufferedReader(new InputStreamReader(in_stream, StandardCharsets.UTF_8));
             String line;
             try {
                 while ((line = reader.readLine()) != null) {
@@ -134,21 +127,20 @@ public class ClasspathStatementLocator implements StatementLocator
                     buffer.append(line).append(" ");
                 }
             }
-            catch (IOException e) {
+            catch (final IOException e) {
                 throw new UnableToCreateStatementException(e.getMessage(), e, ctx);
             }
 
-            String sql = MULTILINE_COMMENTS.matcher(buffer).replaceAll("");
+            final String sql = MULTILINE_COMMENTS.matcher(buffer).replaceAll("");
             found.put(cache_key, sql);
             return sql;
-        }
-        finally {
+        } finally {
             try {
                 if (reader != null) {
                     reader.close();
                 }
             }
-            catch (IOException e) {
+            catch (final IOException e) {
                 // nothing we can do here :-(
             }
         }
@@ -157,9 +149,8 @@ public class ClasspathStatementLocator implements StatementLocator
     /**
      * There *must* be a better place to put this without creating a helpers class just for it
      */
-    private static ClassLoader selectClassLoader()
-    {
-        ClassLoader loader;
+    private static ClassLoader selectClassLoader() {
+        final ClassLoader loader;
         if (Thread.currentThread().getContextClassLoader() != null) {
             loader = Thread.currentThread().getContextClassLoader();
         }
@@ -169,23 +160,21 @@ public class ClasspathStatementLocator implements StatementLocator
         return loader;
     }
 
-    private static boolean isComment(final String line)
-    {
+    private static boolean isComment(final String line) {
         return line.startsWith("#") || line.startsWith("--") || line.startsWith("//");
     }
 
     private static final String SEP = "/"; // *Not* System.getProperty("file.separator"), which breaks in jars
 
-    private static String mungify(String path)
+    private static String mungify(final String path)
     {
         return path.replaceAll("\\.", Matcher.quoteReplacement(SEP));
     }
 
 
     // (scs) Logic copied from commons-lang3 3.1 with minor edits, per discussion on commit 023a14ade2d33bf8ccfa0f68294180455233ad52
-    private static String stripStart(String str)
-    {
-        int strLen;
+    private static String stripStart(final String str) {
+        final int strLen;
         if (str == null || (strLen = str.length()) == 0) {
             return "";
         }
@@ -196,8 +185,7 @@ public class ClasspathStatementLocator implements StatementLocator
         return str.substring(start);
     }
 
-    private static String left(String str, int len)
-    {
+    private static String left(final String str, final int len) {
         if (str == null || len < 0) {
             return "";
         }
