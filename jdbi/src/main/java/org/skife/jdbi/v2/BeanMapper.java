@@ -19,6 +19,7 @@
  */
 package org.skife.jdbi.v2;
 
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import java.beans.BeanInfo;
@@ -26,6 +27,7 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -36,128 +38,114 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * A result set mapper which maps the fields in a statement into a JavaBean. This uses
- * the JDK's built in bean mapping facilities, so it does not support nested properties.
+ * the JDK's built-in bean mapping facilities, so it does not support nested properties.
  */
-public class BeanMapper<T> implements ResultSetMapper<T>
-{
+public class BeanMapper<T> implements ResultSetMapper<T> {
     private final Class<T> type;
-    private final Map<String, PropertyDescriptor> properties = new HashMap<String, PropertyDescriptor>();
+    private final Map<String, PropertyDescriptor> properties = new HashMap<>();
 
-    public BeanMapper(Class<T> type)
-    {
+    public BeanMapper(final Class<T> type) {
         this.type = type;
         try {
-            BeanInfo info = Introspector.getBeanInfo(type);
+            final BeanInfo info = Introspector.getBeanInfo(type);
 
-            for (PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
+            for (final PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
                 properties.put(descriptor.getName().toLowerCase(), descriptor);
             }
         }
-        catch (IntrospectionException e) {
+        catch (final IntrospectionException e) {
             throw new IllegalArgumentException(e);
         }
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @SuppressFBWarnings(value = "DCN_NULLPOINTER_EXCEPTION", justification = "Historic, unclear where NPE could come from")
-    public T map(int row, ResultSet rs, StatementContext ctx)
-        throws SQLException
-    {
-        T bean;
+    @SuppressWarnings({"rawtypes"})
+    public T map(final int row, final ResultSet rs, final StatementContext ctx) throws SQLException {
+        final T bean;
         try {
-            bean = type.newInstance();
-        }
-        catch (Exception e) {
-            throw new IllegalArgumentException(String.format("A bean, %s, was mapped " +
-                                                             "which was not instantiable", type.getName()), e);
+            bean = type.getDeclaredConstructor().newInstance();
+        } catch (final Exception e) {
+            throw new IllegalArgumentException(String.format("A bean, %s, was mapped which was not instantiable", type.getName()), e);
         }
 
-        ResultSetMetaData metadata = rs.getMetaData();
+        final ResultSetMetaData metadata = rs.getMetaData();
 
         for (int i = 1; i <= metadata.getColumnCount(); ++i) {
-            String name = metadata.getColumnLabel(i).toLowerCase();
-
-            PropertyDescriptor descriptor = properties.get(name);
+            final String name = metadata.getColumnLabel(i).toLowerCase();
+            final PropertyDescriptor descriptor = properties.get(name);
 
             if (descriptor != null) {
-                Class type = descriptor.getPropertyType();
-
-                Object value;
-
-                if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
-                    value = rs.getBoolean(i);
+                final Class type = descriptor.getPropertyType();
+                final Object value = getValueFromResultSet(rs, type, i);
+                final Method method = descriptor.getWriteMethod();
+                if (method == null) {
+                    throw new IllegalArgumentException(String.format("No appropriate method to write property %s", name));
                 }
-                else if (type.isAssignableFrom(Byte.class) || type.isAssignableFrom(byte.class)) {
-                    value = rs.getByte(i);
-                }
-                else if (type.isAssignableFrom(Short.class) || type.isAssignableFrom(short.class)) {
-                    value = rs.getShort(i);
-                }
-                else if (type.isAssignableFrom(Integer.class) || type.isAssignableFrom(int.class)) {
-                    value = rs.getInt(i);
-                }
-                else if (type.isAssignableFrom(Long.class) || type.isAssignableFrom(long.class)) {
-                    value = rs.getLong(i);
-                }
-                else if (type.isAssignableFrom(Float.class) || type.isAssignableFrom(float.class)) {
-                    value = rs.getFloat(i);
-                }
-                else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
-                    value = rs.getDouble(i);
-                }
-                else if (type.isAssignableFrom(BigDecimal.class)) {
-                    value = rs.getBigDecimal(i);
-                }
-                else if (type.isAssignableFrom(Timestamp.class)) {
-                    value = rs.getTimestamp(i);
-                }
-                else if (type.isAssignableFrom(Time.class)) {
-                    value = rs.getTime(i);
-                }
-                else if (type.isAssignableFrom(Date.class)) {
-                    value = rs.getDate(i);
-                }
-                else if (type.isAssignableFrom(String.class)) {
-                    value = rs.getString(i);
-                }
-                else if (type.isEnum()) {
-                    String str = rs.getString(i);
-                    value = str != null ? Enum.valueOf(type, str) : null;
-                }
-                else {
-                    value = rs.getObject(i);
-                }
-
-                if (rs.wasNull() && !type.isPrimitive()) {
-                    value = null;
-                }
-
-                try
-                {
+                try {
                     descriptor.getWriteMethod().invoke(bean, value);
                 }
-                catch (IllegalAccessException e) {
-                    throw new IllegalArgumentException(String.format("Unable to access setter for " +
-                                                                     "property, %s", name), e);
+                catch (final IllegalAccessException e) {
+                    throw new IllegalArgumentException(String.format("Unable to access setter for property, %s", name), e);
+                } catch (final InvocationTargetException e) {
+                    throw new IllegalArgumentException(String.format("Invocation target exception trying to invoker setter for the %s property", name), e);
                 }
-                catch (InvocationTargetException e) {
-                    throw new IllegalArgumentException(String.format("Invocation target exception trying to " +
-                                                                     "invoker setter for the %s property", name), e);
-                }
-                catch (NullPointerException e) {
-                    throw new IllegalArgumentException(String.format("No appropriate method to " +
-                                                                     "write property %s", name), e);
-                }
-
             }
         }
-
         return bean;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @VisibleForTesting
+    Object getValueFromResultSet(final ResultSet rs, final Class type, final int index) throws SQLException {
+        final Object result;
+
+        if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
+            result = rs.getBoolean(index);
+        }
+        else if (type.isAssignableFrom(Byte.class) || type.isAssignableFrom(byte.class)) {
+            result = rs.getByte(index);
+        }
+        else if (type.isAssignableFrom(Short.class) || type.isAssignableFrom(short.class)) {
+            result = rs.getShort(index);
+        }
+        else if (type.isAssignableFrom(Integer.class) || type.isAssignableFrom(int.class)) {
+            result = rs.getInt(index);
+        }
+        else if (type.isAssignableFrom(Long.class) || type.isAssignableFrom(long.class)) {
+            result = rs.getLong(index);
+        }
+        else if (type.isAssignableFrom(Float.class) || type.isAssignableFrom(float.class)) {
+            result = rs.getFloat(index);
+        }
+        else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
+            result = rs.getDouble(index);
+        }
+        else if (type.isAssignableFrom(BigDecimal.class)) {
+            result = rs.getBigDecimal(index);
+        }
+        else if (type.isAssignableFrom(Timestamp.class)) {
+            result = rs.getTimestamp(index);
+        }
+        else if (type.isAssignableFrom(Time.class)) {
+            result = rs.getTime(index);
+        }
+        else if (type.isAssignableFrom(Date.class)) {
+            result = rs.getDate(index);
+        }
+        else if (type.isAssignableFrom(String.class)) {
+            result = rs.getString(index);
+        }
+        else if (type.isEnum()) {
+            final String str = rs.getString(index);
+            result = str != null ? Enum.valueOf(type, str) : null;
+        }
+        else {
+            result = rs.getObject(index);
+        }
+
+        return (rs.wasNull() && !type.isPrimitive()) ? null : result;
     }
 }
 
