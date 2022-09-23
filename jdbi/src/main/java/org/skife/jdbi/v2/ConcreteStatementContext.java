@@ -26,25 +26,22 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
-public final class ConcreteStatementContext implements StatementContext
-{
-    private final Set<Cleanable> cleanables = new LinkedHashSet<Cleanable>();
-    private final Map<String, Object>        attributes = new HashMap<String, Object>();
+public final class ConcreteStatementContext implements StatementContext {
+    private final Collection<Cleanable> cleanables = new LinkedHashSet<>();
+    private final Map<String, Object> attributes = new HashMap<>();
 
-    private String            rawSql;
-    private String            rewrittenSql;
-    private String            locatedSql;
+    private String rawSql;
+    private String rewrittenSql;
+    private String locatedSql;
     private PreparedStatement statement;
-    private Connection        connection;
-    private Binding           binding;
-    private Class<?>          sqlObjectType;
-    private Method            sqlObjectMethod;
-    private boolean           returningGeneratedKeys;
+    private Connection connection;
+    private Binding binding;
+    private Class<?> sqlObjectType;
+    private Method sqlObjectMethod;
+    private boolean returningGeneratedKeys;
 
-    ConcreteStatementContext(Map<String, Object> globalAttributes)
-    {
+    ConcreteStatementContext(final Map<String, Object> globalAttributes) {
         attributes.putAll(globalAttributes);
     }
 
@@ -57,8 +54,7 @@ public final class ConcreteStatementContext implements StatementContext
      * @return previous value of this attribute
      */
     @Override
-    public Object setAttribute(String key, Object value)
-    {
+    public Object setAttribute(final String key, final Object value) {
         return attributes.put(key, value);
     }
 
@@ -70,8 +66,7 @@ public final class ConcreteStatementContext implements StatementContext
      * @return the value of the attribute
      */
     @Override
-    public Object getAttribute(String key)
-    {
+    public Object getAttribute(final String key) {
         return this.attributes.get(key);
     }
 
@@ -82,13 +77,11 @@ public final class ConcreteStatementContext implements StatementContext
      * @return a map f attributes
      */
     @Override
-    public Map<String, Object> getAttributes()
-    {
-        return attributes;
+    public Map<String, Object> getAttributes() {
+        return new HashMap<>(attributes);
     }
 
-    void setRawSql(String rawSql)
-    {
+    void setRawSql(final String rawSql) {
         this.rawSql = rawSql;
     }
 
@@ -98,25 +91,22 @@ public final class ConcreteStatementContext implements StatementContext
      * @return the initial sql
      */
     @Override
-    public String getRawSql()
-    {
+    public String getRawSql() {
         return rawSql;
     }
 
-    void setLocatedSql(String locatedSql)
-    {
+    void setLocatedSql(final String locatedSql) {
         this.locatedSql = locatedSql;
     }
 
-    void setRewrittenSql(String rewrittenSql)
-    {
+    void setRewrittenSql(final String rewrittenSql) {
         this.rewrittenSql = rewrittenSql;
     }
 
     /**
      * Obtain the located and rewritten sql
      * <p/>
-     * Not available until until statement execution time
+     * Not available until statement execution time
      *
      * @return the sql as it will be executed against the database
      */
@@ -134,13 +124,11 @@ public final class ConcreteStatementContext implements StatementContext
      * @return the sql which will be passed to the statement rewriter
      */
     @Override
-    public String getLocatedSql()
-    {
+    public String getLocatedSql() {
         return locatedSql;
     }
 
-    void setStatement(PreparedStatement stmt)
-    {
+    void setStatement(final PreparedStatement stmt) {
         statement = stmt;
     }
 
@@ -152,13 +140,11 @@ public final class ConcreteStatementContext implements StatementContext
      * @return Obtain the actual prepared statement being used.
      */
     @Override
-    public PreparedStatement getStatement()
-    {
+    public PreparedStatement getStatement() {
         return statement;
     }
 
-    void setConnection(Connection connection)
-    {
+    void setConnection(final Connection connection) {
         this.connection = connection;
     }
 
@@ -168,64 +154,53 @@ public final class ConcreteStatementContext implements StatementContext
      * @return the JDBC connection
      */
     @Override
-    public Connection getConnection()
-    {
+    public Connection getConnection() {
         return connection;
     }
 
-    public void setBinding(Binding b)
-    {
+    public void setBinding(final Binding b) {
         this.binding = b;
     }
 
     @Override
-    public Binding getBinding()
-    {
+    public Binding getBinding() {
         return binding;
     }
 
-    public void setSqlObjectType(Class<?> sqlObjectType)
-    {
+    public void setSqlObjectType(final Class<?> sqlObjectType) {
         this.sqlObjectType = sqlObjectType;
     }
 
     @Override
-    public Class<?> getSqlObjectType()
-    {
+    public Class<?> getSqlObjectType() {
         return sqlObjectType;
     }
 
-    public void setSqlObjectMethod(Method sqlObjectMethod)
-    {
+    public void setSqlObjectMethod(final Method sqlObjectMethod) {
         this.sqlObjectMethod = sqlObjectMethod;
     }
 
     @Override
-    public Method getSqlObjectMethod()
-    {
+    public Method getSqlObjectMethod() {
         return sqlObjectMethod;
     }
 
-    public void setReturningGeneratedKeys(boolean b)
-    {
+    public void setReturningGeneratedKeys(final boolean b) {
         this.returningGeneratedKeys = b;
     }
 
     @Override
-    public boolean isReturningGeneratedKeys()
-    {
+    public boolean isReturningGeneratedKeys() {
         return returningGeneratedKeys;
     }
 
     @Override
-    public void addCleanable(Cleanable cleanable)
-    {
+    public void addCleanable(final Cleanable cleanable) {
         this.cleanables.add(cleanable);
     }
 
     @Override
-    public Collection<Cleanable> getCleanables()
-    {
+    public Collection<Cleanable> getCleanables() {
         return cleanables;
     }
 }
