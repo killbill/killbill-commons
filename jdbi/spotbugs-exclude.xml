@@ -15,17 +15,133 @@
   ~ under the License.
   -->
 
-<FindBugsFilter>
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+                            https://raw.githubusercontent.com/spotbugs/spotbugs/4.6.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
         <!-- Exclude ANTLR generated files -->
         <Class name="~org\.skife\.jdbi\.rewriter\..*"/>
     </Match>
     <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP"/>
+        <Field type="java.lang.Class" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
     </Match>
     <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Field type="java.lang.reflect.Method" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="java.sql.Connection" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="java.sql.PreparedStatement" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="java.sql.ResultSet" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="javax.sql.DataSource" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="org.skife.jdbi.v2.StatementContext" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- Most Joda time classes are immutable -->
+    <Match>
+        <Field type="org.joda.time.DateTime" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <!-- Most Joda time classes are immutable -->
+        <Field type="org.joda.time.DateTimeZone" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <Field type="org.stringtemplate.v4.STGroup" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="org.killbill.commons.metrics.api.MetricRegistry" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Field type="org.killbill.commons.embeddeddb.EmbeddedDB" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <!--
+        Supposed to be mutable class that shared its state with other jdbi classes.
+        To test this, create copy constructor that copy its attributes, running test with "mvn -Pjdbi test verify" will fail.
+        -->
+        <Field type="org.skife.jdbi.v2.Binding" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <Class name="org.skife.jdbi.v2.ConcreteStatementContext" />
+        <!--
+        Try simple fix by wrapping with new Arraylist<>(cleanables) result with a lot of:
+        ".... org.skife.jdbi.v2.TestIterator.<xxx> .... java.lang.AssertionError: Handle was not closed correctly!"
+        when running test with: "mvn -Pjdbi test verify".
+        -->
+        <Method name="getCleanables" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <!-- FIXME-COMMONS-113 - Is it worth investigating? as:
+      1. Deprecated;
+      2. Not using anywhere; (not in killbill, platform, and plugin-base);
+      3. Not easy to test;
+    -->
+    <Match>
+        <Class name="org.skife.jdbi.v2.unstable.oracle.OracleReturning" />
+        <Method name="getReturnedResults" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <Match>
+        <!--
+        PreparedBatchPart, along with PreparedBatch supposed to be mutable classes that interact each other
+        -->
+        <Class name="org.skife.jdbi.v2.PreparedBatchPart" />
+        <Method name="submit" returns="org.skife.jdbi.v2.PreparedBatch" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <Match>
+        <!-- justification: all operations in returned object do nothing -->
+        <Class name="org.skife.jdbi.v2.logging.NoOpLog" />
+        <Method name="logBatch" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <Match>
+        <!-- justification: client supposed to manage supplied PrintStream -->
+        <Class name="org.skife.jdbi.v2.logging.PrintStreamLog" />
+        <Method name="&lt;init&gt;" params="java.io.PrintStream" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <!-- justification: Iterator created inside for-loop, NoSuchElementException unlikely to happen -->
+        <Class name="org.skife.jdbi.v2.sqlobject.BatchHandler$5" />
+        <Method name="next" />
+        <Bug pattern="IT_NO_SUCH_ELEMENT" />
+    </Match>
+
+    <!-- FIXME-COMMONS-113 - Need investigate, but probably nothing we can do about this -->
+    <Match>
+        <Class name="org.skife.jdbi.v2.logging.Log4JLog" />
+        <Field type="org.apache.log4j.Logger" />
+        <Bug pattern="EI_EXPOSE_REP2" />
     </Match>
 </FindBugsFilter>
