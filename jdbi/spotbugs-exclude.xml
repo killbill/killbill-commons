@@ -97,17 +97,6 @@
         <Bug pattern="EI_EXPOSE_REP" />
     </Match>
 
-    <!-- FIXME-COMMONS-113 - Is it worth investigating? as:
-      1. Deprecated;
-      2. Not using anywhere; (not in killbill, platform, and plugin-base);
-      3. Not easy to test;
-    -->
-    <Match>
-        <Class name="org.skife.jdbi.v2.unstable.oracle.OracleReturning" />
-        <Method name="getReturnedResults" />
-        <Bug pattern="EI_EXPOSE_REP" />
-    </Match>
-
     <Match>
         <!--
         PreparedBatchPart, along with PreparedBatch supposed to be mutable classes that interact each other
@@ -138,10 +127,11 @@
         <Bug pattern="IT_NO_SUCH_ELEMENT" />
     </Match>
 
-    <!-- FIXME-COMMONS-113 - Need investigate, but probably nothing we can do about this -->
     <Match>
-        <Class name="org.skife.jdbi.v2.logging.Log4JLog" />
-        <Field type="org.apache.log4j.Logger" />
-        <Bug pattern="EI_EXPOSE_REP2" />
+        <!-- justification: See: https://github.com/jdbi/jdbi/issues/93, https://github.com/jdbi/jdbi/pull/125 -->
+        <Class name="org.skife.jdbi.v2.ClasspathStatementLocator" />
+        <Method name="locate" />
+        <Bug pattern="DM_STRING_CTOR" />
     </Match>
+
 </FindBugsFilter>
