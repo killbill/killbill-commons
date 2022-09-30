@@ -22,15 +22,11 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-embeddeddb</artifactId>
-        <version>0.24.21</version>
+        <version>0.24.22-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-mysql</artifactId>
     <name>Kill Bill library of embedded dbs: MySQL</name>
-
-    <scm>
-        <tag>killbill-commons-0.24.21</tag>
-    </scm>
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
