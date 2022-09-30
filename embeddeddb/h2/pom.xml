@@ -22,11 +22,15 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-embeddeddb</artifactId>
-        <version>0.24.21-SNAPSHOT</version>
+        <version>0.24.21</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-h2</artifactId>
     <name>Kill Bill library of embedded dbs: H2</name>
+
+    <scm>
+        <tag>killbill-commons-0.24.21</tag>
+    </scm>
     <dependencies>
         <dependency>
             <groupId>com.h2database</groupId>

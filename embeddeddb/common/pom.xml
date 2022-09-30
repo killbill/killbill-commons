@@ -22,11 +22,15 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-embeddeddb</artifactId>
-        <version>0.24.21-SNAPSHOT</version>
+        <version>0.24.21</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-common</artifactId>
     <name>Kill Bill library of embedded dbs: common</name>
+
+    <scm>
+        <tag>killbill-commons-0.24.21</tag>
+    </scm>
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
     </properties>
