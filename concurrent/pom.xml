@@ -51,6 +51,12 @@
             <!-- Cannot use slf4j-simple with the way our tests are written today -->
             <artifactId>slf4j-reload4j</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Test scope -->
         <dependency>
