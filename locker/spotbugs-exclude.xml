@@ -15,7 +15,22 @@
   ~ under the License.
   -->
 
-<FindBugsFilter>
-    <!-- https://github.com/spotbugs/spotbugs-maven-plugin/issues/92 -->
-    <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+                            https://raw.githubusercontent.com/spotbugs/spotbugs/4.6.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- justification: Nothing we can do about this -->
+    <Match>
+        <Field type="javax.sql.DataSource" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: Nothing we can do about this -->
+    <Match>
+        <Field type="java.sql.Connection" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
 </FindBugsFilter>

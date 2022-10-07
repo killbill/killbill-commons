@@ -28,9 +28,6 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-@SuppressFBWarnings("EI_EXPOSE_REP2")
 public abstract class GlobalLockerBaseWithDao extends GlobalLockerBase {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalLockerBaseWithDao.class);
