@@ -53,9 +53,6 @@ import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-@SuppressFBWarnings("VO_VOLATILE_INCREMENT")
 public class NotificationQueueDispatcher extends DefaultQueueLifecycle {
 
     protected static final Logger log = LoggerFactory.getLogger(NotificationQueueDispatcher.class);
