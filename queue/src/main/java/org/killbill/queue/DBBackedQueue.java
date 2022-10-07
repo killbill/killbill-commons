@@ -120,7 +120,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
         private final long time;
 
         public ReadyEntriesWithMetrics(final List<T> entries, final long time) {
-            this.entries = entries;
+            this.entries = new ArrayList<>(entries);
             this.time = time;
         }
 
