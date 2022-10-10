@@ -52,6 +52,7 @@ import org.killbill.queue.QueueObjectMapper;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.killbill.queue.dispatching.CallableCallbackBase;
+import org.killbill.queue.dispatching.EventEntryDeserializer;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
@@ -59,6 +60,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 public class DefaultNotificationQueue implements NotificationQueue {
 
@@ -70,7 +73,8 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private final String queueName;
     private final NotificationQueueHandler handler;
     private final NotificationQueueService notificationQueueService;
-    private final ObjectMapper objectMapper;
+    private final ObjectReader objectReader;
+    private final ObjectWriter objectWriter;
     private final Clock clock;
     private final NotificationQueueConfig config;
     private final Profiling<Iterable<NotificationEventModelDao>, RuntimeException> prof;
@@ -95,7 +99,8 @@ public class DefaultNotificationQueue implements NotificationQueue {
         this.handler = handler;
         this.dao = dao;
         this.notificationQueueService = notificationQueueService;
-        this.objectMapper = objectMapper;
+        this.objectReader = objectMapper.reader();
+        this.objectWriter = objectMapper.writer();
         this.clock = clock;
         this.config = config;
         this.prof = new Profiling<Iterable<NotificationEventModelDao>, RuntimeException>();
@@ -103,7 +108,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     @Override
     public void recordFutureNotification(final DateTime futureNotificationTime, final NotificationEvent event, final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final String eventJson = objectMapper.writeValueAsString(event);
+        final String eventJson = objectWriter.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull = Objects.requireNonNullElse(searchKey2, 0L);
         final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
@@ -113,7 +118,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     @Override
     public void recordFutureNotificationFromTransaction(final Connection connection, final DateTime futureNotificationTime, final NotificationEvent event,
                                                         final UUID userToken, final Long searchKey1, final Long searchKey2) throws IOException {
-        final String eventJson = objectMapper.writeValueAsString(event);
+        final String eventJson = objectWriter.writeValueAsString(event);
         final UUID futureUserToken = UUID.randomUUID();
         final Long searchKey2WithNull = Objects.requireNonNullElse(searchKey2, 0L);
         final NotificationEventModelDao notification = new NotificationEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), eventJson, userToken, searchKey1, searchKey2WithNull, futureUserToken, futureNotificationTime, getFullQName());
@@ -130,7 +135,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
 
     @Override
     public void updateFutureNotification(final Long recordId, final NotificationEvent event, final Long searchKey1, final Long searchKey2) throws IOException {
-        final String eventJson = objectMapper.writeValueAsString(event);
+        final String eventJson = objectWriter.writeValueAsString(event);
         final Long searchKey2WithNull = Objects.requireNonNullElse(searchKey2, 0L);
         ((NotificationSqlDao) dao.getSqlDao()).updateEntry(recordId, eventJson, searchKey1, searchKey2WithNull, config.getTableName());
     }
@@ -143,7 +148,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
                                                  final Long searchKey2) throws IOException {
 
 
-        final String eventJson = objectMapper.writeValueAsString(event);
+        final String eventJson = objectWriter.writeValueAsString(event);
         final Long searchKey2WithNull = Objects.requireNonNullElse(searchKey2, 0L);
         final InTransaction.InTransactionHandler<NotificationSqlDao, Void> handler = new InTransaction.InTransactionHandler<NotificationSqlDao, Void>() {
             @Override
@@ -302,7 +307,7 @@ public class DefaultNotificationQueue implements NotificationQueue {
     private <T extends NotificationEvent> Iterable<NotificationEventWithMetadata<T>> toNotificationEventWithMetadata(final Iterable<NotificationEventModelDao> entries) {
         return Iterables.toStream(entries)
                 .map(cur -> {
-                    final T event = CallableCallbackBase.deserializeEvent(cur, objectMapper);
+                    final T event = EventEntryDeserializer.deserialize(cur, objectReader);
                     return new NotificationEventWithMetadata<T>(cur.getRecordId(),
                                                                 cur.getUserToken(),
                                                                 cur.getCreatedDate(),

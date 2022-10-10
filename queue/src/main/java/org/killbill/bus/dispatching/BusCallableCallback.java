@@ -33,7 +33,7 @@ public class BusCallableCallback extends CallableCallbackBase<BusEvent, BusEvent
     private final DefaultPersistentBus parent;
 
     public BusCallableCallback(final DefaultPersistentBus parent) {
-        super(parent.getDao(), parent.getClock(), parent.getConfig(), parent.getObjectMapper());
+        super(parent.getDao(), parent.getClock(), parent.getConfig(), parent.getObjectReader());
         this.parent = parent;
     }
 

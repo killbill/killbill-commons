@@ -64,8 +64,8 @@ import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
-import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
+import org.killbill.queue.dispatching.EventEntryDeserializer;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
@@ -284,7 +284,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public void post(final BusEvent event) throws EventBusException {
         try {
             if (isInitialized.get()) {
-                final String json = objectMapper.writeValueAsString(event);
+                final String json = objectWriter.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), json,
                                                                     event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
@@ -306,7 +306,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         final String json;
         try {
-            json = objectMapper.writeValueAsString(event);
+            json = objectWriter.writeValueAsString(event);
         } catch (final JsonProcessingException e) {
             log.warn("Unable to serialize event " + event, e);
             return;
@@ -499,7 +499,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     private <T extends BusEvent> Iterable<BusEventWithMetadata<T>> toBusEventWithMetadata(final Iterable<BusEventModelDao> entries) {
         return Iterables.toStream(entries)
                 .map(entry -> {
-                    final T event = CallableCallbackBase.deserializeEvent(entry, objectMapper);
+                    final T event = EventEntryDeserializer.deserialize(entry, objectReader);
                     return new BusEventWithMetadata<T>(entry.getRecordId(),
                                                        entry.getUserToken(),
                                                        entry.getCreatedDate(),
