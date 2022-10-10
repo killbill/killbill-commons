@@ -14,14 +14,94 @@
   ~ License for the specific language governing permissions and limitations
   ~ under the License.
   -->
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+                            https://raw.githubusercontent.com/spotbugs/spotbugs/4.6.0/spotbugs/etc/findbugsfilter.xsd">
 
-<FindBugsFilter>
+    <!-- Most Joda time classes are immutable -->
     <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP"/>
+        <Field type="org.joda.time.DateTime" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
     </Match>
+
+    <!-- justification: DBBackedQueue instance supposed to be injected -->
     <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Field type="org.killbill.queue.DBBackedQueue" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
     </Match>
+
+    <!-- justification: DBI instance supposed to be injected -->
+    <Match>
+        <Field type="org.skife.jdbi.v2.DBI" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: NotificationQueueService supposed to be injected -->
+    <Match>
+        <Field type="org.killbill.notificationq.api.NotificationQueueService" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: managed QueueSqlDao instance expected by its clients -->
+    <Match>
+        <Class name="org.killbill.queue.DBBackedQueue" />
+        <Method name="getSqlDao" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <!-- justification: List already copied in constructor, and this class have no further modification to the list -->
+    <Match>
+        <Class name="org.killbill.queue.DBBackedQueue$ReadyEntriesWithMetrics" />
+        <Method name="getEntries" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <!-- justification: Pretty safe - all clients use this by creating BlockingQueue implementation constructor directly. -->
+    <Match>
+        <Class name="org.killbill.queue.dispatching.Dispatcher" />
+        <Field type="java.util.concurrent.BlockingQueue" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: the entry parameter is generic -->
+    <Match>
+        <Class name="org.killbill.queue.dispatching.Dispatcher$CallableQueueHandler" />
+        <Method name="&lt;init&gt;" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: in this case, we don't really cares the output -->
+    <Match>
+        <Class name="org.killbill.queue.dispatching.Dispatcher" />
+        <Method name="dispatch" />
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" />
+    </Match>
+
+    <!-- justification: No other viable options ? -->
+    <Match>
+        <Class name="org.killbill.notificationq.NotificationQueueDispatcher" />
+        <Bug pattern="VO_VOLATILE_INCREMENT" />
+    </Match>
+
+    <!-- justification: Because this class immutable: https://stackoverflow.com/a/3909846/554958 -->
+    <Match>
+        <Field type="com.fasterxml.jackson.databind.ObjectReader" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: Because this class immutable: https://stackoverflow.com/a/3909846/554958 -->
+    <Match>
+        <Field type="com.fasterxml.jackson.databind.ObjectWriter" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- justification: QueueObjectMapper is ObjectMapper factory for this module -->
+    <Match>
+        <Class name="org.killbill.queue.QueueObjectMapper" />
+        <Method name="get" />
+        <Bug pattern="MS_EXPOSE_REP" />
+    </Match>
+
 </FindBugsFilter>
