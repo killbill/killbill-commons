@@ -33,7 +33,7 @@ public final class EventEntryDeserializer {
             final Class<?> claz = Class.forName(modelDao.getClassName());
             return (E) objectReader.readValue(modelDao.getEventJson(), claz);
         } catch (final Exception e) {
-            log.error(String.format("Failed to deserialize json object %s for class %s", modelDao.getEventJson(), modelDao.getClassName()), e);
+            log.error("Failed to deserialize json object {} for class {}", modelDao.getEventJson(), modelDao.getClassName(), e);
             return null;
         }
     }
