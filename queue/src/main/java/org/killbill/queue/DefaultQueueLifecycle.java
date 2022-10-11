@@ -38,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
@@ -53,7 +55,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     private static final int MAX_COMPLETED_ENTRIES = 15;
 
     protected final String svcQName;
-    protected final ObjectMapper objectMapper;
+    protected final ObjectReader objectReader;
+    protected final ObjectWriter objectWriter;
     protected final PersistentQueueConfig config;
     private final LinkedBlockingQueue<EventEntryModelDao> completedOrFailedEvents;
     private final LinkedBlockingQueue<EventEntryModelDao> retriedEvents;
@@ -88,7 +91,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.config = config;
         this.isDispatchingEvents = false;
         this.isCompletingEvents = false;
-        this.objectMapper = objectMapper;
+        this.objectReader = objectMapper.reader();
+        this.objectWriter = objectMapper.writer();
         this.completedOrFailedEvents = new LinkedBlockingQueue<>();
         this.retriedEvents = new LinkedBlockingQueue<>();
         this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
@@ -176,8 +180,12 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     public abstract void doProcessRetriedEvents(final Iterable<? extends EventEntryModelDao> retried);
 
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
+    public ObjectReader getObjectReader() {
+        return objectReader;
+    }
+
+    public ObjectWriter getObjectWriter() {
+        return objectWriter;
     }
 
     public static class DispatchResultMetrics {

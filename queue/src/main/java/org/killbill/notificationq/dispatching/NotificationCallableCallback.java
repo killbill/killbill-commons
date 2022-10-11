@@ -37,7 +37,7 @@ public class NotificationCallableCallback extends CallableCallbackBase<Notificat
     private final NotificationQueueDispatcher parent;
 
     public NotificationCallableCallback(final NotificationQueueDispatcher parent) {
-        super(parent.getDao(), parent.getClock(), parent.getConfig(), parent.getObjectMapper());
+        super(parent.getDao(), parent.getClock(), parent.getConfig(), parent.getObjectReader());
         this.parent = parent;
     }
 

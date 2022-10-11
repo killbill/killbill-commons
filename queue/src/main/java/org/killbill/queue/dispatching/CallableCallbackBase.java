@@ -29,7 +29,7 @@ import org.killbill.queue.dao.EventEntryModelDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 
 public abstract class CallableCallbackBase<E extends QueueEvent, M extends EventEntryModelDao> implements CallableCallback<E, M> {
 
@@ -38,29 +38,18 @@ public abstract class CallableCallbackBase<E extends QueueEvent, M extends Event
     private final DBBackedQueue<M> dao;
     private final Clock clock;
     private final PersistentQueueConfig config;
-    private final ObjectMapper objectMapper;
+    private final ObjectReader objectReader;
 
-    public CallableCallbackBase(final DBBackedQueue<M> dao, final Clock clock, final PersistentQueueConfig config, final ObjectMapper objectMapper) {
+    public CallableCallbackBase(final DBBackedQueue<M> dao, final Clock clock, final PersistentQueueConfig config, final ObjectReader objectReader) {
         this.dao = dao;
         this.clock = clock;
         this.config = config;
-        this.objectMapper = objectMapper;
+        this.objectReader = objectReader;
     }
 
     @Override
     public E deserialize(final M modelDao) {
-        return deserializeEvent(modelDao, objectMapper);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <E extends QueueEvent, M extends EventEntryModelDao> E deserializeEvent(final M modelDao, final ObjectMapper objectMapper) {
-        try {
-            final Class<?> claz = Class.forName(modelDao.getClassName());
-            return (E) objectMapper.readValue(modelDao.getEventJson(), claz);
-        } catch (final Exception e) {
-            log.error(String.format("Failed to deserialize json object %s for class %s", modelDao.getEventJson(), modelDao.getClassName()), e);
-            return null;
-        }
+        return EventEntryDeserializer.deserialize(modelDao, objectReader);
     }
 
     @Override

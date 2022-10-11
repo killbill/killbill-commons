@@ -33,7 +33,7 @@ import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.notificationq.dao.NotificationEventModelDao;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
-import org.killbill.queue.dispatching.CallableCallbackBase;
+import org.killbill.queue.dispatching.EventEntryDeserializer;
 import org.skife.jdbi.v2.DBI;
 
 public class MockNotificationQueueService extends NotificationQueueServiceBase {
@@ -78,7 +78,7 @@ public class MockNotificationQueueService extends NotificationQueueServiceBase {
 
         final List<NotificationEventModelDao> readyNotifications = queue.getReadyNotifications();
         for (final NotificationEventModelDao cur : readyNotifications) {
-            final NotificationEvent key = CallableCallbackBase.deserializeEvent(cur, objectMapper);
+            final NotificationEvent key = EventEntryDeserializer.deserialize(cur, objectReader);
             queue.getHandler().handleReadyNotification(key, cur.getEffectiveDate(), cur.getFutureUserToken(), cur.getSearchKey1(), cur.getSearchKey2());
 
 
