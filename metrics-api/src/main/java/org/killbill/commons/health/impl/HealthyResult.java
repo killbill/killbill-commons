@@ -34,7 +34,7 @@ public class HealthyResult implements Result {
                          final Map<String, Object> details) {
         this.message = message;
         this.time = time;
-        this.details = details;
+        this.details = details == null ? Collections.emptyMap() : new HashMap<>(details);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class HealthyResult implements Result {
 
     @Override
     public Map<String, Object> getDetails() {
-        return details;
+        return new HashMap<>(details);
     }
 
     @Override
