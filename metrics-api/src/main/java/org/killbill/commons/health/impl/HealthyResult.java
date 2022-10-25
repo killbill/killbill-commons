@@ -17,6 +17,7 @@
 
 package org.killbill.commons.health.impl;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class HealthyResult implements Result {
                          final Map<String, Object> details) {
         this.message = message;
         this.time = time;
-        this.details = new HashMap<>(details);
+        this.details = details == null ? Collections.emptyMap() : new HashMap<>(details);
     }
 
     @Override
