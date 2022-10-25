@@ -31,6 +31,8 @@ import org.killbill.commons.utils.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
+
 import static java.lang.String.format;
 
 // Forked from https://github.com/airlift/testing-postgresql-server (as of 9.6.3-3)
@@ -42,7 +44,7 @@ class KillBillTestingPostgreSqlServer implements Closeable {
     private final String user;
     private final String database;
     private final int port;
-    private final KillBillEmbeddedPostgreSql server;
+    private final EmbeddedPostgres server;
 
     public KillBillTestingPostgreSqlServer(final String user, final String database) throws Exception {
         this(user, null, database);
@@ -56,15 +58,15 @@ class KillBillTestingPostgreSqlServer implements Closeable {
         this.database = Preconditions.checkNotNull(database, "database is null");
 
         if (portOrNull == null) {
-            server = new KillBillEmbeddedPostgreSql();
+            server = EmbeddedPostgres.builder().start();
         } else {
-            server = new KillBillEmbeddedPostgreSql(portOrNull);
+            server = EmbeddedPostgres.builder().setPort(portOrNull).start();
         }
         port = server.getPort();
 
         Connection connection = null;
         try {
-            connection = server.getPostgresDatabase();
+            connection = server.getPostgresDatabase().getConnection();
             Statement statement = null;
             try {
                 statement = connection.createStatement();
