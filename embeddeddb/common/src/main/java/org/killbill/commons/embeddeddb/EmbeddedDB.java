@@ -33,7 +33,6 @@ import javax.sql.DataSource;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,13 +75,11 @@ public abstract class EmbeddedDB {
 
     public abstract void refreshTableNames() throws IOException;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public DataSource getDataSource() throws IOException {
         return dataSource;
     }
 
     // Delayed initialization for GenericStandaloneDB
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setDataSource(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
