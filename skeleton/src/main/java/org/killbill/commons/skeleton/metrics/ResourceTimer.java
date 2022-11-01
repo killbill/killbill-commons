@@ -20,9 +20,12 @@
 package org.killbill.commons.skeleton.metrics;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
 
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.Timer;
@@ -39,11 +42,11 @@ public class ResourceTimer {
     private final Map<String, Object> tags;
     private final MetricRegistry registry;
 
-    public ResourceTimer(final String resourcePath, final String name, final String httpMethod, final Map<String, Object> tags, final MetricRegistry registry) {
+    public ResourceTimer(final String resourcePath, final String name, final String httpMethod, @Nullable final Map<String, Object> tags, final MetricRegistry registry) {
         this.resourcePath = resourcePath;
         this.name = name;
         this.httpMethod = httpMethod;
-        this.tags = tags;
+        this.tags = tags == null ? null : new HashMap<>(tags);
         this.registry = registry;
     }
 

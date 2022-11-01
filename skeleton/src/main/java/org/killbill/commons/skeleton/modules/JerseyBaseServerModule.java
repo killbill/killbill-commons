@@ -58,8 +58,8 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Collection<String> jerseyResourcesAndProvidersClasses,
                                   final Map<String, String> jerseyParams) {
         super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern);
-        this.jerseyResourcesAndProvidersPackages = jerseyResourcesAndProvidersPackages;
-        this.jerseyResourcesAndProvidersClasses = jerseyResourcesAndProvidersClasses;
+        this.jerseyResourcesAndProvidersPackages = new ArrayList<>(jerseyResourcesAndProvidersPackages);
+        this.jerseyResourcesAndProvidersClasses = new ArrayList<>(jerseyResourcesAndProvidersClasses);
         this.jerseyParams = new HashMap<>();
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput

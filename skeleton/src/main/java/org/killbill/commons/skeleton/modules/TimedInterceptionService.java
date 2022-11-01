@@ -20,6 +20,7 @@ package org.killbill.commons.skeleton.modules;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -48,7 +49,7 @@ public class TimedInterceptionService implements InterceptionService {
     public TimedInterceptionService(final Set<String> resourcePackage,
                                     final ExceptionMappers exceptionMappers,
                                     final MetricRegistry metricRegistry) {
-        this.resourcePackages = resourcePackage;
+        this.resourcePackages = new HashSet<>(resourcePackage);
         this.exceptionMappers = exceptionMappers;
         this.metricRegistry = metricRegistry;
     }

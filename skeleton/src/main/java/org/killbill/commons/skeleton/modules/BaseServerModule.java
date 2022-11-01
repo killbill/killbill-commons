@@ -20,6 +20,7 @@
 package org.killbill.commons.skeleton.modules;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -27,9 +28,7 @@ import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
 import com.google.inject.servlet.ServletModule;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-@SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
 public class BaseServerModule extends ServletModule {
 
     private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filters;
@@ -49,12 +48,12 @@ public class BaseServerModule extends ServletModule {
                             final Map<String, Class<? extends HttpServlet>> jaxrsServlets,
                             final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex,
                             final String jaxrsUriPattern) {
-        this.filters = filters;
-        this.filtersRegex = filtersRegex;
-        this.servlets = servlets;
-        this.servletsRegex = servletsRegex;
-        this.jaxrsServlets = jaxrsServlets;
-        this.jaxrsServletsRegex = jaxrsServletsRegex;
+        this.filters = new HashMap<>(filters);
+        this.filtersRegex = new HashMap<>(filtersRegex);
+        this.servlets = new HashMap<>(servlets);
+        this.servletsRegex =new HashMap<>(servletsRegex);
+        this.jaxrsServlets = new HashMap<>(jaxrsServlets);
+        this.jaxrsServletsRegex = new HashMap<>(jaxrsServletsRegex);
         this.jaxrsUriPattern = jaxrsUriPattern;
     }
 
