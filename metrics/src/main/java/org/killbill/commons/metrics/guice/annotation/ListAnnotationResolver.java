@@ -19,6 +19,7 @@ package org.killbill.commons.metrics.guice.annotation;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -32,7 +33,7 @@ public class ListAnnotationResolver implements AnnotationResolver {
     private final List<AnnotationResolver> resolvers;
 
     public ListAnnotationResolver(final List<AnnotationResolver> resolvers) {
-        this.resolvers = resolvers;
+        this.resolvers = new ArrayList<>(resolvers);
     }
 
     @Nullable
