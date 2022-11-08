@@ -30,12 +30,15 @@ import org.killbill.commons.eventbus.AllowConcurrentEvents;
 import org.killbill.commons.eventbus.Subscribe;
 import org.killbill.commons.utils.io.Resources;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.sql.DataSource;
+
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -80,6 +83,13 @@ public class TestPersistentBusDemo {
         properties.setProperty("org.killbill.persistent.bus.main.tableName", "bus_events");
         properties.setProperty("org.killbill.persistent.bus.main.historyTableName", "bus_events_history");
         bus = new DefaultPersistentBus(dataSource, properties);
+    }
+
+    @AfterClass
+    public void afterClass() throws IOException {
+        if (embeddedDB != null) {
+            embeddedDB.stop();
+        }
     }
 
     @BeforeMethod(groups = "slow")
