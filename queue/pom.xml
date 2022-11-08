@@ -62,9 +62,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.airlift</groupId>
+            <groupId>org.kill-bill.testing</groupId>
             <artifactId>testing-mysql-server</artifactId>
-            <!-- Technically, test-runtime -->
             <scope>test</scope>
         </dependency>
         <dependency>
