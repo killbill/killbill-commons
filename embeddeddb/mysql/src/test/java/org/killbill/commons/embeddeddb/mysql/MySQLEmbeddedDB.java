@@ -29,34 +29,35 @@ import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;
 import org.killbill.commons.utils.Preconditions;
+import org.killbill.testing.mysql.MySqlServerOptions;
+import org.killbill.testing.mysql.TestingMySqlServer;
 import org.mariadb.jdbc.MariaDbDataSource;
-
-import io.airlift.testing.mysql.HackedEmbeddedMySql;
-import io.airlift.testing.mysql.HackedTestingMySqlServer;
 
 public class MySQLEmbeddedDB extends EmbeddedDB {
 
-    protected final AtomicBoolean started = new AtomicBoolean(false);
+    private final MySqlServerOptions options;
+    private TestingMySqlServer mysqldResource;
 
-    private final HackedTestingMySqlServer mysqldResource;
+    protected final AtomicBoolean started = new AtomicBoolean(false);
 
     public MySQLEmbeddedDB() {
         // Avoid dashes - MySQL doesn't like them
-        this("database" + UUID.randomUUID().toString().substring(0, 8),
-             "user" + UUID.randomUUID().toString().substring(0, 8),
-             "pass" + UUID.randomUUID().toString().substring(0, 8));
+        this("mydb_" + UUID.randomUUID().toString().substring(0, 8),
+             "myuser_" + UUID.randomUUID().toString().substring(0, 8),
+             "mypass_" + UUID.randomUUID().toString().substring(0, 8));
     }
 
     public MySQLEmbeddedDB(final String databaseName, final String username, final String password) {
         super(databaseName, username, password, null);
-        final int port;
-        try {
-            port = HackedEmbeddedMySql.randomPort();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-        mysqldResource = new HackedTestingMySqlServer(username, password, port, databaseName);
-        this.jdbcConnectionString = mysqldResource.getJdbcUrl(databaseName);
+        options = MySqlServerOptions.builder(databaseName)
+                                    .setUsername(username)
+                                    .setPassword(password)
+                                    .build();
+        // jdbcConnectionString required to set here in constructor, before #start() method. This is because some
+        // clients (like TestKillbillConfigSource along with PlatformDBTestingHelper in killbill-platform) need to get
+        // jdbcConnectionString value. For MySQL PlatformDBTestingHelper#getInstance() will return this instance, and if
+        // jdbcConnectionString not set here, it will `null` and causing DaoConfig's default value take place.
+        jdbcConnectionString = options.getJdbcUrl(databaseName);
     }
 
     @Override
@@ -75,7 +76,9 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         }
 
         try {
-            startMysql();
+            mysqldResource = new TestingMySqlServer(options);
+            started.set(true);
+            logger.info("MySQL started: {}", getCmdLineConnectionString());
         } catch (final Exception e) {
             throw new IOException(e);
         }
@@ -123,7 +126,8 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
     @Override
     public String getCmdLineConnectionString() {
         Preconditions.checkState(started.get(), "MySQL isn't running");
-        return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, mysqldResource.getPort(), mysqldResource.getServer().getServerDirectory(), databaseName);
+        Preconditions.checkNotNull(mysqldResource);
+        return String.format("mysql -u%s -p%s -P%s -S%s/mysql.sock %s", username, password, options.getPort(), mysqldResource.getServerDirectory(), databaseName);
     }
 
     protected void createDataSource() throws IOException, SQLException {
@@ -143,13 +147,7 @@ public class MySQLEmbeddedDB extends EmbeddedDB {
         }
     }
 
-    private void startMysql() throws Exception {
-        mysqldResource.start();
-        started.set(true);
-        logger.info("MySQL started: " + getCmdLineConnectionString());
-    }
-
-    private void stopMysql() throws IOException {
+    private void stopMysql() {
         if (mysqldResource != null) {
             try {
                 mysqldResource.close();
