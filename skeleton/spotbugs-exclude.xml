@@ -43,6 +43,7 @@
             <Method name="configureRegularServletsRegex" />
             <Method name="configureResources" />
         </Or>
+        <Bug pattern="WMI_WRONG_MAP_ITERATOR" />
     </Match>
 
 </FindBugsFilter>
