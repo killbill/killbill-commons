@@ -36,9 +36,6 @@ import javax.xml.bind.annotation.XmlID;
 
 import org.killbill.xmlloader.ValidationErrors;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachine, Externalizable {
 

@@ -15,13 +15,103 @@
   ~ under the License.
   -->
 
-<FindBugsFilter>
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+                            https://raw.githubusercontent.com/spotbugs/spotbugs/4.6.0/spotbugs/etc/findbugsfilter.xsd">
+
     <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="org.killbill.automaton.DefaultLinkStateMachine" />
+        <Or>
+            <!-- EI_EXPOSE_REP -->
+            <Method name="getFinalState" />
+            <Method name="getFinalStateMachine" />
+            <Method name="getInitialState" />
+            <Method name="getInitialStateMachine" />
+
+            <!-- EI_EXPOSE_REP2 -->
+            <Method name="setFinalState" />
+            <Method name="setFinalStateMachine" />
+            <Method name="setInitialState" />
+            <Method name="setInitialStateMachine" />
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
     </Match>
+
     <Match>
-        <!-- Legacy code -->
-        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="org.killbill.automaton.DefaultStateMachine" />
+        <Or>
+            <!-- EI_EXPOSE_REP -->
+            <Method name="getStateMachineConfig" />
+            <Method name="getStates" />
+            <Method name="getTransitions" />
+            <Method name="getOperations" />
+
+            <!-- EI_EXPOSE_REP2 -->
+            <Method name="initialize" />
+            <Method name="setStateMachineConfig" />
+            <Method name="setStates" />
+            <Method name="setTransitions" />
+            <Method name="setOperations" />
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
     </Match>
+
+    <Match>
+        <Class name="org.killbill.automaton.DefaultState" />
+        <Or>
+            <Method name="getStateMachine" />
+            <Method name="setStateMachine" />
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <Class name="org.killbill.automaton.DefaultOperation" />
+        <Or>
+            <Method name="getStateMachine" />
+            <Method name="setStateMachine" />
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <Class name="org.killbill.automaton.DefaultTransition" />
+        <Or>
+            <!-- EI_EXPOSE_REP -->
+            <Method name="getFinalState" />
+            <Method name="getInitialState" />
+            <Method name="getOperation" />
+            <Method name="getStateMachine" />
+
+            <!-- EI_EXPOSE_REP2 -->
+            <Method name="setFinalState" />
+            <Method name="setInitialState" />
+            <Method name="setOperation" />
+            <Method name="setStateMachine" />
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
+    <Match>
+        <Class name="org.killbill.automaton.dot.DefaultStateMachineConfigDOTGenerator" />
+        <Method name="getDot" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <Match>
+        <Class name="org.killbill.automaton.DefaultStateMachineConfig" />
+        <Or>
+            <!-- EI_EXPOSE_REP -->
+            <Method name="getStateMachines" />
+            <Method name="getLinkStateMachines" />
+
+            <!-- EI_EXPOSE_REP2 -->
+            <Method name="setStateMachines" />
+            <Method name="setLinkStateMachines" />
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+
 </FindBugsFilter>
