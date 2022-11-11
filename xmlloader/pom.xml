@@ -27,11 +27,10 @@
     </parent>
     <artifactId>killbill-xmlloader</artifactId>
     <name>Kill Bill xml utils for loading jaxb xml object tree</name>
+    <properties>
+        <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+    </properties>
     <dependencies>
-        <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>

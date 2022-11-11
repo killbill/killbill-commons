@@ -35,9 +35,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.killbill.xmlloader.ValidationErrors;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @XmlRootElement(name = "stateMachineConfig")
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultStateMachineConfig extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachineConfig, Externalizable {
