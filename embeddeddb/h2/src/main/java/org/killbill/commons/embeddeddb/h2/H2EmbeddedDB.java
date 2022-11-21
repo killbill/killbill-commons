@@ -120,8 +120,9 @@ public class H2EmbeddedDB extends EmbeddedDB {
             dataSource = createHikariDataSource();
         } else {
             final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(jdbcConnectionString, username, password);
-            // Default is 10, set it to 30 to match the default for org.killbill.dao.maxActive
-            jdbcConnectionPool.setMaxConnections(30);
+            // Default is 10, set it to 30 to match the default for org.killbill.dao.maxActive.
+            // set to 100 temporarily to temporarily solve CI problem: https://github.com/killbill/killbill/issues/1799
+            jdbcConnectionPool.setMaxConnections(100);
             dataSource = jdbcConnectionPool;
         }
     }
