@@ -38,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 public abstract class RetryableService {
 
@@ -45,7 +47,8 @@ public abstract class RetryableService {
 
     private static final Logger log = LoggerFactory.getLogger(RetryableService.class);
 
-    private final ObjectMapper objectMapper;
+    private final ObjectReader objectReader;
+    private final ObjectWriter objectWriter;
 
     private final NotificationQueueService notificationQueueService;
 
@@ -55,10 +58,10 @@ public abstract class RetryableService {
         this(notificationQueueService, QueueObjectMapper.get());
     }
 
-    public RetryableService(final NotificationQueueService notificationQueueService,
-                            final ObjectMapper objectMapper) {
+    public RetryableService(final NotificationQueueService notificationQueueService, final ObjectMapper objectMapper) {
         this.notificationQueueService = notificationQueueService;
-        this.objectMapper = objectMapper;
+        this.objectReader = objectMapper.reader();
+        this.objectWriter = objectMapper.writer();
     }
 
     public void initialize(final NotificationQueue originalQueue, final NotificationQueueHandler originalQueueHandler) {
@@ -80,7 +83,7 @@ public abstract class RetryableService {
 
                         final NotificationEvent notificationEvent;
                         try {
-                            notificationEvent = (NotificationEvent) objectMapper.readValue(retryNotificationEvent.getOriginalEvent(), retryNotificationEvent.getOriginalEventClass());
+                            notificationEvent = (NotificationEvent) objectReader.readValue(retryNotificationEvent.getOriginalEvent(), retryNotificationEvent.getOriginalEventClass());
                         } catch (final IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -140,7 +143,7 @@ public abstract class RetryableService {
         log.warn("Error processing event, scheduling retry for event='{}', effectiveDate='{}', retryNb='{}'", originalNotificationEvent, effectiveDate, retryNb, exception);
 
         try {
-            final NotificationEvent retryNotificationEvent = new RetryNotificationEvent(objectMapper.writeValueAsString(originalNotificationEvent), originalNotificationEvent.getClass(), originalEffectiveDate, retryNb);
+            final NotificationEvent retryNotificationEvent = new RetryNotificationEvent(objectWriter.writeValueAsString(originalNotificationEvent), originalNotificationEvent.getClass(), originalEffectiveDate, retryNb);
             retryNotificationQueue.recordFutureNotification(effectiveDate, retryNotificationEvent, userToken, searchKey1, searchKey2);
             throw new RetryableInternalException(true);
         } catch (final IOException e) {

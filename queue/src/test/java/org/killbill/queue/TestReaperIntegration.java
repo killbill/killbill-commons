@@ -35,6 +35,8 @@ import org.killbill.bus.api.PersistentBus.EventBusException;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
 import org.killbill.bus.dao.PersistentBusSqlDao;
+import org.killbill.commons.eventbus.AllowConcurrentEvents;
+import org.killbill.commons.eventbus.Subscribe;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
 import org.testng.annotations.AfterMethod;
@@ -45,8 +47,6 @@ import org.testng.annotations.Test;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -329,7 +329,7 @@ public class TestReaperIntegration extends TestSetup {
         }
 
         void waitFor(final BusEvent event) {
-            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+            Awaitility.await().atMost(15, TimeUnit.SECONDS).until(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     return receivedEvents.contains(event.getUserToken());

@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -25,7 +25,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.killbill.commons.embeddeddb.GenericStandaloneDB;
-import org.mariadb.jdbc.MariaDbDataSource;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 
@@ -65,16 +64,14 @@ public class MySQLStandaloneDB extends GenericStandaloneDB {
         super.initialize();
 
         if (useMariaDB) {
-            final MariaDbDataSource mariaDBDataSource = new MariaDbDataSource();
+            final KillBillMariaDbDataSource mariaDBDataSource = new KillBillMariaDbDataSource();
             try {
                 mariaDBDataSource.setUrl(jdbcConnectionString);
             } catch (final SQLException e) {
                 throw new IOException(e);
             }
-            mariaDBDataSource.setDatabaseName(databaseName);
             mariaDBDataSource.setUser(username);
             mariaDBDataSource.setPassword(password);
-            mariaDBDataSource.setPort(port);
             dataSource = mariaDBDataSource;
         } else {
             final MysqlDataSource mysqlDataSource = new MysqlDataSource();

@@ -22,6 +22,9 @@ package org.killbill.commons.jdbi.guice;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
@@ -43,9 +46,6 @@ import org.skife.jdbi.v2.tweak.TransactionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-
 public class DBIProvider implements Provider<IDBI> {
 
     private static final Logger logger = LoggerFactory.getLogger(DBIProvider.class);
@@ -53,9 +53,9 @@ public class DBIProvider implements Provider<IDBI> {
     private final DaoConfig config;
     private final DataSource ds;
     private final TransactionHandler transactionHandler;
-    private final Set<ArgumentFactory> argumentFactorySet = new LinkedHashSet<ArgumentFactory>();
-    private final Set<ResultSetMapperFactory> resultSetMapperFactorySet = new LinkedHashSet<ResultSetMapperFactory>();
-    private final Set<ResultSetMapper> resultSetMapperSet = new LinkedHashSet<ResultSetMapper>();
+    private final Set<ArgumentFactory> argumentFactorySet = new LinkedHashSet<>();
+    private final Set<ResultSetMapperFactory> resultSetMapperFactorySet = new LinkedHashSet<>();
+    private final Set<ResultSetMapper> resultSetMapperSet = new LinkedHashSet<>();
 
     private SQLLog sqlLog;
     private TimingCollector timingCollector;
@@ -71,44 +71,44 @@ public class DBIProvider implements Provider<IDBI> {
         setDefaultResultSetMapperSet();
     }
 
-    @Inject(optional = true)
-    public void setArgumentFactorySet(final Set<ArgumentFactory> argumentFactorySet) {
-        for (final ArgumentFactory argumentFactory : argumentFactorySet) {
-            this.argumentFactorySet.add(argumentFactory);
+    @Inject
+    public void setArgumentFactorySet(@Nullable final Set<ArgumentFactory> argumentFactorySet) {
+        if (argumentFactorySet != null) {
+            this.argumentFactorySet.addAll(argumentFactorySet);
         }
     }
 
-    @Inject(optional = true)
-    public void setResultSetMapperFactorySet(final Set<ResultSetMapperFactory> resultSetMapperFactorySet) {
-        for (final ResultSetMapperFactory resultSetMapperFactory : resultSetMapperFactorySet) {
-            this.resultSetMapperFactorySet.add(resultSetMapperFactory);
+    @Inject
+    public void setResultSetMapperFactorySet(@Nullable final Set<ResultSetMapperFactory> resultSetMapperFactorySet) {
+        if (resultSetMapperFactorySet != null) {
+            this.resultSetMapperFactorySet.addAll(resultSetMapperFactorySet);
         }
     }
 
-    @Inject(optional = true)
-    public void setResultSetMapperSet(final Set<ResultSetMapper> resultSetMapperSet) {
-        for (final ResultSetMapper resultSetMapper : resultSetMapperSet) {
-            this.resultSetMapperSet.add(resultSetMapper);
+    @Inject
+    public void setResultSetMapperSet(@Nullable final Set<ResultSetMapper> resultSetMapperSet) {
+        if (resultSetMapperSet != null) {
+            this.resultSetMapperSet.addAll(resultSetMapperSet);
         }
     }
 
-    @Inject(optional = true)
-    public void setSqlLog(final SQLLog sqlLog) {
+    @Inject
+    public void setSqlLog(@Nullable final SQLLog sqlLog) {
         this.sqlLog = sqlLog;
     }
 
-    @Inject(optional = true)
-    public void setTimingCollector(final TimingCollector timingCollector) {
+    @Inject
+    public void setTimingCollector(@Nullable final TimingCollector timingCollector) {
         this.timingCollector = timingCollector;
     }
 
-    @Inject(optional = true)
-    public void setStatementRewriter(final StatementRewriter statementRewriter) {
+    @Inject
+    public void setStatementRewriter(@Nullable final StatementRewriter statementRewriter) {
         this.statementRewriter = statementRewriter;
     }
 
-    @Inject(optional = true)
-    public void setStatementBuilderFactory(final StatementBuilderFactory statementBuilderFactory) {
+    @Inject
+    public void setStatementBuilderFactory(@Nullable final StatementBuilderFactory statementBuilderFactory) {
         this.statementBuilderFactory = statementBuilderFactory;
     }
 

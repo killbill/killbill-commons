@@ -30,10 +30,9 @@ import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBusConfig;
+import org.killbill.commons.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.eventbus.EventBusThatThrowsException;
 
 public class InMemoryPersistentBus implements PersistentBus {
 
@@ -48,7 +47,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         return true;
     }
 
-    public static class EventBusDelegate extends EventBusThatThrowsException {
+    public static class EventBusDelegate extends EventBus {
 
         public EventBusDelegate() {
             super("Bus");
@@ -91,7 +90,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         checkInitialized("post");
         try {
             delegate.postWithException(event);
-        } catch (final com.google.common.eventbus.EventBusException e) {
+        } catch (final org.killbill.commons.eventbus.EventBusException e) {
             throw new EventBusException(e.getMessage(), e);
         }
     }
@@ -101,7 +100,7 @@ public class InMemoryPersistentBus implements PersistentBus {
         checkInitialized("postFromTransaction");
         try {
             delegate.postWithException(event);
-        } catch (final com.google.common.eventbus.EventBusException e) {
+        } catch (final org.killbill.commons.eventbus.EventBusException e) {
             throw new EventBusException(e.getMessage(), e);
         }
     }

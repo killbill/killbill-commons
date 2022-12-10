@@ -150,7 +150,7 @@ final class DefaultCoercibles {
         }
     };
     static final Coercer<Boolean> BOOLEAN_COERCER = new Coercer<Boolean>() {
-        @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
+        @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Using annotation because cannot excluded via xml")
         public Boolean coerce(final String value) {
             return value != null ? Boolean.valueOf(value) : null;
         }

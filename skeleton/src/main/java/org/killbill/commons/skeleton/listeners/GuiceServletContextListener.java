@@ -19,18 +19,18 @@
 
 package org.killbill.commons.skeleton.listeners;
 
+import java.util.List;
+
 import javax.servlet.ServletContextEvent;
 
+import org.killbill.commons.utils.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Start up the base module when the server comes up. This gets configured in web.xml:
@@ -42,7 +42,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  *  &lt;/context-param&gt;
  * </pre>
  */
-@SuppressFBWarnings("NM_SAME_SIMPLE_NAME_AS_SUPERCLASS")
 public class GuiceServletContextListener extends com.google.inject.servlet.GuiceServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(GuiceServletContextListener.class);
@@ -53,7 +52,7 @@ public class GuiceServletContextListener extends com.google.inject.servlet.Guice
     public void contextInitialized(final ServletContextEvent event) {
         // Check if the module was overridden in subclasses
         if (guiceModules == null) {
-            guiceModules = ImmutableList.<Module>of(initializeGuiceModuleFromWebXML(event));
+            guiceModules = List.of(initializeGuiceModuleFromWebXML(event));
         }
 
         super.contextInitialized(event);

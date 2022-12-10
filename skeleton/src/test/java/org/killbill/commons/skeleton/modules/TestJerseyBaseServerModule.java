@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,22 +19,31 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.Server;
+import org.killbill.commons.health.api.HealthCheck;
+import org.killbill.commons.health.api.Result;
+import org.killbill.commons.health.impl.HealthyResultBuilder;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
+import org.killbill.commons.metrics.modules.StatsModule;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -50,7 +59,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
         builder.setJaxrsUriPattern("/hello|/hello/.*");
 
         final Injector injector = Guice.createInjector(builder.build(),
-                                                       new StatsModule(),
+                                                       new StatsModule(healthCheckUri, metricsUri, threadsUri, List.of(TestHealthCheck.class)),
                                                        new AbstractModule() {
                                                            @Override
                                                            protected void configure() {
@@ -58,15 +67,22 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
                                                                objectMapper.registerModule(new JodaModule());
                                                                objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
                                                                binder().bind(ObjectMapper.class).toInstance(objectMapper);
+
+                                                               bind(MetricRegistry.class).to(NoOpMetricRegistry.class).asEagerSingleton();
                                                            }
                                                        });
         final Server server = startServer(injector);
 
-        final AsyncHttpClient client = new DefaultAsyncHttpClient();
-        Future<Response> responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/1.0/ping").execute();
-        String body = responseFuture.get().getResponseBody();
-        Assert.assertEquals(body, "pong\n");
+        final HttpClient client = HttpClient.newHttpClient();
 
+        // Verify healthcheck integration
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/1.0/healthcheck")).build();
+        String body = client.send(request, BodyHandlers.ofString()).body();
+        final Map<String, Map<String, ?>> deserializedChecks = injector.getInstance(ObjectMapper.class).readValue(body, new TypeReference<>() {});
+        Assert.assertEquals(deserializedChecks.get("org.killbill.commons.skeleton.modules.TestJerseyBaseServerModule$TestHealthCheck").get("healthy"), true);
+        Assert.assertEquals(deserializedChecks.get("org.killbill.commons.skeleton.modules.TestJerseyBaseServerModule$TestHealthCheck").get("message"), "this is working");
+
+        // Verify metrics integration
         final MetricRegistry metricRegistry = injector.getInstance(MetricRegistry.class);
         Assert.assertEquals(metricRegistry.getMetrics().size(), 0);
 
@@ -74,15 +90,20 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
 
         // Do multiple passes to verify Singleton pattern
         for (int i = 0; i < 5; i++) {
-            responseFuture = client.prepareGet("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/").execute();
-            body = responseFuture.get().getResponseBody();
+            request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello/alhuile/")).build();
+            body = client.send(request, BodyHandlers.ofString()).body();
             Assert.assertEquals(body, "Hello alhuile");
             Assert.assertEquals(HelloFilter.invocations, i + 1);
         }
 
-        responseFuture = client.preparePost("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello").execute();
-        body = responseFuture.get().getResponseBody();
-        Assert.assertEquals(body, "{\"key\":\"hello\",\"date\":\"2010-01-01\"}");
+        request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + ((NetworkConnector) server.getConnectors()[0]).getPort() + "/hello")).POST(HttpRequest.BodyPublishers.noBody()).build();
+        body = client.send(request, BodyHandlers.ofString()).body();
+
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final JsonNode node = objectMapper.readTree(body);
+
+        Assert.assertEquals(node.get("key").textValue(), "hello");
+        Assert.assertEquals(node.get("date").textValue(), "2010-01-01");
 
         Assert.assertEquals(metricRegistry.getMetrics().size(), 2);
         Assert.assertNotNull(metricRegistry.getMetrics().get("kb_resource.hello.hello.POST.2xx.200"));
@@ -94,7 +115,7 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
     public void testJerseyParams() throws Exception {
         final BaseServerModuleBuilder builder1 = new BaseServerModuleBuilder();
         final JerseyBaseServerModule module1 = (JerseyBaseServerModule) builder1.build();
-        final Map<String, String> jerseyParams1 = module1.getJerseyParams().build();
+        final Map<String, String> jerseyParams1 = module1.getJerseyParams();
         Assert.assertEquals(jerseyParams1.size(), 2);
         Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "HEADERS_ONLY");
         Assert.assertEquals(jerseyParams1.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "INFO");
@@ -104,10 +125,18 @@ public class TestJerseyBaseServerModule extends AbstractBaseServerModuleTest {
                 .addJerseyParam(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL, "FINE")
                 .addJerseyParam("foo", "qux");
         final JerseyBaseServerModule module2 = (JerseyBaseServerModule) builder2.build();
-        final Map<String, String> jerseyParams2 = module2.getJerseyParams().build();
+        final Map<String, String> jerseyParams2 = module2.getJerseyParams();
         Assert.assertEquals(jerseyParams2.size(), 3);
         Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_VERBOSITY), "PAYLOAD_TEXT");
         Assert.assertEquals(jerseyParams2.get(JerseyBaseServerModule.JERSEY_LOGGING_LEVEL), "FINE");
         Assert.assertEquals(jerseyParams2.get("foo"), "qux");
+    }
+
+    private static class TestHealthCheck implements HealthCheck {
+
+        @Override
+        public Result check() throws Exception {
+            return new HealthyResultBuilder().setMessage("this is working").createHealthyResult();
+        }
     }
 }

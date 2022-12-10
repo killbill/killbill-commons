@@ -26,6 +26,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.killbill.commons.concurrent.Executors;
+import org.killbill.commons.metrics.api.Gauge;
+import org.killbill.commons.metrics.api.Histogram;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.QueueLifecycle;
 import org.killbill.queue.dao.EventEntryModelDao;
@@ -33,11 +37,9 @@ import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
@@ -53,7 +55,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     private static final int MAX_COMPLETED_ENTRIES = 15;
 
     protected final String svcQName;
-    protected final ObjectMapper objectMapper;
+    protected final ObjectReader objectReader;
+    protected final ObjectWriter objectWriter;
     protected final PersistentQueueConfig config;
     private final LinkedBlockingQueue<EventEntryModelDao> completedOrFailedEvents;
     private final LinkedBlockingQueue<EventEntryModelDao> retriedEvents;
@@ -72,6 +75,8 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
     private ExecutorService lifecycleDispatcherExecutor;
     private ExecutorService lifecycleCompletionExecutor;
 
+    protected final Gauge<Integer> completedOrFailedEventsGauge;
+
     public DefaultQueueLifecycle(final String svcQName,
                                  final PersistentQueueConfig config,
                                  final MetricRegistry metricRegistry) {
@@ -86,18 +91,19 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
         this.config = config;
         this.isDispatchingEvents = false;
         this.isCompletingEvents = false;
-        this.objectMapper = objectMapper;
+        this.objectReader = objectMapper.reader();
+        this.objectWriter = objectMapper.writer();
         this.completedOrFailedEvents = new LinkedBlockingQueue<>();
         this.retriedEvents = new LinkedBlockingQueue<>();
         this.isStickyEvent = config.getPersistentQueueMode() == PersistentQueueConfig.PersistentQueueMode.STICKY_EVENTS;
 
-        this.dispatchTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchTime"));
-        this.completeTime = metricRegistry.timer(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeTime"));
+        this.dispatchTime = metricRegistry.timer(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "dispatchTime"));
+        this.completeTime = metricRegistry.timer(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completeTime"));
 
-        this.dispatchedEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "dispatchedEntries"));
-        this.completeEntries = metricRegistry.histogram(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completeEntries"));
+        this.dispatchedEntries = metricRegistry.histogram(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "dispatchedEntries"));
+        this.completeEntries = metricRegistry.histogram(String.format("%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completeEntries"));
 
-        metricRegistry.register(MetricRegistry.name(DefaultQueueLifecycle.class, svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
+        this.completedOrFailedEventsGauge = metricRegistry.gauge(String.format("%s.%s.%s.%s", DefaultQueueLifecycle.class.getName(), svcQName, "completedOrFailedEvents", "size"), new Gauge<Integer>() {
             @Override
             public Integer getValue() {
                 return completedOrFailedEvents.size();
@@ -174,8 +180,12 @@ public abstract class DefaultQueueLifecycle implements QueueLifecycle {
 
     public abstract void doProcessRetriedEvents(final Iterable<? extends EventEntryModelDao> retried);
 
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
+    public ObjectReader getObjectReader() {
+        return objectReader;
+    }
+
+    public ObjectWriter getObjectWriter() {
+        return objectWriter;
     }
 
     public static class DispatchResultMetrics {

@@ -20,13 +20,12 @@
 
 package org.killbill.automaton;
 
+import org.killbill.commons.utils.io.Resources;
 import org.killbill.xmlloader.XMLLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import com.google.common.io.Resources;
 
 public class TestStateMachine {
 

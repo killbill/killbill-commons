@@ -22,6 +22,7 @@ package org.killbill.commons.jdbi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Matcher;
 
@@ -31,10 +32,8 @@ import org.antlr.stringtemplate.language.AngleBracketTemplateLexer;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.StatementLocator;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.BaseEncoding;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 // Similar to StringTemplate3StatementLocator, but safe to use in conjunction with dbi#setStatementLocator
 public class ReusableStringTemplate3StatementLocator implements StatementLocator {
@@ -95,7 +94,7 @@ public class ReusableStringTemplate3StatementLocator implements StatementLocator
             return sql;
         } else if (treatLiteralsAsTemplates) {
             // no template in the template group, but we want literals to be templates
-            final String key = BaseEncoding.base64().encode(name.getBytes(Charsets.US_ASCII));
+            final String key = Base64.getEncoder().encodeToString(name.getBytes(US_ASCII));
             if (!literals.isDefined(key)) {
                 literals.defineTemplate(key, name);
             }

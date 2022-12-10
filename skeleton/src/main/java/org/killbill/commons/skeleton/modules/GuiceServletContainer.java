@@ -17,6 +17,8 @@
 
 package org.killbill.commons.skeleton.modules;
 
+import java.util.Set;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.ServletException;
@@ -31,14 +33,11 @@ import org.glassfish.jersey.servlet.WebConfig;
 import org.glassfish.jersey.spi.ExceptionMappers;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.utils.Strings;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 
@@ -69,12 +68,11 @@ public class GuiceServletContainer extends ServletContainer {
         // Metrics integration
         final String scannedResourcePackagesString = webConfig.getInitParameter(ServerProperties.PROVIDER_PACKAGES);
         if (Strings.emptyToNull(scannedResourcePackagesString) != null) {
-            final ImmutableSet<String> scannedResourcePackages = ImmutableSet.<String>copyOf(Splitter.on(CharMatcher.anyOf(" ,;\n"))
-                                                                                                     .split(scannedResourcePackagesString));
+            final Set<String> scannedResourcePackages = Set.of(scannedResourcePackagesString.split("[ ,;\n]"));
             ServiceLocatorUtilities.addOneConstant(serviceLocator,
                                                    new TimedInterceptionService(scannedResourcePackages,
                                                                                 // From HK2
-                                                                                injectionManager.<ExceptionMappers>getInstance(ExceptionMappers.class),
+                                                                                injectionManager.getInstance(ExceptionMappers.class),
                                                                                 // From Guice
                                                                                 injector.getInstance(MetricRegistry.class)));
         }
@@ -84,7 +82,7 @@ public class GuiceServletContainer extends ServletContainer {
         if (hasObjectMapperBinding) {
             // JacksonJsonProvider is constructed by HK2, but we need to inject the ObjectMapper we constructed via Guice
             final ObjectMapper objectMapper = injector.getInstance(ObjectMapper.class);
-            for (final MessageBodyWriter messageBodyWriter : injectionManager.<MessageBodyWriter>getAllInstances(MessageBodyWriter.class)) {
+            for (final MessageBodyWriter<?> messageBodyWriter : injectionManager.<MessageBodyWriter<?>>getAllInstances(MessageBodyWriter.class)) {
                 if (messageBodyWriter instanceof JacksonJsonProvider) {
                     ((JacksonJsonProvider) messageBodyWriter).setMapper(objectMapper);
                     break;

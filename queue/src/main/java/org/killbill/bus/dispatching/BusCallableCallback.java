@@ -24,17 +24,16 @@ import org.killbill.CreatorName;
 import org.killbill.bus.DefaultPersistentBus;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.dao.BusEventModelDao;
+import org.killbill.commons.eventbus.EventBusException;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dispatching.CallableCallbackBase;
-
-import com.google.common.eventbus.EventBusException;
 
 public class BusCallableCallback extends CallableCallbackBase<BusEvent, BusEventModelDao> {
 
     private final DefaultPersistentBus parent;
 
     public BusCallableCallback(final DefaultPersistentBus parent) {
-        super(parent.getDao(), parent.getClock(), parent.getConfig(), parent.getObjectMapper());
+        super(parent.getDao(), parent.getClock(), parent.getConfig(), parent.getObjectReader());
         this.parent = parent;
     }
 

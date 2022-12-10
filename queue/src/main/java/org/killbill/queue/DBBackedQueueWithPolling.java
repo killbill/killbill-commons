@@ -19,14 +19,16 @@
 
 package org.killbill.queue;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.queue.api.PersistentQueueConfig;
 import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
@@ -35,13 +37,6 @@ import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.Transaction;
 import org.skife.jdbi.v2.TransactionStatus;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBackedQueue<T> {
 
@@ -73,14 +68,14 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
     @Override
     public ReadyEntriesWithMetrics<T> getReadyEntries() {
         final long ini = System.nanoTime();
-        final List<T> claimedEntries = executeTransaction(new Transaction<List<T>, QueueSqlDao<T>>() {
+        final List<T> claimedEntries = executeTransaction(new Transaction<>() {
             @Override
             public List<T> inTransaction(final QueueSqlDao<T> queueSqlDao, final TransactionStatus status) throws Exception {
                 final DateTime now = clock.getUTCNow();
 
                 final List<T> entriesToClaim = fetchReadyEntries(now, config.getMaxEntriesClaimed(), queueSqlDao);
 
-                List<T> claimedEntries = ImmutableList.of();
+                List<T> claimedEntries = Collections.emptyList();
                 if (!entriesToClaim.isEmpty()) {
                     log.debug("{} Entries to claim: {}", DB_QUEUE_LOG_ID, entriesToClaim);
                     claimedEntries = claimEntries(now, entriesToClaim, queueSqlDao);
@@ -137,18 +132,15 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
 
     private List<T> batchClaimEntries(final DateTime utcNow, final List<T> candidates, final QueueSqlDao<T> queueSqlDao) {
         if (candidates.isEmpty()) {
-            return ImmutableList.of();
+            return Collections.emptyList();
         }
 
         final Date now = utcNow.toDate();
         final Date nextAvailable = utcNow.plus(config.getClaimedTime().getMillis()).toDate();
         final String owner = CreatorName.get();
-        final Collection<Long> recordIds = Collections2.transform(candidates, new Function<T, Long>() {
-            @Override
-            public Long apply(final T input) {
-                return input == null ? Long.valueOf(-1) : input.getRecordId();
-            }
-        });
+        final List<Long> recordIds = candidates.stream()
+                .map(input -> input == null ? Long.valueOf( -1L) : input.getRecordId())
+                .collect(Collectors.toUnmodifiableList());
 
         final long ini = System.nanoTime();
         final int resultCount = queueSqlDao.claimEntries(recordIds, owner, nextAvailable, config.getTableName());
@@ -161,7 +153,7 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
                       DB_QUEUE_LOG_ID, recordIds, now, nextAvailable, owner, candidates);
             return candidates;
         } else {
-            final List<T> maybeClaimedEntries = queueSqlDao.getEntriesFromIds(ImmutableList.copyOf(recordIds), config.getTableName());
+            final List<T> maybeClaimedEntries = queueSqlDao.getEntriesFromIds(recordIds, config.getTableName());
             final StringBuilder stringBuilder = new StringBuilder();
             for (int i = 0; i < maybeClaimedEntries.size(); i++) {
                 final T eventEntryModelDao = maybeClaimedEntries.get(i);
@@ -177,13 +169,11 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
             log.warn("{} batchClaimEntries only claimed partial entries {}/{} (now={}, nextAvailable={}, owner={}): {}",
                      DB_QUEUE_LOG_ID, resultCount, candidates.size(), now, nextAvailable, owner, stringBuilder.toString());
 
-            final Iterable<T> claimed = Iterables.<T>filter(maybeClaimedEntries, new Predicate<T>() {
-                @Override
-                public boolean apply(final T input) {
-                    return input != null && input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING && owner.equals(input.getProcessingOwner());
-                }
-            });
-            return ImmutableList.<T>copyOf(claimed);
+            return maybeClaimedEntries.stream()
+                    .filter(input -> input != null &&
+                                     input.getProcessingState() == PersistentQueueEntryLifecycleState.IN_PROCESSING &&
+                                     owner.equals(input.getProcessingOwner()))
+                    .collect(Collectors.toUnmodifiableList());
         }
     }
 
@@ -192,12 +182,9 @@ public class DBBackedQueueWithPolling<T extends EventEntryModelDao> extends DBBa
     // but we are looking for performance and that does not the right choice.
     //
     private List<T> sequentialClaimEntries(final DateTime now, final List<T> candidates, final QueueSqlDao<T> queueSqlDao) {
-        return ImmutableList.<T>copyOf(Collections2.filter(candidates, new Predicate<T>() {
-            @Override
-            public boolean apply(final T input) {
-                return claimEntry(now, input, queueSqlDao);
-            }
-        }));
+        return candidates.stream()
+                .filter(input -> claimEntry(now, input, queueSqlDao))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private boolean claimEntry(final DateTime now, final T entry, final QueueSqlDao<T> queueSqlDao) {

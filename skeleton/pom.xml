@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-skeleton</artifactId>
@@ -34,6 +34,10 @@
         <dependency>
             <groupId>aopalliance</groupId>
             <artifactId>aopalliance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -51,23 +55,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <scope>provided</scope>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <!-- Needed by jmxutils -->
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-multibindings</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -76,30 +69,14 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.palominolabs.metrics</groupId>
-            <artifactId>metrics-guice</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-healthchecks</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-servlet</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-servlets</artifactId>
-            <optional>true</optional>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
@@ -111,18 +88,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.asynchttpclient</groupId>
-            <artifactId>async-http-client</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -132,6 +99,11 @@
                 <exclusion>
                     <groupId>org.eclipse.jetty.orbit</groupId>
                     <artifactId>javax.servlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- https://github.com/eclipse/jetty.project/issues/5943 (somehow not properly inherited in the verify phase) -->
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -173,6 +145,15 @@
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

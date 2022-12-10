@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-queue</artifactId>
@@ -48,16 +48,8 @@
             <artifactId>jackson-datatype-joda</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -70,20 +62,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.airlift</groupId>
+            <groupId>org.kill-bill.testing</groupId>
             <artifactId>testing-mysql-server</artifactId>
-            <!-- Technically, test-runtime -->
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>testing-postgresql-server</artifactId>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
             <!-- Technically, test-runtime -->
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.inject</groupId>
@@ -105,18 +92,12 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.influxdb</groupId>
-            <artifactId>influxdb-java</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- Just need killbill-api for the QueueRetryException exception -->
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
             <artifactId>killbill-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-clock</artifactId>
@@ -166,6 +147,14 @@
             <artifactId>killbill-jdbi</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -179,7 +168,6 @@
             <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>

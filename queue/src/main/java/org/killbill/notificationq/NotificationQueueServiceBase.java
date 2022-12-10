@@ -23,13 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.killbill.clock.Clock;
+import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.notificationq.api.NotificationQueueService;
 import org.skife.jdbi.v2.IDBI;
-
-import com.codahale.metrics.MetricRegistry;
-
 
 public abstract class NotificationQueueServiceBase extends NotificationQueueDispatcher implements NotificationQueueService {
 

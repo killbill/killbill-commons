@@ -19,7 +19,7 @@
 
 package org.killbill.commons.jdbi.notification;
 
-import com.google.common.eventbus.EventBus;
+import org.killbill.commons.eventbus.EventBus;
 
 public class DatabaseTransactionNotificationApi {
 

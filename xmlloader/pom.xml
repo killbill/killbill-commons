@@ -22,23 +22,23 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-xmlloader</artifactId>
     <name>Kill Bill xml utils for loading jaxb xml object tree</name>
+    <properties>
+        <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+    </properties>
     <dependencies>
-        <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -54,6 +54,10 @@
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

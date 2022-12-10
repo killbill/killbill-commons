@@ -20,6 +20,7 @@
 package org.skife.jdbi.v2.sqlobject;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.h2.jdbcx.JdbcDataSourceBackwardsCompat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.skife.jdbi.v2.sqlobject.customizers.TransactionIsolation;
 import org.skife.jdbi.v2.sqlobject.mixins.Transactional;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -43,7 +45,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.collect.ImmutableSet;
+import javax.naming.Referenceable;
+import javax.sql.ConnectionPoolDataSource;
+import javax.sql.DataSource;
+import javax.sql.XADataSource;
 
 @Category(JDBITests.class)
 public class TestDoublyTransactional
@@ -79,17 +84,22 @@ public class TestDoublyTransactional
     @Before
     public void setUp() throws Exception
     {
-        final JdbcDataSource ds = new JdbcDataSource() {
-            private static final long serialVersionUID = 1L;
+        final JdbcDataSource realDs = new JdbcDataSource();
+        realDs.setURL(String.format("jdbc:h2:mem:%s", UUID.randomUUID()));
 
-            @Override
-            public Connection getConnection() throws SQLException
-            {
-                final Connection real = super.getConnection();
-                return (Connection) Proxy.newProxyInstance(real.getClass().getClassLoader(), new Class<?>[] {Connection.class}, new TxnIsolationCheckingInvocationHandler(real));
-            }
-        };
-        ds.setURL(String.format("jdbc:h2:mem:%s", UUID.randomUUID()));
+        final DataSource ds = (DataSource) Proxy.newProxyInstance(realDs.getClass().getClassLoader(),
+                                                                  new Class<?>[]{XADataSource.class, DataSource.class, ConnectionPoolDataSource.class, Serializable.class, Referenceable.class, JdbcDataSourceBackwardsCompat.class},
+                                                                  new InvocationHandler() {
+                                                                      @Override
+                                                                      public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+                                                                          if ("getConnection".equals(method.getName())) {
+                                                                              final Connection real = realDs.getConnection();
+                                                                              return Proxy.newProxyInstance(real.getClass().getClassLoader(), new Class<?>[]{Connection.class}, new TxnIsolationCheckingInvocationHandler(real));
+                                                                          } else {
+                                                                              return method.invoke(realDs, args);
+                                                                          }
+                                                                      }
+                                                                  });
         dbi = new DBI(ds);
 
         dbi.registerMapper(new SomethingMapper());
@@ -109,7 +119,7 @@ public class TestDoublyTransactional
     private static final Set<Method> CHECKED_METHODS;
     static {
         try {
-            CHECKED_METHODS = ImmutableSet.of(Connection.class.getMethod("setTransactionIsolation", int.class));
+            CHECKED_METHODS = Set.of(Connection.class.getMethod("setTransactionIsolation", int.class));
         } catch (final Exception e) {
             throw new ExceptionInInitializerError(e);
         }

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-embeddeddb</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-postgresql</artifactId>
@@ -31,11 +31,6 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.airlift</groupId>
@@ -48,8 +43,17 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-embeddeddb-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

@@ -19,6 +19,7 @@
 
 package org.killbill.notificationq;
 
+import java.util.Map;
 import java.util.Properties;
 
 import javax.inject.Inject;
@@ -27,6 +28,8 @@ import javax.sql.DataSource;
 
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.queue.InTransaction;
@@ -34,9 +37,6 @@ import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableMap;
 
 /**
  * A factory to create notification queues.
@@ -68,8 +68,8 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
     public DefaultNotificationQueueService(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource),
              new DefaultClock(),
-             new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, ImmutableMap.<String, String>of("instanceName", "main")),
-             new MetricRegistry());
+             new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, Map.of("instanceName", "main")),
+             new NoOpMetricRegistry());
     }
 
     @Override

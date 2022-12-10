@@ -22,11 +22,13 @@ package org.killbill.bus;
 import java.sql.Connection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -44,9 +46,14 @@ import org.killbill.bus.dao.PersistentBusSqlDao;
 import org.killbill.bus.dispatching.BusCallableCallback;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
+import org.killbill.commons.eventbus.EventBus;
 import org.killbill.commons.jdbi.notification.DatabaseTransactionNotificationApi;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.Timer;
+import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
 import org.killbill.commons.profiling.Profiling;
 import org.killbill.commons.profiling.ProfilingFeature;
+import org.killbill.commons.utils.collect.Iterables;
 import org.killbill.queue.DBBackedQueue;
 import org.killbill.queue.DBBackedQueue.ReadyEntriesWithMetrics;
 import org.killbill.queue.DBBackedQueueWithInflightQueue;
@@ -57,28 +64,22 @@ import org.killbill.queue.api.PersistentQueueConfig.PersistentQueueMode;
 import org.killbill.queue.api.QueueEvent;
 import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
-import org.killbill.queue.dispatching.CallableCallbackBase;
 import org.killbill.queue.dispatching.Dispatcher;
+import org.killbill.queue.dispatching.EventEntryDeserializer;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.eventbus.EventBusThatThrowsException;
 
 public class DefaultPersistentBus extends DefaultQueueLifecycle implements PersistentBus {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultPersistentBus.class);
 
     private final DBI dbi;
-    private final EventBusThatThrowsException eventBusDelegate;
+    private final EventBus eventBusDelegate;
     private final DBBackedQueue<BusEventModelDao> dao;
     private final Clock clock;
     private final PersistentBusConfig config;
@@ -96,7 +97,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
     private final BusCallableCallback busCallableCallback;
 
-    private static final class EventBusDelegate extends EventBusThatThrowsException {
+    private static final class EventBusDelegate extends EventBus {
 
         public EventBusDelegate(final String busName) {
             super(busName);
@@ -111,10 +112,10 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         this.config = config;
         this.dbBackedQId = config.getTableName();
         this.dao = config.getPersistentQueueMode() == PersistentQueueMode.STICKY_EVENTS ?
-                   new DBBackedQueueWithInflightQueue<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi) :
-                   new DBBackedQueueWithPolling<BusEventModelDao>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry);
+                   new DBBackedQueueWithInflightQueue<>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry, databaseTransactionNotificationApi) :
+                   new DBBackedQueueWithPolling<>(clock, dbi, PersistentBusSqlDao.class, config, dbBackedQId, metricRegistry);
 
-        this.prof = new Profiling<Iterable<BusEventModelDao>, RuntimeException>();
+        this.prof = new Profiling<>();
         final ThreadFactory busThreadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
@@ -124,7 +125,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
             }
         };
 
-        this.busHandlersProcessingTime = metricRegistry.timer(MetricRegistry.name(DefaultPersistentBus.class, dbBackedQId, "busHandlersProcessingTime"));
+        this.busHandlersProcessingTime = metricRegistry.timer(String.format("%s.%s.%s", DefaultPersistentBus.class.getName(), dbBackedQId, "busHandlersProcessingTime"));
 
         this.eventBusDelegate = new EventBusDelegate("Killbill EventBus");
         this.isInitialized = new AtomicBoolean(false);
@@ -138,7 +139,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
                                            TimeUnit.MINUTES,
                                            config.getShutdownTimeout().getPeriod(),
                                            config.getShutdownTimeout().getUnit(),
-                                           new LinkedBlockingQueue<Runnable>(config.getEventQueueCapacity()),
+                                           new LinkedBlockingQueue<>(config.getEventQueueCapacity()),
                                            busThreadFactory,
                                            new BlockingRejectionExecutionHandler(),
                                            clock,
@@ -148,10 +149,12 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
-        this(InTransaction.buildDDBI(dataSource), new DefaultClock(), new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, ImmutableMap.<String, String>of("instanceName", "main")),
-             new MetricRegistry(), new DatabaseTransactionNotificationApi());
+        this(InTransaction.buildDDBI(dataSource),
+             new DefaultClock(),
+             new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, Map.of("instanceName", "main")),
+             new NoOpMetricRegistry(),
+             new DatabaseTransactionNotificationApi());
     }
-
 
     @Override
     public boolean initQueue() {
@@ -281,7 +284,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public void post(final BusEvent event) throws EventBusException {
         try {
             if (isInitialized.get()) {
-                final String json = objectMapper.writeValueAsString(event);
+                final String json = objectWriter.writeValueAsString(event);
                 final BusEventModelDao entry = new BusEventModelDao(CreatorName.get(), clock.getUTCNow(), event.getClass().getName(), json,
                                                                     event.getUserToken(), event.getSearchKey1(), event.getSearchKey2());
                 dao.insertEntry(entry);
@@ -303,7 +306,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
 
         final String json;
         try {
-            json = objectMapper.writeValueAsString(event);
+            json = objectWriter.writeValueAsString(event);
         } catch (final JsonProcessingException e) {
             log.warn("Unable to serialize event " + event, e);
             return;
@@ -421,12 +424,12 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
         return sb.toString();
     }
 
-    public void dispatchBusEventWithMetrics(final QueueEvent event) throws com.google.common.eventbus.EventBusException {
-        final Timer.Context dispatchTimerContext = busHandlersProcessingTime.time();
+    public void dispatchBusEventWithMetrics(final QueueEvent event) throws org.killbill.commons.eventbus.EventBusException {
+        final long ini = System.nanoTime();
         try {
             eventBusDelegate.postWithException(event);
         } finally {
-            dispatchTimerContext.stop();
+            busHandlersProcessingTime.update(System.nanoTime() - ini, TimeUnit.NANOSECONDS);
         }
     }
 
@@ -494,23 +497,17 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     }
 
     private <T extends BusEvent> Iterable<BusEventWithMetadata<T>> toBusEventWithMetadata(final Iterable<BusEventModelDao> entries) {
-        return Iterables.<BusEventModelDao, BusEventWithMetadata<T>>transform(entries,
-                                                                              new Function<BusEventModelDao, BusEventWithMetadata<T>>() {
-                                                                                  @Override
-                                                                                  public BusEventWithMetadata<T> apply(final BusEventModelDao input) {
-                                                                                      return toBusEventWithMetadata(input);
-                                                                                  }
-                                                                              });
-    }
-
-    private <T extends BusEvent> BusEventWithMetadata<T> toBusEventWithMetadata(final BusEventModelDao entry) {
-        final T event = CallableCallbackBase.deserializeEvent(entry, objectMapper);
-        return new BusEventWithMetadata<T>(entry.getRecordId(),
-                                           entry.getUserToken(),
-                                           entry.getCreatedDate(),
-                                           entry.getSearchKey1(),
-                                           entry.getSearchKey2(),
-                                           event);
+        return Iterables.toStream(entries)
+                .map(entry -> {
+                    final T event = EventEntryDeserializer.deserialize(entry, objectReader);
+                    return new BusEventWithMetadata<T>(entry.getRecordId(),
+                                                       entry.getUserToken(),
+                                                       entry.getCreatedDate(),
+                                                       entry.getSearchKey1(),
+                                                       entry.getSearchKey2(),
+                                                       event);
+                })
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public DBBackedQueue<BusEventModelDao> getDao() {

@@ -20,33 +20,34 @@
 package org.killbill.commons.skeleton.modules;
 
 import java.lang.management.ManagementFactory;
+import java.util.Collections;
+import java.util.List;
 
 import javax.management.MBeanServer;
 
 import org.weakref.jmx.guice.ExportBinder;
 import org.weakref.jmx.guice.MBeanModule;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 
 public class JMXModule extends AbstractModule {
 
     // JMX beans to export
-    private final Iterable<Class> beans;
+    private final Iterable<Class<?>> beans;
 
     public JMXModule() {
-        this(ImmutableList.<Class>of());
+        this(Collections.emptyList());
     }
 
-    public JMXModule(final Class bean) {
-        this(ImmutableList.<Class>of(bean));
+    public JMXModule(final Class<?> bean) {
+        this(List.of(bean));
     }
 
-    public JMXModule(final Class... beans) {
-        this(ImmutableList.<Class>copyOf(beans));
+    public JMXModule(final Class<?>... beans) {
+        this(List.of(beans));
     }
 
-    public JMXModule(final Iterable<Class> beans) {
+    public JMXModule(final Iterable<Class<?>> beans) {
         this.beans = beans;
     }
 
@@ -58,7 +59,7 @@ public class JMXModule extends AbstractModule {
         install(new MBeanModule());
 
         final ExportBinder builder = ExportBinder.newExporter(binder());
-        for (final Class beanClass : beans) {
+        for (final Class<?> beanClass : beans) {
             builder.export(beanClass).withGeneratedName();
         }
     }

@@ -21,19 +21,18 @@ package org.killbill.commons.skeleton.modules;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
 import org.glassfish.jersey.server.ServerProperties;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
+import org.killbill.commons.utils.Joiner;
+import org.killbill.commons.utils.Strings;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 
 public class JerseyBaseServerModule extends BaseServerModule {
 
@@ -46,7 +45,7 @@ public class JerseyBaseServerModule extends BaseServerModule {
     protected final Collection<String> jerseyResourcesAndProvidersPackages;
     protected final Collection<String> jerseyResourcesAndProvidersClasses;
     // See org.glassfish.jersey.servlet.ServletProperties and org.glassfish.jersey.logging.LoggingFeature
-    protected final ImmutableMap.Builder<String, String> jerseyParams;
+    protected final Map<String, String> jerseyParams;
 
     public JerseyBaseServerModule(final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filters,
                                   final Map<String, ArrayList<Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex,
@@ -59,15 +58,15 @@ public class JerseyBaseServerModule extends BaseServerModule {
                                   final Collection<String> jerseyResourcesAndProvidersClasses,
                                   final Map<String, String> jerseyParams) {
         super(filters, filtersRegex, servlets, servletsRegex, jaxrsServlets, jaxrsServletsRegex, jaxrsUriPattern);
-        this.jerseyResourcesAndProvidersPackages = jerseyResourcesAndProvidersPackages;
-        this.jerseyResourcesAndProvidersClasses = jerseyResourcesAndProvidersClasses;
-        this.jerseyParams = new ImmutableMap.Builder<String, String>();
+        this.jerseyResourcesAndProvidersPackages = new ArrayList<>(jerseyResourcesAndProvidersPackages);
+        this.jerseyResourcesAndProvidersClasses = new ArrayList<>(jerseyResourcesAndProvidersClasses);
+        this.jerseyParams = new HashMap<>();
 
         // The LoggingFilter will log the body by default, which breaks StreamingOutput
-        final String jerseyLoggingVerbosity = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
-        final String jerseyLoggingLevel = MoreObjects.firstNonNull(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_LEVEL)), "INFO");
-        this.jerseyParams.put(JERSEY_LOGGING_VERBOSITY, jerseyLoggingVerbosity)
-                         .put(JERSEY_LOGGING_LEVEL, jerseyLoggingLevel);
+        final String jerseyLoggingVerbosity = Objects.requireNonNullElse(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_VERBOSITY)), "HEADERS_ONLY");
+        final String jerseyLoggingLevel = Objects.requireNonNullElse(Strings.emptyToNull(jerseyParams.remove(JERSEY_LOGGING_LEVEL)), "INFO");
+        this.jerseyParams.put(JERSEY_LOGGING_VERBOSITY, jerseyLoggingVerbosity);
+        this.jerseyParams.put(JERSEY_LOGGING_LEVEL, jerseyLoggingLevel);
 
         this.jerseyParams.putAll(jerseyParams);
     }
@@ -75,11 +74,11 @@ public class JerseyBaseServerModule extends BaseServerModule {
     @Override
     protected void configureResources() {
         for (final Entry<String, Class<? extends HttpServlet>> entry : jaxrsServlets.entrySet()) {
-            serve(entry.getKey()).with(entry.getValue(), jerseyParams.build());
+            serve(entry.getKey()).with(entry.getValue(), jerseyParams);
         }
 
         for (final Entry<String, Class<? extends HttpServlet>> entry : jaxrsServletsRegex.entrySet()) {
-            serveRegex(entry.getKey()).with(entry.getValue(), jerseyParams.build());
+            serveRegex(entry.getKey()).with(entry.getValue(), jerseyParams);
         }
 
         // Catch-all resources
@@ -92,11 +91,11 @@ public class JerseyBaseServerModule extends BaseServerModule {
 
     protected void serveJaxrsResources() {
         bind(GuiceServletContainer.class).asEagerSingleton();
-        serveRegex(jaxrsUriPattern).with(GuiceServletContainer.class, jerseyParams.build());
+        serveRegex(jaxrsUriPattern).with(GuiceServletContainer.class, jerseyParams);
     }
 
     @VisibleForTesting
-    ImmutableMap.Builder<String, String> getJerseyParams() {
+    Map<String, String> getJerseyParams() {
         return jerseyParams;
     }
 }

@@ -25,14 +25,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.clock.DefaultClock;
+import org.killbill.commons.utils.collect.Iterators;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.killbill.queue.dao.QueueSqlDao;
 import org.skife.jdbi.v2.Handle;
@@ -42,9 +42,6 @@ import org.skife.jdbi.v2.TransactionStatus;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterators;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -177,13 +174,9 @@ public class TestNotificationSqlDao extends TestSetup {
         notif3 = insertEntry(notif3, notificationQueueConfig.getTableName());
         entries.add(notif3);
 
-        final Collection<Long> entryIds = Collections2.transform(entries, new com.google.common.base.Function<NotificationEventModelDao, Long>() {
-            @Nullable
-            @Override
-            public Long apply(@Nullable final NotificationEventModelDao input) {
-                return input.getRecordId();
-            }
-        });
+        final Collection<Long> entryIds = entries.stream()
+                .map(NotificationEventModelDao::getRecordId)
+                .collect(Collectors.toUnmodifiableList());
 
         dao.removeEntries(entryIds, notificationQueueConfig.getTableName());
         for (final Long entry : entryIds) {

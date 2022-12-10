@@ -30,10 +30,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import org.joda.time.LocalDate;
-import org.killbill.commons.metrics.TimedResource;
+import org.killbill.commons.metrics.api.annotation.TimedResource;
 import org.testng.Assert;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 
 @Path("hello")
@@ -64,6 +63,6 @@ public class HelloResource {
     @POST
     @Produces("application/json")
     public Map<String, ?> hello() {
-        return ImmutableMap.<String, Object>of("key", "hello", "date", new LocalDate("2010-01-01"));
+        return Map.of("key", "hello", "date", new LocalDate("2010-01-01"));
     }
 }

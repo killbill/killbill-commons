@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-concurrent</artifactId>
@@ -31,16 +31,11 @@
         <dependency>
             <groupId>ch.qos.reload4j</groupId>
             <artifactId>reload4j</artifactId>
-            <version>1.2.19</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -54,7 +49,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <!-- Cannot use slf4j-simple with the way our tests are written today -->
-            <artifactId>slf4j-log4j12</artifactId>
+            <artifactId>slf4j-reload4j</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>

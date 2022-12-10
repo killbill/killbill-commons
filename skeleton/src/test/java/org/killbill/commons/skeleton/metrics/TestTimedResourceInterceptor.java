@@ -22,6 +22,7 @@ package org.killbill.commons.skeleton.metrics;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -32,17 +33,17 @@ import javax.ws.rs.core.Response;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.glassfish.hk2.api.InterceptionService;
 import org.glassfish.jersey.spi.ExceptionMappers;
-import org.killbill.commons.metrics.MetricTag;
-import org.killbill.commons.metrics.TimedResource;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.api.annotation.MetricTag;
+import org.killbill.commons.metrics.api.annotation.TimedResource;
+import org.killbill.commons.metrics.api.Timer;
+import org.killbill.commons.metrics.dropwizard.KillBillCodahaleMetricRegistry;
 import org.killbill.commons.skeleton.modules.TimedInterceptionService;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -195,10 +196,10 @@ public class TestTimedResourceInterceptor {
         @Override
         protected void configure() {
             bind(TestResource.class).asEagerSingleton();
-            final MetricRegistry metricRegistry = new MetricRegistry();
+            final MetricRegistry metricRegistry = new KillBillCodahaleMetricRegistry();
             bind(MetricRegistry.class).toInstance(metricRegistry);
 
-            final InterceptionService timedInterceptionService = new TimedInterceptionService(ImmutableSet.<String>of(this.getClass().getPackage().getName()),
+            final InterceptionService timedInterceptionService = new TimedInterceptionService(Set.of(this.getClass().getPackage().getName()),
                                                                                               Mockito.mock(ExceptionMappers.class),
                                                                                               metricRegistry);
             bindListener(Matchers.any(), new TypeListener() {

@@ -85,7 +85,7 @@ public @interface SmartFetchSize {
 
     public static final class SmartFetchSizeCustomizer extends BaseStatementCustomizer {
 
-        // Shared name across drivers, see org.mariadb.jdbc.MySQLDatabaseMetaData and com.mysql.jdbc.DatabaseMetaData
+        // Shared name across drivers, see org.mariadb.jdbc.DatabaseMetaData and com.mysql.jdbc.DatabaseMetaData
         private static final String MYSQL = "MySQL";
 
         private final int fetchSize;
@@ -104,13 +104,19 @@ public @interface SmartFetchSize {
                     ctx.getConnection() != null &&
                     ctx.getConnection().getMetaData() != null &&
                     MYSQL.equalsIgnoreCase(ctx.getConnection().getMetaData().getDatabaseProductName())) {
-                    try {
-                        // Magic value to force MySQL to stream from the database
-                        // See http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-implementation-notes.html (ResultSet)
-                        stmt.setFetchSize(Integer.MIN_VALUE);
-                    } catch (final SQLException e) {
-                        // Shouldn't happen? The exception will be logged by log4jdbc
-                        stmt.setFetchSize(0);
+                    // The Integer.MIN_VALUE hint isn't supported by MariaDB anymore
+                    if (ctx.getConnection().getMetaData().getDriverName().startsWith("MariaDB")) {
+                        // See https://mariadb.com/kb/en/about-mariadb-connector-j/#streaming-result-sets and org.mariadb.jdbc.message.ClientMessage#readPacket
+                        stmt.setFetchSize(1);
+                    } else {
+                        try {
+                            // Magic value to force MySQL to stream from the database
+                            // See https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-implementation-notes.html (ResultSet)
+                            stmt.setFetchSize(Integer.MIN_VALUE);
+                        } catch (final SQLException e) {
+                            // Shouldn't happen? The exception will be logged by log4jdbc
+                            stmt.setFetchSize(0);
+                        }
                     }
                 } else {
                     // Other engines (H2, PostgreSQL, etc.)

@@ -23,10 +23,12 @@ package org.killbill;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
+import org.killbill.commons.utils.Strings;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 
 public class CreatorName {
+
+    private static final Object lock = new Object();
 
     // Allow to override the default naming based on Hostname
     static final String QUEUE_CREATOR_NAME = "org.killbill.queue.creator.name";
@@ -35,7 +37,7 @@ public class CreatorName {
 
     public static String get() {
         if (creatorName == null) {
-            synchronized (CreatorName.class) {
+            synchronized (lock) {
                 String tmpCreatorName = System.getProperty(QUEUE_CREATOR_NAME);
                 if (Strings.emptyToNull(tmpCreatorName) == null) {
                     try {

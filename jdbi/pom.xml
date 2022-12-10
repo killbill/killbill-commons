@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-jdbi</artifactId>
@@ -34,36 +34,17 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml</groupId>
             <artifactId>classmate</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <optional>true</optional>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.mchange</groupId>
-            <artifactId>c3p0</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -78,16 +59,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-healthchecks</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -100,14 +73,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
@@ -124,18 +96,13 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-jexl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.derby</groupId>
-            <artifactId>derby</artifactId>
+            <artifactId>derbytools</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -147,12 +114,6 @@
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>cglib</groupId>
-                    <artifactId>cglib-nodep</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -188,6 +149,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
             <scope>test</scope>
@@ -209,16 +178,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-mock</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -261,6 +220,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
+                        <version>3.0.0-M7</version>
                         <configuration>
                             <groups>org.skife.jdbi.v2.JDBITests</groups>
                             <excludes>
@@ -272,7 +232,7 @@
                             <dependency>
                                 <groupId>org.apache.maven.surefire</groupId>
                                 <artifactId>surefire-junit47</artifactId>
-                                <version>3.0.0-M5</version>
+                                <version>3.0.0-M7</version>
                             </dependency>
                         </dependencies>
                     </plugin>

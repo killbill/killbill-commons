@@ -20,6 +20,7 @@ package org.killbill.commons.skeleton.modules;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,11 +34,10 @@ import org.glassfish.hk2.api.Descriptor;
 import org.glassfish.hk2.api.Filter;
 import org.glassfish.hk2.api.InterceptionService;
 import org.glassfish.jersey.spi.ExceptionMappers;
-import org.killbill.commons.metrics.TimedResource;
+import org.killbill.commons.metrics.api.annotation.TimedResource;
 import org.killbill.commons.skeleton.metrics.TimedResourceInterceptor;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.collect.ImmutableList;
+import org.killbill.commons.metrics.api.MetricRegistry;
 
 @Singleton
 public class TimedInterceptionService implements InterceptionService {
@@ -49,7 +49,7 @@ public class TimedInterceptionService implements InterceptionService {
     public TimedInterceptionService(final Set<String> resourcePackage,
                                     final ExceptionMappers exceptionMappers,
                                     final MetricRegistry metricRegistry) {
-        this.resourcePackages = resourcePackage;
+        this.resourcePackages = new HashSet<>(resourcePackage);
         this.exceptionMappers = exceptionMappers;
         this.metricRegistry = metricRegistry;
     }
@@ -99,7 +99,7 @@ public class TimedInterceptionService implements InterceptionService {
                                                                                         resourcePath,
                                                                                         metricName,
                                                                                         httpMethod.value());
-        return ImmutableList.<MethodInterceptor>of(timedResourceInterceptor);
+        return List.of(timedResourceInterceptor);
     }
 
     private HttpMethod resourceHttpMethod(final Method method) {

@@ -32,8 +32,6 @@ import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * looks for [name], then [name].sql on the classpath
  */
@@ -80,7 +78,6 @@ public class ClasspathStatementLocator implements StatementLocator
      */
     @Override
     @SuppressWarnings("PMD.EmptyCatchBlock")
-    @SuppressFBWarnings({"DM_STRING_CTOR", "DE_MIGHT_IGNORE"})
     public String locate(String name, StatementContext ctx) throws Exception
     {
         final String cache_key;

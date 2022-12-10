@@ -19,6 +19,7 @@
 
 package org.killbill.bus;
 
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -31,6 +32,8 @@ import org.killbill.TestSetup;
 import org.killbill.bus.api.BusEvent;
 import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBusConfig;
+import org.killbill.commons.eventbus.AllowConcurrentEvents;
+import org.killbill.commons.eventbus.Subscribe;
 import org.skife.config.ConfigurationObjectFactory;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
@@ -45,9 +48,6 @@ import org.testng.annotations.Test;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
 
 public class TestLoadDefaultPersistentBus extends TestSetup {
 
@@ -69,7 +69,7 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
         properties.setProperty("org.killbill.persistent.bus.main.sleep", "0");
         properties.setProperty("org.killbill.persistent.bus.main.sticky", "true");
         properties.setProperty("org.killbill.persistent.bus.main.useInflightQ", "true");
-        final PersistentBusConfig busConfig = new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, ImmutableMap.<String, String>of("instanceName", "main"));
+        final PersistentBusConfig busConfig = new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, Map.of("instanceName", "main"));
 
         eventBus = new DefaultPersistentBus(dbi, clock, busConfig, metricRegistry, databaseTransactionNotificationApi);
     }

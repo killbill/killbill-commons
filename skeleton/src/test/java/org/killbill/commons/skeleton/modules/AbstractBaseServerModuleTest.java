@@ -27,13 +27,15 @@ import javax.servlet.ServletContextEvent;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.killbill.commons.health.api.HealthCheckRegistry;
+import org.killbill.commons.metrics.api.MetricRegistry;
+import org.killbill.commons.metrics.servlets.HealthCheckServlet;
+import org.killbill.commons.metrics.servlets.InstrumentedFilter;
+import org.killbill.commons.metrics.servlets.MetricsServlet;
 import org.testng.Assert;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.health.HealthCheckRegistry;
-import com.codahale.metrics.servlet.InstrumentedFilter;
-import com.codahale.metrics.servlets.HealthCheckServlet;
-import com.codahale.metrics.servlets.MetricsServlet;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -41,6 +43,10 @@ import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.GuiceServletContextListener;
 
 public abstract class AbstractBaseServerModuleTest {
+
+    final String metricsUri = "/1.0/metrics";
+    final String threadsUri = "/1.0/threads";
+    final String healthCheckUri = "/1.0/healthcheck";
 
     protected Server startServer(final Module... modules) throws Exception {
         final Injector injector = Guice.createInjector(modules);
@@ -60,11 +66,16 @@ public abstract class AbstractBaseServerModuleTest {
             public void contextInitialized(final ServletContextEvent servletContextEvent) {
                 super.contextInitialized(servletContextEvent);
 
-                // For Kill Bill, this is done in KillbillPlatformGuiceListener
-                final MetricRegistry metricRegistry = injector.getInstance(MetricRegistry.class);
-                servletContextEvent.getServletContext().setAttribute(HealthCheckServlet.HEALTH_CHECK_REGISTRY, injector.getInstance(HealthCheckRegistry.class));
-                servletContextEvent.getServletContext().setAttribute(MetricsServlet.METRICS_REGISTRY, metricRegistry);
-                servletContextEvent.getServletContext().setAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE, metricRegistry);
+                try {
+                    // For Kill Bill, this is done in KillbillPlatformGuiceListener
+                    final MetricRegistry metricRegistry = injector.getInstance(MetricRegistry.class);
+                    servletContextEvent.getServletContext().setAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE, metricRegistry);
+                    servletContextEvent.getServletContext().setAttribute(MetricsServlet.METRICS_REGISTRY, metricRegistry);
+                    servletContextEvent.getServletContext().setAttribute(MetricsServlet.OBJECT_MAPPER, injector.getInstance(ObjectMapper.class));
+                    servletContextEvent.getServletContext().setAttribute(HealthCheckServlet.HEALTH_CHECK_REGISTRY, injector.getInstance(HealthCheckRegistry.class));
+                } catch(final ConfigurationException ignored) {
+                    // No MetricRegistry binding (no StatsModule)
+                }
             }
         });
 

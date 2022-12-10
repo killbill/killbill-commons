@@ -19,11 +19,10 @@
  */
 package org.skife.jdbi.v2.sqlobject;
 
-import net.sf.cglib.proxy.MethodProxy;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 class HashCodeHandler implements Handler
 {
@@ -42,7 +41,7 @@ class HashCodeHandler implements Handler
     }
 
     @Override
-    public Object invoke(HandleDing h, Object target, Object[] args, MethodProxy mp)
+    public Object invoke(HandleDing h, Object target, Object[] args, Callable<?> methodProxy)
     {
         return System.identityHashCode(target);
     }

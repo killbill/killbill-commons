@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -50,12 +50,11 @@ import org.killbill.commons.embeddeddb.GenericStandaloneDB;
 import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.killbill.commons.embeddeddb.mysql.KillBillMariaDbDataSource;
 import org.killbill.commons.jdbi.guice.DataSourceProvider.DatabaseType;
-import org.mariadb.jdbc.util.Options;
+import org.mariadb.jdbc.Configuration;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool;
 
@@ -186,24 +185,9 @@ public class TestDataSourceProvider {
         assertTrue(wrappedDataSource instanceof KillBillMariaDbDataSource);
 
         final KillBillMariaDbDataSource mariaDbDataSource = (KillBillMariaDbDataSource) wrappedDataSource;
-        final Options options = mariaDbDataSource.initializeAndGetUrlParser().getOptions();
-        assertTrue(options.cachePrepStmts);
-        assertTrue(options.useServerPrepStmts);
-    }
-
-    @Test(groups = "fast")
-    public void testDataSourceProviderC3P0() throws Exception {
-        for (final DataSourceProvider.DatabaseType databaseType : DataSourceProvider.DatabaseType.values()) {
-            for (final boolean shouldUseMariaDB : new boolean[]{false, true}) {
-                final DaoConfig daoConfig = buildDaoConfig(DataSourceConnectionPoolingType.C3P0, databaseType);
-
-                final String poolName = TEST_POOL_PREFIX + "-" + databaseType + "_C3P0";
-                final DataSourceProvider dataSourceProvider = new DataSourceProvider(daoConfig, poolName, shouldUseMariaDB);
-
-                final DataSource dataSource = dataSourceProvider.get();
-                assertTrue(dataSource instanceof ComboPooledDataSource);
-            }
-        }
+        final Configuration configuration = Configuration.parse(mariaDbDataSource.getUrl());
+        assertTrue(configuration.cachePrepStmts());
+        assertTrue(configuration.useServerPrepStmts());
     }
 
     DaoConfig buildDaoConfig(final DataSourceConnectionPoolingType poolingType, final DataSourceProvider.DatabaseType databaseType) {
@@ -220,7 +204,7 @@ public class TestDataSourceProvider {
         if (DataSourceProvider.DatabaseType.MYSQL.equals(databaseType)) {
             properties.put("org.killbill.dao.url", "jdbc:mysql://127.0.0.1:3306/killbill");
         } else if (DataSourceProvider.DatabaseType.H2.equals(databaseType)) {
-            properties.put("org.killbill.dao.url", "jdbc:h2:file:/var/tmp/killbill;MODE=MYSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+            properties.put("org.killbill.dao.url", "jdbc:h2:file:/var/tmp/killbill;MODE=LEGACY;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         } else {
             properties.put("org.killbill.dao.url", "jdbc:test:@myhost:1521:orcl");
 

@@ -1,8 +1,8 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2021 Equinix, Inc
- * Copyright 2014-2021 The Billing Project, LLC
+ * Copyright 2020-2022 Equinix, Inc
+ * Copyright 2014-2022 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -29,26 +29,28 @@ public class TestKillBillMariaDbDataSource {
         final KillBillMariaDbDataSource killBillMariaDbDataSource = new KillBillMariaDbDataSource();
 
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill?createDatabaseIfNotExist=true&allowMultiQueries=true&cachePrepStmts=false"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true");
+                                                                      "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true&permitMysqlScheme=true");
+
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill");
+                                                                      "jdbc:mysql://127.0.0.1:3306/killbill?permitMysqlScheme=true");
 
         killBillMariaDbDataSource.setCachePrepStmts(false);
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill?createDatabaseIfNotExist=true&allowMultiQueries=true&cachePrepStmts=false"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true");
+                                                                      "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true&permitMysqlScheme=true");
+
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?cachePrepStmts=false");
+                                                                      "jdbc:mysql://127.0.0.1:3306/killbill?cachePrepStmts=false&permitMysqlScheme=true");
 
         killBillMariaDbDataSource.setCachePrepStmts(true);
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill?createDatabaseIfNotExist=true&allowMultiQueries=true&cachePrepStmts=false"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true");
+                            "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true&permitMysqlScheme=true");
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?cachePrepStmts=true");
+                            "jdbc:mysql://127.0.0.1:3306/killbill?cachePrepStmts=true&permitMysqlScheme=true");
 
         killBillMariaDbDataSource.setPrepStmtCacheSize(123);
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill?createDatabaseIfNotExist=true&allowMultiQueries=true&cachePrepStmts=false"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true&prepStmtCacheSize=123");
+                            "jdbc:mysql://127.0.0.1:3306/killbill?allowMultiQueries=true&cachePrepStmts=false&createDatabaseIfNotExist=true&permitMysqlScheme=true&prepStmtCacheSize=123");
         Assert.assertEquals(killBillMariaDbDataSource.buildUpdatedUrl("jdbc:mysql://127.0.0.1:3306/killbill"),
-                            "jdbc:mysql://127.0.0.1:3306/killbill?cachePrepStmts=true&prepStmtCacheSize=123");
+                            "jdbc:mysql://127.0.0.1:3306/killbill?cachePrepStmts=true&permitMysqlScheme=true&prepStmtCacheSize=123");
     }
 }

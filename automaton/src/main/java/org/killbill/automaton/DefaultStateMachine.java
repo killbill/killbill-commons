@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -34,12 +36,6 @@ import javax.xml.bind.annotation.XmlID;
 
 import org.killbill.xmlloader.ValidationErrors;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultStateMachineConfig> implements StateMachine, Externalizable {
 
@@ -126,12 +122,10 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
     }
 
     public boolean hasTransitionsFromStates(final String initState) {
-        return Iterables.filter(ImmutableList.copyOf(transitions), new Predicate<Transition>() {
-            @Override
-            public boolean apply(final Transition input) {
-                return input != null && input.getInitialState().getName().equals(initState);
-            }
-        }).iterator().hasNext();
+        return Stream.of(transitions)
+                     .filter(input -> input != null && input.getInitialState().getName().equals(initState))
+                     .iterator()
+                     .hasNext();
     }
 
     public void setStates(final DefaultState[] states) {
@@ -157,16 +151,14 @@ public class DefaultStateMachine extends StateMachineValidatingConfig<DefaultSta
     public DefaultTransition findTransition(final State initialState, final Operation operation, final OperationResult operationResult)
             throws MissingEntryException {
         try {
-            return Iterables.tryFind(ImmutableList.<DefaultTransition>copyOf(transitions), new Predicate<DefaultTransition>() {
-                @Override
-                public boolean apply(final DefaultTransition input) {
-                    return input != null &&
-                           input.getInitialState().getName().equals(initialState.getName()) &&
-                           input.getOperation().getName().equals(operation.getName()) &&
-                           input.getOperationResult().equals(operationResult);
-                }
-            }).get();
-        } catch (final IllegalStateException e) {
+            return Stream.of(transitions)
+                         .filter(input -> input != null &&
+                                          input.getInitialState().getName().equals(initialState.getName()) &&
+                                          input.getOperation().getName().equals(operation.getName()) &&
+                                          input.getOperationResult().equals(operationResult))
+                         .findFirst()
+                         .get();
+        } catch (final NoSuchElementException e) {
             throw new MissingEntryException("Missing transition for initialState " + initialState.getName() +
                                             ", operation = " + operation.getName() + ", result = " + operationResult, e);
         }

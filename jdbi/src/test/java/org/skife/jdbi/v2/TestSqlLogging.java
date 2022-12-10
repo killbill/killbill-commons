@@ -19,15 +19,9 @@
  */
 package org.skife.jdbi.v2;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.exceptions.TransactionFailedException;
-import org.skife.jdbi.v2.logging.Log4JLog;
 import org.skife.jdbi.v2.logging.PrintStreamLog;
 import org.skife.jdbi.v2.tweak.SQLLog;
 
@@ -172,40 +166,6 @@ public class TestSqlLogging extends DBITestCase
         h.prepareBatch(sql).add(1, "Eric").add(2, "Keith").execute();
         assertEquals(1, logged.size());
         assertEquals(String.format("%d:%s", 2, sql), logged.get(0));
-    }
-
-    @Test
-    public void testLog4J() throws Exception
-    {
-        BasicConfigurator.configure(new AppenderSkeleton()
-        {
-            @Override
-            protected void append(LoggingEvent loggingEvent)
-            {
-                logged.add(loggingEvent.getRenderedMessage());
-            }
-
-            @Override
-            public boolean requiresLayout()
-            {
-                return false;
-            }
-
-            @Override
-            public void close()
-            {
-            }
-        });
-        h.setSQLLog(new Log4JLog());
-        Logger.getLogger("org.skife.jdbi").setLevel(Level.DEBUG);
-
-        String sql1 = "insert into something (id, name) values (1, 'Eric')";
-        String sql2 = "insert into something (id, name) values (2, 'Keith')";
-        h.createBatch().add(sql1).add(sql2).execute();
-        assertEquals(1, logged.size());
-
-
-        assertTrue(logged.get(0).matches("batch:\\[\\[insert into something \\(id, name\\) values \\(1, 'Eric'\\)\\], \\[insert into something \\(id, name\\) values \\(2, 'Keith'\\)\\]\\] took \\d+ millis"));
     }
 
     private static final String linesep = System.getProperty("line.separator");

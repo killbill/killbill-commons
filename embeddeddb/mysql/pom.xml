@@ -22,16 +22,12 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-embeddeddb</artifactId>
-        <version>0.24.22-SNAPSHOT</version>
+        <version>0.25.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-embeddeddb-mysql</artifactId>
     <name>Kill Bill library of embedded dbs: MySQL</name>
     <dependencies>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
@@ -61,12 +57,26 @@
             <artifactId>killbill-embeddeddb-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.testing</groupId>
+            <artifactId>testing-mysql-server</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>

@@ -27,8 +27,6 @@ import java.util.Map;
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 
-import com.google.common.collect.Maps;
-
 public class BaseServerModuleBuilder {
 
     public enum JaxrsImplementation {
@@ -38,17 +36,17 @@ public class BaseServerModuleBuilder {
 
     // By default, proxy all requests to the Guice/Jax-RS servlet
     private String jaxrsUriPattern = "/.*";
-    private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filters = new HashMap<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>>();
-    private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex = new HashMap<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>>();
-    private final Map<String, Class<? extends HttpServlet>> jaxrsServlets = new HashMap<String, Class<? extends HttpServlet>>();
-    private final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex = new HashMap<String, Class<? extends HttpServlet>>();
-    private final Map<String, Class<? extends HttpServlet>> servlets = new HashMap<String, Class<? extends HttpServlet>>();
-    private final Map<String, Class<? extends HttpServlet>> servletsRegex = new HashMap<String, Class<? extends HttpServlet>>();
+    private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filters = new HashMap<>();
+    private final Map<String, ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>> filtersRegex = new HashMap<>();
+    private final Map<String, Class<? extends HttpServlet>> jaxrsServlets = new HashMap<>();
+    private final Map<String, Class<? extends HttpServlet>> jaxrsServletsRegex = new HashMap<>();
+    private final Map<String, Class<? extends HttpServlet>> servlets = new HashMap<>();
+    private final Map<String, Class<? extends HttpServlet>> servletsRegex = new HashMap<>();
 
     // Jersey specific
-    private final List<String> jerseyResourcesAndProvidersPackages = new ArrayList<String>();
-    private final List<String> jerseyResourcesAndProvidersClasses = new ArrayList<String>();
-    private final Map<String, String> jerseyParams = new HashMap<String, String>();
+    private final List<String> jerseyResourcesAndProvidersPackages = new ArrayList<>();
+    private final List<String> jerseyResourcesAndProvidersClasses = new ArrayList<>();
+    private final Map<String, String> jerseyParams = new HashMap<>();
 
     private JaxrsImplementation jaxrsImplementation = JaxrsImplementation.JERSEY;
 
@@ -56,28 +54,28 @@ public class BaseServerModuleBuilder {
     }
 
     public BaseServerModuleBuilder addFilter(final String urlPattern, final Class<? extends Filter> filterKey) {
-        return addFilter(urlPattern, filterKey, new HashMap<String, String>());
+        return addFilter(urlPattern, filterKey, new HashMap<>());
     }
 
     public BaseServerModuleBuilder addFilter(final String urlPattern, final Class<? extends Filter> filterKey, final Map<String, String> initParams) {
         if (this.filters.get(urlPattern) == null) {
-            this.filters.put(urlPattern, new ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>());
+            this.filters.put(urlPattern, new ArrayList<>());
         }
 
-        this.filters.get(urlPattern).add(Maps.<Class<? extends Filter>, Map<String, String>>immutableEntry(filterKey, initParams));
+        this.filters.get(urlPattern).add(Map.entry(filterKey, initParams));
         return this;
     }
 
     public BaseServerModuleBuilder addFilterRegex(final String urlPattern, final Class<? extends Filter> filterKey) {
-        return addFilterRegex(urlPattern, filterKey, new HashMap<String, String>());
+        return addFilterRegex(urlPattern, filterKey, new HashMap<>());
     }
 
     public BaseServerModuleBuilder addFilterRegex(final String urlPattern, final Class<? extends Filter> filterKey, final Map<String, String> initParams) {
         if (this.filtersRegex.get(urlPattern) == null) {
-            this.filtersRegex.put(urlPattern, new ArrayList<Map.Entry<Class<? extends Filter>, Map<String, String>>>());
+            this.filtersRegex.put(urlPattern, new ArrayList<>());
         }
 
-        this.filtersRegex.get(urlPattern).add(Maps.<Class<? extends Filter>, Map<String, String>>immutableEntry(filterKey, initParams));
+        this.filtersRegex.get(urlPattern).add(Map.entry(filterKey, initParams));
         return this;
     }
 

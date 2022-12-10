@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.JDBIQuarantineTests;
 import org.skife.jdbi.v2.JDBITests;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
 import org.skife.jdbi.v2.sqlobject.SqlUpdate;
@@ -69,28 +68,6 @@ public class ExampleTest {
                 return null;
             }
         });
-    }
-
-    @Test
-    @Category(JDBIQuarantineTests.class)
-    public void testDao() throws Exception {
-        DBI dbi = new DBI(h2);
-        Dao dao = dbi.onDemand(Dao.class);
-
-        dao.createSomethingTable();
-        dao.insertSomething(7, "Jan");
-        dao.insertSomething(1, "Brian");
-
-        Something jan = dao.findById(7, "id", "name");
-        assertThat(jan.getId()).as("Jan's ID").isEqualTo(7);
-        assertThat(jan.getName()).as("Jan's Name").isEqualTo("Jan");
-
-        Something partial = dao.findById(7, "name");
-        assertThat(partial.getId()).as("Jan's ID").isEqualTo(0); // default int value
-        assertThat(partial.getName()).as("Jan's Name").isEqualTo("Jan");
-
-        String greeting = dao.findGreetingFor(7);
-        assertThat(greeting).isEqualTo("Hello, Jan!");
     }
 
     @UseST4StatementLocator

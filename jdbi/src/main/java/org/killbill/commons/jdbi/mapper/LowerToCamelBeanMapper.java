@@ -40,18 +40,16 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
+import org.killbill.commons.utils.Strings;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
-
-import com.google.common.base.CaseFormat;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 // Identical to org.skife.jdbi.v2.BeanMapper but maps created_date to createdDate
 public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
 
     private final Class<T> type;
-    private final Map<String, PropertyDescriptor> properties = new HashMap<String, PropertyDescriptor>();
-    private final Map<String, PropertyMapper> propertiesMappers = new HashMap<String, PropertyMapper>();
+    private final Map<String, PropertyDescriptor> properties = new HashMap<>();
+    private final Map<String, PropertyMapper<ResultSet, ?>> propertiesMappers = new HashMap<>();
 
     public LowerToCamelBeanMapper(final Class<T> type) {
         this.type = type;
@@ -59,161 +57,10 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
             final BeanInfo info = Introspector.getBeanInfo(type);
 
             for (final PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
-                final String key = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, descriptor.getName()).toLowerCase();
+                final String key = Strings.toSnakeCase(descriptor.getName()).toLowerCase();
                 properties.put(key, descriptor);
 
-                final PropertyMapper propertyMapper;
-                final Class<?> propertyType = descriptor.getPropertyType();
-                if (propertyType.isAssignableFrom(Boolean.class) || propertyType.isAssignableFrom(boolean.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Boolean>() {
-
-                        @Override
-                        public Boolean apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getBoolean(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Byte.class) || propertyType.isAssignableFrom(byte.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Byte>() {
-
-                        @Override
-                        public Byte apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getByte(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Short.class) || propertyType.isAssignableFrom(short.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Short>() {
-
-                        @Override
-                        public Short apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getShort(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Integer.class) || propertyType.isAssignableFrom(int.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Integer>() {
-
-                        @Override
-                        public Integer apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getInt(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Long.class) || propertyType.isAssignableFrom(long.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Long>() {
-
-                        @Override
-                        public Long apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getLong(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Float.class) || propertyType.isAssignableFrom(float.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Float>() {
-
-                        @Override
-                        public Float apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getFloat(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Double.class) || propertyType.isAssignableFrom(double.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Double>() {
-
-                        @Override
-                        public Double apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getDouble(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(BigDecimal.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, BigDecimal>() {
-
-                        @Override
-                        public BigDecimal apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getBigDecimal(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(DateTime.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, DateTime>() {
-
-                        @Override
-                        public DateTime apply(final ResultSet rs, final int i) throws SQLException {
-                            final Timestamp timestamp = rs.getTimestamp(i);
-                            return timestamp == null ? null : new DateTime(timestamp).toDateTime(DateTimeZone.UTC);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(Time.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, Time>() {
-
-                        @Override
-                        public Time apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getTime(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(LocalDate.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, LocalDate>() {
-
-                        @Override
-                        public LocalDate apply(final ResultSet rs, final int i) throws SQLException {
-                            //
-                            // We store the LocalDate into a mysql 'date' as a string
-                            // (See https://github.com/killbill/killbill-commons/blob/master/jdbi/src/main/java/org/killbill/commons/jdbi/argument/LocalDateArgumentFactory.java)
-                            // So we also read it as a String which avoids any kind of transformation
-                            //
-                            // Note that we used previously the getDate(index, Calendar) method, but this is not thread safe as we discovered
-                            // unless maybe -- untested --we pass a new instance of a Calendar each time
-                            //
-                            final String dateString = rs.getString(i);
-                            return dateString == null ? null : new LocalDate(dateString, DateTimeZone.UTC);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(DateTimeZone.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, DateTimeZone>() {
-
-                        @Override
-                        public DateTimeZone apply(final ResultSet rs, final int i) throws SQLException {
-                            final String dateTimeZoneString = rs.getString(i);
-                            return dateTimeZoneString == null ? null : DateTimeZone.forID(dateTimeZoneString);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(String.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, String>() {
-
-                        @Override
-                        public String apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getString(i);
-                        }
-                    };
-                } else if (propertyType.isAssignableFrom(UUID.class)) {
-                    propertyMapper = new PropertyMapper<ResultSet, UUID>() {
-
-                        @Override
-                        public UUID apply(final ResultSet rs, final int i) throws SQLException {
-                            final String uuidString = rs.getString(i);
-                            return uuidString == null ? null : UUID.fromString(uuidString);
-                        }
-                    };
-                } else if (propertyType.isEnum()) {
-                    propertyMapper = new PropertyMapper<ResultSet, Enum>() {
-
-                        @Override
-                        public Enum apply(final ResultSet rs, final int i) throws SQLException {
-                            final String enumString = rs.getString(i);
-                            return enumString == null ? null : Enum.valueOf((Class<Enum>) propertyType, enumString);
-                        }
-                    };
-                } else if (propertyType == byte[].class) {
-                    propertyMapper = new PropertyMapper<ResultSet, byte[]>() {
-
-                        @Override
-                        public byte[] apply(final ResultSet rs, final int i) throws SQLException {
-                            return rs.getBytes(i);
-                        }
-                    };
-                } else {
-                    propertyMapper = new PropertyMapper<ResultSet, Time>() {
-
-                        @Override
-                        public Time apply(final ResultSet rs, final int i) throws SQLException {
-                            return (Time) rs.getObject(i);
-                        }
-                    };
-                }
+                final PropertyMapper<ResultSet, ?> propertyMapper = getPropertyMapper(descriptor);
                 propertiesMappers.put(key, propertyMapper);
             }
         } catch (final IntrospectionException e) {
@@ -221,12 +68,93 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         }
     }
 
-    private static Field getField(final Class clazz, final String fieldName) throws NoSuchFieldException {
+    private static PropertyMapper<ResultSet, ?> getPropertyMapper(final PropertyDescriptor descriptor) {
+        final PropertyMapper<ResultSet, ?> propertyMapper;
+        final Class<?> propertyType = descriptor.getPropertyType();
+
+        if (propertyType.isAssignableFrom(Boolean.class) || propertyType.isAssignableFrom(boolean.class)) {
+            propertyMapper = ResultSet::getBoolean;
+
+        } else if (propertyType.isAssignableFrom(Byte.class) || propertyType.isAssignableFrom(byte.class)) {
+            propertyMapper = ResultSet::getByte;
+
+        } else if (propertyType.isAssignableFrom(Short.class) || propertyType.isAssignableFrom(short.class)) {
+            propertyMapper = ResultSet::getShort;
+
+        } else if (propertyType.isAssignableFrom(Integer.class) || propertyType.isAssignableFrom(int.class)) {
+            propertyMapper = ResultSet::getInt;
+
+        } else if (propertyType.isAssignableFrom(Long.class) || propertyType.isAssignableFrom(long.class)) {
+            propertyMapper = ResultSet::getLong;
+
+        } else if (propertyType.isAssignableFrom(Float.class) || propertyType.isAssignableFrom(float.class)) {
+            propertyMapper = ResultSet::getFloat;
+
+        } else if (propertyType.isAssignableFrom(Double.class) || propertyType.isAssignableFrom(double.class)) {
+            propertyMapper = ResultSet::getDouble;
+
+        } else if (propertyType.isAssignableFrom(BigDecimal.class)) {
+            propertyMapper = ResultSet::getBigDecimal;
+
+        } else if (propertyType.isAssignableFrom(DateTime.class)) {
+            propertyMapper = (rs, i) -> {
+                final Timestamp timestamp = rs.getTimestamp(i);
+                return timestamp == null ? null : new DateTime(timestamp).toDateTime(DateTimeZone.UTC);
+            };
+
+        } else if (propertyType.isAssignableFrom(Time.class)) {
+            propertyMapper = ResultSet::getTime;
+
+        } else if (propertyType.isAssignableFrom(LocalDate.class)) {
+            propertyMapper = (rs, i) -> {
+                // We store the LocalDate into a mysql 'date' as a string
+                // (See https://github.com/killbill/killbill-commons/blob/master/jdbi/src/main/java/org/killbill/commons/jdbi/argument/LocalDateArgumentFactory.java)
+                // So we also read it as a String which avoids any kind of transformation
+                //
+                // Note that we used previously the getDate(index, Calendar) method, but this is not thread safe as we discovered
+                // unless maybe -- untested --we pass a new instance of a Calendar each time
+                //
+                final String dateString = rs.getString(i);
+                return dateString == null ? null : new LocalDate(dateString, DateTimeZone.UTC);
+            };
+
+        } else if (propertyType.isAssignableFrom(DateTimeZone.class)) {
+            propertyMapper = (rs, i) -> {
+                final String dateTimeZoneString = rs.getString(i);
+                return dateTimeZoneString == null ? null : DateTimeZone.forID(dateTimeZoneString);
+            };
+
+        } else if (propertyType.isAssignableFrom(String.class)) {
+            propertyMapper = ResultSet::getString;
+
+        } else if (propertyType.isAssignableFrom(UUID.class)) {
+            propertyMapper = (rs, i) -> {
+                final String uuidString = rs.getString(i);
+                return uuidString == null ? null : UUID.fromString(uuidString);
+            };
+
+        } else if (propertyType.isEnum()) {
+            propertyMapper = (rs, i) -> {
+                final String enumString = rs.getString(i);
+                return enumString == null ? null : Enum.valueOf((Class<Enum>) propertyType, enumString);
+            };
+
+        } else if (propertyType == byte[].class) {
+            propertyMapper = ResultSet::getBytes;
+
+        } else {
+            propertyMapper = (rs, i) -> (Time) rs.getObject(i);
+        }
+
+        return propertyMapper;
+    }
+
+    private static Field getField(final Class<?> clazz, final String fieldName) throws NoSuchFieldException {
         try {
             return clazz.getDeclaredField(fieldName);
         } catch (final NoSuchFieldException e) {
             // Go up in the hierarchy
-            final Class superClass = clazz.getSuperclass();
+            final Class<?> superClass = clazz.getSuperclass();
             if (superClass == null) {
                 throw e;
             } else {
@@ -235,16 +163,13 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    @SuppressFBWarnings(value = "DCN_NULLPOINTER_EXCEPTION", justification = "Historic, unclear where NPE could come from")
+    @SuppressWarnings("rawtypes")
     public T map(final int row, final ResultSet rs, final StatementContext ctx) throws SQLException {
         final T bean;
         try {
-            bean = type.newInstance();
+            bean = type.getDeclaredConstructor().newInstance();
         } catch (final Exception e) {
-            throw new IllegalArgumentException(String.format("A bean, %s, was mapped " +
-                                                             "which was not instantiable", type.getName()),
-                                               e);
+            throw new IllegalArgumentException(String.format("A bean, %s, was mapped which was not instantiable", type.getName()), e);
         }
 
         final Class beanClass = bean.getClass();
@@ -253,14 +178,14 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
         for (int i = 1; i <= metadata.getColumnCount(); ++i) {
             final String name = metadata.getColumnLabel(i).toLowerCase();
 
-            final PropertyMapper propertyMapper = propertiesMappers.get(name);
+            final PropertyMapper<ResultSet, ?> propertyMapper = propertiesMappers.get(name);
             if (propertyMapper != null) {
                 Object value = propertyMapper.apply(rs, i);
 
                 // For h2, transform a JdbcBlob into a byte[]
                 if (value instanceof Blob) {
                     final Blob blob = (Blob) value;
-                    value = blob.getBytes(0, (int) blob.length());
+                    value = blob.getBytes(1, (int) blob.length());
                 }
                 if (rs.wasNull() && !type.isPrimitive()) {
                     value = null;
@@ -272,26 +197,19 @@ public class LowerToCamelBeanMapper<T> implements ResultSetMapper<T> {
                     if (writeMethod != null) {
                         writeMethod.invoke(bean, value);
                     } else {
-                        final String camelCasedName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, name);
+                        final String camelCasedName = Strings.toCamelCase(name, false, '_');
                         final Field field = getField(beanClass, camelCasedName);
                         field.setAccessible(true); // Often private...
                         field.set(bean, value);
                     }
                 } catch (final IllegalArgumentException e) {
-                    throw new IllegalArgumentException(String.format("Unable to set field for " +
-                                                                     "property: name=%s, value=%s", name, value), e);
+                    throw new IllegalArgumentException(String.format("Unable to set field for property: name=%s, value=%s", name, value), e);
                 } catch (final NoSuchFieldException e) {
-                    throw new IllegalArgumentException(String.format("Unable to find field for " +
-                                                                     "property, %s", name), e);
+                    throw new IllegalArgumentException(String.format("Unable to find field for property, %s", name), e);
                 } catch (final IllegalAccessException e) {
-                    throw new IllegalArgumentException(String.format("Unable to access setter for " +
-                                                                     "property, %s", name), e);
+                    throw new IllegalArgumentException(String.format("Unable to access setter for property, %s", name), e);
                 } catch (final InvocationTargetException e) {
-                    throw new IllegalArgumentException(String.format("Invocation target exception trying to " +
-                                                                     "invoker setter for the %s property", name), e);
-                } catch (final NullPointerException e) {
-                    throw new IllegalArgumentException(String.format("No appropriate method to " +
-                                                                     "write value %s ", value), e);
+                    throw new IllegalArgumentException(String.format("Invocation target exception trying to invoker setter for the %s property", name), e);
                 }
             }
         }

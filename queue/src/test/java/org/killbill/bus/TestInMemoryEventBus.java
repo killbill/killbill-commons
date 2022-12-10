@@ -133,7 +133,7 @@ public class TestInMemoryEventBus {
     }
 
     @AfterMethod(groups = "fast")
-    public void afterMethod() throws Exception {
+    public void afterMethod() {
         busService.stopQueue();
     }
 

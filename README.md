@@ -13,6 +13,7 @@ Kill Bill reusable Java components:
 * **metrics**: annotation-based metrics
 * **queue**: provides persistent bus events and notifications
 * **skeleton**: framework to build web services
+* **utils**: provides utility methods for core Java(tm) classes (lang, IO, collection) and Cache
 * **xmlloader**: library to load, parse and validate XML files
 
 ## Kill Bill compatibility
@@ -25,6 +26,7 @@ Kill Bill reusable Java components:
 | 0.23.y          | 0.20.z            |
 | 0.23.y          | 0.22.z            |
 | 0.24.y          | 0.22.z            |
+| 0.25.y          | 0.23.z            |
 
 We've upgraded numerous dependencies in 0.24.x (required for Java 11 support).
 
@@ -97,6 +99,11 @@ Add the relevant submodule(s) to a project:
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-skeleton</artifactId>
     <version>... release version ...</version>
+</dependency>
+<dependency>
+<groupId>org.kill-bill.commons</groupId>
+<artifactId>killbill-utils</artifactId>
+<version>... release version ...</version>
 </dependency>
 ```
 
