@@ -295,7 +295,7 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                         // See https://github.com/killbill/killbill-commons/issues/47
                         stuckEntries.add(entryLeftBehind);
                     } else if (entryCreatedByThisNodeAndNeverProcessed) {
-                        lateEntries.addAll(entriesLeftBehind);
+                        lateEntries.add(entryLeftBehind);
                     } else {
                         // Fields will be reset appropriately in insertReapedEntriesFromTransaction
                         entriesToReInsert.add(entryLeftBehind);
