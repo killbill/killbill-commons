@@ -62,11 +62,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.kill-bill.testing</groupId>
-            <artifactId>testing-mysql-server</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.zonky.test</groupId>
             <artifactId>embedded-postgres</artifactId>
             <!-- Technically, test-runtime -->
@@ -155,6 +150,11 @@
             <artifactId>killbill-utils</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.kill-bill.testing</groupId>
+            <artifactId>testing-mysql-server</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -184,6 +184,7 @@
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>jdbi-shaded</shadedClassifierName>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>
                                 <relocation>
                                     <pattern>org.skife.jdbi</pattern>
