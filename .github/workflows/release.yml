@@ -11,6 +11,11 @@ on:
         description: 'tag to (re-)perform (in case of release:perform failure)'
         required: false
         default: ''
+      release_oss_parent:
+        description: 'Release killbill-oss-parent automatically?'
+        required: true
+        default: true
+        type: boolean
 
 env:
   MAVEN_FLAGS: "-B --no-transfer-progress"
@@ -93,3 +98,11 @@ jobs:
           echo "scm.url=scm\:git\:git@github.com\:${GITHUB_REPOSITORY}.git" > release.properties
           echo "scm.tag=${{ github.event.inputs.perform_version }}" >> release.properties
           mvn ${MAVEN_FLAGS} release:perform
+      - name: Send Repository Dispatch Event
+        if: github.event.inputs.release_oss_parent == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_WORKFLOW_PAT }}
+        run: |
+          PROJECT_VERSION=$(git describe --abbrev=0 | cut -d '-' -f 3)
+          gh workflow -R killbill/killbill-oss-parent run release.yml -f commons_version=${PROJECT_VERSION}
+
