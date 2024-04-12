@@ -42,8 +42,6 @@ import static org.testng.Assert.assertTrue;
 
 public class TestReaper extends TestSetup {
 
-    private static final Long SEARCH_KEY_1 = 1L;
-    private static final Long SEARCH_KEY_2 = 2L;
 
     private DBBackedQueue<BusEventModelDao> queue;
     private PersistentBusSqlDao sqlDao;

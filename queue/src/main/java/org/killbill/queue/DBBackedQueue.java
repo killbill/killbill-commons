@@ -286,12 +286,11 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                 final List<T> lateEntries = new LinkedList<T>();
                 for (final T entryLeftBehind : entriesLeftBehind) {
                     // entryIsBeingProcessedByThisNode is a sign of a stuck entry on this node
-                    final boolean entryIsBeingProcessedByThisNode = owner.equals(entryLeftBehind.getProcessingOwner());
                     // entryCreatedByThisNodeAndNeverProcessed is likely a sign of the queue being late
                     final boolean entryCreatedByThisNodeAndNeverProcessed = owner.equals(entryLeftBehind.getCreatingOwner()) && entryLeftBehind.getProcessingOwner() == null;
                     if (entryCreatedByThisNodeAndNeverProcessed) {
                         lateEntries.add(entryLeftBehind);
-                    } else { /* This includes entryIsBeingProcessedByThisNode. See https://github.com/killbill/killbill-commons/issues/169 */
+                    } else { /* This includes entryIsBeingProcessedByThisNode (owner.equals(entryLeftBehind.getProcessingOwner())). See https://github.com/killbill/killbill-commons/issues/169 */
                         // Set the status to REAPED in the history table
                         entryLeftBehind.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
                         entriesToReInsert.add(entryLeftBehind);

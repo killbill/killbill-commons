@@ -53,6 +53,9 @@ public class TestSetup {
 
     private static final String TEST_DB_PROPERTY_PREFIX = "org.killbill.billing.dbi.test.";
 
+    protected static final Long SEARCH_KEY_1 = 1L;
+    protected static final Long SEARCH_KEY_2 = 2L;
+
     protected EmbeddedDB embeddedDB;
 
     protected DBI dbi;

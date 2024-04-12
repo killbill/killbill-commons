@@ -31,6 +31,7 @@ import org.killbill.CreatorName;
 import org.killbill.TestSetup;
 import org.killbill.bus.DefaultPersistentBus;
 import org.killbill.bus.api.BusEvent;
+import org.killbill.bus.api.BusEventWithMetadata;
 import org.killbill.bus.api.PersistentBus.EventBusException;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.bus.dao.BusEventModelDao;
@@ -39,6 +40,7 @@ import org.killbill.commons.eventbus.AllowConcurrentEvents;
 import org.killbill.commons.eventbus.Subscribe;
 import org.killbill.queue.api.PersistentQueueEntryLifecycleState;
 import org.skife.config.TimeSpan;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -164,9 +166,17 @@ public class TestReaperIntegration extends TestSetup {
 
         // Trigger reaper
         clock.addDeltaFromReality(config.getReapThreshold().getMillis());
-        // It's a no-op though (it won't reap itself)
-        handler.ensureNotSeen(event2);
-        handler.assertSeenEvents(2);
+        // Give a chance to the reaper to run
+        Thread.sleep(500);
+
+        clock.addDeltaFromReality(1000);
+        handler.waitFor(event2);
+
+        // See https://github.com/killbill/killbill-commons/issues/169
+        handler.assertSeenEvents(3);
+        final Iterable<BusEventWithMetadata<BusEvent>> result = bus.getHistoricalBusEventsForSearchKey2(now, SEARCH_KEY_2);
+        final long nbItems = result.spliterator().getExactSizeIfKnown();
+        assertEquals(nbItems, 4);
     }
 
 
@@ -278,8 +288,8 @@ public class TestReaperIntegration extends TestSetup {
 
         public DummyEvent() {
             this(UUID.randomUUID().toString(),
-                 System.currentTimeMillis(),
-                 System.currentTimeMillis(),
+                 SEARCH_KEY_1,
+                 SEARCH_KEY_2,
                  UUID.randomUUID());
         }
 
