@@ -102,9 +102,10 @@ public class TestReaper extends TestSetup {
         queue.reapEntries(now.minus(config.getReapThreshold().getMillis()).toDate());
 
         final List<BusEventModelDao> readyEntriesAfterReaping = sqlDao.getReadyEntries(now.toDate(), 10, CreatorName.get(), config.getTableName());
-        assertEquals(readyEntriesAfterReaping.size(), 2);
+        assertEquals(readyEntriesAfterReaping.size(), 3);
         assertEquals(readyEntriesAfterReaping.get(0).getRecordId(), (Long) 1L);
         assertTrue(readyEntriesAfterReaping.get(1).getRecordId() > (Long) 6L);
+        assertTrue(readyEntriesAfterReaping.get(2).getRecordId() > (Long) 6L);
 
         final List<BusEventModelDao> readyOrInProcessingAfterReaping = Iterators.toUnmodifiableList(sqlDao.getReadyOrInProcessingQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getTableName()));
         assertEquals(readyOrInProcessingAfterReaping.size(), 6);
@@ -112,16 +113,17 @@ public class TestReaper extends TestSetup {
         assertEquals(readyOrInProcessingAfterReaping.get(1).getRecordId(), (Long) 2L);
         assertEquals(readyOrInProcessingAfterReaping.get(2).getRecordId(), (Long) 3L);
         assertEquals(readyOrInProcessingAfterReaping.get(3).getRecordId(), (Long) 4L);
-        // That stuck entry hasn't moved (https://github.com/killbill/killbill-commons/issues/47)
-        assertEquals(readyOrInProcessingAfterReaping.get(4).getRecordId(), (Long) 5L);
-        // New (reaped) one
+        // New (reaped) ones
+        assertTrue(readyOrInProcessingAfterReaping.get(4).getRecordId() > (Long) 6L);
         assertTrue(readyOrInProcessingAfterReaping.get(5).getRecordId() > (Long) 6L);
 
         // Check history table
         final List<BusEventModelDao> historicalQueueEntries = Iterators.toUnmodifiableList(sqlDao.getHistoricalQueueEntriesForSearchKeys(SEARCH_KEY_1, SEARCH_KEY_2, config.getHistoryTableName()));
-        assertEquals(historicalQueueEntries.size(), 1);
+        assertEquals(historicalQueueEntries.size(), 2);
         assertEquals(historicalQueueEntries.get(0).getProcessingState(), PersistentQueueEntryLifecycleState.REAPED);
-        assertEquals(historicalQueueEntries.get(0).getUserToken(), readyOrInProcessingAfterReaping.get(5).getUserToken());
+        assertEquals(historicalQueueEntries.get(0).getUserToken(), readyOrInProcessingAfterReaping.get(4).getUserToken());
+        assertEquals(historicalQueueEntries.get(1).getProcessingState(), PersistentQueueEntryLifecycleState.REAPED);
+        assertEquals(historicalQueueEntries.get(1).getUserToken(), readyOrInProcessingAfterReaping.get(5).getUserToken());
     }
 
     private BusEventModelDao createEntry(final long recordId,

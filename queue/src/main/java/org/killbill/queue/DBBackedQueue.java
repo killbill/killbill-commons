@@ -282,39 +282,28 @@ public abstract class DBBackedQueue<T extends EventEntryModelDao> {
                     return null;
                 }
 
-                final Collection<T> entriesToMove = new ArrayList<T>(entriesLeftBehind.size());
                 final List<T> entriesToReInsert = new ArrayList<T>(entriesLeftBehind.size());
-                final List<T> stuckEntries = new LinkedList<T>();
                 final List<T> lateEntries = new LinkedList<T>();
                 for (final T entryLeftBehind : entriesLeftBehind) {
                     // entryIsBeingProcessedByThisNode is a sign of a stuck entry on this node
                     final boolean entryIsBeingProcessedByThisNode = owner.equals(entryLeftBehind.getProcessingOwner());
                     // entryCreatedByThisNodeAndNeverProcessed is likely a sign of the queue being late
                     final boolean entryCreatedByThisNodeAndNeverProcessed = owner.equals(entryLeftBehind.getCreatingOwner()) && entryLeftBehind.getProcessingOwner() == null;
-                    if (entryIsBeingProcessedByThisNode) {
-                        // See https://github.com/killbill/killbill-commons/issues/47
-                        stuckEntries.add(entryLeftBehind);
-                    } else if (entryCreatedByThisNodeAndNeverProcessed) {
+                    if (entryCreatedByThisNodeAndNeverProcessed) {
                         lateEntries.add(entryLeftBehind);
-                    } else {
-                        // Fields will be reset appropriately in insertReapedEntriesFromTransaction
-                        entriesToReInsert.add(entryLeftBehind);
-
+                    } else { /* This includes entryIsBeingProcessedByThisNode. See https://github.com/killbill/killbill-commons/issues/169 */
                         // Set the status to REAPED in the history table
                         entryLeftBehind.setProcessingState(PersistentQueueEntryLifecycleState.REAPED);
-                        entriesToMove.add(entryLeftBehind);
+                        entriesToReInsert.add(entryLeftBehind);
                     }
                 }
 
-                if (!stuckEntries.isEmpty()) {
-                    log.warn("{} reapEntries: stuck queue entries {}", DB_QUEUE_LOG_ID, stuckEntries);
-                }
                 if (!lateEntries.isEmpty()) {
                     log.warn("{} reapEntries: late queue entries {}", DB_QUEUE_LOG_ID, lateEntries);
                 }
 
                 if (!entriesToReInsert.isEmpty()) {
-                    moveEntriesToHistoryFromTransaction(transactional, entriesToMove);
+                    moveEntriesToHistoryFromTransaction(transactional, entriesToReInsert);
                     insertReapedEntriesFromTransaction(transactional, entriesToReInsert, now);
                     log.warn("{} reapEntries: {} entries were reaped by {} {}",
                              DB_QUEUE_LOG_ID,
