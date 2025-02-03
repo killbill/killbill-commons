@@ -67,10 +67,9 @@ public abstract class GlobalLockerBaseWithDao extends GlobalLockerBase {
     @Override
     protected GlobalLock doLock(final String lockName) {
         Connection connection = null;
-        boolean obtained = false;
         try {
             connection = dataSource.getConnection();
-            obtained = globalLockDao.lock(connection, lockName, timeout, timeUnit);
+            final boolean obtained = globalLockDao.lock(connection, lockName, timeout, timeUnit);
             if (obtained) {
                 final GlobalLock lock = getGlobalLock(connection, lockName, new ResetReentrantLockCallback() {
                     @Override
@@ -84,7 +83,7 @@ public abstract class GlobalLockerBaseWithDao extends GlobalLockerBase {
         } catch (final SQLException e) {
             logger.warn("Unable to obtain lock for {}", lockName, e);
         } finally {
-            if (!obtained && connection != null) {
+            if (connection != null) {
                 try {
                     connection.close();
                 } catch (final SQLException e) {
