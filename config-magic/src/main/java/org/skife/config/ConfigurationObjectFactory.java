@@ -40,7 +40,7 @@ import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.implementation.SuperMethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
-public class ConfigurationObjectFactory {
+class ConfigurationObjectFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationObjectFactory.class);
 
