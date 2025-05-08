@@ -61,7 +61,7 @@ public abstract class NotificationQueueConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.notificationq.${instanceName}.queue.mode")
-    @Default("STICKY_POLLING")
+    @Default("POLLING")
     @Description("How entries are put in the queue")
     public abstract PersistentQueueMode getPersistentQueueMode();
 
