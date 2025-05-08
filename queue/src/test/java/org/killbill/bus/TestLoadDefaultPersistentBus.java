@@ -34,7 +34,7 @@ import org.killbill.bus.api.PersistentBus;
 import org.killbill.bus.api.PersistentBusConfig;
 import org.killbill.commons.eventbus.AllowConcurrentEvents;
 import org.killbill.commons.eventbus.Subscribe;
-import org.skife.config.ConfigurationObjectFactory;
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
@@ -69,7 +69,7 @@ public class TestLoadDefaultPersistentBus extends TestSetup {
         properties.setProperty("org.killbill.persistent.bus.main.sleep", "0");
         properties.setProperty("org.killbill.persistent.bus.main.sticky", "true");
         properties.setProperty("org.killbill.persistent.bus.main.useInflightQ", "true");
-        final PersistentBusConfig busConfig = new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, Map.of("instanceName", "main"));
+        final PersistentBusConfig busConfig = new AugmentedConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, Map.of("instanceName", "main"));
 
         eventBus = new DefaultPersistentBus(dbi, clock, busConfig, metricRegistry, databaseTransactionNotificationApi);
     }

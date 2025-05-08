@@ -51,7 +51,7 @@ import org.killbill.commons.embeddeddb.h2.H2EmbeddedDB;
 import org.killbill.commons.embeddeddb.mysql.KillBillMariaDbDataSource;
 import org.killbill.commons.jdbi.guice.DataSourceProvider.DatabaseType;
 import org.mariadb.jdbc.Configuration;
-import org.skife.config.ConfigurationObjectFactory;
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
@@ -195,7 +195,7 @@ public class TestDataSourceProvider {
     }
 
     DaoConfig buildDaoConfig(final Properties properties) {
-        return new ConfigurationObjectFactory(properties).build(DaoConfig.class);
+        return new AugmentedConfigurationObjectFactory(properties).build(DaoConfig.class);
     }
 
     private Properties defaultDaoConfigProperties(final DataSourceConnectionPoolingType poolingType, final DataSourceProvider.DatabaseType databaseType) {

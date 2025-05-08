@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.config.ConfigSource;
-import org.skife.config.ConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 
 import com.google.inject.AbstractModule;
@@ -63,7 +63,7 @@ public class ConfigModule extends AbstractModule {
     @Override
     protected void configure() {
         for (final Class config : configs) {
-            bind(config).toInstance(new ConfigurationObjectFactory(configSource).build(config));
+            bind(config).toInstance(new AugmentedConfigurationObjectFactory(configSource).build(config));
         }
     }
 }
