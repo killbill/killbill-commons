@@ -59,7 +59,7 @@ public abstract class PersistentBusConfig implements PersistentQueueConfig {
 
     @Override
     @Config("org.killbill.persistent.bus.${instanceName}.queue.mode")
-    @Default("STICKY_EVENTS")
+    @Default("POLLING")
     @Description("How entries are put in the queue")
     public abstract PersistentQueueMode getPersistentQueueMode();
 
