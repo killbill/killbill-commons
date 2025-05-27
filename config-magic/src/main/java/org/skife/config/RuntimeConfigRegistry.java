@@ -26,28 +26,33 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RuntimeConfigRegistry {
 
+    private static final Map<String, String> RUNTIME_CONFIGS = new ConcurrentHashMap<>();
+
     private static final Map<String, Map<String, String>> RUNTIME_CONFIGS_BY_SOURCE = new ConcurrentHashMap<>();
 
-    public static void put(final String configSource, final String key, final Object value) {
+    public static void put(final String key, final Object value) {
+        RUNTIME_CONFIGS.put(key, value == null ? "" : value.toString());
+    }
+
+    public static void putWithSource(final String configSource, final String key, final Object value) {
         RUNTIME_CONFIGS_BY_SOURCE
                 .computeIfAbsent(configSource, k -> new ConcurrentHashMap<>())
                 .put(key, value == null ? "" : value.toString());
     }
 
     public static String get(final String key) {
-        return RUNTIME_CONFIGS_BY_SOURCE.values()
-                                        .stream()
-                                        .filter(map -> map.containsKey(key))
-                                        .map(map -> map.get(key))
-                                        .findFirst()
-                                        .orElse("");
+        return RUNTIME_CONFIGS.getOrDefault(key, "");
     }
 
     public static Map<String, String> getBySource(final String source) {
         return Collections.unmodifiableMap(RUNTIME_CONFIGS_BY_SOURCE.getOrDefault(source, Map.of()));
     }
 
-    public static Map<String, Map<String, String>> getAll() {
+    public static Map<String, String> getAll() {
+        return Collections.unmodifiableMap(RUNTIME_CONFIGS);
+    }
+
+    public static Map<String, Map<String, String>> getAllBySource() {
         return Collections.unmodifiableMap(RUNTIME_CONFIGS_BY_SOURCE);
     }
 }
