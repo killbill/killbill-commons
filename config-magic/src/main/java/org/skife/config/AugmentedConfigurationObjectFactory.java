@@ -51,8 +51,11 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
     }
 
     private <T> void collectConfigValues(final Class<T> configClass, final T instance) {
+        final String configSource = configClass.getSimpleName();
+
         for (final Method method : configClass.getMethods()) {
             final Config configAnnotation = method.getAnnotation(Config.class);
+
             if (configAnnotation != null && method.getParameterCount() == 0) {
                 try {
                     final Object value = method.invoke(instance);
@@ -60,6 +63,8 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
                     Arrays.stream(keys)
                           .forEach(key -> RuntimeConfigRegistry.put(key, value));
 
+                    Arrays.stream(keys)
+                          .forEach(key -> RuntimeConfigRegistry.putWithSource(configSource, key, value));
                 } catch (final IllegalAccessException | InvocationTargetException e) {
                     log.warn("Failed to resolve config method: {}", method.getName(), e);
                 }
