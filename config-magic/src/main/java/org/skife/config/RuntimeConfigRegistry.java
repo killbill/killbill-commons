@@ -20,6 +20,7 @@ package org.skife.config;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Registry to capture and expose runtime configuration values.
@@ -38,6 +39,19 @@ public class RuntimeConfigRegistry {
         RUNTIME_CONFIGS_BY_SOURCE
                 .computeIfAbsent(configSource, k -> new ConcurrentHashMap<>())
                 .put(key, value == null ? "" : value.toString());
+    }
+
+    public static void putAllWithSource(final String configSource, final Map<String, ?> values) {
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+
+        RUNTIME_CONFIGS_BY_SOURCE
+                .computeIfAbsent(configSource, k -> new ConcurrentHashMap<>())
+                .putAll(values.entrySet()
+                              .stream()
+                              .collect(Collectors.toMap(Map.Entry::getKey,
+                                                        e -> e.getValue() == null ? "" : e.getValue().toString())));
     }
 
     public static String get(final String key) {
