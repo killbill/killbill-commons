@@ -20,6 +20,7 @@ package org.skife.config;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Registry to capture and expose runtime configuration values.
@@ -28,15 +29,44 @@ public class RuntimeConfigRegistry {
 
     private static final Map<String, String> RUNTIME_CONFIGS = new ConcurrentHashMap<>();
 
+    private static final Map<String, Map<String, String>> RUNTIME_CONFIGS_BY_SOURCE = new ConcurrentHashMap<>();
+
     public static void put(final String key, final Object value) {
         RUNTIME_CONFIGS.put(key, value == null ? "" : value.toString());
+    }
+
+    public static void putWithSource(final String configSource, final String key, final Object value) {
+        RUNTIME_CONFIGS_BY_SOURCE
+                .computeIfAbsent(configSource, k -> new ConcurrentHashMap<>())
+                .put(key, value == null ? "" : value.toString());
+    }
+
+    public static void putAllWithSource(final String configSource, final Map<String, ?> values) {
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+
+        RUNTIME_CONFIGS_BY_SOURCE
+                .computeIfAbsent(configSource, k -> new ConcurrentHashMap<>())
+                .putAll(values.entrySet()
+                              .stream()
+                              .collect(Collectors.toMap(Map.Entry::getKey,
+                                                        e -> e.getValue() == null ? "" : e.getValue().toString())));
     }
 
     public static String get(final String key) {
         return RUNTIME_CONFIGS.getOrDefault(key, "");
     }
 
+    public static Map<String, String> getBySource(final String source) {
+        return Collections.unmodifiableMap(RUNTIME_CONFIGS_BY_SOURCE.getOrDefault(source, Map.of()));
+    }
+
     public static Map<String, String> getAll() {
         return Collections.unmodifiableMap(RUNTIME_CONFIGS);
+    }
+
+    public static Map<String, Map<String, String>> getAllBySource() {
+        return Collections.unmodifiableMap(RUNTIME_CONFIGS_BY_SOURCE);
     }
 }
