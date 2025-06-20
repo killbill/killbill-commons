@@ -23,6 +23,7 @@
         <version>0.26.10-SNAPSHOT</version>
     </parent>
     <artifactId>killbill-metrics</artifactId>
+    <name>KillBill Metrics</name>
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
     </properties>

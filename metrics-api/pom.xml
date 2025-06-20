@@ -23,8 +23,9 @@
         <version>0.26.10-SNAPSHOT</version>
     </parent>
     <artifactId>killbill-metrics-api</artifactId>
+    <name>KillBill Metrics API</name>
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
     </properties>
-    <dependencies />
+    <dependencies/>
 </project>
