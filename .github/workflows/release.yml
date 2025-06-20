@@ -81,7 +81,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         # It will still check the remote but hopefully not download much (0 B at 0 B/s). -o isn't safe because of MDEP-82 (see above).
         run: |
-          mvn ${MAVEN_FLAGS} clean deploy -Psonatype-oss-release
+          mvn ${MAVEN_FLAGS} release:clean release:prepare release:perform
       - name: Perform release
         if: github.event.inputs.perform_version != ''
         env:
