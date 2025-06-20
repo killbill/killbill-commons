@@ -8,5 +8,5 @@ jobs:
   snapshot:
     uses: killbill/gh-actions-shared/.github/workflows/snapshot.yml@main
     secrets:
-      OSSRH_USER: ${{ secrets.MAVEN_USERNAME }}
-      OSSRH_PASS: ${{ secrets.MAVEN_PASSWORD }}
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
