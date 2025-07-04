@@ -69,4 +69,9 @@ public class RuntimeConfigRegistry {
     public static Map<String, Map<String, String>> getAllBySource() {
         return Collections.unmodifiableMap(RUNTIME_CONFIGS_BY_SOURCE);
     }
+
+    public static void clear() {
+        RUNTIME_CONFIGS.clear();
+        RUNTIME_CONFIGS_BY_SOURCE.clear();
+    }
 }
