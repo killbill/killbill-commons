@@ -27,7 +27,7 @@ public class TestNoFinal {
 
     @Test(expected = IllegalArgumentException.class)
     public void testExplodeOnFinal() {
-        final ConfigurationObjectFactory cof = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory cof = new AugmentedConfigurationObjectFactory(new Properties());
         cof.build(EmptyClass.class);
     }
 

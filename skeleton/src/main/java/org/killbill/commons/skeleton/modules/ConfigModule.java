@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.config.ConfigSource;
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 
 import com.google.inject.AbstractModule;

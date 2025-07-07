@@ -36,7 +36,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testMultipleReplacements() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("another-option.a.1", "A1");
             setProperty("another-option.a.2", "A2");
             setProperty("another-option.b.1", "B1");
@@ -71,7 +71,7 @@ public class TestConfigurationObjectFactory {
     public void testReplacement() throws Exception {
         final Map<String, String> replacementsMap = new HashMap<String, String>();
         replacementsMap.put("type", "first");
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("option.first", "1st");
             setProperty("option.second", "2nd");
         }});
@@ -85,7 +85,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testFoo() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("hello", "world");
             setProperty("theValue", "value");
         }});
@@ -95,7 +95,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testEnum() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("option.one", "1");
             setProperty("option.two", "2");
         }});
@@ -107,7 +107,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testMultiParameters() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("another-option.one.a", "1-x");
             setProperty("another-option.two.b", "2-y");
         }});
@@ -119,21 +119,21 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testDefaultValue() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties());
         final Thing t = c.build(Thing.class);
         assertEquals(t.getName(), "woof");
     }
 
     @Test
     public void testDefaultViaImpl() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties());
         final Config2 config = c.build(Config2.class);
         assertEquals(config.getOption(), "default");
     }
 
     @Test
     public void testProvidedOverridesDefault() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("option", "provided");
         }});
 
@@ -143,7 +143,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testMissingDefault() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties());
         try {
             c.build(Config3.class);
             fail("Expected exception due to missing value");
@@ -153,7 +153,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testDetectsAbstractMethod() throws Exception {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties());
         try {
             c.build(Config4.class);
             fail("Expected exception due to abstract method without @Config annotation");
@@ -163,7 +163,7 @@ public class TestConfigurationObjectFactory {
 
     @Test
     public void testTypes() {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("stringOption", "a string");
             setProperty("booleanOption", "true");
             setProperty("boxedBooleanOption", "true");

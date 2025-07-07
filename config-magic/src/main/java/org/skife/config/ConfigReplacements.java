@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * If a configuration bean is created with mapped replacement values via
- * {@link ConfigurationObjectFactory#buildWithReplacements(Class, java.util.Map)},
+ * {@link AugmentedConfigurationObjectFactory#buildWithReplacements(Class, java.util.Map)},
  * this annotation designates a method which should present the provided Map.
  * The map may not be changed and is not necessarily the same instance as the original.
  * If a key is provided, the return is instead the value for that key.

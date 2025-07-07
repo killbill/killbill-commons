@@ -32,7 +32,7 @@ public class TestCustomCoercion {
 
     @Test(expected = IllegalStateException.class)
     public void testNoConverterConfig() {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("the-url", "http://github.org/brianm/config-magic");
         }});
 
@@ -41,7 +41,7 @@ public class TestCustomCoercion {
 
     @Test
     public void testWithConverterConfig() {
-        final ConfigurationObjectFactory c = new ConfigurationObjectFactory(new Properties() {{
+        final ConfigurationObjectFactory c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("the-url", "http://github.org/brianm/config-magic");
         }});
 

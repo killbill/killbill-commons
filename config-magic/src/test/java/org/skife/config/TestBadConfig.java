@@ -27,11 +27,11 @@ import org.junit.experimental.categories.Category;
 @Category(ConfigMagicTests.class)
 public class TestBadConfig {
 
-    ConfigurationObjectFactory c = null;
+    AugmentedConfigurationObjectFactory c = null;
 
     @Before
     public void setUp() {
-        this.c = new ConfigurationObjectFactory(new Properties());
+        this.c = new AugmentedConfigurationObjectFactory(new Properties());
     }
 
     @After
