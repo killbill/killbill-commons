@@ -30,100 +30,100 @@ public class TestClasses {
 
     @Test
     public void testRawType() {
-        final WithRawType config = new ConfigurationObjectFactory(Props.of("theClazz", Object.class.getName())).build(WithRawType.class);
+        final WithRawType config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", Object.class.getName())).build(WithRawType.class);
 
         Assert.assertEquals(config.getTheClazz(), Object.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRawTypeNotFound() {
-        new ConfigurationObjectFactory(Props.of("theClazz", "does.not.Exist")).build(WithRawType.class);
+        new AugmentedConfigurationObjectFactory(Props.of("theClazz", "does.not.Exist")).build(WithRawType.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRawTypeIllegal() {
-        new ConfigurationObjectFactory(Props.of("theClazz", "not a class")).build(WithRawType.class);
+        new AugmentedConfigurationObjectFactory(Props.of("theClazz", "not a class")).build(WithRawType.class);
     }
 
     @Test
     public void testRawTypeWithDefault() {
-        final WithRawTypeAndDefault config = new ConfigurationObjectFactory(new Properties()).build(WithRawTypeAndDefault.class);
+        final WithRawTypeAndDefault config = new AugmentedConfigurationObjectFactory(new Properties()).build(WithRawTypeAndDefault.class);
 
         Assert.assertEquals(config.getTheClazz(), Object.class);
     }
 
     @Test
     public void testRawTypeWithNullDefault() {
-        final WithRawType config = new ConfigurationObjectFactory(new Properties()).build(WithRawType.class);
+        final WithRawType config = new AugmentedConfigurationObjectFactory(new Properties()).build(WithRawType.class);
 
         Assert.assertNull(config.getTheClazz());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRawTypeWithNotFoundDefault() {
-        new ConfigurationObjectFactory(new Properties()).build(WithRawTypeAndUndefinedDefault.class);
+        new AugmentedConfigurationObjectFactory(new Properties()).build(WithRawTypeAndUndefinedDefault.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRawTypeWithIllegalDefault() {
-        new ConfigurationObjectFactory(new Properties()).build(WithRawTypeAndIllegalDefault.class);
+        new AugmentedConfigurationObjectFactory(new Properties()).build(WithRawTypeAndIllegalDefault.class);
     }
 
     @Test
     public void testUnspecifiedType() {
-        final WithUnspecifiedType config = new ConfigurationObjectFactory(Props.of("theClazz", Foo.class.getName())).build(WithUnspecifiedType.class);
+        final WithUnspecifiedType config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", Foo.class.getName())).build(WithUnspecifiedType.class);
 
         Assert.assertEquals(config.getTheClazz(), Foo.class);
     }
 
     @Test
     public void testExtends() {
-        final WithExtends config = new ConfigurationObjectFactory(Props.of("theClazz", Foo.class.getName())).build(WithExtends.class);
+        final WithExtends config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", Foo.class.getName())).build(WithExtends.class);
 
         Assert.assertEquals(config.getTheClazz(), Foo.class);
     }
 
     @Test
     public void testExtendsWithSubClass() {
-        final WithExtends config = new ConfigurationObjectFactory(Props.of("theClazz", FooSub.class.getName())).build(WithExtends.class);
+        final WithExtends config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", FooSub.class.getName())).build(WithExtends.class);
 
         Assert.assertEquals(config.getTheClazz(), FooSub.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExtendsWithSuperClass() {
-        new ConfigurationObjectFactory(Props.of("theClazz", FooSuper.class.getName())).build(WithExtends.class);
+        new AugmentedConfigurationObjectFactory(Props.of("theClazz", FooSuper.class.getName())).build(WithExtends.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExtendsWithUnrelatedClass() {
-        new ConfigurationObjectFactory(Props.of("theClazz", Properties.class.getName())).build(WithExtends.class);
+        new AugmentedConfigurationObjectFactory(Props.of("theClazz", Properties.class.getName())).build(WithExtends.class);
     }
 
     @Test
     public void testNestedExtends() {
-        final WithNestedExtends config = new ConfigurationObjectFactory(Props.of("theClazz", FooList.class.getName())).build(WithNestedExtends.class);
+        final WithNestedExtends config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", FooList.class.getName())).build(WithNestedExtends.class);
 
         Assert.assertEquals(config.getTheClazz(), FooList.class);
     }
 
     @Test
     public void testNestedExtendsWithSubClass() {
-        final WithNestedExtends config = new ConfigurationObjectFactory(Props.of("theClazz", FooSubList.class.getName())).build(WithNestedExtends.class);
+        final WithNestedExtends config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", FooSubList.class.getName())).build(WithNestedExtends.class);
 
         Assert.assertEquals(config.getTheClazz(), FooSubList.class);
     }
 
     @Test
     public void testNestedExtendsWithSuperClass() {
-        final WithNestedExtends config = new ConfigurationObjectFactory(Props.of("theClazz", FooSuperList.class.getName())).build(WithNestedExtends.class);
+        final WithNestedExtends config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", FooSuperList.class.getName())).build(WithNestedExtends.class);
 
         Assert.assertEquals(config.getTheClazz(), FooSuperList.class);
     }
 
     @Test
     public void testNestedExtendsWithUnrelatedClass() {
-        final WithNestedExtends config = new ConfigurationObjectFactory(Props.of("theClazz", StringList.class.getName())).build(WithNestedExtends.class);
+        final WithNestedExtends config = new AugmentedConfigurationObjectFactory(Props.of("theClazz", StringList.class.getName())).build(WithNestedExtends.class);
 
         Assert.assertEquals(config.getTheClazz(), StringList.class);
     }

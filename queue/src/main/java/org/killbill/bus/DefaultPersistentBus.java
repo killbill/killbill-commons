@@ -66,7 +66,7 @@ import org.killbill.queue.dao.EventEntryModelDao;
 import org.killbill.queue.dispatching.BlockingRejectionExecutionHandler;
 import org.killbill.queue.dispatching.Dispatcher;
 import org.killbill.queue.dispatching.EventEntryDeserializer;
-import org.skife.config.ConfigurationObjectFactory;
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 import org.slf4j.Logger;
@@ -151,7 +151,7 @@ public class DefaultPersistentBus extends DefaultQueueLifecycle implements Persi
     public DefaultPersistentBus(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource),
              new DefaultClock(),
-             new ConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, Map.of("instanceName", "main")),
+             new AugmentedConfigurationObjectFactory(properties).buildWithReplacements(PersistentBusConfig.class, Map.of("instanceName", "main")),
              new NoOpMetricRegistry(),
              new DatabaseTransactionNotificationApi());
     }

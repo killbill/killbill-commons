@@ -40,7 +40,7 @@ import org.killbill.commons.utils.io.Resources;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.queue.InTransaction;
 import org.skife.config.ConfigSource;
-import org.skife.config.ConfigurationObjectFactory;
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 import org.skife.jdbi.v2.DBI;
 import org.testng.annotations.AfterClass;
@@ -111,10 +111,10 @@ public class TestSetup {
         dbi.setTransactionHandler(new NotificationTransactionHandler(databaseTransactionNotificationApi));
 
         final ConfigSource configSource = new SimplePropertyConfigSource(System.getProperties());
-        persistentBusConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(
+        persistentBusConfig = new AugmentedConfigurationObjectFactory(configSource).buildWithReplacements(
                 PersistentBusConfig.class,
                 Map.of("instanceName", "main"));
-        notificationQueueConfig = new ConfigurationObjectFactory(configSource).buildWithReplacements(
+        notificationQueueConfig = new AugmentedConfigurationObjectFactory(configSource).buildWithReplacements(
                 NotificationQueueConfig.class,
                 Map.of("instanceName", "main"));
     }

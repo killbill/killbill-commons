@@ -33,7 +33,7 @@ import org.killbill.commons.metrics.impl.NoOpMetricRegistry;
 import org.killbill.notificationq.api.NotificationQueue;
 import org.killbill.notificationq.api.NotificationQueueConfig;
 import org.killbill.queue.InTransaction;
-import org.skife.config.ConfigurationObjectFactory;
+import org.skife.config.AugmentedConfigurationObjectFactory;
 import org.skife.config.SimplePropertyConfigSource;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
@@ -68,7 +68,7 @@ public class DefaultNotificationQueueService extends NotificationQueueServiceBas
     public DefaultNotificationQueueService(final DataSource dataSource, final Properties properties) {
         this(InTransaction.buildDDBI(dataSource),
              new DefaultClock(),
-             new ConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, Map.of("instanceName", "main")),
+             new AugmentedConfigurationObjectFactory(new SimplePropertyConfigSource(properties)).buildWithReplacements(NotificationQueueConfig.class, Map.of("instanceName", "main")),
              new NoOpMetricRegistry());
     }
 

@@ -31,11 +31,11 @@ import static org.hamcrest.CoreMatchers.is;
 @Category(ConfigMagicTests.class)
 public class TestMultiConfig {
 
-    ConfigurationObjectFactory c = null;
+    AugmentedConfigurationObjectFactory c = null;
 
     @Before
     public void setUp() {
-        this.c = new ConfigurationObjectFactory(new Properties() {{
+        this.c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("singleOption", "the-single-value");
             setProperty("multiOption1", "the-multi-option1-value");
             setProperty("multiOption2", "the-multi-option2-value");
