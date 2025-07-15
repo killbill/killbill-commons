@@ -71,11 +71,6 @@ class ConfigurationObjectFactory {
 
     public <T> T build(final Class<T> configClass) {
         return internalBuild(configClass, null);
-
-        /*logger.info("Calling collectConfigValues");
-        collectConfigValues(configClass, t);*/
-
-
     }
 
     private <T> T internalBuild(final Class<T> configClass, @Nullable final Map<String, String> mappedReplacements) {
@@ -121,33 +116,6 @@ class ConfigurationObjectFactory {
             throw new AssertionError("Failed to instantiate proxy class for " + configClass.getName(), e);
         }
     }
-
-    /*private <T> void collectConfigValues(final Class<T> configClass, final T instance) {
-        //final String configSource = configClass.getSimpleName();
-
-        for (final Method method : configClass.getMethods()) {
-            final Config configAnnotation = method.getAnnotation(Config.class);
-
-            if (configAnnotation != null && method.getParameterCount() == 0) {
-                try {
-                    final Object value = method.invoke(instance);
-                    final String[] keys = configAnnotation.value();
-                    Arrays.stream(keys)
-                          .forEach(key -> RuntimeConfigRegistry.put(key, value == null ? "" : value.toString()));
-
-                    *//*Arrays.stream(keys)
-                          .forEach(key -> RuntimeConfigRegistry.putWithSource(configSource, key, value));*//*
-                } catch (final IllegalAccessException | InvocationTargetException e) {
-                    logger.warn("Failed to resolve config method: {}", method.getName(), e);
-                }
-            } else if (configAnnotation != null) {
-                logger.debug("Skipping config method {} due to parameters", method.getName());
-            }
-        }
-
-        logger.info("RUNTIME_CONFIGS updated successfully");
-        //RuntimeConfigRegistry.getAll().forEach((s, s2) -> System.out.println(s + ": " + s2));
-    }*/
 
     private <T> Builder<T> buildSimple(final Builder<T> bbBuilder,
                                        final Method method,
