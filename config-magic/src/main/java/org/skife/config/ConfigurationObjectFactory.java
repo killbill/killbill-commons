@@ -47,8 +47,6 @@ class ConfigurationObjectFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationObjectFactory.class);
 
-    //private static final Map<String, String> RUNTIME_CONFIGS = new ConcurrentHashMap<>();
-
     private final ConfigSource config;
     private final Bully bully;
 
