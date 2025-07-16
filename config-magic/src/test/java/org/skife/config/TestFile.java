@@ -29,11 +29,11 @@ import org.junit.experimental.categories.Category;
 @Category(ConfigMagicTests.class)
 public class TestFile {
 
-    private ConfigurationObjectFactory cof;
+    private AugmentedConfigurationObjectFactory cof;
 
     @Before
     public void setUp() {
-        cof = new ConfigurationObjectFactory(new Properties() {{
+        cof = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("file2", "..");
         }});
     }

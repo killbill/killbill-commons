@@ -35,7 +35,7 @@ public class TestExposeMappedReplacements {
         final Properties properties = new Properties();
         properties.put("wat.1", "xyzzy");
 
-        final ConfigurationObjectFactory factory = new ConfigurationObjectFactory(properties);
+        final ConfigurationObjectFactory factory = new AugmentedConfigurationObjectFactory(properties);
         final Map<String, String> map = new HashMap<String, String>();
 
         map.put("a", "1");
@@ -48,7 +48,7 @@ public class TestExposeMappedReplacements {
 
     @Test
     public void testNoReplacements() {
-        final ConfigurationObjectFactory factory = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory factory = new AugmentedConfigurationObjectFactory(new Properties());
 
         final ReplacementConfig config = factory.build(ReplacementConfig.class);
         assertTrue(config.getMap().isEmpty());
@@ -56,7 +56,7 @@ public class TestExposeMappedReplacements {
 
     @Test
     public void testKeyReplacement() {
-        final ConfigurationObjectFactory factory = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory factory = new AugmentedConfigurationObjectFactory(new Properties());
         final Map<String, String> map = new HashMap<String, String>();
 
         map.put("a", "1");
@@ -69,7 +69,7 @@ public class TestExposeMappedReplacements {
 
     @Test
     public void testDefaultValues() {
-        final ConfigurationObjectFactory factory = new ConfigurationObjectFactory(new Properties());
+        final ConfigurationObjectFactory factory = new AugmentedConfigurationObjectFactory(new Properties());
         final ReplacementConfig config = factory.build(ReplacementConfig.class);
         assertEquals(null, config.getDefaultNull());
         assertEquals(3, config.getDefault3());

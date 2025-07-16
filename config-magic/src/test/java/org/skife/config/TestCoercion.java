@@ -31,11 +31,11 @@ import static org.hamcrest.CoreMatchers.is;
 @Category(ConfigMagicTests.class)
 public class TestCoercion {
 
-    private ConfigurationObjectFactory c = null;
+    private AugmentedConfigurationObjectFactory c = null;
 
     @Before
     public void setUp() {
-        this.c = new ConfigurationObjectFactory(new Properties() {{
+        this.c = new AugmentedConfigurationObjectFactory(new Properties() {{
             setProperty("the-url", "http://github.org/brianm/config-magic");
         }});
     }

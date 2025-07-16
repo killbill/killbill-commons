@@ -28,7 +28,7 @@ import org.junit.experimental.categories.Category;
 @Category(ConfigMagicTests.class)
 public class TestVariousPropertyTypes {
 
-    private ConfigurationObjectFactory c = null;
+    private AugmentedConfigurationObjectFactory c = null;
     private StrangeConfig sc = null;
 
     @Before
@@ -39,7 +39,7 @@ public class TestVariousPropertyTypes {
         p.setProperty("double.second.property", "double-second-value");
         p.setProperty("test.value.property", "test-value-value");
         p.setProperty("test.default.property", "test-default-value");
-        c = new ConfigurationObjectFactory(p);
+        c = new AugmentedConfigurationObjectFactory(p);
         sc = c.buildWithReplacements(StrangeConfig.class, Collections.singletonMap("key", "value"));
     }
 
