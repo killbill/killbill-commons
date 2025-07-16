@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.26.11-SNAPSHOT</version>
+        <version>0.26.11</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-jdbi</artifactId>
