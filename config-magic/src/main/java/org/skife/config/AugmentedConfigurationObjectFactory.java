@@ -19,7 +19,7 @@ package org.skife.config;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.Map;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -45,12 +45,21 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
     public <T> T build(final Class<T> configClass) {
         final T instance = super.build(configClass);
 
-        collectConfigValues(configClass, instance);
+        collectConfigValues(configClass, instance, null);
 
         return instance;
     }
 
-    private <T> void collectConfigValues(final Class<T> configClass, final T instance) {
+    @Override
+    public <T> T buildWithReplacements(final Class<T> configClass, final Map<String, String> mappedReplacements) {
+        final T instance = super.buildWithReplacements(configClass, mappedReplacements);
+
+        collectConfigValues(configClass, instance, mappedReplacements);
+
+        return instance;
+    }
+
+    private <T> void collectConfigValues(final Class<T> configClass, final T instance, final Map<String, String> mappedReplacements) {
         final String configSource = configClass.getSimpleName();
 
         for (final Method method : configClass.getMethods()) {
@@ -60,11 +69,15 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
                 try {
                     final Object value = method.invoke(instance);
                     final String[] keys = configAnnotation.value();
-                    Arrays.stream(keys)
-                          .forEach(key -> RuntimeConfigRegistry.put(key, value));
 
-                    Arrays.stream(keys)
-                          .forEach(key -> RuntimeConfigRegistry.putWithSource(configSource, key, value));
+                    for (String key : keys) {
+                        if (mappedReplacements != null) {
+                            key = applyReplacements(key, mappedReplacements);
+                        }
+
+                        RuntimeConfigRegistry.put(key, value);
+                        RuntimeConfigRegistry.putWithSource(configSource, key, value);
+                    }
                 } catch (final IllegalAccessException | InvocationTargetException e) {
                     log.warn("Failed to resolve config method: {}", method.getName(), e);
                 }
@@ -72,5 +85,15 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
                 log.debug("Skipping config method {} due to parameters", method.getName());
             }
         }
+    }
+
+    private String applyReplacements(String propertyName, final Map<String, String> mappedReplacements) {
+        for (final Map.Entry<String, String> entry : mappedReplacements.entrySet()) {
+            final String token = "${" + entry.getKey() + "}";
+            final String replacement = entry.getValue();
+            propertyName = propertyName.replace(token, replacement);
+        }
+
+        return propertyName;
     }
 }
