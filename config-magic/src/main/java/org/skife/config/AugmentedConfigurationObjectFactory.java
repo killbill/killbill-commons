@@ -59,7 +59,9 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
         return instance;
     }
 
-    private <T> void collectConfigValues(final Class<T> configClass, final T instance, final Map<String, String> mappedReplacements) {
+    private <T> void collectConfigValues(final Class<T> configClass,
+                                         final T instance,
+                                         final Map<String, String> mappedReplacements) {
         final String configSource = configClass.getSimpleName();
 
         for (final Method method : configClass.getMethods()) {
