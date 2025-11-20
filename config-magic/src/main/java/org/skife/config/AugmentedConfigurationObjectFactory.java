@@ -77,7 +77,6 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
                             key = applyReplacements(key, mappedReplacements);
                         }
 
-                        RuntimeConfigRegistry.put(key, value);
                         RuntimeConfigRegistry.putWithSource(configSource, key, value);
                     }
                 } catch (final IllegalAccessException | InvocationTargetException e) {

@@ -18,6 +18,7 @@
 package org.skife.config;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -27,13 +28,7 @@ import java.util.stream.Collectors;
  */
 public class RuntimeConfigRegistry {
 
-    private static final Map<String, String> RUNTIME_CONFIGS = new ConcurrentHashMap<>();
-
     private static final Map<String, Map<String, String>> RUNTIME_CONFIGS_BY_SOURCE = new ConcurrentHashMap<>();
-
-    public static void put(final String key, final Object value) {
-        RUNTIME_CONFIGS.put(key, value == null ? "" : value.toString());
-    }
 
     public static void putWithSource(final String configSource, final String key, final Object value) {
         RUNTIME_CONFIGS_BY_SOURCE
@@ -55,7 +50,14 @@ public class RuntimeConfigRegistry {
     }
 
     public static String get(final String key) {
-        return RUNTIME_CONFIGS.getOrDefault(key, "");
+        for (final Map<String, String> sourceMap : RUNTIME_CONFIGS_BY_SOURCE.values()) {
+            final String value = sourceMap.get(key);
+            if (value != null) {
+                return value;
+            }
+        }
+
+        return "";
     }
 
     public static Map<String, String> getBySource(final String source) {
@@ -63,7 +65,10 @@ public class RuntimeConfigRegistry {
     }
 
     public static Map<String, String> getAll() {
-        return Collections.unmodifiableMap(RUNTIME_CONFIGS);
+        final Map<String, String> allConfigs = new LinkedHashMap<>();
+        RUNTIME_CONFIGS_BY_SOURCE.values().forEach(allConfigs::putAll);
+
+        return Collections.unmodifiableMap(allConfigs);
     }
 
     public static Map<String, Map<String, String>> getAllBySource() {
@@ -71,7 +76,6 @@ public class RuntimeConfigRegistry {
     }
 
     public static void clear() {
-        RUNTIME_CONFIGS.clear();
         RUNTIME_CONFIGS_BY_SOURCE.clear();
     }
 }
