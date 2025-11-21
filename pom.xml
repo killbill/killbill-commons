@@ -26,7 +26,7 @@
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
-    <version>0.26.12</version>
+    <version>0.26.13-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>
@@ -56,7 +56,7 @@
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-commons.git</connection>
         <developerConnection>scm:git:git@github.com:killbill/killbill-commons.git</developerConnection>
-        <tag>killbill-commons-0.26.12</tag>
+        <tag>HEAD</tag>
         <url>http://github.com/killbill/killbill-commons/tree/master</url>
     </scm>
     <issueManagement>
