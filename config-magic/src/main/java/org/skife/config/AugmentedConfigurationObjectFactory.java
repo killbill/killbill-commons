@@ -19,8 +19,11 @@ package org.skife.config;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +80,13 @@ public class AugmentedConfigurationObjectFactory extends ConfigurationObjectFact
                             key = applyReplacements(key, mappedReplacements);
                         }
 
-                        RuntimeConfigRegistry.putWithSource(configSource, key, value);
+                        RuntimeConfigRegistry.putWithSource(configSource, key,
+                                                            value instanceof Collection
+                                                            ? ((Collection<?>) value).stream()
+                                                                                     .filter(Objects::nonNull)
+                                                                                     .map(String::valueOf)
+                                                                                     .collect(Collectors.joining(","))
+                                                            : value);
                     }
                 } catch (final IllegalAccessException | InvocationTargetException e) {
                     log.warn("Failed to resolve config method: {}", method.getName(), e);
