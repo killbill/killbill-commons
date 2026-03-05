@@ -49,6 +49,7 @@
         <module>skeleton</module>
         <module>xmlloader</module>
         <module>automaton</module>
+        <module>jooby</module>
         <module>metrics</module>
         <module>metrics-api</module>
         <module>utils</module>
@@ -133,6 +134,11 @@
                 <version>${project.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-jooby</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>

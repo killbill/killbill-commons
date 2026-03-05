@@ -1,0 +1,206 @@
+/*
+ * Copyright 2026 The Billing Project, LLC
+ *
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+package org.jooby.internal;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.jooby.Err;
+import org.jooby.MediaType;
+import org.jooby.MediaType.Matcher;
+import org.jooby.Renderer;
+import org.jooby.Status;
+import org.jooby.View;
+
+import com.google.common.base.Joiner;
+
+public abstract class AbstractRendererContext implements Renderer.Context {
+
+  private Locale locale;
+
+  private List<Renderer> renderers;
+
+  private Matcher matcher;
+
+  protected final Charset charset;
+
+  private Map<String, Object> locals;
+
+  private List<MediaType> produces;
+
+  private boolean committed;
+
+  private int rsize;
+
+  public AbstractRendererContext(final List<Renderer> renderers,
+      final List<MediaType> produces, final Charset charset, final Locale locale,
+      final Map<String, Object> locals) {
+    this.renderers = renderers;
+    this.produces = produces;
+    this.charset = charset;
+    this.locale = locale;
+    this.locals = locals;
+    rsize = this.renderers.size();
+  }
+
+  public void render(final Object value) throws Exception {
+    int i = 0;
+    FileNotFoundException notFound = null;
+    while (!committed && i < rsize) {
+      Renderer next = renderers.get(i);
+      try {
+        next.render(value, this);
+      } catch (FileNotFoundException x) {
+        // view engine should recover from a template not found
+        if (next instanceof View.Engine) {
+          if (notFound == null) {
+            notFound = x;
+          }
+        } else {
+          throw x;
+        }
+      }
+      i += 1;
+    }
+    if (!committed) {
+      if (notFound != null) {
+        throw notFound;
+      }
+      throw new Err(Status.NOT_ACCEPTABLE, Joiner.on(", ").join(produces));
+    }
+  }
+
+  @Override
+  public Locale locale() {
+    return locale;
+  }
+
+  @Override
+  public Map<String, Object> locals() {
+    return locals;
+  }
+
+  @Override
+  public boolean accepts(final MediaType type) {
+    if (matcher == null) {
+      matcher = MediaType.matcher(produces);
+    }
+    return matcher.matches(type);
+  }
+
+  @Override
+  public Renderer.Context type(final MediaType type) {
+    // NOOP
+    return this;
+  }
+
+  @Override
+  public Renderer.Context length(final long length) {
+    // NOOP
+    return this;
+  }
+
+  @Override
+  public Charset charset() {
+    return charset;
+  }
+
+  @Override
+  public void send(final CharBuffer buffer) throws Exception {
+    type(MediaType.html);
+    send(charset.encode(buffer));
+  }
+
+  @Override
+  public void send(final Reader reader) throws Exception {
+    type(MediaType.html);
+    send(new ReaderInputStream(reader, charset));
+  }
+
+  @Override
+  public void send(final String text) throws Exception {
+    type(MediaType.html);
+    byte[] bytes = text.getBytes(charset);
+    length(bytes.length);
+    _send(bytes);
+    committed = true;
+  }
+
+  @Override
+  public void send(final byte[] bytes) throws Exception {
+    type(MediaType.octetstream);
+    length(bytes.length);
+    _send(bytes);
+    committed = true;
+  }
+
+  @Override
+  public void send(final ByteBuffer buffer) throws Exception {
+    type(MediaType.octetstream);
+    length(buffer.remaining());
+    _send(buffer);
+    committed = true;
+  }
+
+  @Override
+  public void send(final FileChannel file) throws Exception {
+    type(MediaType.octetstream);
+    length(file.size());
+    _send(file);
+    committed = true;
+  }
+
+  @Override
+  public void send(final InputStream stream) throws Exception {
+    type(MediaType.octetstream);
+    if (stream instanceof FileInputStream) {
+      send(((FileInputStream) stream).getChannel());
+    } else {
+      _send(stream);
+    }
+    committed = true;
+  }
+
+  protected void setCommitted() {
+    committed = true;
+  }
+
+  @Override
+  public String toString() {
+    return renderers.stream().map(Renderer::name).collect(Collectors.joining(", "));
+  }
+
+  protected abstract void _send(final byte[] bytes) throws Exception;
+
+  protected abstract void _send(final ByteBuffer buffer) throws Exception;
+
+  protected abstract void _send(final FileChannel file) throws Exception;
+
+  protected abstract void _send(final InputStream stream) throws Exception;
+
+}

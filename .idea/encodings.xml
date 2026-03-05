@@ -31,6 +31,8 @@
     <file url="file://$PROJECT_DIR$/jdbi" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/jdbi/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/jdbi/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/jooby/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/jooby/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/locker" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/locker/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/locker/src/main/resources" charset="UTF-8" />

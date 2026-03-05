@@ -1,0 +1,129 @@
+/*
+ * Copyright 2026 The Billing Project, LLC
+ *
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+package org.jooby.handlers;
+
+import org.jooby.Route;
+import org.jooby.test.MockUnit;
+import org.jooby.test.MockUnit.Block;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({AssetHandler.class, File.class, Paths.class, Files.class})
+public class AssetHandlerTest {
+
+  @Test
+  public void customClassloader() throws Exception {
+    URI uri = Paths.get("src", "test", "resources", "org", "jooby").toUri();
+    new MockUnit(ClassLoader.class)
+        .expect(publicDir(uri, "JoobyTest.js"))
+        .run(unit -> {
+          URL value = newHandler(unit, "/")
+              .resolve("JoobyTest.js");
+          assertNotNull(value);
+        });
+  }
+
+  private AssetHandler newHandler(MockUnit unit, String location) {
+    AssetHandler handler = new AssetHandler(location, unit.get(ClassLoader.class));
+    new Route.AssetDefinition("GET", "/assets/**", handler, false);
+    return handler;
+  }
+
+  @Test
+  public void shouldCallParentOnMissing() throws Exception {
+    URI uri = Paths.get("src", "test", "resources", "org", "jooby").toUri();
+    new MockUnit(ClassLoader.class)
+        .expect(publicDir(uri, "assets/index.js", false))
+        .expect(unit -> {
+          ClassLoader loader = unit.get(ClassLoader.class);
+          expect(loader.getResource("assets/index.js")).andReturn(uri.toURL());
+        })
+        .run(unit -> {
+          URL value = newHandler(unit, "/")
+              .resolve("assets/index.js");
+          assertNotNull(value);
+        });
+  }
+
+  @Test
+  public void ignoreMalformedURL() throws Exception {
+    Path path = Paths.get("src", "test", "resources", "org", "jooby");
+    new MockUnit(ClassLoader.class, URI.class)
+        .expect(publicDir(null, "assets/index.js"))
+        .expect(unit -> {
+          URI uri = unit.get(URI.class);
+          expect(uri.toURL()).andThrow(new MalformedURLException());
+        })
+        .expect(unit -> {
+          ClassLoader loader = unit.get(ClassLoader.class);
+          expect(loader.getResource("assets/index.js")).andReturn(path.toUri().toURL());
+        })
+        .run(unit -> {
+          URL value = newHandler(unit, "/")
+              .resolve("assets/index.js");
+          assertNotNull(value);
+        });
+  }
+
+  private Block publicDir(final URI uri, final String name) {
+    return publicDir(uri, name, true);
+  }
+
+  private Block publicDir(final URI uri, final String name, final boolean exists) {
+    return unit -> {
+      unit.mockStatic(Paths.class);
+
+      Path basedir = unit.mock(Path.class);
+
+      expect(Paths.get("public")).andReturn(basedir);
+
+      Path path = unit.mock(Path.class);
+      expect(basedir.resolve(name)).andReturn(path);
+      expect(path.normalize()).andReturn(path);
+
+      if (exists) {
+        expect(path.startsWith(basedir)).andReturn(true);
+      }
+
+      unit.mockStatic(Files.class);
+      expect(Files.exists(basedir)).andReturn(true);
+      expect(Files.exists(path)).andReturn(exists);
+
+      if (exists) {
+        if (uri != null) {
+          expect(path.toUri()).andReturn(uri);
+        } else {
+          expect(path.toUri()).andReturn(unit.get(URI.class));
+        }
+      }
+    };
+  }
+
+}
