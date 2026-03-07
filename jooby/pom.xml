@@ -114,6 +114,10 @@
         <!-- Jackson (Kill Bill managed) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
@@ -151,6 +155,11 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -239,6 +248,8 @@
                         <version>3.0.0-M7</version>
                         <configuration>
                             <skip>false</skip>
+                            <reuseForks>false</reuseForks>
+                            <argLine>-XX:-OmitStackTraceInFastThrow --illegal-access=permit</argLine>
                         </configuration>
                         <dependencies>
                             <dependency>

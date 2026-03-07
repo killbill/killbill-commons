@@ -15,9 +15,9 @@
  */
 package org.jooby.internal.jetty;
 
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.isA;
 
 import java.io.IOException;
 
@@ -52,7 +52,7 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("Multipart/Form-Data");
+              when(request.getContentType()).thenReturn("Multipart/Form-Data");
 
               request.setAttribute(eq(Request.MULTIPART_CONFIG_ELEMENT),
                   isA(MultipartConfigElement.class));
@@ -60,8 +60,8 @@ public class JettyHandlerTest {
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
 
             })
             .expect(unit -> {
@@ -88,13 +88,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               HttpHandler dispatcher = unit.get(HttpHandler.class);
@@ -120,13 +120,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               HttpServletRequest req = unit.get(HttpServletRequest.class);
@@ -135,11 +135,11 @@ public class JettyHandlerTest {
 
               WebSocketServerFactory factory = unit.get(WebSocketServerFactory.class);
 
-              expect(factory.isUpgradeRequest(req, rsp)).andReturn(true);
+              when(factory.isUpgradeRequest(req, rsp)).thenReturn(true);
 
-              expect(factory.acceptWebSocket(req, rsp)).andReturn(true);
+              when(factory.acceptWebSocket(req, rsp)).thenReturn(true);
 
-              expect(req.getAttribute(JettyWebSocket.class.getName())).andReturn(ws);
+              when(req.getAttribute(JettyWebSocket.class.getName())).thenReturn(ws);
               req.removeAttribute(JettyWebSocket.class.getName());
             })
             .expect(unit -> {
@@ -169,13 +169,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               HttpServletRequest req = unit.get(HttpServletRequest.class);
@@ -183,11 +183,11 @@ public class JettyHandlerTest {
 
               WebSocketServerFactory factory = unit.get(WebSocketServerFactory.class);
 
-              expect(factory.isUpgradeRequest(req, rsp)).andReturn(true);
+              when(factory.isUpgradeRequest(req, rsp)).thenReturn(true);
 
-              expect(factory.acceptWebSocket(req, rsp)).andReturn(true);
+              when(factory.acceptWebSocket(req, rsp)).thenReturn(true);
 
-              expect(req.getAttribute(JettyWebSocket.class.getName())).andReturn(null);
+              when(req.getAttribute(JettyWebSocket.class.getName())).thenReturn(null);
             })
             .expect(unit -> {
               HttpHandler dispatcher = unit.get(HttpHandler.class);
@@ -216,13 +216,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               HttpServletRequest req = unit.get(HttpServletRequest.class);
@@ -230,7 +230,7 @@ public class JettyHandlerTest {
 
               WebSocketServerFactory factory = unit.get(WebSocketServerFactory.class);
 
-              expect(factory.isUpgradeRequest(req, rsp)).andReturn(false);
+              when(factory.isUpgradeRequest(req, rsp)).thenReturn(false);
             })
             .expect(unit -> {
               HttpHandler dispatcher = unit.get(HttpHandler.class);
@@ -259,13 +259,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               HttpServletRequest req = unit.get(HttpServletRequest.class);
@@ -273,9 +273,9 @@ public class JettyHandlerTest {
 
               WebSocketServerFactory factory = unit.get(WebSocketServerFactory.class);
 
-              expect(factory.isUpgradeRequest(req, rsp)).andReturn(true);
+              when(factory.isUpgradeRequest(req, rsp)).thenReturn(true);
 
-              expect(factory.acceptWebSocket(req, rsp)).andReturn(false);
+              when(factory.acceptWebSocket(req, rsp)).thenReturn(false);
             })
             .expect(unit -> {
               HttpHandler dispatcher = unit.get(HttpHandler.class);
@@ -304,13 +304,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               HttpHandler dispatcher = unit.get(HttpHandler.class);
@@ -342,13 +342,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               Request request = unit.get(Request.class);
@@ -377,13 +377,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               Request request = unit.get(Request.class);
@@ -412,13 +412,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               Request request = unit.get(Request.class);
@@ -447,13 +447,13 @@ public class JettyHandlerTest {
 
               request.setHandled(true);
 
-              expect(request.getContentType()).andReturn("application/json");
+              when(request.getContentType()).thenReturn("application/json");
             })
             .expect(unit -> {
               HttpServletRequest request = unit.get(HttpServletRequest.class);
 
-              expect(request.getPathInfo()).andReturn("/");
-              expect(request.getContextPath()).andReturn("");
+              when(request.getPathInfo()).thenReturn("/");
+              when(request.getContextPath()).thenReturn("");
             })
             .expect(unit -> {
               Request request = unit.get(Request.class);

@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
@@ -49,14 +49,14 @@ public class RequestScopeTest {
           .expect(unit -> {
             Map scopedObjects = unit.get(Map.class);
             requestScope.enter(scopedObjects);
-            expect(scopedObjects.get(key)).andReturn(null);
-            expect(scopedObjects.containsKey(key)).andReturn(false);
+            when(scopedObjects.get(key)).thenReturn(null);
+            when(scopedObjects.containsKey(key)).thenReturn(false);
 
-            expect(scopedObjects.put(key, value)).andReturn(null);
+            when(scopedObjects.put(key, value)).thenReturn(null);
           })
           .expect(unit -> {
             Provider provider = unit.get(Provider.class);
-            expect(provider.get()).andReturn(value);
+            when(provider.get()).thenReturn(value);
           })
           .run(unit -> {
             Object result = requestScope.<Object> scope(key, unit.get(Provider.class)).get();
@@ -77,8 +77,8 @@ public class RequestScopeTest {
           .expect(unit -> {
             Map scopedObjects = unit.get(Map.class);
             requestScope.enter(scopedObjects);
-            expect(scopedObjects.get(key)).andReturn(null);
-            expect(scopedObjects.containsKey(key)).andReturn(true);
+            when(scopedObjects.get(key)).thenReturn(null);
+            when(scopedObjects.containsKey(key)).thenReturn(true);
           })
           .run(unit -> {
             Object result = requestScope.<Object> scope(key, unit.get(Provider.class)).get();
@@ -100,7 +100,7 @@ public class RequestScopeTest {
           .expect(unit -> {
             Map scopedObjects = unit.get(Map.class);
             requestScope.enter(scopedObjects);
-            expect(scopedObjects.get(key)).andReturn(value);
+            when(scopedObjects.get(key)).thenReturn(value);
           })
           .run(unit -> {
             Object result = requestScope.<Object> scope(key, unit.get(Provider.class)).get();
@@ -121,12 +121,12 @@ public class RequestScopeTest {
           .expect(unit -> {
             Map scopedObjects = unit.get(Map.class);
             requestScope.enter(scopedObjects);
-            expect(scopedObjects.get(key)).andReturn(null);
-            expect(scopedObjects.containsKey(key)).andReturn(false);
+            when(scopedObjects.get(key)).thenReturn(null);
+            when(scopedObjects.containsKey(key)).thenReturn(false);
           })
           .expect(unit -> {
             Provider provider = unit.get(Provider.class);
-            expect(provider.get()).andReturn(unit.get(CircularDependencyProxy.class));
+            when(provider.get()).thenReturn(unit.get(CircularDependencyProxy.class));
           })
           .run(unit -> {
             Object result = requestScope.<Object> scope(key, unit.get(Provider.class)).get();

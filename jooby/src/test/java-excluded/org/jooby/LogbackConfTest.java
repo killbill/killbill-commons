@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -23,14 +23,9 @@ import java.io.File;
 import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.typesafe.config.Config;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Jooby.class, File.class })
 public class LogbackConfTest {
 
   @Test
@@ -39,7 +34,7 @@ public class LogbackConfTest {
         .expect(conflog(true))
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.getString("logback.configurationFile")).andReturn("logback.xml");
+          when(config.getString("logback.configurationFile")).thenReturn("logback.xml");
         })
         .run(unit -> {
           assertEquals("logback.xml", Jooby.logback(unit.get(Config.class)));
@@ -63,12 +58,12 @@ public class LogbackConfTest {
           File rlogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(dir, "logback.xml");
-          expect(rlogback.exists()).andReturn(false);
+          when(rlogback.exists()).thenReturn(false);
 
           File clogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(conf, "logback.xml");
-          expect(clogback.exists()).andReturn(false);
+          when(clogback.exists()).thenReturn(false);
         })
         .run(unit -> {
           assertEquals("logback.xml", Jooby.logback(unit.get(Config.class)));
@@ -92,8 +87,8 @@ public class LogbackConfTest {
           File rlogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(dir, "logback.xml");
-          expect(rlogback.exists()).andReturn(true);
-          expect(rlogback.getAbsolutePath()).andReturn("foo/logback.xml");
+          when(rlogback.exists()).thenReturn(true);
+          when(rlogback.getAbsolutePath()).thenReturn("foo/logback.xml");
 
           unit.constructor(File.class)
               .args(File.class, String.class)
@@ -121,22 +116,22 @@ public class LogbackConfTest {
           File relogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(dir, "logback.foo.xml");
-          expect(relogback.exists()).andReturn(false);
+          when(relogback.exists()).thenReturn(false);
 
           File rlogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(dir, "logback.xml");
-          expect(rlogback.exists()).andReturn(false);
+          when(rlogback.exists()).thenReturn(false);
 
           File clogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(conf, "logback.xml");
-          expect(clogback.exists()).andReturn(false);
+          when(clogback.exists()).thenReturn(false);
 
           File celogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(conf, "logback.foo.xml");
-          expect(celogback.exists()).andReturn(false);
+          when(celogback.exists()).thenReturn(false);
         })
         .run(unit -> {
           assertEquals("logback.xml", Jooby.logback(unit.get(Config.class)));
@@ -160,7 +155,7 @@ public class LogbackConfTest {
           File relogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(dir, "logback.foo.xml");
-          expect(relogback.exists()).andReturn(false);
+          when(relogback.exists()).thenReturn(false);
 
           unit.constructor(File.class)
               .args(File.class, String.class)
@@ -169,8 +164,8 @@ public class LogbackConfTest {
           File celogback = unit.constructor(File.class)
               .args(File.class, String.class)
               .build(conf, "logback.foo.xml");
-          expect(celogback.exists()).andReturn(true);
-          expect(celogback.getAbsolutePath()).andReturn("logback.foo.xml");
+          when(celogback.exists()).thenReturn(true);
+          when(celogback.getAbsolutePath()).thenReturn("logback.foo.xml");
 
           unit.constructor(File.class)
               .args(File.class, String.class)
@@ -184,9 +179,9 @@ public class LogbackConfTest {
   private Block env(final String env) {
     return unit -> {
       Config config = unit.get(Config.class);
-      expect(config.hasPath("application.env")).andReturn(env != null);
+      when(config.hasPath("application.env")).thenReturn(env != null);
       if (env != null) {
-        expect(config.getString("application.env")).andReturn(env);
+        when(config.getString("application.env")).thenReturn(env);
       }
     };
   }
@@ -194,7 +189,7 @@ public class LogbackConfTest {
   private Block conflog(final boolean b) {
     return unit -> {
       Config config = unit.get(Config.class);
-      expect(config.hasPath("logback.configurationFile")).andReturn(b);
+      when(config.hasPath("logback.configurationFile")).thenReturn(b);
     };
   }
 
