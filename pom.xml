@@ -137,12 +137,12 @@
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
-                <artifactId>killbill-jooby</artifactId>
+                <artifactId>killbill-jdbi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
-                <artifactId>killbill-jdbi</artifactId>
+                <artifactId>killbill-jooby</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
