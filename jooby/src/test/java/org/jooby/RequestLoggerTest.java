@@ -15,23 +15,22 @@
  */
 package org.jooby;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({RequestLogger.class, System.class })
 public class RequestLoggerTest {
 
   @BeforeClass
@@ -39,13 +38,16 @@ public class RequestLoggerTest {
     Locale.setDefault(Locale.US);
   }
 
+  private final AtomicReference<Route.Complete> capturedComplete = new AtomicReference<>();
+
   private Block capture = unit -> {
     Response rsp = unit.get(Response.class);
-    rsp.complete(unit.capture(Route.Complete.class));
+    doAnswer(inv -> { capturedComplete.set(inv.getArgument(0)); return null; })
+        .when(rsp).complete(any(Route.Complete.class));
   };
 
   private Block onComplete = unit -> {
-    unit.captured(Route.Complete.class).iterator().next()
+    capturedComplete.get()
         .handle(unit.get(Request.class), unit.get(Response.class), Optional.empty());
   };
 
@@ -78,16 +80,12 @@ public class RequestLoggerTest {
         .expect(protocol("HTTP/1.1"))
         .expect(status(Status.OK))
         .expect(len(345L))
-        .expect(unit -> {
-          unit.mockStatic(System.class);
-          expect(System.currentTimeMillis()).andReturn(10L);
-        })
         .run(unit -> {
           new RequestLogger()
               .dateFormatter(ZoneId.of("UTC"))
               .latency()
-              .log(line -> assertEquals(
-                  "127.0.0.1 - - [01/Jan/1970:00:00:00 +0000] \"GET / HTTP/1.1\" 200 345 3", line))
+              .log(line -> assertTrue("Expected latency suffix, got: " + line,
+                  line.matches("127\\.0\\.0\\.1 - - \\[01/Jan/1970:00:00:00 \\+0000\\] \"GET / HTTP/1\\.1\" 200 345 \\d+")))
               .handle(unit.get(Request.class), unit.get(Response.class));
         }, onComplete);
   }
@@ -140,20 +138,20 @@ public class RequestLoggerTest {
   private Block referer(final String referer) {
     return unit -> {
       Mutant mutant = unit.mock(Mutant.class);
-      expect(mutant.value("-")).andReturn(referer);
+      when(mutant.value("-")).thenReturn(referer);
 
       Request req = unit.get(Request.class);
-      expect(req.header("Referer")).andReturn(mutant);
+      when(req.header("Referer")).thenReturn(mutant);
     };
   }
 
   private Block userAgent(final String userAgent) {
     return unit -> {
       Mutant mutant = unit.mock(Mutant.class);
-      expect(mutant.value("-")).andReturn(userAgent);
+      when(mutant.value("-")).thenReturn(userAgent);
 
       Request req = unit.get(Request.class);
-      expect(req.header("User-Agent")).andReturn(mutant);
+      when(req.header("User-Agent")).thenReturn(mutant);
     };
   }
 
@@ -180,59 +178,59 @@ public class RequestLoggerTest {
   private Block method(final String method) {
     return unit -> {
       Request req = unit.get(Request.class);
-      expect(req.method()).andReturn(method);
+      when(req.method()).thenReturn(method);
     };
   }
 
   private Block path(final String path) {
     return unit -> {
       Request req = unit.get(Request.class);
-      expect(req.path()).andReturn(path);
+      when(req.path()).thenReturn(path);
     };
   }
 
   private Block query(final String query) {
     return unit -> {
       Request req = unit.get(Request.class);
-      expect(req.queryString()).andReturn(Optional.of(query));
+      when(req.queryString()).thenReturn(Optional.of(query));
     };
   }
 
   private Block status(final Status status) {
     return unit -> {
       Response rsp = unit.get(Response.class);
-      expect(rsp.status()).andReturn(Optional.ofNullable(status));
+      when(rsp.status()).thenReturn(Optional.ofNullable(status));
     };
   }
 
   private Block len(final Long len) {
     return unit -> {
       Mutant mutant = unit.mock(Mutant.class);
-      expect(mutant.value("-")).andReturn(len.toString());
+      when(mutant.value("-")).thenReturn(len.toString());
 
       Response rsp = unit.get(Response.class);
-      expect(rsp.header("Content-Length")).andReturn(mutant);
+      when(rsp.header("Content-Length")).thenReturn(mutant);
     };
   }
 
   private Block protocol(final String protocol) {
     return unit -> {
       Request req = unit.get(Request.class);
-      expect(req.protocol()).andReturn(protocol);
+      when(req.protocol()).thenReturn(protocol);
     };
   }
 
   private Block timestamp(final long ts) {
     return unit -> {
       Request req = unit.get(Request.class);
-      expect(req.timestamp()).andReturn(ts);
+      when(req.timestamp()).thenReturn(ts);
     };
   }
 
   private Block ip(final String ip) {
     return unit -> {
       Request req = unit.get(Request.class);
-      expect(req.ip()).andReturn(ip);
+      when(req.ip()).thenReturn(ip);
     };
   }
 

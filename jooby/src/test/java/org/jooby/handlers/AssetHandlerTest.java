@@ -19,9 +19,6 @@ import org.jooby.Route;
 import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -31,11 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({AssetHandler.class, File.class, Paths.class, Files.class})
 public class AssetHandlerTest {
 
   @Test
@@ -63,7 +58,7 @@ public class AssetHandlerTest {
         .expect(publicDir(uri, "assets/index.js", false))
         .expect(unit -> {
           ClassLoader loader = unit.get(ClassLoader.class);
-          expect(loader.getResource("assets/index.js")).andReturn(uri.toURL());
+          when(loader.getResource("assets/index.js")).thenReturn(uri.toURL());
         })
         .run(unit -> {
           URL value = newHandler(unit, "/")
@@ -79,11 +74,11 @@ public class AssetHandlerTest {
         .expect(publicDir(null, "assets/index.js"))
         .expect(unit -> {
           URI uri = unit.get(URI.class);
-          expect(uri.toURL()).andThrow(new MalformedURLException());
+          when(uri.toURL()).thenThrow(new MalformedURLException());
         })
         .expect(unit -> {
           ClassLoader loader = unit.get(ClassLoader.class);
-          expect(loader.getResource("assets/index.js")).andReturn(path.toUri().toURL());
+          when(loader.getResource("assets/index.js")).thenReturn(path.toUri().toURL());
         })
         .run(unit -> {
           URL value = newHandler(unit, "/")
@@ -102,25 +97,25 @@ public class AssetHandlerTest {
 
       Path basedir = unit.mock(Path.class);
 
-      expect(Paths.get("public")).andReturn(basedir);
+      unit.mockStatic(Paths.class).when(() -> Paths.get("public")).thenReturn(basedir);
 
       Path path = unit.mock(Path.class);
-      expect(basedir.resolve(name)).andReturn(path);
-      expect(path.normalize()).andReturn(path);
+      when(basedir.resolve(name)).thenReturn(path);
+      when(path.normalize()).thenReturn(path);
 
       if (exists) {
-        expect(path.startsWith(basedir)).andReturn(true);
+        when(path.startsWith(basedir)).thenReturn(true);
       }
 
       unit.mockStatic(Files.class);
-      expect(Files.exists(basedir)).andReturn(true);
-      expect(Files.exists(path)).andReturn(exists);
+      unit.mockStatic(Files.class).when(() -> Files.exists(basedir)).thenReturn(true);
+      unit.mockStatic(Files.class).when(() -> Files.exists(path)).thenReturn(exists);
 
       if (exists) {
         if (uri != null) {
-          expect(path.toUri()).andReturn(uri);
+          when(path.toUri()).thenReturn(uri);
         } else {
-          expect(path.toUri()).andReturn(unit.get(URI.class));
+          when(path.toUri()).thenReturn(unit.get(URI.class));
         }
       }
     };

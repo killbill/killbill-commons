@@ -79,13 +79,14 @@ Key API mappings:
 - 1 file (`LogbackConfTest`) deferred — classpath issue, not mock-related.
 - **Validation:** 661 tests pass, 0 failures.
 
-### 1.7.3 — Migrate mockStatic Tests
+### 1.7.3 — Migrate mockStatic Tests ✅
 
-- **12 files** that use `unit.mockStatic()` but NOT `mockConstructor`.
-- Mockito's `mockStatic()` returns `MockedStatic<T>` — must be closed (try-with-resources).
-- This means `MockUnit.mockStatic()` must manage `MockedStatic` instances and close them in `run()`.
-- Move migrated files back to `java/`.
-- Validate: tests compile and pass.
+- **DONE.** 12 files migrated that use `unit.mockStatic()` but NOT `mockConstructor`.
+- Static method stubbing converted: `when(X.method()).thenReturn(val)` → `unit.mockStatic(X.class).when(() -> X.method()).thenReturn(val)`
+- `System.class` cannot be mocked by Mockito — 2 tests (CookieImplTest) rewritten with pattern assertions, 1 test (RequestLoggerTest) rewritten with regex assertion.
+- Void method captures (3 files) converted to explicit `doAnswer()` with `AtomicReference`.
+- `partialMock(FileChannel.class)` → `mock(FileChannel.class)` — CALLS_REAL_METHODS on FileChannel.close() causes NPE.
+- **Validation:** 751 tests pass, 0 failures.
 
 ### 1.7.4 — Migrate mockConstructor Tests
 
@@ -133,17 +134,17 @@ Key API mappings:
 | Category | Count | Status |
 |---|---|---|
 | MockUnit only (no static/constructor) | 44 | ✅ Migrated (Phase 1.7.2) |
-| mockStatic only | 12 | Pending (Phase 1.7.3) |
+| mockStatic only | 12 | ✅ Migrated (Phase 1.7.3) |
 | mockConstructor only | 7 | Pending (Phase 1.7.4) |
 | mockStatic + mockConstructor | 6 | Pending (Phase 1.7.5) |
 | Non-MockUnit utilities / other | 7 | Pending (Phase 1.7.6) |
-| Remaining in `java-excluded/` | 32 | Sum of above pending phases |
+| Remaining in `java-excluded/` | 20 | Sum of above pending phases |
 
 ## Progress
 
 - [x] 1.7.1 — Rewrite MockUnit.java
 - [x] 1.7.2 — Migrate 44 simple MockUnit tests
-- [ ] 1.7.3 — Migrate mockStatic tests
+- [x] 1.7.3 — Migrate 12 mockStatic tests
 - [ ] 1.7.4 — Migrate mockConstructor tests
 - [ ] 1.7.5 — Migrate complex tests (static + constructor)
 - [ ] 1.7.6 — Migrate remaining utilities

@@ -67,8 +67,8 @@ Differences from upstream dependency versions:
 | `jooby-netty` excluded | Kill Bill uses Jetty; SSE/WebSocket work via core SPI |
 | ASM shade plugin preserved | Relocates `org.objectweb.asm` → `org.jooby.internal.asm` (same as upstream) |
 | Test compilation disabled by default | 76 of 125 test files depend on PowerMock (not available); enabled via `-Pjooby` profile |
-| 32 test files moved to `src/test/java-excluded/` | Depend on PowerMock mockStatic/mockConstructor or external HTTP clients; will be restored after Phase 1.7.3-1.7.6 |
-| 93 test files remain in `src/test/java/` | 50 pre-existing + 43 migrated from EasyMock to Mockito; compile and run with `-Pjooby` profile (661 tests pass) |
+| 20 test files moved to `src/test/java-excluded/` | Depend on PowerMock mockConstructor or external HTTP clients; will be restored after Phase 1.7.4-1.7.6 |
+| 105 test files remain in `src/test/java/` | 50 pre-existing + 43 migrated (1.7.2) + 12 migrated (1.7.3); compile and run with `-Pjooby` profile (751 tests pass) |
 | SpotBugs exclude filter (`spotbugs-exclude.xml`) | Suppresses all upstream SpotBugs findings until Phase 1.8 triage |
 | Apache RAT exclusions for resources | Resource files (`.conf`, `.xml`, `.properties`, SSL certs) have no license headers |
 
@@ -143,6 +143,27 @@ delegates all calls to its corresponding pre-mock via `Method.invoke()`.
 - `openConstructionMocks()` populates constructor captures from `context.arguments()`
 
 **Result:** 661 tests pass (327 pre-existing + 334 migrated), 0 failures.
+
+### Sub-phase 1.7.3 — mockStatic Test Migration ✅
+
+12 test files migrated that use `unit.mockStatic()` for static method stubbing.
+
+**Static mock conversion pattern:**
+- `unit.mockStatic(X.class); when(X.method(args)).thenReturn(val)` → `unit.mockStatic(X.class).when(() -> X.method(args)).thenReturn(val)`
+- No-arg static methods use method reference: `unit.mockStatic(X.class).when(X::method).thenReturn(val)`
+
+**Additional fixes:**
+
+| File | Change | Reason |
+|---|---|---|
+| `CookieImplTest.java` | Rewrote 2 tests to not mock `System.class` | Mockito cannot mock `java.lang.System` (class loader interference) |
+| `RequestLoggerTest.java` | Rewrote `latency` test with regex assertion; void capture → `doAnswer()` | Cannot mock `System.class`; `rsp.complete()` is void |
+| `DefaultErrHandlerTest.java` | Void capture → `doAnswer()` with `AtomicReference` | `rsp.send(unit.capture(...))` is void method |
+| `JettyResponseTest.java` | Void capture → `doAnswer()` with `AtomicReference` | `output.sendContent(unit.capture(...))` is void method |
+| `ServletServletResponseTest.java` | `partialMock(FileChannel.class)` → `mock(FileChannel.class)` | `CALLS_REAL_METHODS` on `FileChannel.close()` causes NPE |
+| `CookieSignatureTest.java` | Removed `@PowerMockIgnore` annotation | Not needed in Mockito |
+
+**Result:** 751 tests pass (661 prior + 90 new), 0 failures.
 
 ### Remaining sub-phases (in progress)
 

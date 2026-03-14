@@ -15,7 +15,6 @@
  */
 package org.jooby;
 
-import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 
 import java.security.NoSuchAlgorithmException;
@@ -25,13 +24,7 @@ import javax.crypto.Mac;
 import org.jooby.Cookie.Signature;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@PowerMockIgnore("javax.crypto.*")
-@RunWith(PowerMockRunner.class)
 public class CookieSignatureTest {
 
   @Test
@@ -46,12 +39,10 @@ public class CookieSignatureTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  @PrepareForTest({Cookie.class, Cookie.Signature.class, Mac.class })
   public void noSuchAlgorithmException() throws Exception {
     new MockUnit()
     .expect(unit -> {
-      unit.mockStatic(Mac.class);
-      expect(Mac.getInstance("HmacSHA256")).andThrow(new NoSuchAlgorithmException("HmacSHA256"));
+      unit.mockStatic(Mac.class).when(() -> Mac.getInstance("HmacSHA256")).thenThrow(new NoSuchAlgorithmException("HmacSHA256"));
     })
     .run(unit -> {
       Signature.sign("jooby", "a11");

@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 
 import org.jooby.Env;
@@ -23,16 +23,11 @@ import org.jooby.Jooby;
 import org.jooby.spi.Server;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.inject.Binder;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerLookup.class, ConfigFactory.class })
 public class ServerLookupTest {
 
   private static int calls = 0;
@@ -52,8 +47,8 @@ public class ServerLookupTest {
     new MockUnit(Env.class, Config.class, Binder.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("server.module")).andReturn(true);
-          expect(config.getString("server.module")).andReturn(ServerModule.class.getName());
+          when(config.hasPath("server.module")).thenReturn(true);
+          when(config.getString("server.module")).thenReturn(ServerModule.class.getName());
         })
         .run(unit -> {
           new ServerLookup()
@@ -68,7 +63,7 @@ public class ServerLookupTest {
     new MockUnit(Env.class, Config.class, Binder.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("server.module")).andReturn(false);
+          when(config.hasPath("server.module")).thenReturn(false);
         })
         .run(unit -> {
           new ServerLookup()
@@ -83,8 +78,8 @@ public class ServerLookupTest {
     new MockUnit(Env.class, Config.class, Binder.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("server.module")).andReturn(true);
-          expect(config.getString("server.module")).andReturn("org.Missing");
+          when(config.hasPath("server.module")).thenReturn(true);
+          when(config.getString("server.module")).thenReturn("org.Missing");
         })
         .run(unit -> {
           new ServerLookup()
@@ -97,18 +92,16 @@ public class ServerLookupTest {
   public void config() throws Exception {
     new MockUnit(Config.class)
         .expect(unit -> {
-          unit.mockStatic(ConfigFactory.class);
-
           Config serverLookup = unit.mock(Config.class);
 
           Config defs = unit.mock(Config.class);
-          expect(serverLookup.withFallback(defs)).andReturn(unit.get(Config.class));
+          when(serverLookup.withFallback(defs)).thenReturn(unit.get(Config.class));
 
-          expect(ConfigFactory.parseResources(Server.class, "server-defaults.conf"))
-              .andReturn(defs);
+          unit.mockStatic(ConfigFactory.class).when(() -> ConfigFactory.parseResources(Server.class, "server-defaults.conf"))
+              .thenReturn(defs);
 
-          expect(ConfigFactory.parseResources(Server.class, "server.conf"))
-              .andReturn(serverLookup);
+          unit.mockStatic(ConfigFactory.class).when(() -> ConfigFactory.parseResources(Server.class, "server.conf"))
+              .thenReturn(serverLookup);
         })
         .run(unit -> {
           assertEquals(unit.get(Config.class), new ServerLookup().config());

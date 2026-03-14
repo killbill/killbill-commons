@@ -15,7 +15,6 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Locale;
@@ -24,15 +23,9 @@ import org.jooby.internal.parser.LocaleParser;
 import org.jooby.internal.parser.StringConstructorParser;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.inject.TypeLiteral;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({StringConstructTypeConverter.class, LocaleParser.class,
-    StringConstructorParser.class })
 public class StringConstructorTypeConverterTest {
 
   @Test
@@ -50,8 +43,7 @@ public class StringConstructorTypeConverterTest {
     TypeLiteral<Object> type = TypeLiteral.get(Object.class);
     new MockUnit()
         .expect(unit -> {
-          unit.mockStatic(StringConstructorParser.class);
-          expect(StringConstructorParser.parse(type, "y")).andThrow(
+          unit.mockStatic(StringConstructorParser.class).when(() -> StringConstructorParser.parse(type, "y")).thenThrow(
               new IllegalArgumentException("intentional err"));
         })
         .run(unit -> {

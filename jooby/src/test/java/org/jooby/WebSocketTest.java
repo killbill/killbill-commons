@@ -17,15 +17,12 @@ package org.jooby;
 
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 import org.jooby.WebSocket.CloseStatus;
 import org.jooby.test.MockUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +31,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({WebSocket.class, LoggerFactory.class })
 public class WebSocketTest {
 
   static class WebSocketMock implements WebSocket {
@@ -165,8 +160,7 @@ public class WebSocketTest {
           Logger log = unit.get(Logger.class);
           log.error("error while sending data", ex);
 
-          unit.mockStatic(LoggerFactory.class);
-          expect(LoggerFactory.getLogger(WebSocket.class)).andReturn(log);
+          unit.mockStatic(LoggerFactory.class).when(() -> LoggerFactory.getLogger(WebSocket.class)).thenReturn(log);
         })
         .run(unit -> {
           WebSocket.ERR.onError(ex);
