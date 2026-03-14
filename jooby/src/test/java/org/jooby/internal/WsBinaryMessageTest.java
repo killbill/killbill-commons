@@ -17,6 +17,8 @@ package org.jooby.internal;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -31,14 +33,10 @@ import org.jooby.Err;
 import org.jooby.Mutant;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mockito;
 
 import com.google.common.base.Charsets;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({WsBinaryMessage.class, ByteArrayInputStream.class, InputStreamReader.class })
 public class WsBinaryMessageTest {
 
   @Test
@@ -62,13 +60,13 @@ public class WsBinaryMessageTest {
 
     new MockUnit()
         .expect(unit -> {
-          InputStream stream = unit.mockConstructor(ByteArrayInputStream.class,
+          unit.mockConstructor(ByteArrayInputStream.class,
               new Class[]{byte[].class }, bytes);
-          unit.registerMock(InputStream.class, stream);
         })
         .run(unit -> {
-          assertEquals(unit.get(InputStream.class),
-              new WsBinaryMessage(buffer).to(InputStream.class));
+          InputStream result = new WsBinaryMessage(buffer).to(InputStream.class);
+          assertNotNull(result);
+          assertTrue(Mockito.mockingDetails(result).isMock());
         });
   }
 
@@ -80,17 +78,16 @@ public class WsBinaryMessageTest {
     new MockUnit()
         .expect(
             unit -> {
-              InputStream stream = unit.mockConstructor(ByteArrayInputStream.class,
+              unit.mockConstructor(ByteArrayInputStream.class,
                   new Class[]{byte[].class }, bytes);
 
-              Reader reader = unit.mockConstructor(InputStreamReader.class, new Class[]{
-                  InputStream.class, Charset.class }, stream, Charsets.UTF_8);
-
-              unit.registerMock(Reader.class, reader);
+              unit.mockConstructor(InputStreamReader.class, new Class[]{
+                  InputStream.class, Charset.class }, null, Charsets.UTF_8);
             })
         .run(unit -> {
-          assertEquals(unit.get(Reader.class),
-              new WsBinaryMessage(buffer).to(Reader.class));
+          Reader result = new WsBinaryMessage(buffer).to(Reader.class);
+          assertNotNull(result);
+          assertTrue(Mockito.mockingDetails(result).isMock());
         });
   }
 

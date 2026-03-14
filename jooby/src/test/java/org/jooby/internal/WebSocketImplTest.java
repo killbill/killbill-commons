@@ -19,10 +19,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.isA;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.isA;
 import org.jooby.Err;
 import org.jooby.MediaType;
 import org.jooby.Mutant;
@@ -42,9 +43,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.lang.reflect.Field;
 import java.nio.channels.ClosedChannelException;
@@ -57,11 +55,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({WebSocketImpl.class, WebSocketRendererContext.class})
 public class WebSocketImplTest {
 
   private Block connect = unit -> {
@@ -70,8 +67,8 @@ public class WebSocketImplTest {
 
     Injector injector = unit.get(Injector.class);
 
-    expect(injector.getInstance(Key.get(new TypeLiteral<Set<Renderer>>() {
-    }))).andReturn(Collections.emptySet());
+    when(injector.getInstance(Key.get(new TypeLiteral<Set<Renderer>>() {
+    }))).thenReturn(Collections.emptySet());
 
   };
 
@@ -86,7 +83,7 @@ public class WebSocketImplTest {
 
   private Block locale = unit -> {
     Request req = unit.get(Request.class);
-    expect(req.locale()).andReturn(Locale.CANADA);
+    when(req.locale()).thenReturn(Locale.CANADA);
   };
 
   @SuppressWarnings({"resource"})
@@ -107,7 +104,7 @@ public class WebSocketImplTest {
           List<Renderer> renderers = Collections.emptyList();
 
           NativeWebSocket ws = unit.get(NativeWebSocket.class);
-          expect(ws.isOpen()).andReturn(true);
+          when(ws.isOpen()).thenReturn(true);
 
           WebSocketRendererContext ctx = unit.mockConstructor(WebSocketRendererContext.class,
               new Class[]{List.class, NativeWebSocket.class, MediaType.class, Charset.class,
@@ -160,7 +157,7 @@ public class WebSocketImplTest {
           List<Renderer> renderers = Collections.emptyList();
 
           NativeWebSocket ws = unit.get(NativeWebSocket.class);
-          expect(ws.isOpen()).andReturn(true);
+          when(ws.isOpen()).thenReturn(true);
 
           WebSocketRendererContext ctx = unit.mockConstructor(WebSocketRendererContext.class,
               new Class[]{List.class, NativeWebSocket.class, MediaType.class, Charset.class,
@@ -203,7 +200,7 @@ public class WebSocketImplTest {
           List<Renderer> renderers = Collections.emptyList();
 
           NativeWebSocket ws = unit.get(NativeWebSocket.class);
-          expect(ws.isOpen()).andReturn(true);
+          when(ws.isOpen()).thenReturn(true);
 
           WebSocketRendererContext ctx = unit.mockConstructor(WebSocketRendererContext.class,
               new Class[]{List.class, NativeWebSocket.class, MediaType.class, Charset.class,
@@ -215,9 +212,8 @@ public class WebSocketImplTest {
               Locale.CANADA,
               unit.get(WebSocket.SuccessCallback.class),
               unit.get(WebSocket.OnError.class));
-          ctx.render(data);
           IllegalStateException x = new IllegalStateException("intentional err");
-          expectLastCall().andThrow(x);
+          doThrow(x).when(ctx).render(data);
           unit.get(WebSocket.OnError.class).onError(x);
         })
         .run(unit -> {
@@ -247,7 +243,7 @@ public class WebSocketImplTest {
         .expect(locale)
         .expect(unit -> {
           NativeWebSocket ws = unit.get(NativeWebSocket.class);
-          expect(ws.isOpen()).andReturn(false);
+          when(ws.isOpen()).thenReturn(false);
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -330,7 +326,7 @@ public class WebSocketImplTest {
         .expect(locale)
         .expect(unit -> {
           NativeWebSocket ws = unit.get(NativeWebSocket.class);
-          expect(ws.isOpen()).andReturn(true);
+          when(ws.isOpen()).thenReturn(true);
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -468,7 +464,7 @@ public class WebSocketImplTest {
         })
         .expect(unit -> {
           Injector injector = unit.get(Injector.class);
-          expect(injector.getInstance(Key.get(Object.class))).andReturn(instance);
+          when(injector.getInstance(Key.get(Object.class))).thenReturn(instance);
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -488,6 +484,8 @@ public class WebSocketImplTest {
     MediaType consumes = MediaType.all;
     MediaType produces = MediaType.all;
 
+    AtomicReference<Consumer> textCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, Injector.class, OnMessage.class, Request.class,
         NativeWebSocket.class,
         Mutant.class)
@@ -496,7 +494,8 @@ public class WebSocketImplTest {
         .expect(unit -> {
           NativeWebSocket nws = unit.get(NativeWebSocket.class);
           nws.onBinaryMessage(isA(Consumer.class));
-          nws.onTextMessage(unit.capture(Consumer.class));
+          doAnswer(inv -> { textCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onTextMessage(isA(Consumer.class));
           nws.onErrorMessage(isA(Consumer.class));
           nws.onCloseMessage(isA(BiConsumer.class));
         })
@@ -506,7 +505,7 @@ public class WebSocketImplTest {
         })
         .expect(unit -> {
           Injector injector = unit.get(Injector.class);
-          expect(injector.getInstance(ParserExecutor.class)).andReturn(
+          when(injector.getInstance(ParserExecutor.class)).thenReturn(
               unit.mock(ParserExecutor.class));
         })
         .run(unit -> {
@@ -516,7 +515,7 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onMessage(unit.get(OnMessage.class));
         }, unit -> {
-          unit.captured(Consumer.class).iterator().next().accept("something");
+          textCapture.get().accept("something");
         });
   }
 
@@ -530,6 +529,8 @@ public class WebSocketImplTest {
     MediaType produces = MediaType.all;
     Exception ex = new Exception();
 
+    AtomicReference<Consumer> errorCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, Injector.class, Request.class, NativeWebSocket.class,
         WebSocket.OnError.class)
         .expect(connect)
@@ -538,10 +539,11 @@ public class WebSocketImplTest {
           NativeWebSocket nws = unit.get(NativeWebSocket.class);
           nws.onBinaryMessage(isA(Consumer.class));
           nws.onTextMessage(isA(Consumer.class));
-          nws.onErrorMessage(unit.capture(Consumer.class));
+          doAnswer(inv -> { errorCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onErrorMessage(isA(Consumer.class));
           nws.onCloseMessage(isA(BiConsumer.class));
 
-          expect(nws.isOpen()).andReturn(false);
+          when(nws.isOpen()).thenReturn(false);
         })
         .expect(unit -> {
           WebSocket.OnError callback = unit.get(WebSocket.OnError.class);
@@ -554,7 +556,7 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onError(unit.get(WebSocket.OnError.class));
         }, unit -> {
-          unit.captured(Consumer.class).iterator().next().accept(ex);
+          errorCapture.get().accept(ex);
         });
   }
 
@@ -568,6 +570,8 @@ public class WebSocketImplTest {
     MediaType produces = MediaType.all;
     Exception ex = new ClosedChannelException();
 
+    AtomicReference<Consumer> errorCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, Injector.class, Request.class, NativeWebSocket.class,
         WebSocket.OnError.class)
         .expect(connect)
@@ -576,10 +580,11 @@ public class WebSocketImplTest {
           NativeWebSocket nws = unit.get(NativeWebSocket.class);
           nws.onBinaryMessage(isA(Consumer.class));
           nws.onTextMessage(isA(Consumer.class));
-          nws.onErrorMessage(unit.capture(Consumer.class));
+          doAnswer(inv -> { errorCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onErrorMessage(isA(Consumer.class));
           nws.onCloseMessage(isA(BiConsumer.class));
 
-          expect(nws.isOpen()).andReturn(false);
+          when(nws.isOpen()).thenReturn(false);
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -588,7 +593,7 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onError(unit.get(WebSocket.OnError.class));
         }, unit -> {
-          unit.captured(Consumer.class).iterator().next().accept(ex);
+          errorCapture.get().accept(ex);
         });
   }
 
@@ -602,6 +607,8 @@ public class WebSocketImplTest {
     MediaType produces = MediaType.all;
     Exception ex = new Exception();
 
+    AtomicReference<Consumer> errorCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, Injector.class, Request.class, NativeWebSocket.class,
         WebSocket.OnError.class)
         .expect(connect)
@@ -610,10 +617,11 @@ public class WebSocketImplTest {
           NativeWebSocket nws = unit.get(NativeWebSocket.class);
           nws.onBinaryMessage(isA(Consumer.class));
           nws.onTextMessage(isA(Consumer.class));
-          nws.onErrorMessage(unit.capture(Consumer.class));
+          doAnswer(inv -> { errorCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onErrorMessage(isA(Consumer.class));
           nws.onCloseMessage(isA(BiConsumer.class));
 
-          expect(nws.isOpen()).andReturn(true);
+          when(nws.isOpen()).thenReturn(true);
           nws.close(1011, "Server error");
         })
         .expect(unit -> {
@@ -627,7 +635,7 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onError(unit.get(WebSocket.OnError.class));
         }, unit -> {
-          unit.captured(Consumer.class).iterator().next().accept(ex);
+          errorCapture.get().accept(ex);
         });
   }
 
@@ -641,6 +649,9 @@ public class WebSocketImplTest {
     MediaType produces = MediaType.all;
     WebSocket.CloseStatus status = WebSocket.NORMAL;
 
+    AtomicReference<BiConsumer> closeCapture = new AtomicReference<>();
+    AtomicReference<WebSocket.CloseStatus> statusCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, OnMessage.class, OnClose.class, Request.class,
         NativeWebSocket.class, Injector.class)
         .expect(connect)
@@ -650,11 +661,13 @@ public class WebSocketImplTest {
           nws.onBinaryMessage(isA(Consumer.class));
           nws.onTextMessage(isA(Consumer.class));
           nws.onErrorMessage(isA(Consumer.class));
-          nws.onCloseMessage(unit.capture(BiConsumer.class));
+          doAnswer(inv -> { closeCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onCloseMessage(isA(BiConsumer.class));
         })
         .expect(unit -> {
           OnClose callback = unit.get(OnClose.class);
-          callback.onClose(unit.capture(WebSocket.CloseStatus.class));
+          doAnswer(inv -> { statusCapture.set(inv.getArgument(0)); return null; })
+              .when(callback).onClose(isA(WebSocket.CloseStatus.class));
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -663,10 +676,10 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onClose(unit.get(WebSocket.OnClose.class));
         }, unit -> {
-          unit.captured(BiConsumer.class).iterator().next()
+          closeCapture.get()
               .accept(status.code(), Optional.of(status.reason()));
         }, unit -> {
-          CloseStatus captured = unit.captured(WebSocket.CloseStatus.class).iterator().next();
+          CloseStatus captured = statusCapture.get();
           assertEquals(status.code(), captured.code());
           assertEquals(status.reason(), captured.reason());
         });
@@ -682,6 +695,9 @@ public class WebSocketImplTest {
     MediaType produces = MediaType.all;
     WebSocket.CloseStatus status = WebSocket.CloseStatus.of(1000);
 
+    AtomicReference<BiConsumer> closeCapture = new AtomicReference<>();
+    AtomicReference<WebSocket.CloseStatus> statusCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, OnMessage.class, OnClose.class, NativeWebSocket.class,
         Request.class, Injector.class)
         .expect(connect)
@@ -691,11 +707,13 @@ public class WebSocketImplTest {
           nws.onBinaryMessage(isA(Consumer.class));
           nws.onTextMessage(isA(Consumer.class));
           nws.onErrorMessage(isA(Consumer.class));
-          nws.onCloseMessage(unit.capture(BiConsumer.class));
+          doAnswer(inv -> { closeCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onCloseMessage(isA(BiConsumer.class));
         })
         .expect(unit -> {
           OnClose callback = unit.get(OnClose.class);
-          callback.onClose(unit.capture(WebSocket.CloseStatus.class));
+          doAnswer(inv -> { statusCapture.set(inv.getArgument(0)); return null; })
+              .when(callback).onClose(isA(WebSocket.CloseStatus.class));
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -704,10 +722,10 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onClose(unit.get(OnClose.class));
         }, unit -> {
-          unit.captured(BiConsumer.class).iterator().next()
+          closeCapture.get()
               .accept(status.code(), Optional.empty());
         }, unit -> {
-          CloseStatus captured = unit.captured(WebSocket.CloseStatus.class).iterator().next();
+          CloseStatus captured = statusCapture.get();
           assertEquals(status.code(), captured.code());
           assertEquals(null, captured.reason());
         });
@@ -723,6 +741,9 @@ public class WebSocketImplTest {
     MediaType produces = MediaType.all;
     WebSocket.CloseStatus status = WebSocket.CloseStatus.of(1000, "");
 
+    AtomicReference<BiConsumer> closeCapture = new AtomicReference<>();
+    AtomicReference<WebSocket.CloseStatus> statusCapture = new AtomicReference<>();
+
     new MockUnit(WebSocket.OnOpen1.class, OnMessage.class, NativeWebSocket.class, Request.class,
         Injector.class, OnClose.class)
         .expect(connect)
@@ -732,11 +753,13 @@ public class WebSocketImplTest {
           nws.onBinaryMessage(isA(Consumer.class));
           nws.onTextMessage(isA(Consumer.class));
           nws.onErrorMessage(isA(Consumer.class));
-          nws.onCloseMessage(unit.capture(BiConsumer.class));
+          doAnswer(inv -> { closeCapture.set(inv.getArgument(0)); return null; })
+              .when(nws).onCloseMessage(isA(BiConsumer.class));
         })
         .expect(unit -> {
           OnClose callback = unit.get(OnClose.class);
-          callback.onClose(unit.capture(WebSocket.CloseStatus.class));
+          doAnswer(inv -> { statusCapture.set(inv.getArgument(0)); return null; })
+              .when(callback).onClose(isA(WebSocket.CloseStatus.class));
         })
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
@@ -745,10 +768,10 @@ public class WebSocketImplTest {
               unit.get(NativeWebSocket.class));
           ws.onClose(unit.get(OnClose.class));
         }, unit -> {
-          unit.captured(BiConsumer.class).iterator().next()
+          closeCapture.get()
               .accept(status.code(), Optional.of(""));
         }, unit -> {
-          CloseStatus captured = unit.captured(WebSocket.CloseStatus.class).iterator().next();
+          CloseStatus captured = statusCapture.get();
           assertEquals(status.code(), captured.code());
           assertEquals(null, captured.reason());
         });

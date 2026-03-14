@@ -88,12 +88,14 @@ Key API mappings:
 - `partialMock(FileChannel.class)` → `mock(FileChannel.class)` — CALLS_REAL_METHODS on FileChannel.close() causes NPE.
 - **Validation:** 751 tests pass, 0 failures.
 
-### 1.7.4 — Migrate mockConstructor Tests
+### 1.7.4 — Migrate mockConstructor Tests ✅
 
-- **7 files** that use `unit.mockConstructor()` / `unit.constructor()` but NOT `mockStatic`.
-- Mockito's `mockConstruction()` returns `MockedConstruction<T>` — must be closed.
-- Move migrated files back to `java/`.
-- Validate: tests compile and pass.
+- **DONE.** 5 files migrated that use `unit.mockConstructor()` / `unit.constructor()`.
+- MockUnit enhanced: `preMockToConstructed` reverse map resolves pre-mock → construction mock in `get()`/`first()`.
+- Void method captures (WebSocketImplTest, 7 tests) converted to `doAnswer()` + `AtomicReference`.
+- Identity assertions (WsBinaryMessageTest, 2 tests) rewritten: `assertEquals(preMock, constructed)` → `assertNotNull` + `isMock()`.
+- 4 files deferred: LogbackConfTest (classpath), RequestScopeTest (Guice internals), JettyServerTest + JettyHandlerTest (Jetty 10 API change).
+- **Validation:** 807 tests pass, 0 failures.
 
 ### 1.7.5 — Migrate Complex Tests (mockStatic + mockConstructor)
 
@@ -135,17 +137,18 @@ Key API mappings:
 |---|---|---|
 | MockUnit only (no static/constructor) | 44 | ✅ Migrated (Phase 1.7.2) |
 | mockStatic only | 12 | ✅ Migrated (Phase 1.7.3) |
-| mockConstructor only | 7 | Pending (Phase 1.7.4) |
+| mockConstructor only | 5 | ✅ Migrated (Phase 1.7.4) |
 | mockStatic + mockConstructor | 6 | Pending (Phase 1.7.5) |
-| Non-MockUnit utilities / other | 7 | Pending (Phase 1.7.6) |
-| Remaining in `java-excluded/` | 20 | Sum of above pending phases |
+| Non-MockUnit utilities / other | 5 | Pending (Phase 1.7.6) |
+| Deferred (not mock-related) | 4 | LogbackConfTest, RequestScopeTest, JettyServerTest, JettyHandlerTest |
+| Remaining in `java-excluded/` | 15 | Sum of above pending + deferred |
 
 ## Progress
 
 - [x] 1.7.1 — Rewrite MockUnit.java
 - [x] 1.7.2 — Migrate 44 simple MockUnit tests
 - [x] 1.7.3 — Migrate 12 mockStatic tests
-- [ ] 1.7.4 — Migrate mockConstructor tests
+- [x] 1.7.4 — Migrate 5 mockConstructor tests
 - [ ] 1.7.5 — Migrate complex tests (static + constructor)
 - [ ] 1.7.6 — Migrate remaining utilities
 - [ ] 1.7.7 — Cleanup and finalize

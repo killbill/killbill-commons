@@ -15,23 +15,17 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 
 import org.jooby.internal.parser.LocaleParser;
 import org.jooby.internal.parser.StaticMethodParser;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.inject.TypeLiteral;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({StaticMethodTypeConverter.class, LocaleParser.class,
-    StaticMethodParser.class })
 public class StaticMethodTypeConverterTest {
 
   @Test
@@ -42,7 +36,7 @@ public class StaticMethodTypeConverterTest {
           StaticMethodParser converter = unit
               .mockConstructor(StaticMethodParser.class, new Class[]{String.class },
                   "valueOf");
-          expect(converter.parse(eq(type), eq("y"))).andReturn("x");
+          when(converter.parse(eq(type), eq("y"))).thenReturn("x");
         })
         .run(unit -> {
           assertEquals("x", new StaticMethodTypeConverter<Object>("valueOf").convert("y", type));
@@ -57,8 +51,8 @@ public class StaticMethodTypeConverterTest {
           StaticMethodParser converter = unit
               .mockConstructor(StaticMethodParser.class, new Class[]{String.class },
                   "valueOf");
-          expect(converter.parse(eq(type), eq("y")))
-              .andThrow(new IllegalArgumentException("intentional err"));
+          when(converter.parse(eq(type), eq("y")))
+              .thenThrow(new IllegalArgumentException("intentional err"));
         })
         .run(unit -> {
           new StaticMethodTypeConverter<Object>("valueOf").convert("y", type);

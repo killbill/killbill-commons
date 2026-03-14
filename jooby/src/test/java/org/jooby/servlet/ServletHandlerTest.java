@@ -15,7 +15,7 @@
  */
 package org.jooby.servlet;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
@@ -29,32 +29,27 @@ import org.jooby.Jooby;
 import org.jooby.spi.HttpHandler;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.typesafe.config.Config;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServletHandler.class, ServletServletRequest.class, ServletServletResponse.class })
 public class ServletHandlerTest {
 
   MockUnit.Block init = unit -> {
     HttpHandler dispatcher = unit.get(HttpHandler.class);
 
     Config config = unit.mock(Config.class);
-    expect(config.getString("application.tmpdir")).andReturn("target");
+    when(config.getString("application.tmpdir")).thenReturn("target");
 
     Jooby app = unit.mock(Jooby.class);
-    expect(app.require(HttpHandler.class)).andReturn(dispatcher);
-    expect(app.require(Config.class)).andReturn(config);
+    when(app.require(HttpHandler.class)).thenReturn(dispatcher);
+    when(app.require(Config.class)).thenReturn(config);
 
     ServletContext ctx = unit.mock(ServletContext.class);
-    expect(ctx.getAttribute(Jooby.class.getName())).andReturn(app);
+    when(ctx.getAttribute(Jooby.class.getName())).thenReturn(app);
 
     ServletConfig servletConfig = unit.get(ServletConfig.class);
 
-    expect(servletConfig.getServletContext()).andReturn(ctx);
+    when(servletConfig.getServletContext()).thenReturn(ctx);
   };
 
   @Test
@@ -102,18 +97,18 @@ public class ServletHandlerTest {
         HttpServletResponse.class)
         .expect(unit -> {
           Config config = unit.mock(Config.class);
-          expect(config.getString("application.tmpdir")).andReturn("target");
+          when(config.getString("application.tmpdir")).thenReturn("target");
 
           Jooby app = unit.mock(Jooby.class);
-          expect(app.require(HttpHandler.class)).andReturn(dispatcher);
-          expect(app.require(Config.class)).andReturn(config);
+          when(app.require(HttpHandler.class)).thenReturn(dispatcher);
+          when(app.require(Config.class)).thenReturn(config);
 
           ServletContext ctx = unit.mock(ServletContext.class);
-          expect(ctx.getAttribute(Jooby.class.getName())).andReturn(app);
+          when(ctx.getAttribute(Jooby.class.getName())).thenReturn(app);
 
           ServletConfig servletConfig = unit.get(ServletConfig.class);
 
-          expect(servletConfig.getServletContext()).andReturn(ctx);
+          when(servletConfig.getServletContext()).thenReturn(ctx);
         })
         .expect(unit -> {
           unit.mockConstructor(ServletServletRequest.class,
@@ -125,7 +120,7 @@ public class ServletHandlerTest {
         })
         .expect(unit -> {
           HttpServletRequest req = unit.get(HttpServletRequest.class);
-          expect(req.getRequestURI()).andReturn("/");
+          when(req.getRequestURI()).thenReturn("/");
         })
         .run(unit -> {
           ServletHandler handler = new ServletHandler();
@@ -144,18 +139,18 @@ public class ServletHandlerTest {
         HttpServletResponse.class)
         .expect(unit -> {
           Config config = unit.mock(Config.class);
-          expect(config.getString("application.tmpdir")).andReturn("target");
+          when(config.getString("application.tmpdir")).thenReturn("target");
 
           Jooby app = unit.mock(Jooby.class);
-          expect(app.require(HttpHandler.class)).andReturn(dispatcher);
-          expect(app.require(Config.class)).andReturn(config);
+          when(app.require(HttpHandler.class)).thenReturn(dispatcher);
+          when(app.require(Config.class)).thenReturn(config);
 
           ServletContext ctx = unit.mock(ServletContext.class);
-          expect(ctx.getAttribute(Jooby.class.getName())).andReturn(app);
+          when(ctx.getAttribute(Jooby.class.getName())).thenReturn(app);
 
           ServletConfig servletConfig = unit.get(ServletConfig.class);
 
-          expect(servletConfig.getServletContext()).andReturn(ctx);
+          when(servletConfig.getServletContext()).thenReturn(ctx);
         })
         .expect(unit -> {
           unit.mockConstructor(ServletServletRequest.class,
@@ -167,7 +162,7 @@ public class ServletHandlerTest {
         })
         .expect(unit -> {
           HttpServletRequest req = unit.get(HttpServletRequest.class);
-          expect(req.getRequestURI()).andReturn("/");
+          when(req.getRequestURI()).thenReturn("/");
         })
         .run(unit -> {
           ServletHandler handler = new ServletHandler();
@@ -186,18 +181,18 @@ public class ServletHandlerTest {
         HttpServletResponse.class)
         .expect(unit -> {
           Config config = unit.mock(Config.class);
-          expect(config.getString("application.tmpdir")).andReturn("target");
+          when(config.getString("application.tmpdir")).thenReturn("target");
 
           Jooby app = unit.mock(Jooby.class);
-          expect(app.require(HttpHandler.class)).andReturn(dispatcher);
-          expect(app.require(Config.class)).andReturn(config);
+          when(app.require(HttpHandler.class)).thenReturn(dispatcher);
+          when(app.require(Config.class)).thenReturn(config);
 
           ServletContext ctx = unit.mock(ServletContext.class);
-          expect(ctx.getAttribute(Jooby.class.getName())).andReturn(app);
+          when(ctx.getAttribute(Jooby.class.getName())).thenReturn(app);
 
           ServletConfig servletConfig = unit.get(ServletConfig.class);
 
-          expect(servletConfig.getServletContext()).andReturn(ctx);
+          when(servletConfig.getServletContext()).thenReturn(ctx);
         })
         .expect(unit -> {
           unit.mockConstructor(ServletServletRequest.class,
@@ -209,7 +204,7 @@ public class ServletHandlerTest {
         })
         .expect(unit -> {
           HttpServletRequest req = unit.get(HttpServletRequest.class);
-          expect(req.getRequestURI()).andReturn("/");
+          when(req.getRequestURI()).thenReturn("/");
         })
         .run(unit -> {
           ServletHandler handler = new ServletHandler();

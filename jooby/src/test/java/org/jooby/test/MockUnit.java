@@ -118,6 +118,9 @@ public class MockUnit {
   // Maps constructed mock → pre-configured mock (for delegation)
   private Map<Object, Object> mockToPreMock = new IdentityHashMap<>();
 
+  // Reverse: maps pre-configured mock → constructed mock (for identity in get())
+  private Map<Object, Object> preMockToConstructed = new IdentityHashMap<>();
+
   private List<Block> blocks = new LinkedList<>();
 
   public MockUnit(final Class... types) {
@@ -220,7 +223,10 @@ public class MockUnit {
   public <T> T get(final Class<T> type) {
     try {
       List<Object> collection = (List<Object>) requireNonNull(globalMock.get(type));
-      return (T) collection.get(collection.size() - 1);
+      Object result = collection.get(collection.size() - 1);
+      // If this is a pre-mock that has been replaced by a construction mock, return the latter
+      Object constructed = preMockToConstructed.get(result);
+      return (T) (constructed != null ? constructed : result);
     } catch (ArrayIndexOutOfBoundsException ex) {
       throw new IllegalStateException("Not found: " + type);
     }
@@ -229,7 +235,9 @@ public class MockUnit {
   public <T> T first(final Class<T> type) {
     List<Object> collection = (List<Object>) requireNonNull(globalMock.get(type),
         "Mock not found: " + type);
-    return (T) collection.get(0);
+    Object result = collection.get(0);
+    Object constructed = preMockToConstructed.get(result);
+    return (T) (constructed != null ? constructed : result);
   }
 
   public MockUnit expect(final Block block) {
@@ -300,7 +308,9 @@ public class MockUnit {
           (mock, context) -> {
             int i = counter.getAndIncrement();
             if (i < preMocks.size()) {
-              mockToPreMock.put(mock, preMocks.get(i));
+              Object preMock = preMocks.get(i);
+              mockToPreMock.put(mock, preMock);
+              preMockToConstructed.put(preMock, mock);
             }
             // Populate constructor arg captures with actual constructor arguments
             List<ConstructorArgCapture> caps = constructorArgCaptures.get(type);

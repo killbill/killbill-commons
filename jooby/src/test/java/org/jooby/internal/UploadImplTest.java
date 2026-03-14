@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -29,14 +29,9 @@ import org.jooby.internal.parser.ParserExecutor;
 import org.jooby.spi.NativeUpload;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.inject.Injector;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UploadImpl.class, MutantImpl.class })
 public class UploadImplTest {
 
   @Test
@@ -54,7 +49,7 @@ public class UploadImplTest {
   public void name() throws Exception {
     new MockUnit(Injector.class, NativeUpload.class)
         .expect(unit -> {
-          expect(unit.get(NativeUpload.class).name()).andReturn("x");
+          when(unit.get(NativeUpload.class).name()).thenReturn("x");
         })
         .run(unit -> {
           assertEquals("x",
@@ -66,7 +61,7 @@ public class UploadImplTest {
   public void describe() throws Exception {
     new MockUnit(Injector.class, NativeUpload.class)
         .expect(unit -> {
-          expect(unit.get(NativeUpload.class).name()).andReturn("x");
+          when(unit.get(NativeUpload.class).name()).thenReturn("x");
         })
         .run(unit -> {
           assertEquals("x",
@@ -79,7 +74,7 @@ public class UploadImplTest {
     File f = new File("x");
     new MockUnit(Injector.class, NativeUpload.class)
         .expect(unit -> {
-          expect(unit.get(NativeUpload.class).file()).andReturn(f);
+          when(unit.get(NativeUpload.class).file()).thenReturn(f);
         })
         .run(unit -> {
           assertEquals(f,
@@ -91,7 +86,7 @@ public class UploadImplTest {
   public void type() throws Exception {
     new MockUnit(Injector.class, NativeUpload.class, ParserExecutor.class)
         .expect(unit -> {
-          expect(unit.get(Injector.class).getInstance(ParserExecutor.class)).andReturn(
+          when(unit.get(Injector.class).getInstance(ParserExecutor.class)).thenReturn(
               unit.get(ParserExecutor.class));
         })
         .expect(
@@ -99,7 +94,7 @@ public class UploadImplTest {
               NativeUpload upload = unit.get(NativeUpload.class);
 
               List<String> headers = Arrays.asList("application/json");
-              expect(upload.headers("Content-Type")).andReturn(headers);
+              when(upload.headers("Content-Type")).thenReturn(headers);
 
               StrParamReferenceImpl pref = unit.mockConstructor(StrParamReferenceImpl.class,
                   new Class[]{
@@ -110,8 +105,8 @@ public class UploadImplTest {
                   new Class[]{ParserExecutor.class, Object.class },
                   unit.get(ParserExecutor.class), pref);
 
-              expect(mutant.toOptional(MediaType.class))
-                  .andReturn(Optional.ofNullable(MediaType.json));
+              when(mutant.toOptional(MediaType.class))
+                  .thenReturn(Optional.ofNullable(MediaType.json));
             })
         .run(unit -> {
           assertEquals(MediaType.json,
@@ -123,17 +118,17 @@ public class UploadImplTest {
   public void deftype() throws Exception {
     new MockUnit(Injector.class, NativeUpload.class, ParserExecutor.class)
         .expect(unit -> {
-          expect(unit.get(Injector.class).getInstance(ParserExecutor.class)).andReturn(
+          when(unit.get(Injector.class).getInstance(ParserExecutor.class)).thenReturn(
               unit.get(ParserExecutor.class));
         })
         .expect(unit -> {
-          expect(unit.get(NativeUpload.class).name()).andReturn("x");
+          when(unit.get(NativeUpload.class).name()).thenReturn("x");
         })
         .expect(unit -> {
           NativeUpload upload = unit.get(NativeUpload.class);
 
           List<String> headers = Arrays.asList();
-          expect(upload.headers("Content-Type")).andReturn(headers);
+          when(upload.headers("Content-Type")).thenReturn(headers);
 
           StrParamReferenceImpl pref = unit.mockConstructor(StrParamReferenceImpl.class,
               new Class[]{
@@ -144,8 +139,8 @@ public class UploadImplTest {
               new Class[]{ParserExecutor.class, Object.class },
               unit.get(ParserExecutor.class), pref);
 
-          expect(mutant.toOptional(MediaType.class))
-              .andReturn(Optional.ofNullable(null));
+          when(mutant.toOptional(MediaType.class))
+              .thenReturn(Optional.ofNullable(null));
         })
         .run(unit -> {
           assertEquals(MediaType.octetstream,
@@ -157,17 +152,17 @@ public class UploadImplTest {
   public void typeFromName() throws Exception {
     new MockUnit(Injector.class, NativeUpload.class, ParserExecutor.class)
         .expect(unit -> {
-          expect(unit.get(Injector.class).getInstance(ParserExecutor.class)).andReturn(
+          when(unit.get(Injector.class).getInstance(ParserExecutor.class)).thenReturn(
               unit.get(ParserExecutor.class));
         })
         .expect(unit -> {
-          expect(unit.get(NativeUpload.class).name()).andReturn("x.js");
+          when(unit.get(NativeUpload.class).name()).thenReturn("x.js");
         })
         .expect(unit -> {
           NativeUpload upload = unit.get(NativeUpload.class);
 
           List<String> headers = Arrays.asList();
-          expect(upload.headers("Content-Type")).andReturn(headers);
+          when(upload.headers("Content-Type")).thenReturn(headers);
 
           StrParamReferenceImpl pref = unit.mockConstructor(StrParamReferenceImpl.class,
               new Class[]{
@@ -178,8 +173,8 @@ public class UploadImplTest {
               new Class[]{ParserExecutor.class, Object.class },
               unit.get(ParserExecutor.class), pref);
 
-          expect(mutant.toOptional(MediaType.class))
-              .andReturn(Optional.ofNullable(null));
+          when(mutant.toOptional(MediaType.class))
+              .thenReturn(Optional.ofNullable(null));
         })
         .run(unit -> {
           assertEquals(MediaType.js,
