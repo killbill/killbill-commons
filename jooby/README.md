@@ -28,9 +28,10 @@ Run tests (103 test files, 894 tests):
 mvn clean test -pl jooby -Pjooby
 ```
 
-**Note:** 10 test files that depend on PowerMock classloader, Jetty 9 APIs, or external HTTP clients
-are temporarily in `src/test/java-excluded/`. These will be restored after migration to Mockito
-(Phase 1.7.6). The `-Pjooby` profile compiles and runs only the test files in `src/test/java/`.
+**Note:** 6 test files remain in `src/test/java-excluded/`: FileConfTest and LogbackConfTest (Jooby
+static init needs PowerMock classloader), RequestScopeTest (Guice internal API), JettyServerTest
+and JettyHandlerTest (Jetty 10 API removal), and SseFeature (Ning AsyncHttpClient dependency).
+The `-Pjooby` profile compiles and runs only the test files in `src/test/java/`.
 
 Changes with upstream:
 

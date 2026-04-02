@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Utility test class for mocks. Internal use only.
  *
- * Rewritten from EasyMock+PowerMock to pure Mockito 5.
+ * Rewritten from EasyMock+PowerMock to pure Mockito 5 (inline mock maker).
  * See jooby/1-7-easymock-migration.md for migration details.
  *
  * @author edgar

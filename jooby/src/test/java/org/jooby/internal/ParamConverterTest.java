@@ -35,7 +35,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static org.easymock.EasyMock.*;
+import static org.mockito.Mockito.mock;
 import static org.junit.Assert.*;
 
 public class ParamConverterTest {
@@ -394,7 +394,7 @@ public class ParamConverterTest {
   }
 
   private ParserExecutor newParser() {
-    return new ParserExecutor(createMock(Injector.class),
+    return new ParserExecutor(mock(Injector.class),
         Sets.newLinkedHashSet(
             Arrays.asList(
                 BuiltinParser.Basic,

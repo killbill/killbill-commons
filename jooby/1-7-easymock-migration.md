@@ -112,30 +112,29 @@ Key API mappings:
   - **`MockedStatic.when()` leaks stubbing state:** A void mock call (e.g., `tc.configure(binder)`) immediately before `MockedStatic.when()` causes `CannotStubVoidMethodWithReturnValue`. Fix: removed unnecessary void mock calls that preceded MockedStatic operations.
 - **Validation:** 894 tests pass, 0 failures.
 
-### 1.7.6 — Migrate Remaining Utilities
+### 1.7.6 — Migrate Remaining Utilities ✅
 
-- **7 non-MockUnit files:**
-  - `JoobyRunner.java` — depends on `Client.java`/`ServerFeature.java` (HTTP integration test runner).
-  - `JoobySuite.java` — depends on `JoobyRunner.java`.
-  - `Client.java` — HTTP client utility, needs Apache HttpClient dep.
-  - `ServerFeature.java` — integration test base, needs Apache HttpClient dep.
-  - `SseFeature.java` — SSE integration test base, needs Ning Async HTTP Client dep.
-  - `JettyHandlerTest.java` — uses removed `WebSocketServerFactory` (Jetty 10 incompatibility, not mock-related).
-  - `RequestScopeTest.java` — uses `com.google.inject.internal.CircularDependencyProxy` (Guice internal API, not mock-related).
-- Decision needed: do we add HttpClient/Ning as test deps, or defer integration tests?
-- Move whatever compiles back to `java/`.
-- Validate: tests compile and pass.
+- **DONE.** 4 non-MockUnit files moved from `java-excluded/` to `java/`.
+- No EasyMock/PowerMock references — these are pure integration test infrastructure (JUnit runner,
+  HTTP client wrapper, base classes).
+- Added Apache HttpClient 4.5.14 test dependencies: `httpclient`, `httpcore`, `fluent-hc`, `httpmime`.
+- `SseFeature.java` deferred — hardwired to Ning AsyncHttpClient (`com.ning.http.client`) which is
+  not used anywhere in Kill Bill repositories.
+- **Validation:** 894 tests pass (no new tests — these are utilities, not test classes), 0 failures.
 
-### 1.7.7 — Cleanup and Finalize
+### 1.7.7 — Cleanup and Finalize ✅
 
-- Remove `easymock` dependency from `jooby/pom.xml`.
-- Add `mockito-core` as test dependency (managed by parent).
-- Verify `java-excluded/` is empty (or document why files remain).
-- Remove `-Pjooby` profile testExclude workarounds if no longer needed.
-- Update `CHANGES.md` with final migration summary.
-- Update `killbill-jooby-todo.md` section 7 as ✅.
-- Run full `mvn clean install -pl jooby -Pjooby` — all tests pass.
-- Run `mvn clean install` (root) — no sibling breakage.
+- **DONE.** EasyMock fully removed from the jooby module.
+- Removed `easymock` dependency from `jooby/pom.xml`. `mockito-core` (managed by parent) is the only
+  test mock framework.
+- Migrated last 2 EasyMock holdouts: `ParamConverterTest` and `MutantImplTest` — both only used
+  `createMock()`, replaced with `Mockito.mock()`.
+- `java-excluded/` has 6 remaining files, all blocked by non-mock issues (documented in 1.7.5/1.7.6).
+- `-Pjooby` profile retained: `reuseForks=false` still needed for Mockito inline mock maker stability;
+  `java-excluded/` still has files that would fail compilation.
+- **Validation:** `mvn clean install -pl jooby -Pjooby` — 894 tests pass, 0 failures.
+  Root build (`mvn clean install -DskipTests`) passes (pre-existing `jackson-annotations` unused
+  dependency warning is unrelated).
 
 ---
 
@@ -147,9 +146,9 @@ Key API mappings:
 | mockStatic only | 12 | ✅ Migrated (Phase 1.7.3) |
 | mockConstructor only | 5 | ✅ Migrated (Phase 1.7.4) |
 | mockStatic + mockConstructor | 5 | ✅ Migrated (Phase 1.7.5) |
-| Non-MockUnit utilities / other | 5 | Pending (Phase 1.7.6) |
-| Deferred (not mock-related) | 5 | FileConfTest, LogbackConfTest, RequestScopeTest, JettyServerTest, JettyHandlerTest |
-| Remaining in `java-excluded/` | 10 | Sum of above pending + deferred |
+| Non-MockUnit utilities / other | 4 | ✅ Migrated (Phase 1.7.6) |
+| Deferred (not mock-related) | 6 | FileConfTest, LogbackConfTest, RequestScopeTest, JettyServerTest, JettyHandlerTest, SseFeature |
+| Remaining in `java-excluded/` | 6 | Sum of above deferred |
 
 ## Progress
 
@@ -158,5 +157,5 @@ Key API mappings:
 - [x] 1.7.3 — Migrate 12 mockStatic tests
 - [x] 1.7.4 — Migrate 5 mockConstructor tests
 - [x] 1.7.5 — Migrate 5 complex tests (static + constructor)
-- [ ] 1.7.6 — Migrate remaining utilities
-- [ ] 1.7.7 — Cleanup and finalize
+- [x] 1.7.6 — Migrate 4 remaining utilities
+- [x] 1.7.7 — Cleanup and finalize

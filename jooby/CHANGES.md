@@ -58,6 +58,11 @@ Differences from upstream dependency versions:
 | `javax.inject:javax.inject` | transitive via Guice | managed (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
 | `junit:junit` | optional (compile) | compile + optional | Parent forces test scope; explicit compile needed for `JoobyRule` |
 | `org.mockito:mockito-core` | not present | 5.3.1 (managed, test) | Added for Phase 1.7 EasyMock→Mockito migration |
+| `org.easymock:easymock` | present (test) | **removed** | Replaced by mockito-core in Phase 1.7.7 |
+| `org.apache.httpcomponents:httpclient` | not present | 4.5.14 (test) | Integration test HTTP client (Phase 1.7.6) |
+| `org.apache.httpcomponents:httpcore` | not present | 4.4.16 (test) | Required by httpclient (Phase 1.7.6) |
+| `org.apache.httpcomponents:fluent-hc` | not present | 4.5.14 (test) | Client.java fluent Executor API (Phase 1.7.6) |
+| `org.apache.httpcomponents:httpmime` | not present | 4.5.14 (test) | Client.java multipart support (Phase 1.7.6) |
 
 ## Structural Changes
 
@@ -67,7 +72,7 @@ Differences from upstream dependency versions:
 | `jooby-netty` excluded | Kill Bill uses Jetty; SSE/WebSocket work via core SPI |
 | ASM shade plugin preserved | Relocates `org.objectweb.asm` → `org.jooby.internal.asm` (same as upstream) |
 | Test compilation disabled by default | 76 of 125 test files depend on PowerMock (not available); enabled via `-Pjooby` profile |
-| 20 test files moved to `src/test/java-excluded/` | Depend on PowerMock mockConstructor or external HTTP clients; will be restored after Phase 1.7.4-1.7.6 |
+| 20 test files moved to `src/test/java-excluded/` | Were blocked by PowerMock/missing deps; 14 restored in Phases 1.7.2-1.7.6, 6 remain (non-mock blockers) |
 | 105 test files remain in `src/test/java/` | 50 pre-existing + 43 migrated (1.7.2) + 12 migrated (1.7.3); compile and run with `-Pjooby` profile (751 tests pass) |
 | SpotBugs exclude filter (`spotbugs-exclude.xml`) | Suppresses all upstream SpotBugs findings until Phase 1.8 triage |
 | Apache RAT exclusions for resources | Resource files (`.conf`, `.xml`, `.properties`, SSL certs) have no license headers |
@@ -236,3 +241,30 @@ deferred — same `NoClassDefFoundError` as LogbackConfTest (Jooby static init r
 | `FileConfTest.java` | `NoClassDefFoundError: org/jooby/Jooby` (same as LogbackConfTest) |
 
 **Result:** 894 tests pass (807 prior + 87 new), 0 failures.
+
+### Sub-phase 1.7.6 -- Integration Test Utilities
+
+4 non-MockUnit utility files moved from java-excluded/ to java/. These are the integration test
+infrastructure (JUnit runner, HTTP client wrapper, base classes) -- no EasyMock/PowerMock references.
+
+New test-scope dependencies in pom.xml:
+- org.apache.httpcomponents:httpclient 4.5.14 (Client.java HTTP test client)
+- org.apache.httpcomponents:httpcore 4.4.16 (required by httpclient, flagged by dependency analysis)
+- org.apache.httpcomponents:fluent-hc 4.5.14 (Client.java fluent Executor API)
+- org.apache.httpcomponents:httpmime 4.5.14 (Client.java multipart upload support)
+
+Deferred: SseFeature.java -- hardwired to Ning AsyncHttpClient (com.ning.http.client), not used in Kill Bill.
+
+Result: 894 tests pass (no new tests -- these are utilities), 0 failures. 6 files remain in java-excluded/.
+
+### Sub-phase 1.7.7 -- Cleanup and Finalize
+
+Removed easymock dependency from pom.xml. Migrated last 2 EasyMock holdouts
+(ParamConverterTest and MutantImplTest) which only used createMock() -- replaced
+with Mockito.mock(). No EasyMock or PowerMock references remain in active test code.
+mockito-core (managed by killbill-oss-parent) is now the sole test mock framework.
+
+The -Pjooby profile is retained: reuseForks=false is still needed for Mockito inline
+mock maker stability, and java-excluded/ still has 6 files that would fail compilation.
+
+Result: 894 tests pass, 0 failures. EasyMock migration complete.

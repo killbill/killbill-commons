@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.createMock;
+import static org.mockito.Mockito.mock;
 import static org.junit.Assert.assertEquals;
 
 import java.time.format.DateTimeFormatter;
@@ -542,7 +542,7 @@ public class MutantImplTest {
   }
 
   private ParserExecutor newConverter() {
-    return new ParserExecutor(createMock(Injector.class),
+    return new ParserExecutor(mock(Injector.class),
         Sets.newLinkedHashSet(
             Arrays.asList(
                 BuiltinParser.Basic,
