@@ -25,6 +25,7 @@ The following files were modified from upstream to adapt to Jetty 10 API changes
 | `JettyPush.java` | Replaced `PushBuilder` usage with no-op + log message | HTTP/2 Server Push (`PushBuilder`) removed in Jetty 10 (deprecated in HTTP/2 spec RFC 9113) |
 | `JettyHandler.java` | Removed `WebSocketServerFactory` field/parameter; replaced `Request.MULTIPART_CONFIG_ELEMENT` with string constant; simplified `upgrade()` method | `WebSocketServerFactory` removed in Jetty 10; `MULTIPART_CONFIG_ELEMENT` constant removed from `Request` |
 | `JettyServer.java` | Removed `WebSocketPolicy`/`WebSocketServerFactory`/`DecoratedObjectFactory` imports and usage; changed `new SslContextFactory()` → `new SslContextFactory.Server()` | WebSocket API completely restructured in Jetty 10; `SslContextFactory` made abstract with `Server` subclass |
+| `Response.java` | `Response.Forwarding.setResetHeadersOnError()`: changed `this.setResetHeadersOnError(value)` → `rsp.setResetHeadersOnError(value)` | Upstream bug — infinite recursion. Every other method in `Forwarding` delegates to `rsp`; this one called `this` by mistake |
 
 ## POM / Dependency Changes
 
@@ -74,7 +75,7 @@ Differences from upstream dependency versions:
 | Test compilation disabled by default | 76 of 125 test files depend on PowerMock (not available); enabled via `-Pjooby` profile |
 | 20 test files moved to `src/test/java-excluded/` | Were blocked by PowerMock/missing deps; 14 restored in Phases 1.7.2-1.7.6, 6 remain (non-mock blockers) |
 | 105 test files remain in `src/test/java/` | 50 pre-existing + 43 migrated (1.7.2) + 12 migrated (1.7.3); compile and run with `-Pjooby` profile (751 tests pass) |
-| SpotBugs exclude filter (`spotbugs-exclude.xml`) | Suppresses all upstream SpotBugs findings until Phase 1.8 triage |
+| SpotBugs exclude filter (`spotbugs-exclude.xml`) | Targeted exclusions for 77 upstream findings (12 bug patterns across 10 categories) triaged as intentional framework patterns or low-risk upstream code |
 | Apache RAT exclusions for resources | Resource files (`.conf`, `.xml`, `.properties`, SSL certs) have no license headers |
 
 ## Configuration / Resource Changes

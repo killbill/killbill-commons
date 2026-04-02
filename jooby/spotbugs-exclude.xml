@@ -19,11 +19,104 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
                             https://raw.githubusercontent.com/spotbugs/spotbugs/4.6.0/spotbugs/etc/findbugsfilter.xsd">
-    <!-- Upstream Jooby 1.6.9 code — suppress all findings until Phase 1.8 (SpotBugs triage) -->
+    <!--
+      Upstream Jooby 1.6.9 code — targeted exclusions for findings triaged in Step 9.
+      All findings below are present in the original upstream source and are either:
+      (a) framework-internal patterns that are intentional (e.g., mutable state exposure in
+          internal classes not part of any public API contract), or
+      (b) low-risk code patterns not worth fixing in vendored code.
+      Real bugs found during triage were fixed directly in source (see CHANGES.md).
+    -->
+
+    <!-- EI_EXPOSE_REP / EI_EXPOSE_REP2: Mutable object stored/returned without copy.
+         Upstream framework internals intentionally share mutable state for performance.
+         These are internal classes (org.jooby.internal.*) or framework base types where
+         defensive copying would degrade request-path performance for no safety gain. -->
     <Match>
-        <Package name="~org\.jooby\..*" />
+        <Package name="~org\.jooby(\..*)?"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP" />
+            <Bug pattern="EI_EXPOSE_REP2" />
+        </Or>
     </Match>
+
+    <!-- NP_NONNULL_PARAM_VIOLATION / NP_NONNULL_RETURN_VIOLATION: Null passed where @Nonnull
+         is declared. Upstream Jooby uses JSR-305 annotations loosely — several paths pass null
+         by design (e.g., Deferred constructor, Jooby bootstrap). Not fixing in vendored code. -->
     <Match>
-        <Class name="~org\.jooby\.[^.]*" />
+        <Package name="~org\.jooby(\..*)?"/>
+        <Or>
+            <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+            <Bug pattern="NP_NONNULL_RETURN_VIOLATION" />
+        </Or>
+    </Match>
+
+    <!-- RV_RETURN_VALUE_IGNORED_BAD_PRACTICE: Ignored return values from File.delete(),
+         File.mkdirs(), etc. Upstream pattern in cleanup/teardown paths where failure is
+         acceptable. -->
+    <Match>
+        <Package name="~org\.jooby(\..*)?"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" />
+    </Match>
+
+    <!-- OBL_UNSATISFIED_OBLIGATION: Unclosed streams. Upstream resource management patterns
+         where streams are handed off to the response pipeline (caller closes). -->
+    <Match>
+        <Package name="~org\.jooby(\..*)?"/>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION" />
+    </Match>
+
+    <!-- DCN_NULLPOINTER_EXCEPTION: Catching NullPointerException. Upstream pattern in
+         SSIHandler and URLAsset where NPE is used as a sentinel for missing attributes. -->
+    <Match>
+        <Package name="~org\.jooby(\..*)?"/>
+        <Bug pattern="DCN_NULLPOINTER_EXCEPTION" />
+    </Match>
+
+    <!-- IS2_INCONSISTENT_SYNC: Inconsistent synchronization in WebSocketImpl. Upstream
+         threading model uses selective synchronization on specific fields. -->
+    <Match>
+        <Class name="org.jooby.internal.WebSocketImpl" />
+        <Bug pattern="IS2_INCONSISTENT_SYNC" />
+    </Match>
+
+    <!-- DM_DEFAULT_ENCODING: Uses default platform encoding. Upstream Cookie.Signature.sign()
+         uses String.getBytes() without charset — acceptable for HMAC signing where consistent
+         encoding within a single JVM is sufficient. -->
+    <Match>
+        <Class name="org.jooby.Cookie$Signature" />
+        <Bug pattern="DM_DEFAULT_ENCODING" />
+    </Match>
+
+    <!-- DM_BOXED_PRIMITIVE_FOR_PARSING: Uses new Float() for parsing. Upstream MediaType
+         quality parsing — minor performance issue, not a bug. -->
+    <Match>
+        <Class name="org.jooby.MediaType" />
+        <Bug pattern="DM_BOXED_PRIMITIVE_FOR_PARSING" />
+    </Match>
+
+    <!-- BC_EQUALS_METHOD_SHOULD_WORK_FOR_ALL_OBJECTS / NP_EQUALS_SHOULD_HANDLE_NULL_ARGUMENT:
+         RouteKey.equals() doesn't check type or null. This is a private inner class used only
+         as a HashMap key within HttpHandlerImpl — never compared against other types. -->
+    <Match>
+        <Class name="org.jooby.internal.HttpHandlerImpl$RouteKey" />
+        <Or>
+            <Bug pattern="BC_EQUALS_METHOD_SHOULD_WORK_FOR_ALL_OBJECTS" />
+            <Bug pattern="NP_EQUALS_SHOULD_HANDLE_NULL_ARGUMENT" />
+        </Or>
+    </Match>
+
+    <!-- SR_NOT_CHECKED: InputStream.skip() return value not checked. Upstream pattern in
+         HttpRendererContext — skip is best-effort in the response pipeline. -->
+    <Match>
+        <Class name="org.jooby.internal.HttpRendererContext" />
+        <Bug pattern="SR_NOT_CHECKED" />
+    </Match>
+
+    <!-- NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE: Possible null dereference from File.toPath().
+         Upstream SslContextProvider — the file is validated earlier in the call chain. -->
+    <Match>
+        <Class name="org.jooby.internal.ssl.SslContextProvider" />
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
     </Match>
 </FindBugsFilter>

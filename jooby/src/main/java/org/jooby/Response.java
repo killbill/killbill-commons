@@ -233,7 +233,10 @@ public interface Response {
     }
 
     @Override public void setResetHeadersOnError(boolean value) {
-      this.setResetHeadersOnError(value);
+      // Upstream Jooby 1.6.9 bug: was this.setResetHeadersOnError(value) — infinite recursion.
+      // Every other Forwarding method delegates to rsp; this was a copy-paste error.
+      // Latent: nobody calls setResetHeadersOnError() through a Forwarding wrapper.
+      rsp.setResetHeadersOnError(value);
     }
 
     /**
