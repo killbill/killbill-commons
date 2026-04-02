@@ -38,13 +38,15 @@ import com.google.common.io.Files;
  */
 final class PemReader {
 
+  // ReDoS fix: (?:\s|\r|\n)+ → \s+ (since \s already includes \r and \n,
+  // the alternation created ambiguous matching paths for whitespace chars).
   private static final Pattern CERT_PATTERN = Pattern.compile(
-      "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
+      "-+BEGIN\\s+.*CERTIFICATE[^-]*-+\\s+" + // Header
           "([a-z0-9+/=\\r\\n]+)" + // Base64 text
           "-+END\\s+.*CERTIFICATE[^-]*-+", // Footer
       Pattern.CASE_INSENSITIVE);
   private static final Pattern KEY_PATTERN = Pattern.compile(
-      "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
+      "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+\\s+" + // Header
           "([a-z0-9+/=\\r\\n]+)" + // Base64 text
           "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", // Footer
       Pattern.CASE_INSENSITIVE);

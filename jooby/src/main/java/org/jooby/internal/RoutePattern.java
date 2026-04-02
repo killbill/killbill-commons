@@ -49,8 +49,10 @@ public class RoutePattern {
       /**            ?| **    | * | :var           | {var(:.*)} */
       //.compile("\\?|/\\*\\*|\\*|\\:((?:[^/]+)+?)              |\\{((?:\\{[^/]+?\\}|[^/{}]|\\\\[{}])+?)\\}");
       /**           ? | **:name            | * | :var           | */
+      // ReDoS fix: collapsed nested quantifier (?:[^/]+)+? → [^/]+ in :var group;
+      // restricted [^/]+? → [^/}]+ inside \{...\} to prevent ambiguous } matching.
       .compile(
-          "\\?|/\\*\\*(\\:(?:[^/]+))?|\\*|\\:((?:[^/]+)+?)|\\{((?:\\{[^/]+?\\}|[^/{}]|\\\\[{}])+?)\\}");
+          "\\?|/\\*\\*(\\:(?:[^/]+))?|\\*|\\:([^/]+)|\\{((?:\\{[^/}]+\\}|[^/{}]|\\\\[{}])+?)\\}");
 
   private static final Pattern SLASH = Pattern.compile("//+");
 
