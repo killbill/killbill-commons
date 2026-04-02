@@ -15,10 +15,10 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -33,23 +33,17 @@ import java.nio.file.Path;
 import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.io.ByteStreams;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({BodyReferenceImpl.class, ByteStreams.class, FileOutputStream.class, Files.class,
-    File.class, ByteArrayOutputStream.class })
 public class BodyReferenceImplTest {
 
   private Block mkdir = unit -> {
     File dir = unit.mock(File.class);
-    expect(dir.mkdirs()).andReturn(true);
+    when(dir.mkdirs()).thenReturn(true);
 
     File file = unit.get(File.class);
-    expect(file.getParentFile()).andReturn(dir);
+    when(file.getParentFile()).thenReturn(dir);
   };
 
   private Block fos = unit -> {
@@ -83,7 +77,7 @@ public class BodyReferenceImplTest {
         .expect(unit -> {
           InputStream in = unit.get(InputStream.class);
 
-          expect(in.read(unit.capture(byte[].class))).andThrow(new IOException());
+          when(in.read(unit.capture(byte[].class))).thenThrow(new IOException());
 
           OutputStream out = unit.get(ByteArrayOutputStream.class);
 
@@ -108,11 +102,9 @@ public class BodyReferenceImplTest {
           in.close();
 
           OutputStream out = unit.get(ByteArrayOutputStream.class);
-          out.close();
-          expectLastCall().andThrow(new IOException());
+          doThrow(new IOException()).when(out).close();
 
-          unit.mockStatic(ByteStreams.class);
-          expect(ByteStreams.copy(in, out)).andReturn(1L);
+          unit.mockStatic(ByteStreams.class).when(() -> ByteStreams.copy(in, out)).thenReturn(1L);
         })
         .run(unit -> {
           new BodyReferenceImpl(len, StandardCharsets.UTF_8, unit.get(File.class),
@@ -129,14 +121,12 @@ public class BodyReferenceImplTest {
         .expect(baos(bytes))
         .expect(unit -> {
           InputStream in = unit.get(InputStream.class);
-          in.close();
-          expectLastCall().andThrow(new IOException());
+          doThrow(new IOException()).when(in).close();
 
           OutputStream out = unit.get(ByteArrayOutputStream.class);
           out.close();
 
-          unit.mockStatic(ByteStreams.class);
-          expect(ByteStreams.copy(in, out)).andReturn(1L);
+          unit.mockStatic(ByteStreams.class).when(() -> ByteStreams.copy(in, out)).thenReturn(1L);
         })
         .run(unit -> {
           new BodyReferenceImpl(len, StandardCharsets.UTF_8, unit.get(File.class),
@@ -184,10 +174,9 @@ public class BodyReferenceImplTest {
         .expect(fos)
         .expect(copy(FileOutputStream.class))
         .expect(unit -> {
-          expect(unit.get(File.class).toPath()).andReturn(unit.get(Path.class));
+          when(unit.get(File.class).toPath()).thenReturn(unit.get(Path.class));
 
-          unit.mockStatic(Files.class);
-          expect(Files.readAllBytes(unit.get(Path.class))).andReturn(bytes);
+          unit.mockStatic(Files.class).when(() -> Files.readAllBytes(unit.get(Path.class))).thenReturn(bytes);
         })
         .run(unit -> {
           byte[] rsp = new BodyReferenceImpl(len, StandardCharsets.UTF_8, unit.get(File.class),
@@ -222,10 +211,9 @@ public class BodyReferenceImplTest {
         .expect(fos)
         .expect(copy(FileOutputStream.class))
         .expect(unit -> {
-          expect(unit.get(File.class).toPath()).andReturn(unit.get(Path.class));
+          when(unit.get(File.class).toPath()).thenReturn(unit.get(Path.class));
 
-          unit.mockStatic(Files.class);
-          expect(Files.readAllBytes(unit.get(Path.class))).andReturn(bytes);
+          unit.mockStatic(Files.class).when(() -> Files.readAllBytes(unit.get(Path.class))).thenReturn(bytes);
         })
         .run(unit -> {
           String rsp = new BodyReferenceImpl(len, StandardCharsets.UTF_8, unit.get(File.class),
@@ -244,10 +232,9 @@ public class BodyReferenceImplTest {
         .expect(fos)
         .expect(copy(FileOutputStream.class))
         .expect(unit -> {
-          expect(unit.get(File.class).toPath()).andReturn(unit.get(Path.class));
+          when(unit.get(File.class).toPath()).thenReturn(unit.get(Path.class));
 
-          unit.mockStatic(Files.class);
-          expect(Files.copy(unit.get(Path.class), unit.get(OutputStream.class))).andReturn(1L);
+          unit.mockStatic(Files.class).when(() -> Files.copy(unit.get(Path.class), unit.get(OutputStream.class))).thenReturn(1L);
         })
         .run(unit -> {
           new BodyReferenceImpl(len, StandardCharsets.UTF_8, unit.get(File.class),
@@ -290,8 +277,7 @@ public class BodyReferenceImplTest {
         out.close();
       }
 
-      unit.mockStatic(ByteStreams.class);
-      expect(ByteStreams.copy(in, out)).andReturn(1L);
+      unit.mockStatic(ByteStreams.class).when(() -> ByteStreams.copy(in, out)).thenReturn(1L);
     };
   }
 
@@ -300,7 +286,7 @@ public class BodyReferenceImplTest {
       ByteArrayOutputStream baos = unit.constructor(ByteArrayOutputStream.class)
           .build();
 
-      expect(baos.toByteArray()).andReturn(bytes);
+      when(baos.toByteArray()).thenReturn(bytes);
 
       unit.registerMock(ByteArrayOutputStream.class, baos);
     };

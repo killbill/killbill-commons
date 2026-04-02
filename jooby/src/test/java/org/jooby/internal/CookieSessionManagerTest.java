@@ -15,11 +15,12 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jooby.Cookie;
 import org.jooby.Mutant;
@@ -33,25 +34,27 @@ import org.jooby.internal.parser.ParserExecutor;
 import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.mockito.Mockito.doAnswer;
 
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CookieSessionManager.class, SessionImpl.class, Cookie.class })
 public class CookieSessionManagerTest {
 
   private Block cookie = unit -> {
     Session.Definition sdef = unit.get(Session.Definition.class);
-    expect(sdef.cookie()).andReturn(unit.get(Cookie.Definition.class));
+    when(sdef.cookie()).thenReturn(unit.get(Cookie.Definition.class));
   };
 
   private Block push = unit -> {
     Response rsp = unit.get(Response.class);
-    rsp.after(unit.capture(Route.After.class));
+    AtomicReference<Route.After> ref = new AtomicReference<>();
+    doAnswer(invocation -> {
+      ref.set(invocation.getArgument(0));
+      return null;
+    }).when(rsp).after(org.mockito.ArgumentMatchers.any(Route.After.class));
+    unit.registerMock(AtomicReference.class, ref);
   };
 
   @Test
@@ -111,6 +114,7 @@ public class CookieSessionManagerTest {
             });
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void saveAfter() throws Exception {
     String secret = "shhh";
@@ -123,25 +127,24 @@ public class CookieSessionManagerTest {
             .expect(push)
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.of(signed));
+              when(mutant.toOptional()).thenReturn(Optional.of(signed));
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
 
-              expect(session.attributes()).andReturn(ImmutableMap.of("foo", "2"));
+              when(session.attributes()).thenReturn(ImmutableMap.of("foo", "2"));
 
               Request req = unit.get(Request.class);
-              expect(req.ifSession()).andReturn(Optional.of(session));
+              when(req.ifSession()).thenReturn(Optional.of(session));
             })
             .expect(unit -> {
-              unit.mockStatic(Cookie.Signature.class);
-              expect(Cookie.Signature.unsign(signed, secret)).andReturn("foo=1");
+              unit.mockStatic(Cookie.Signature.class).when(() -> Cookie.Signature.unsign(signed, secret)).thenReturn("foo=1");
             })
             .expect(signCookie(secret, "foo=2", "sss"))
             .expect(sendCookie())
@@ -151,13 +154,15 @@ public class CookieSessionManagerTest {
                       .create(unit.get(Request.class), unit.get(Response.class));
               assertEquals(unit.get(SessionImpl.class), session);
             }, unit -> {
-              After next = unit.captured(Route.After.class).iterator().next();
+              AtomicReference<Route.After> ref = unit.get(AtomicReference.class);
+              After next = ref.get();
               Result ok = next.handle(unit.get(Request.class), unit.get(Response.class),
                   org.jooby.Results.ok());
               assertNotNull(ok);
             });
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void ignoreSaveAfterIfNoSession() throws Exception {
     String secret = "shhh";
@@ -169,7 +174,7 @@ public class CookieSessionManagerTest {
             .expect(push)
             .expect(unit -> {
               Request req = unit.get(Request.class);
-              expect(req.ifSession()).andReturn(Optional.empty());
+              when(req.ifSession()).thenReturn(Optional.empty());
             })
             .run(unit -> {
               Session session = new CookieSessionManager(unit.get(ParserExecutor.class),
@@ -177,13 +182,15 @@ public class CookieSessionManagerTest {
                       .create(unit.get(Request.class), unit.get(Response.class));
               assertEquals(unit.get(SessionImpl.class), session);
             }, unit -> {
-              After next = unit.captured(Route.After.class).iterator().next();
+              AtomicReference<Route.After> ref = unit.get(AtomicReference.class);
+              After next = ref.get();
               Result ok = next.handle(unit.get(Request.class), unit.get(Response.class),
                   org.jooby.Results.ok());
               assertNotNull(ok);
             });
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void saveAfterTouchSession() throws Exception {
     String secret = "shhh";
@@ -196,32 +203,31 @@ public class CookieSessionManagerTest {
             .expect(push)
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.of(signed));
+              when(mutant.toOptional()).thenReturn(Optional.of(signed));
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
 
-              expect(session.attributes()).andReturn(ImmutableMap.of("foo", "1"));
+              when(session.attributes()).thenReturn(ImmutableMap.of("foo", "1"));
 
               Request req = unit.get(Request.class);
-              expect(req.ifSession()).andReturn(Optional.of(session));
+              when(req.ifSession()).thenReturn(Optional.of(session));
             })
             .expect(unit -> {
-              unit.mockStatic(Cookie.Signature.class);
-              expect(Cookie.Signature.unsign(signed, secret)).andReturn("foo=1");
+              unit.mockStatic(Cookie.Signature.class).when(() -> Cookie.Signature.unsign(signed, secret)).thenReturn("foo=1");
             })
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
               Cookie.Definition newCookie = unit.constructor(Cookie.Definition.class)
                   .build(cookie);
 
-              expect(newCookie.value(signed)).andReturn(newCookie);
+              when(newCookie.value(signed)).thenReturn(newCookie);
               unit.registerMock(Cookie.Definition.class, newCookie);
             })
             .expect(sendCookie())
@@ -231,7 +237,8 @@ public class CookieSessionManagerTest {
                       .create(unit.get(Request.class), unit.get(Response.class));
               assertEquals(unit.get(SessionImpl.class), session);
             }, unit -> {
-              After next = unit.captured(Route.After.class).iterator().next();
+              AtomicReference<Route.After> ref = unit.get(AtomicReference.class);
+              After next = ref.get();
               Result ok = next.handle(unit.get(Request.class), unit.get(Response.class),
                   org.jooby.Results.ok());
               assertNotNull(ok);
@@ -242,7 +249,7 @@ public class CookieSessionManagerTest {
     return unit -> {
       Cookie.Definition cookie = unit.get(Cookie.Definition.class);
       Response rsp = unit.get(Response.class);
-      expect(rsp.cookie(cookie)).andReturn(rsp);
+      when(rsp.cookie(cookie)).thenReturn(rsp);
     };
   }
 
@@ -255,13 +262,13 @@ public class CookieSessionManagerTest {
             .expect(maxAge(-1))
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.empty());
+              when(mutant.toOptional()).thenReturn(Optional.empty());
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .run(unit -> {
               Session session = new CookieSessionManager(unit.get(ParserExecutor.class),
@@ -281,23 +288,22 @@ public class CookieSessionManagerTest {
             .expect(maxAge(-1))
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.of(signed));
+              when(mutant.toOptional()).thenReturn(Optional.of(signed));
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .expect(unit -> {
-              unit.mockStatic(Cookie.Signature.class);
-              expect(Cookie.Signature.unsign(signed, secret)).andReturn("foo=1");
+              unit.mockStatic(Cookie.Signature.class).when(() -> Cookie.Signature.unsign(signed, secret)).thenReturn("foo=1");
             })
             .expect(sessionBuilder(Session.COOKIE_SESSION, false, -1))
             .expect(unit -> {
               Session.Builder builder = unit.get(Session.Builder.class);
-              expect(builder.set(ImmutableMap.of("foo", "1"))).andReturn(builder);
-              expect(builder.build()).andReturn(unit.get(SessionImpl.class));
+              when(builder.set(ImmutableMap.of("foo", "1"))).thenReturn(builder);
+              when(builder.build()).thenReturn(unit.get(SessionImpl.class));
             })
             .expect(push)
             .run(unit -> {
@@ -310,14 +316,13 @@ public class CookieSessionManagerTest {
 
   private Block signCookie(final String secret, final String value, final String signed) {
     return unit -> {
-      unit.mockStatic(Cookie.Signature.class);
-      expect(Cookie.Signature.sign(value, secret)).andReturn(signed);
+      unit.mockStatic(Cookie.Signature.class).when(() -> Cookie.Signature.sign(value, secret)).thenReturn(signed);
 
       Cookie.Definition cookie = unit.get(Cookie.Definition.class);
       Cookie.Definition newCookie = unit.constructor(Cookie.Definition.class)
           .build(cookie);
 
-      expect(newCookie.value(signed)).andReturn(newCookie);
+      when(newCookie.value(signed)).thenReturn(newCookie);
       unit.registerMock(Cookie.Definition.class, newCookie);
     };
   }
@@ -325,7 +330,7 @@ public class CookieSessionManagerTest {
   private Block maxAge(final Integer maxAge) {
     return unit -> {
       Cookie.Definition session = unit.get(Cookie.Definition.class);
-      expect(session.maxAge()).andReturn(Optional.of(maxAge));
+      when(session.maxAge()).thenReturn(Optional.of(maxAge));
     };
   }
 
@@ -334,7 +339,7 @@ public class CookieSessionManagerTest {
       SessionImpl.Builder builder = unit.constructor(SessionImpl.Builder.class)
           .build(unit.get(ParserExecutor.class), isNew, id, timeout);
       if (isNew) {
-        expect(builder.build()).andReturn(unit.get(SessionImpl.class));
+        when(builder.build()).thenReturn(unit.get(SessionImpl.class));
       }
 
       unit.registerMock(Session.Builder.class, builder);

@@ -121,6 +121,9 @@ public class MockUnit {
   // Reverse: maps pre-configured mock → constructed mock (for identity in get())
   private Map<Object, Object> preMockToConstructed = new IdentityHashMap<>();
 
+  // Void method captures: type → list of captured values (populated via doAnswer in tests)
+  private Map<Class, List<Object>> voidCaptures = new LinkedHashMap<>();
+
   private List<Block> blocks = new LinkedList<>();
 
   public MockUnit(final Class... types) {
@@ -137,6 +140,15 @@ public class MockUnit {
     // Register a pending constructor capture (build() will drain these)
     pendingConstructorCaptures.add(new ConstructorArgCapture(type));
     return (T) captor.capture();
+  }
+
+  /**
+   * Record a value captured from a void method via doAnswer().
+   * Use with: doAnswer(inv -> { unit.addVoidCapture(Type.class, inv.getArgument(0)); return null; })
+   *           .when(mock).voidMethod(any());
+   */
+  public <T> void addVoidCapture(final Class<T> type, final Object value) {
+    voidCaptures.computeIfAbsent(type, k -> new ArrayList<>()).add(value);
   }
 
   public <T> List<T> captured(final Class<T> type) {
@@ -159,6 +171,11 @@ public class MockUnit {
           result.add((T) cap.value);
         }
       }
+    }
+    // From void method captures (doAnswer() contexts)
+    List<Object> voidList = voidCaptures.get(type);
+    if (voidList != null) {
+      voidList.forEach(v -> result.add((T) v));
     }
     return result;
   }
@@ -274,8 +291,20 @@ public class MockUnit {
 
   public <T> T mockConstructor(final Class<T> type, final Class<?>[] paramTypes,
       final Object... args) {
+    // Clear any pending Mockito matchers registered by capture() calls in args
+    try {
+      org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress()
+          .getArgumentMatcherStorage().pullLocalizedMatchers();
+    } catch (Exception ignored) {
+    }
     T mock = Mockito.mock(type);
     constructorPreMocks.computeIfAbsent(type, k -> new ArrayList<>()).add(mock);
+    // Drain pending constructor captures and associate with this constructor type
+    if (!pendingConstructorCaptures.isEmpty()) {
+      constructorArgCaptures.computeIfAbsent(type, k -> new ArrayList<>())
+          .addAll(pendingConstructorCaptures);
+      pendingConstructorCaptures.clear();
+    }
     return mock;
   }
 
@@ -298,7 +327,9 @@ public class MockUnit {
             Object preMock = mockToPreMock.get(invocation.getMock());
             if (preMock != null) {
               try {
-                return invocation.getMethod().invoke(preMock, invocation.getArguments());
+                java.lang.reflect.Method method = invocation.getMethod();
+                method.setAccessible(true);
+                return method.invoke(preMock, invocation.getArguments());
               } catch (InvocationTargetException e) {
                 throw e.getCause();
               }

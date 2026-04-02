@@ -15,9 +15,9 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -33,30 +33,25 @@ import org.jooby.internal.parser.ParserExecutor;
 import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.typesafe.config.Config;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerSessionManager.class, SessionImpl.class, Cookie.class })
 public class ServerSessionManagerTest {
 
   private Block noSecret = unit -> {
     Config config = unit.get(Config.class);
-    expect(config.hasPath("application.secret")).andReturn(false);
+    when(config.hasPath("application.secret")).thenReturn(false);
   };
 
   private Block cookie = unit -> {
     Definition session = unit.get(Session.Definition.class);
-    expect(session.cookie()).andReturn(unit.get(Cookie.Definition.class));
+    when(session.cookie()).thenReturn(unit.get(Cookie.Definition.class));
   };
 
   private Block storeGet = unit -> {
     Store store = unit.get(Store.class);
-    expect(store.get(unit.get(Session.Builder.class)))
-        .andReturn(unit.get(SessionImpl.class));
+    when(store.get(org.mockito.ArgumentMatchers.any(Session.Builder.class)))
+        .thenReturn(unit.get(SessionImpl.class));
   };
 
   @Test
@@ -83,7 +78,7 @@ public class ServerSessionManagerTest {
             .expect(maxAge(-1))
             .expect(unit -> {
               Session session = unit.get(Session.class);
-              expect(session.id()).andReturn("sid");
+              when(session.id()).thenReturn("sid");
 
               Store store = unit.get(Session.Store.class);
               store.delete("sid");
@@ -107,7 +102,7 @@ public class ServerSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
               session.touch();
-              expect(session.isNew()).andReturn(true);
+              when(session.isNew()).thenReturn(true);
               session.aboutToSave();
 
               Store store = unit.get(Store.class);
@@ -134,8 +129,8 @@ public class ServerSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
               session.touch();
-              expect(session.isNew()).andReturn(false);
-              expect(session.isDirty()).andReturn(true);
+              when(session.isNew()).thenReturn(false);
+              when(session.isDirty()).thenReturn(true);
               session.aboutToSave();
 
               Store store = unit.get(Store.class);
@@ -162,9 +157,9 @@ public class ServerSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
               session.touch();
-              expect(session.isNew()).andReturn(false);
-              expect(session.isDirty()).andReturn(false);
-              expect(session.savedAt()).andReturn(0L);
+              when(session.isNew()).thenReturn(false);
+              when(session.isDirty()).thenReturn(false);
+              when(session.savedAt()).thenReturn(0L);
               session.aboutToSave();
 
               Store store = unit.get(Store.class);
@@ -191,9 +186,9 @@ public class ServerSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
               session.touch();
-              expect(session.isNew()).andReturn(false);
-              expect(session.isDirty()).andReturn(false);
-              expect(session.savedAt()).andReturn(Long.MAX_VALUE);
+              when(session.isNew()).thenReturn(false);
+              when(session.isDirty()).thenReturn(false);
+              when(session.savedAt()).thenReturn(Long.MAX_VALUE);
               session.markAsSaved();
             })
             .run(unit -> {
@@ -215,11 +210,10 @@ public class ServerSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
               session.touch();
-              expect(session.isNew()).andReturn(true);
+              when(session.isNew()).thenReturn(true);
               session.aboutToSave();
               Store store = unit.get(Store.class);
-              store.create(session);
-              expectLastCall().andThrow(new IllegalStateException("intentional err"));
+              doThrow(new IllegalStateException("intentional err")).when(store).create(session);
             })
             .run(unit -> {
               new ServerSessionManager(unit.get(Config.class), unit.get(Session.Definition.class),
@@ -231,7 +225,7 @@ public class ServerSessionManagerTest {
   private Block reqSession() {
     return unit -> {
       RequestScopedSession req = unit.get(RequestScopedSession.class);
-      expect(req.session()).andReturn(unit.get(SessionImpl.class));
+      when(req.session()).thenReturn(unit.get(SessionImpl.class));
     };
   }
 
@@ -245,13 +239,13 @@ public class ServerSessionManagerTest {
             .expect(maxAge(-1))
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.empty());
+              when(mutant.toOptional()).thenReturn(Optional.empty());
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .run(unit -> {
               Session session = new ServerSessionManager(unit.get(Config.class),
@@ -273,13 +267,13 @@ public class ServerSessionManagerTest {
             .expect(maxAge(-1))
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.of(id));
+              when(mutant.toOptional()).thenReturn(Optional.of(id));
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .expect(sessionBuilder(id, false, -1))
             .expect(storeGet)
@@ -303,13 +297,13 @@ public class ServerSessionManagerTest {
             .expect(maxAge(30))
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.of(id));
+              when(mutant.toOptional()).thenReturn(Optional.of(id));
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .expect(sessionBuilder(id, false, TimeUnit.SECONDS.toMillis(30)))
             .expect(storeGet)
@@ -336,17 +330,16 @@ public class ServerSessionManagerTest {
             .expect(maxAge(-1))
             .expect(unit -> {
               Cookie.Definition cookie = unit.get(Cookie.Definition.class);
-              expect(cookie.name()).andReturn(Optional.of("sid"));
+              when(cookie.name()).thenReturn(Optional.of("sid"));
 
               Mutant mutant = unit.mock(Mutant.class);
-              expect(mutant.toOptional()).andReturn(Optional.of(id));
+              when(mutant.toOptional()).thenReturn(Optional.of(id));
 
               Request req = unit.get(Request.class);
-              expect(req.cookie("sid")).andReturn(mutant);
+              when(req.cookie("sid")).thenReturn(mutant);
             })
             .expect(unit -> {
-              unit.mockStatic(Cookie.Signature.class);
-              expect(Cookie.Signature.unsign(id, "querty")).andReturn("unsigned");
+              unit.mockStatic(Cookie.Signature.class).when(() -> Cookie.Signature.unsign(id, "querty")).thenReturn("unsigned");
             })
             .expect(sessionBuilder("unsigned", false, -1))
             .expect(storeGet)
@@ -401,14 +394,13 @@ public class ServerSessionManagerTest {
 
   private Block signCookie(final String secret, final String value, final String signed) {
     return unit -> {
-      unit.mockStatic(Cookie.Signature.class);
-      expect(Cookie.Signature.sign(value, secret)).andReturn(signed);
+      unit.mockStatic(Cookie.Signature.class).when(() -> Cookie.Signature.sign(value, secret)).thenReturn(signed);
 
       Cookie.Definition cookie = unit.get(Cookie.Definition.class);
       Cookie.Definition newCookie = unit.constructor(Cookie.Definition.class)
           .build(cookie);
 
-      expect(newCookie.value(signed)).andReturn(newCookie);
+      when(newCookie.value(signed)).thenReturn(newCookie);
       unit.registerMock(Cookie.Definition.class, newCookie);
     };
   }
@@ -416,8 +408,8 @@ public class ServerSessionManagerTest {
   private Block secret(final String secret) {
     return unit -> {
       Config config = unit.get(Config.class);
-      expect(config.hasPath("application.secret")).andReturn(true);
-      expect(config.getString("application.secret")).andReturn(secret);
+      when(config.hasPath("application.secret")).thenReturn(true);
+      when(config.getString("application.secret")).thenReturn(secret);
     };
   }
 
@@ -427,7 +419,7 @@ public class ServerSessionManagerTest {
       Cookie.Definition newCookie = unit.constructor(Cookie.Definition.class)
           .build(cookie);
 
-      expect(newCookie.value(id)).andReturn(newCookie);
+      when(newCookie.value(id)).thenReturn(newCookie);
       unit.registerMock(Cookie.Definition.class, newCookie);
     };
   }
@@ -436,14 +428,14 @@ public class ServerSessionManagerTest {
     return unit -> {
       Cookie.Definition cookie = unit.get(Cookie.Definition.class);
       Response rsp = unit.get(Response.class);
-      expect(rsp.cookie(cookie)).andReturn(rsp);
+      when(rsp.cookie(cookie)).thenReturn(rsp);
     };
   }
 
   private Block session(final String sid) {
     return unit -> {
       SessionImpl session = unit.get(SessionImpl.class);
-      expect(session.id()).andReturn(sid);
+      when(session.id()).thenReturn(sid);
     };
   }
 
@@ -452,7 +444,7 @@ public class ServerSessionManagerTest {
       SessionImpl.Builder builder = unit.constructor(SessionImpl.Builder.class)
           .build(unit.get(ParserExecutor.class), isNew, id, timeout);
       if (isNew) {
-        expect(builder.build()).andReturn(unit.get(SessionImpl.class));
+        when(builder.build()).thenReturn(unit.get(SessionImpl.class));
       }
 
       unit.registerMock(Session.Builder.class, builder);
@@ -462,21 +454,21 @@ public class ServerSessionManagerTest {
   private Block genID(final String id) {
     return unit -> {
       Store store = unit.get(Session.Store.class);
-      expect(store.generateID()).andReturn(id);
+      when(store.generateID()).thenReturn(id);
     };
   }
 
   private Block saveInterval(final Long saveInterval) {
     return unit -> {
       Definition session = unit.get(Session.Definition.class);
-      expect(session.saveInterval()).andReturn(Optional.of(saveInterval));
+      when(session.saveInterval()).thenReturn(Optional.of(saveInterval));
     };
   }
 
   private Block maxAge(final Integer maxAge) {
     return unit -> {
       Cookie.Definition session = unit.get(Cookie.Definition.class);
-      expect(session.maxAge()).andReturn(Optional.of(maxAge));
+      when(session.maxAge()).thenReturn(Optional.of(maxAge));
     };
   }
 }

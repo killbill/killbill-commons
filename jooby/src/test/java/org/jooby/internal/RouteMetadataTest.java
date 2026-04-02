@@ -15,14 +15,14 @@
  */
 package org.jooby.internal;
 
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -32,17 +32,12 @@ import java.net.URL;
 import org.jooby.Env;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.io.Resources;
 import com.typesafe.config.Config;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({RouteMetadata.class, Resources.class, URL.class, ClassReader.class })
 public class RouteMetadataTest {
 
   public static class Mvc {
@@ -79,14 +74,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Constructor<?> constructor = Mvc.class.getDeclaredConstructor();
           RouteMetadata ci = new RouteMetadata(Env.DEFAULT.build(unit.get(Config.class)));
           assertArrayEquals(new String[0], ci.names(constructor));
-          assertEquals(35, ci.startAt(constructor));
+          assertEquals(45, ci.startAt(constructor));
         });
   }
 
@@ -95,14 +90,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Constructor<?> constructor = Mvc.class.getDeclaredConstructor(String.class);
           RouteMetadata ci = new RouteMetadata(Env.DEFAULT.build(unit.get(Config.class)));
           assertArrayEquals(new String[]{"s" }, ci.names(constructor));
-          assertEquals(38, ci.startAt(constructor));
+          assertEquals(48, ci.startAt(constructor));
         });
   }
 
@@ -111,14 +106,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Method m = Mvc.class.getDeclaredMethod("noarg");
           RouteMetadata ci = new RouteMetadata(Env.DEFAULT.build(unit.get(Config.class)));
           assertArrayEquals(new String[0], ci.names(m));
-          assertEquals(43, ci.startAt(m));
+          assertEquals(53, ci.startAt(m));
         });
   }
 
@@ -127,14 +122,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Method m = Mvc.class.getDeclaredMethod("arg", double.class);
           RouteMetadata ci = new RouteMetadata(Env.DEFAULT.build(unit.get(Config.class)));
           assertArrayEquals(new String[]{"v" }, ci.names(m));
-          assertEquals(47, ci.startAt(m));
+          assertEquals(57, ci.startAt(m));
         });
   }
 
@@ -143,14 +138,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Method m = Mvc.class.getDeclaredMethod("arg", String.class);
           RouteMetadata ci = new RouteMetadata(Env.DEFAULT.build(unit.get(Config.class)));
           assertArrayEquals(new String[]{"x" }, ci.names(m));
-          assertEquals(51, ci.startAt(m));
+          assertEquals(61, ci.startAt(m));
         });
   }
 
@@ -159,14 +154,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Method m = Mvc.class.getDeclaredMethod("arg", double.class, int.class);
           RouteMetadata ci = new RouteMetadata(Env.DEFAULT.build(unit.get(Config.class)));
           assertArrayEquals(new String[]{"v", "u" }, ci.names(m));
-          assertEquals(55, ci.startAt(m));
+          assertEquals(65, ci.startAt(m));
         });
   }
 
@@ -175,8 +170,8 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .run(unit -> {
           Method m = Mvc.class.getDeclaredMethod("arg", String.class);
@@ -193,15 +188,14 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .expect(unit -> {
           URL resource = unit.mock(URL.class);
-          expect(resource.openStream()).andReturn(stream);
-          unit.mockStatic(Resources.class);
-          expect(Resources.getResource(Mvc.class, "RouteMetadataTest$Mvc.class"))
-              .andReturn(resource);
+          when(resource.openStream()).thenReturn(stream);
+          unit.mockStatic(Resources.class).when(() -> Resources.getResource(Mvc.class, "RouteMetadataTest$Mvc.class"))
+              .thenReturn(resource);
         })
         .run(unit -> {
           Method method = Mvc.class.getDeclaredMethod("arg", String.class);
@@ -216,23 +210,20 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("dev");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("dev");
         })
         .expect(unit -> {
           InputStream stream = unit.mock(InputStream.class);
-          stream.close();
           URL resource = unit.mock(URL.class);
-          expect(resource.openStream()).andReturn(stream);
+          when(resource.openStream()).thenReturn(stream);
 
           ClassReader reader = unit
               .mockConstructor(ClassReader.class, new Class[]{InputStream.class }, stream);
-          reader.accept(isA(ClassVisitor.class), eq(0));
-          expectLastCall().andThrow(new NullPointerException("intentional err"));
+          doThrow(new NullPointerException("intentional err")).when(reader).accept(isA(ClassVisitor.class), eq(0));
 
-          unit.mockStatic(Resources.class);
-          expect(Resources.getResource(Mvc.class, "RouteMetadataTest$Mvc.class"))
-              .andReturn(resource);
+          unit.mockStatic(Resources.class).when(() -> Resources.getResource(Mvc.class, "RouteMetadataTest$Mvc.class"))
+              .thenReturn(resource);
         })
         .run(unit -> {
           Method method = Mvc.class.getDeclaredMethod("arg", String.class);
@@ -247,8 +238,8 @@ public class RouteMetadataTest {
     new MockUnit(Config.class)
         .expect(unit -> {
           Config config = unit.get(Config.class);
-          expect(config.hasPath("application.env")).andReturn(true);
-          expect(config.getString("application.env")).andReturn("prod");
+          when(config.hasPath("application.env")).thenReturn(true);
+          when(config.getString("application.env")).thenReturn("prod");
         })
         .run(unit -> {
           Method m = Mvc.class.getDeclaredMethod("arg", String.class);
