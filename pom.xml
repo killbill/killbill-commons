@@ -26,7 +26,7 @@
     </parent>
     <groupId>org.kill-bill.commons</groupId>
     <artifactId>killbill-commons</artifactId>
-    <version>0.26.14-SNAPSHOT</version>
+    <version>0.27.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>killbill-commons</name>
     <description>Kill Bill reusable Java components</description>
@@ -49,6 +49,7 @@
         <module>skeleton</module>
         <module>xmlloader</module>
         <module>automaton</module>
+        <module>jooby</module>
         <module>metrics</module>
         <module>metrics-api</module>
         <module>utils</module>
@@ -137,6 +138,11 @@
             <dependency>
                 <groupId>org.kill-bill.commons</groupId>
                 <artifactId>killbill-jdbi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-jooby</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
