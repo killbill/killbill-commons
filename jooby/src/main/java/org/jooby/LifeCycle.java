@@ -189,8 +189,6 @@ public interface LifeCycle {
     return Optional.empty();
   }
 
-  ;
-
   /**
    * Add to lifecycle the given service. Any method annotated with {@link PostConstruct} or
    * {@link PreDestroy} will be executed at application startup or shutdown time.

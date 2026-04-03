@@ -450,7 +450,7 @@ public interface Cookie {
         byte[] bytes = mac.doFinal(value.getBytes());
         return EQ.matcher(BaseEncoding.base64().encode(bytes)).replaceAll("") + SEP + value;
       } catch (Exception ex) {
-        throw new IllegalArgumentException("Can't sing value", ex);
+        throw new IllegalArgumentException("Can't sign value", ex);
       }
     }
 
