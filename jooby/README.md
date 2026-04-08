@@ -18,20 +18,18 @@ Not forked:
 
 ## Building & Testing
 
-Default build (compile main sources only, skip tests):
+`killbill-jooby` keeps the upstream **JUnit 4** test stack. It does **not** use the
+repository's usual TestNG-based test setup.
+
+Standard build:
 ```
-mvn clean install -pl jooby
+mvn clean install
 ```
 
-Run tests (103 test files, 894 tests):
+Run tests (108 test classes, 923 tests):
 ```
-mvn clean test -pl jooby -Pjooby
+mvn clean test
 ```
-
-**Note:** 6 test files remain in `src/test/java-excluded/`: FileConfTest and LogbackConfTest (Jooby
-static init needs PowerMock classloader), RequestScopeTest (Guice internal API), JettyServerTest
-and JettyHandlerTest (Jetty 10 API removal), and SseFeature (Ning AsyncHttpClient dependency).
-The `-Pjooby` profile compiles and runs only the test files in `src/test/java/`.
 
 Changes with upstream:
 
