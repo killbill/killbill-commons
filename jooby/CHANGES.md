@@ -74,9 +74,9 @@ Differences from upstream dependency versions:
 | 4 upstream modules + funzy merged into 1 flat module | Kill Bill convention (like `killbill-jdbi`, `killbill-config-magic`) |
 | `jooby-netty` excluded | Kill Bill uses Jetty; SSE/WebSocket work via core SPI |
 | ASM shade plugin preserved | Relocates `org.objectweb.asm` → `org.jooby.internal.asm` (same as upstream) |
-| Test compilation disabled by default | 76 of 125 test files depend on PowerMock (not available); enabled via `-Pjooby` profile |
+| Jooby tests now run in the default Maven lifecycle | The earlier PowerMock-era gating was removed after all deferred tests were restored into the active test tree |
 | 20 test files moved to `src/test/java-excluded/` | Were blocked by PowerMock/missing deps; all 20 have now been restored into the active test tree |
-| 124 Java files remain in `src/test/java/` | Active test tree after migration, including shared test utilities; `-Pjooby` runs 108 test classes / 923 tests successfully |
+| 124 Java files remain in `src/test/java/` | Active test tree after migration, including shared test utilities; the standard Maven test lifecycle runs 108 test classes / 923 tests successfully |
 | SpotBugs exclude filter (`spotbugs-exclude.xml`) | Targeted exclusions for 77 upstream findings (12 bug patterns across 10 categories) triaged as intentional framework patterns or low-risk upstream code |
 | Apache RAT exclusions for resources | Resource files (`.conf`, `.xml`, `.properties`, SSL certs) have no license headers |
 
@@ -136,7 +136,7 @@ Notable rewrites and follow-up restorations:
 
 ### Current Test Baseline
 
-- `-Pjooby` remains the active test profile for the module
+- Jooby tests run in the default Maven lifecycle
 - `reuseForks=false` remains configured in Surefire for stable Mockito inline runs
 - active test tree: `124` Java files in `src/test/java`
 - runnable suite: `108` test classes / `923` tests
