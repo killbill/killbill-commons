@@ -446,8 +446,8 @@ public interface Cookie {
 
       try {
         Mac mac = Mac.getInstance(HMAC_SHA256);
-        mac.init(new SecretKeySpec(secret.getBytes(), HMAC_SHA256));
-        byte[] bytes = mac.doFinal(value.getBytes());
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
+        byte[] bytes = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
         return EQ.matcher(BaseEncoding.base64().encode(bytes)).replaceAll("") + SEP + value;
       } catch (Exception ex) {
         throw new IllegalArgumentException("Can't sign value", ex);

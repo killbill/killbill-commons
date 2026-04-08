@@ -153,7 +153,7 @@ public class CsrfHandler implements Route.Filter {
       String candidate = req.header(name).toOptional()
           .orElseGet(() -> req.param(name).toOptional().orElse(null));
       if (!token.equals(candidate)) {
-        throw new Err(Status.FORBIDDEN, "Invalid Csrf token: " + candidate);
+        throw new Err(Status.FORBIDDEN, "Invalid CSRF token");
       }
     }
 
