@@ -1,6 +1,7 @@
 # killbill-jooby — Changes from Upstream
 
 This file documents all intentional deviations from the upstream Jooby 1.6.9 source.
+The fork remains based on that upstream source line; modernization work keeps the existing Kill Bill fork in place.
 
 Upstream references:
 - Jooby: https://github.com/jooby-project/jooby tag `v1.6.9`, commit `85a50d5e894d14068b2e90a0601481cf52a0abec`

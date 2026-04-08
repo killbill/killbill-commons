@@ -2,6 +2,7 @@ killbill-jooby
 ==============
 
 Contains a fork of [Jooby 1.6.9](https://github.com/jooby-project/jooby/tree/v1.6.9) vendored for Kill Bill.
+This fork is maintained in place as Kill Bill modernizes its dependencies and Jakarta compatibility.
 
 The following upstream modules are merged into this single artifact:
 
