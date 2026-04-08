@@ -26,7 +26,7 @@
   - This does NOT need migration — `jsr305` is not part of the Jakarta namespace transition.
 - `javax.sql` is used in 22 files across 5 modules — this is core JDK, NOT part of Jakarta migration.
 - Jooby 1.6.9 uses `javax.*` namespace, which matches the current codebase state.
-  - Jooby 2.x/3.x uses `jakarta.*` — that upgrade happens later in Phase 4.
+  - The Jakarta migration keeps the existing `killbill-jooby` fork and updates it in place during Phases 3-4.
 - `killbill-commons` already contains vendored forks: `jdbi` (fork of jDBI 2.62) and `config-magic` (fork of config-magic 0.17).
   - `killbill-jooby` follows the same forking pattern.
 
@@ -261,25 +261,21 @@
 
 ---
 
-# Phase 4 — Migrate killbill-jooby Fork to Jooby 3.x (Jakarta-native)
+# Phase 4 — Continue Modernizing the Existing killbill-jooby Fork
 
-> With the codebase fully on Jakarta (Phase 3), update the forked Jooby source from 1.6.9
-> to the 3.x codebase. This is a re-fork, not a library upgrade — replace the vendored source.
+> With the codebase fully on Jakarta (Phase 3), keep the existing `killbill-jooby`
+> fork based on upstream Jooby 1.6.9 and continue modernizing it in place.
+> This is fork maintenance, not a re-fork onto a newer upstream major version.
 
-## 1. Re-fork Jooby Source from 3.x
+## 1. Complete Jakarta-native Fork Maintenance
 
-- Jooby 3.x is a major rewrite — it uses `jakarta.*` namespace and has a different API surface.
-- Download/clone the latest Jooby 3.x release tag from upstream.
-- Inventory API differences between 1.6.9 and 3.x that affect downstream consumers.
-  - `Jooby.Module` → `Extension` interface.
-  - `Request`/`Response` → `Context` handler signature.
-  - `Env.onStart`/`onStop` → Jooby 3.x lifecycle callbacks.
-  - groupId changed from `org.jooby` to `io.jooby`.
-- Replace the forked source files in `jooby/src/main/java/` with Jooby 3.x source (core + servlet + jetty + jackson, merged into one flat module).
-- Replace upstream test files in `jooby/src/test/java/` with Jooby 3.x tests.
-- Update `jooby/pom.xml` dependencies to match Jooby 3.x requirements.
-- Re-apply any Kill Bill-specific modifications that were made to the 1.6.9 fork (if any).
-- Update `README.md` with the new upstream commit SHA and version.
+- Preserve the current vendored source base under `jooby/src/main/java/`; do not replace it with a newer upstream codebase.
+- Preserve the current `org.jooby` API surface and Kill Bill module layout unless a change is required for compatibility.
+- Finish any remaining `javax.*` → `jakarta.*` updates inside the forked source and tests that are still needed after Phase 3.
+- Update `jooby/pom.xml` dependencies only as needed to keep the maintained fork compatible with the selected Jakarta-era baseline.
+- Keep the current forked test tree and adapt it to the maintained fork behavior; do not swap it out for a different upstream major-version test tree.
+- Re-verify Kill Bill-specific changes documented in `jooby/CHANGES.md` and keep them applied on top of the maintained fork.
+- Update `jooby/README.md` and `jooby/CHANGES.md` to reflect the current maintained-fork baseline and any new compatibility notes.
 - Run `mvn clean install` to verify compilation and tests pass.
 
 ---
@@ -292,7 +288,7 @@
 
 - Update `killbill-oss-parent` to set `maven.compiler.release=21`.
 - Fix any JDK 21 deprecation warnings or removed APIs (e.g., `SecurityManager` removal, finalization deprecation).
-- Verify all dependencies (Guice 7, Jersey 3, forked Jooby 3.x, etc.) are compatible with JDK 21.
+- Verify all dependencies (Guice 7, Jersey 3, the maintained `killbill-jooby` fork, etc.) are compatible with JDK 21.
 - Run the full test suite under JDK 21.
 - Consider adopting JDK 21 features incrementally (virtual threads, pattern matching, sealed classes) in later tasks.
 
