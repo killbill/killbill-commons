@@ -96,8 +96,7 @@
 - Upstream tests use **JUnit 4** (116 `@Test` imports, 35 `@RunWith` usages).
 - 76 test files depended on PowerMock (67 via `MockUnit.java`, 4 test utilities, 5 transitive) and were moved temporarily to `src/test/java-excluded/` during the migration.
 - 3 test utility files (`Client.java`, `ServerFeature.java`, `SseFeature.java`) were part of the temporary `java-excluded/` set during the migration; all three are now restored under `src/test/java/`.
-- Test compilation disabled by default (`<phase>none</phase>` on `default-testCompile`, `<skip>true</skip>` on Surefire).
-- Maven profile `-Pjooby` enables test compilation and Surefire execution with `surefire-junit47` provider.
+- Jooby tests now run in the default Maven lifecycle with `surefire-junit47` and `reuseForks=false`.
 - Current active Jooby test baseline: `124` Java files in `src/test/java`, `108` runnable test classes, `923` tests, `src/test/java-excluded/` empty.
 - `mvn clean install -pl jooby` passes all checks (dependency:analyze, SpotBugs, Apache RAT).
 - SpotBugs exclude filter (`spotbugs-exclude.xml`) suppresses the remaining upstream findings after triage.
