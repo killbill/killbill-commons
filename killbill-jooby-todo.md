@@ -184,20 +184,22 @@
 
 ## 1. Upgrade to JDK 17 (Prerequisite for Jakarta)
 
-- Update `killbill-oss-parent` to set `project.build.targetJdk=17` and `maven.compiler.release=17`.
+- Override root `project.build.targetJdk=17` in this repository so the parent-managed compiler configuration emits Java 17 bytecode.
 - Fix any JDK 17 deprecation warnings or removed APIs across all modules (including `killbill-jooby`).
-- Verify all dependencies are compatible with JDK 17 (check for illegal reflective access warnings).
+- Verify all dependencies are compatible with JDK 17 and remove inherited test JVM flags that are invalid on JDK 17.
 - Run the full test suite under JDK 17 to establish a green baseline.
 - Update CI pipelines to build and test with JDK 17.
+- Current state: completed in-repo via root `project.build.targetJdk=17` override plus root `surefireArgLine` cleanup for JDK 17 test JVMs.
 
 ## 2. Upgrade to Guice 6.0 (Bridge Version)
 
 - Guice 6.0 supports **both** `javax.inject` and `jakarta.inject` simultaneously, making it the ideal bridge.
-- Update `killbill-oss-parent` dependency management to use `com.google.inject:guice:6.0.0`.
-- Update `com.google.inject.extensions:guice-servlet` to `6.0.0`.
+- Override root dependency management in this repository to use `com.google.inject:guice:6.0.0`.
+- Override root dependency management in this repository to use `com.google.inject.extensions:guice-servlet:6.0.0`.
 - Fix any API incompatibilities in `killbill-jooby` caused by the Guice upgrade (Jooby 1.6.9 was written against Guice 4.2; Kill Bill currently uses 5.1.0).
 - Run the full test suite to confirm Guice 6.0 is a drop-in replacement for 5.x.
 - Note: Guice 6.0's `servlet` and `persist` extensions still use `javax.*` — this is expected and fine.
+- Current state: completed in-repo; full reactor tests passed on JDK 17 with Guice 6.0.0.
 
 ---
 
