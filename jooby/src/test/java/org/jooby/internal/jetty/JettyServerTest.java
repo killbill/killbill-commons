@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Provider;
+import com.google.inject.Provider;
 import javax.net.ssl.SSLContext;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;

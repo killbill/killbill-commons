@@ -24,7 +24,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.killbill.commons.health.api.HealthCheck;
 import org.killbill.commons.health.api.HealthCheckRegistry;

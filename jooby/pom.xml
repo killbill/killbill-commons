@@ -103,10 +103,10 @@
             <artifactId>jetty-util</artifactId>
             <version>${jetty.version}</version>
         </dependency>
-        <!-- javax.inject (transitive via Guice, but imported directly) -->
+        <!-- jakarta.inject (managed in the root pom, but imported directly) -->
         <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
         </dependency>
 
         <!-- Jackson -->

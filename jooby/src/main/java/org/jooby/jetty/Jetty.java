@@ -15,7 +15,7 @@
  */
 package org.jooby.jetty;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import org.jooby.Env;
 import org.jooby.Jooby;

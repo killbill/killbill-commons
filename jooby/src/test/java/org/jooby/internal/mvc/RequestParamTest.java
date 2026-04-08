@@ -23,7 +23,7 @@ import org.jooby.mvc.Local;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 import java.lang.reflect.Parameter;
 import java.util.Optional;
 

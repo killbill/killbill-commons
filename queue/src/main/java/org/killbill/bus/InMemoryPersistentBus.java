@@ -23,7 +23,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.joda.time.DateTime;
 import org.killbill.bus.api.BusEvent;

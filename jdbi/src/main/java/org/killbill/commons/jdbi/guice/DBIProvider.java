@@ -23,8 +23,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import javax.sql.DataSource;
 
 import org.killbill.commons.jdbi.argument.DateTimeArgumentFactory;
