@@ -16,8 +16,9 @@
   - `jakarta.ws.rs:jakarta.ws.rs-api` in `skeleton` (code uses `javax.ws.rs.*`).
   - `jakarta.xml.bind:jakarta.xml.bind-api` in `automaton`, `xmlloader` (code uses `javax.xml.bind.*`).
   - `jakarta.activation:jakarta.activation-api` in `automaton`, `xmlloader`.
-- `javax.inject:javax.inject` is still the Maven artifact in 4 modules: `skeleton` (5 files), `queue` (4 files), `jdbi` (2 files), `metrics` (1 file).
-- Guice version is **5.1.0** (managed by `killbill-oss-parent`; supports `javax.inject` only).
+- `jakarta.inject:jakarta.inject-api` is now the explicit Maven artifact in `killbill-jooby`, `queue`, `jdbi`, and `metrics`.
+- `skeleton` still uses `javax.inject` for now because Jersey 2 / HK2 still expects that namespace.
+- Guice version is **6.0.0** (overridden in this repository; supports both `javax.inject` and `jakarta.inject` annotations).
 - Jersey version is **2.39.1** (supports `javax.ws.rs` only; Jersey 3.x requires `jakarta.ws.rs`).
 - `javax.servlet` imports span 12 files: `skeleton` (8 files), `metrics` (4 files).
 - `javax.ws.rs` imports span 6 files: `skeleton` only.
@@ -103,7 +104,7 @@
 - Apache RAT exclusions added for resource files and the temporary migration layout.
 - Removed `spotbugs-annotations` dependency (no upstream source uses `@SuppressFBWarnings`).
 - Removed `websocket-jetty-server` dependency (WebSocket factory code removed from Jetty adapter).
-- Added explicit deps for `websocket-jetty-api`, `jetty-io`, `jetty-util`, `javax.inject` (transitive but used directly).
+- Added explicit deps for `websocket-jetty-api`, `jetty-io`, `jetty-util`, `jakarta.inject-api` (annotations) and kept Guice-provider-compatible code paths where needed.
 
 ## 7. Migrate EasyMock + PowerMock to Mockito ✅
 
@@ -177,7 +178,7 @@
 
 ---
 
-# Phase 2 — JDK & Guice Foundation Upgrades
+# Phase 2 — JDK & Guice Foundation Upgrades ✅
 
 > These steps prepare the foundation for the Jakarta namespace migration.
 > They do NOT change any `javax.*` imports — only upgrade the JDK and Guice versions.
@@ -212,8 +213,9 @@
 
 - Replace `javax.inject:javax.inject` with `jakarta.inject:jakarta.inject-api:2.0.1` in all POMs.
 - In all Java source files, replace `import javax.inject.*` with `import jakarta.inject.*`.
-  - Affected modules: `skeleton` (5 files), `queue` (4 files), `jdbi` (2 files), `metrics` (1 file), and `killbill-jooby` (forked Jooby source).
-  - Affected annotations: `@Inject`, `@Named`, `@Singleton`, `@Provider`.
+  - Completed in-repo for `killbill-jooby`, `queue`, `jdbi`, and `metrics`.
+  - `skeleton` is intentionally deferred: Jersey 2 / HK2 still expects `javax.inject` semantics there.
+  - Affected annotations: `@Inject`, `@Named`, `@Singleton`, `@Qualifier`, `@Scope`.
 - Verify Guice 6.0 resolves `jakarta.inject` annotations correctly alongside any remaining `javax.inject` from transitive deps.
 - Run the full test suite to confirm no injection failures.
 
