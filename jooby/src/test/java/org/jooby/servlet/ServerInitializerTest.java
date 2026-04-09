@@ -22,8 +22,8 @@ import org.jooby.Jooby;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
 
 public class ServerInitializerTest {
 

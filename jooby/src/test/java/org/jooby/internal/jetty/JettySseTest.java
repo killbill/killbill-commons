@@ -28,7 +28,7 @@ import org.jooby.test.MockUnit.Block;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-import javax.servlet.AsyncContext;
+import jakarta.servlet.AsyncContext;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;

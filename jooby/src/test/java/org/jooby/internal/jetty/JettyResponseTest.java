@@ -32,8 +32,8 @@ import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.eclipse.jetty.server.HttpOutput;
 import org.eclipse.jetty.server.Request;

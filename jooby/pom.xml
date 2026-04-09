@@ -28,6 +28,8 @@
     <description>Fork of Jooby 1.6.9 (core, servlet, jetty, jackson, funzy)</description>
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+        <jetty.version>11.0.24</jetty.version>
+        <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
     </properties>
     <dependencies>
         <!-- Core dependencies -->
@@ -63,16 +65,26 @@
             <version>9.7</version>
             <optional>true</optional>
         </dependency>
-        <!-- Servlet API (Kill Bill managed, transitional jakarta groupId shipping javax packages) -->
+        <!-- Servlet API (Jetty 11 / Servlet 5, jakarta namespace) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servlet.version}</version>
         </dependency>
 
-        <!-- Jetty Server (Kill Bill managed 10.0.16) -->
+        <!-- Jetty Server (Jetty 11.x, jakarta.servlet-based) -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
+            <exclusions>
+                <!-- Keep the standard jakarta.servlet-api dependency above and avoid duplicate
+                     jakarta.servlet classes from Jetty's JPMS/OSGi wrapper artifact. -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty.toolchain</groupId>
+                    <artifactId>jetty-jakarta-servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Jetty HTTP/2 -->
         <dependency>

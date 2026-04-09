@@ -30,8 +30,8 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.jooby.Cookie;
 import org.jooby.MediaType;
@@ -150,7 +150,7 @@ public class ServletServletRequest implements NativeRequest {
 
   @Override
   public List<Cookie> cookies() {
-    javax.servlet.http.Cookie[] cookies = req.getCookies();
+    jakarta.servlet.http.Cookie[] cookies = req.getCookies();
     if (cookies == null) {
       return ImmutableList.of();
     }
