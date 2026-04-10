@@ -66,8 +66,11 @@
     </issueManagement>
     <properties>
         <check.fail-spotbugs>true</check.fail-spotbugs>
-        <project.build.targetJdk>17</project.build.targetJdk>
+        <project.build.targetJdk>21</project.build.targetJdk>
         <surefireArgLine>-Xmx${build.jvmsize} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</surefireArgLine>
+        <!-- killbill-oss-parent still brings extra-enforcer-rules 1.6.1, which rejects Java 21 as
+             an unknown target. Keep this local override until the parent is updated. -->
+        <extra-enforcer-rules.version>1.12.0</extra-enforcer-rules.version>
         <!-- Used across the reactor; Guice Servlet 7 is required by jooby, metrics, and skeleton. -->
         <guice.version>7.0.0</guice.version>
         <!-- Used by jooby, queue, jdbi, metrics, and skeleton. -->
@@ -274,4 +277,21 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <dependencies>
+                    <!-- Only the helper dependency version changes here; the inherited Enforcer
+                         rules/executions stay intact. -->
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <version>${extra-enforcer-rules.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
 </project>
