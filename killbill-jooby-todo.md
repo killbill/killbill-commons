@@ -9,25 +9,22 @@
 
 ## Phase 0 — Current State Assessment ✅
 
-- The codebase targets **JDK 11** as baseline (`project.build.targetJdk=11` via `killbill-oss-parent:0.146.63`).
-- 90 Java source files use `javax.*` imports — zero `jakarta.*` imports exist anywhere.
-- Maven coordinates already use transitional `jakarta.*` groupIds for some dependencies, but these still ship `javax.*` packages:
-  - `jakarta.servlet:jakarta.servlet-api` in `skeleton`, `metrics` (code uses `javax.servlet.*`).
-  - `jakarta.ws.rs:jakarta.ws.rs-api` in `skeleton` (code uses `javax.ws.rs.*`).
-  - `jakarta.xml.bind:jakarta.xml.bind-api` in `automaton`, `xmlloader` (code uses `javax.xml.bind.*`).
-  - `jakarta.activation:jakarta.activation-api` in `automaton`, `xmlloader`.
-- `jakarta.inject:jakarta.inject-api` is now the explicit Maven artifact in `killbill-jooby`, `queue`, `jdbi`, and `metrics`.
-- `skeleton` still uses `javax.inject` for now because Jersey 2 / HK2 still expects that namespace.
-- Guice version is **6.0.0** (overridden in this repository; supports both `javax.inject` and `jakarta.inject` annotations).
-- Jersey version is **2.39.1** (supports `javax.ws.rs` only; Jersey 3.x requires `jakarta.ws.rs`).
-- `javax.servlet` imports span 12 files: `skeleton` (8 files), `metrics` (4 files).
-- `javax.ws.rs` imports span 6 files: `skeleton` only.
-- `javax.xml.bind` imports span 14 files: `automaton` (7 files), `xmlloader` (7 files).
-- `javax.annotation.Nullable`/`@Nonnull` (from `jsr305`) is used in 35 files across 8 modules.
-  - This does NOT need migration — `jsr305` is not part of the Jakarta namespace transition.
-- `javax.sql` is used in 22 files across 5 modules — this is core JDK, NOT part of Jakarta migration.
-- Jooby 1.6.9 uses `javax.*` namespace, which matches the current codebase state.
-  - The Jakarta migration keeps the existing `killbill-jooby` fork and updates it in place during Phases 3-4.
+- The repository currently targets **JDK 17** in-repo via `project.build.targetJdk=17`, while still inheriting from `killbill-oss-parent:0.146.63`.
+- The Jakarta migration is complete for the targeted Java EE APIs:
+  - `javax.inject` -> `jakarta.inject`
+  - `javax.servlet` -> `jakarta.servlet`
+  - `javax.ws.rs` -> `jakarta.ws.rs`
+  - `javax.xml.bind` -> `jakarta.xml.bind`
+- `killbill-jooby` no longer has direct `javax.annotation` usage.
+- `jakarta.inject:jakarta.inject-api` is now the explicit Maven artifact in `killbill-jooby`, `queue`, `jdbi`, `metrics`, and `skeleton`.
+- Guice version is **7.0.0** (overridden in this repository; now aligned with the Jakarta servlet stack).
+- Jersey version is **3.0.18** with HK2 **3.0.6** in `skeleton` (Jakarta namespace line).
+- `killbill-jooby` and `skeleton` now use Jetty **11.0.24**.
+- Remaining `javax.*` usage is **not** the already-migrated Jakarta surface:
+  - `javax.annotation.*` from `jsr305` still appears in several modules and is outside the Jakarta EE migration scope.
+  - JDK namespaces like `javax.sql`, `javax.net.ssl`, `javax.crypto`, `javax.xml`, `javax.management`, and `javax.naming` remain where appropriate.
+- So the repository is **not literally `javax.*`-free**, but it is free of the targeted `javax` APIs that were part of this Jakarta migration.
+- The Jakarta migration keeps the existing `killbill-jooby` fork and updates it in place during Phases 3-4.
 - `killbill-commons` already contains vendored forks: `jdbi` (fork of jDBI 2.62) and `config-magic` (fork of config-magic 0.17).
   - `killbill-jooby` follows the same forking pattern.
 
@@ -75,10 +72,10 @@
 - Complete POM written from scratch — see `jooby/CHANGES.md` for the full dependency version mapping table.
 - `guice-multibindings` removed (merged into core Guice since 4.2).
 - `funzy` removed as external dep (inlined into `org.jooby.funzy`).
-- `javax.servlet-api` → `jakarta.servlet:jakarta.servlet-api:4.0.4` (transitional, still ships `javax.servlet`).
-- Jetty upgraded from 9.4.24 → 10.0.16; `websocket-server` → `websocket-jetty-server`; `jetty-alpn-server` added.
+- `javax.servlet-api` was first replaced by `jakarta.servlet:jakarta.servlet-api` during the forking work and later moved to the current Servlet **5.0.0** baseline in the Jakarta migration.
+- Jetty was first upgraded from 9.4.24 → 10.0.16 during the initial fork and later moved to the current Jetty **11.0.24** baseline.
 - ASM shade plugin preserved (`org.objectweb.asm` → `org.jooby.internal.asm`).
-- `jakarta.annotation-api:1.3.5` added for `@PostConstruct`/`@PreDestroy`.
+- `jakarta.annotation-api:2.1.1` added for Jooby's `@PostConstruct`/`@PreDestroy` and nullability annotations after removing the fork's direct `javax.annotation` usage.
 - PowerMock removed (obsolete for modern JDKs).
 - All other deps aligned to Kill Bill managed versions (Jackson, Guava, SLF4J, Typesafe Config).
 
@@ -157,14 +154,14 @@
 
 - Source: `src/test/java-excluded/org/jooby/internal/jetty/JettyHandlerTest.java`
 - Target path: `src/test/java/org/jooby/internal/jetty/JettyHandlerTest.java`
-- Restored as a current-behavior Jetty 10 test in `src/test/java/org/jooby/internal/jetty/JettyHandlerTest.java`.
+- Restored as a current-behavior Jetty adapter test in `src/test/java/org/jooby/internal/jetty/JettyHandlerTest.java`.
 - Re-review target: `src/main/java/org/jooby/internal/jetty/JettyHandler.java`.
 
 ## 15. Rewrite `JettyServerTest` ✅
 
 - Source: `src/test/java-excluded/org/jooby/internal/jetty/JettyServerTest.java`
 - Target path: `src/test/java/org/jooby/internal/jetty/JettyServerTest.java`
-- Restored as a direct Jetty 10 wiring test in `src/test/java/org/jooby/internal/jetty/JettyServerTest.java`.
+- Restored as a direct Jetty wiring test in `src/test/java/org/jooby/internal/jetty/JettyServerTest.java`.
 - Re-review target: `src/main/java/org/jooby/internal/jetty/JettyServer.java`.
 
 ## 16. Restore `SseFeature` ✅
@@ -213,32 +210,30 @@
 
 - Replace `javax.inject:javax.inject` with `jakarta.inject:jakarta.inject-api:2.0.1` in all POMs.
 - In all Java source files, replace `import javax.inject.*` with `import jakarta.inject.*`.
-  - Completed in-repo for `killbill-jooby`, `queue`, `jdbi`, and `metrics`.
-  - `skeleton` is intentionally deferred: Jersey 2 / HK2 still expects `javax.inject` semantics there.
+  - Completed in-repo for `killbill-jooby`, `queue`, `jdbi`, `metrics`, and `skeleton`.
   - Affected annotations: `@Inject`, `@Named`, `@Singleton`, `@Qualifier`, `@Scope`.
-- Verify Guice 6.0 resolves `jakarta.inject` annotations correctly alongside any remaining `javax.inject` from transitive deps.
+- Verify Guice 7.0 resolves `jakarta.inject` annotations correctly across the migrated modules.
 - Run the full test suite to confirm no injection failures.
 
 ## 2. javax.servlet → jakarta.servlet
 
-- Upgrade `jakarta.servlet:jakarta.servlet-api` from `4.x` (transitional) to `6.0.0` (true Jakarta namespace).
+- Upgrade `killbill-jooby` to Jetty 11 and move its servlet/jetty adapter code to `jakarta.servlet`.
+- Upgrade the remaining `jakarta.servlet:jakarta.servlet-api` users from `4.x` (transitional) to a true Jakarta namespace line when their integration layers are ready.
 - In all Java source files, replace `import javax.servlet.*` with `import jakarta.servlet.*`.
-  - Affected modules: `skeleton` (8 files), `metrics` (4 files), and `killbill-jooby` (forked Jooby servlet/jetty source under `org.jooby.servlet`/`org.jooby.jetty` packages).
+  - Completed in-repo for `killbill-jooby`, `skeleton`, and `metrics`.
   - Affected classes: `HttpServlet`, `ServletContext`, `Filter`, `FilterChain`, `HttpServletRequest`, `HttpServletResponse`, etc.
 - Update `GuiceServletContextListener` and `JULServletContextListener` to use `jakarta.servlet` equivalents.
-- Note: `guice-servlet` 6.0 still uses `javax.servlet` — this creates a temporary incompatibility.
-  - Workaround: keep `guice-servlet` on 6.0 and defer `skeleton`/`metrics` servlet migration until Phase 3 / Step 4 (Guice 7.0).
-  - Alternative: migrate `skeleton` servlet code and `guice-servlet` together in Phase 3 / Step 4.
+- Current state: completed in-repo via Guice Servlet **7.0.0**, Jetty **11.0.24**, `jakarta.servlet-api:5.0.0`, and source/test migration from `javax.servlet.*` to `jakarta.servlet.*` in `killbill-jooby`, `skeleton`, and `metrics`.
 
 ## 3. javax.ws.rs → jakarta.ws.rs + Jersey 3.x (skeleton only)
 
-- Upgrade `jakarta.ws.rs:jakarta.ws.rs-api` from `2.x` (transitional) to `3.1.0` (true Jakarta namespace).
+- Upgrade `jakarta.ws.rs:jakarta.ws.rs-api` from `2.x` (transitional) to a true Jakarta namespace line.
 - In all Java source files, replace `import javax.ws.rs.*` with `import jakarta.ws.rs.*`.
-  - Affected module: `skeleton` only (6 files).
+  - Completed in-repo for `skeleton`.
   - Affected annotations: `@Path`, `@GET`, `@POST`, `@Produces`, `@Consumes`, `@QueryParam`, `@PathParam`, etc.
 - Upgrade Jersey from **2.39.1 to 3.x** (Jersey 3.x uses `jakarta.ws.rs`).
-  - Update all `org.glassfish.jersey.*` dependencies to their 3.x equivalents.
-  - Update `org.glassfish.hk2:guice-bridge` and `hk2-api` to Jakarta-compatible versions.
+  - Completed in-repo with Jersey **3.0.18** and HK2 / `guice-bridge` **3.0.6**.
+  - Updated the Jackson JAX-RS provider to `com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider`.
 - Run skeleton tests (`TestJerseyBaseServerModule`) to verify Jersey 3.x + Jakarta JAX-RS works.
 
 ## 4. Upgrade to Guice 7.0.0 (Final Jakarta)
@@ -247,7 +242,7 @@
 - This step MUST come after Phase 2 / Step 2 and the earlier Jakarta migration steps in this phase are complete.
 - Update `killbill-oss-parent` to use `com.google.inject:guice:7.0.0`.
 - Update `com.google.inject.extensions:guice-servlet` to `7.0.0` (now uses `jakarta.servlet`).
-  - This resolves the `guice-servlet` / `jakarta.servlet` incompatibility noted above.
+  - Completed in-repo via root dependency management override to Guice / Guice Servlet **7.0.0**.
 - Verify no transitive dependency still pulls in `javax.inject` or `javax.servlet` (use `mvn dependency:tree`).
 - Run the full test suite to confirm everything works with Guice 7.0.0.
 
@@ -260,12 +255,13 @@
 - Update JAXB runtime implementation (e.g., `org.glassfish.jaxb:jaxb-runtime`) to 4.x.
 - Run automaton and xmlloader tests to verify XML serialization/deserialization still works.
 - This step is independent of Guice and can be done in parallel with the earlier Jakarta migration work.
+- Current state: completed in-repo via `jakarta.xml.bind-api:4.0.0`, `jaxb-runtime:4.0.0`, and source/test import updates in `automaton` and `xmlloader`.
 
 ---
 
 # Phase 4 — Continue Modernizing the Existing killbill-jooby Fork
 
-> With the codebase fully on Jakarta (Phase 3), keep the existing `killbill-jooby`
+> With the targeted Jakarta migration complete for the framework-facing APIs (Phase 3), keep the existing `killbill-jooby`
 > fork based on upstream Jooby 1.6.9 and continue modernizing it in place.
 > This is fork maintenance, not a re-fork onto a newer upstream major version.
 
@@ -279,6 +275,7 @@
 - Re-verify Kill Bill-specific changes documented in `jooby/CHANGES.md` and keep them applied on top of the maintained fork.
 - Update `jooby/README.md` and `jooby/CHANGES.md` to reflect the current maintained-fork baseline and any new compatibility notes.
 - Run `mvn clean install` to verify compilation and tests pass.
+- Current state: effectively complete in-repo. The maintained fork remains based on Jooby **1.6.9**, stays vendored in place, uses the existing Kill Bill module layout and test tree, runs on Jetty **11.0.24** / Servlet **5.0.0**, and no longer has direct `javax.annotation` usage.
 
 ---
 
@@ -300,6 +297,28 @@
 - Address any further API removals or deprecations introduced between JDK 21 and 25.
 - Verify all third-party dependencies have JDK 25-compatible releases.
 - Run full test suite and integration tests under JDK 25.
+
+---
+
+# Phase 6 — Parent Dependency Alignment
+
+> Once the Jakarta-era dependency baselines are proven inside `killbill-commons`, move the stable
+> version pins into `killbill-oss-parent` so this repository stops carrying local overrides that
+> should become platform defaults.
+
+## 1. Promote Jetty 11 / Servlet 5 properties to killbill-oss-parent
+
+- Add parent-managed `jetty.version` for the validated Jooby baseline (**11.0.24** or later agreed patch line).
+- Add parent-managed `jakarta.servlet-api.version` for the validated Jakarta Servlet baseline (**5.0.0** or later agreed line).
+- Update `killbill-oss-parent` dependency management so child modules can inherit these versions consistently.
+- Remove the local `jetty.version` and `jakarta.servlet-api.version` properties from child modules once the parent provides them.
+- Verify `killbill-commons` still builds and tests cleanly when Jooby inherits those properties from `killbill-oss-parent`.
+- Verify downstream Kill Bill repositories that consume Jetty / Servlet APIs remain compatible with the new parent-managed baseline.
+
+## 2. Promote later Jakarta-era dependency baselines to killbill-oss-parent
+
+- As Phase 3 and Phase 4 complete, move any other repository-local dependency overrides that should become platform defaults into `killbill-oss-parent`.
+- Keep this limited to versions that are already validated in `killbill-commons`; do not move experimental baselines into the parent prematurely.
 
 ---
 
