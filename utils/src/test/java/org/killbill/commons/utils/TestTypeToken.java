@@ -19,6 +19,7 @@ package org.killbill.commons.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -35,17 +36,51 @@ public class TestTypeToken {
         Assert.assertEquals(types.size(), 1);
 
         types = TypeToken.getRawTypes(Integer.class);
-        // class java.lang.Integer, interface java.lang.Comparable, class java.lang.Number, interface java.io.Serializable, class java.lang.Object
-        // FIXME-1615 : JDK 11 and JDK 17 produce different result.
-        // Assert.assertEquals(types.size(), 5);
+        final Set<Class<?>> integerExpected = new LinkedHashSet<>();
+        integerExpected.add(Integer.class);
+        integerExpected.add(Comparable.class);
+        addIfPresent(integerExpected, "java.lang.constant.Constable");
+        addIfPresent(integerExpected, "java.lang.constant.ConstantDesc");
+        integerExpected.add(Number.class);
+        integerExpected.add(java.io.Serializable.class);
+        integerExpected.add(Object.class);
+        Assert.assertEquals(types, integerExpected);
 
         // Guava version: com.google.common.reflect.TypeToken.of(SuperList.class).getTypes().rawTypes() . Size = 11.
         types = TypeToken.getRawTypes(SuperList.class);
-        Assert.assertEquals(types.size(), 11);
+        final Set<Class<?>> expected = new LinkedHashSet<>();
+        expected.add(SuperList.class);
+        expected.add(ArrayList.class);
+        expected.add(List.class);
+        addIfPresent(expected, "java.util.SequencedCollection");
+        expected.add(Collection.class);
+        expected.add(Iterable.class);
+        expected.add(java.util.RandomAccess.class);
+        expected.add(Cloneable.class);
+        expected.add(java.io.Serializable.class);
+        expected.add(java.util.AbstractList.class);
+        expected.add(java.util.AbstractCollection.class);
+        expected.add(Object.class);
+        Assert.assertEquals(types, expected);
 
         types = TypeToken.getRawTypes(String.class);
-        // class java.lang.String, interface java.lang.Comparable, interface java.io.Serializable, interface java.lang.CharSequence, class java.lang.Object
-        // FIXME-1615 : JDK 11 and JDK 17 produce different result.
-        // Assert.assertEquals(types.size(), 5);
+        final Set<Class<?>> stringExpected = new LinkedHashSet<>();
+        stringExpected.add(String.class);
+        stringExpected.add(java.io.Serializable.class);
+        stringExpected.add(Comparable.class);
+        stringExpected.add(CharSequence.class);
+        addIfPresent(stringExpected, "java.lang.constant.Constable");
+        addIfPresent(stringExpected, "java.lang.constant.ConstantDesc");
+        stringExpected.add(Object.class);
+        Assert.assertEquals(types, stringExpected);
+    }
+
+    // Newer JDKs add interfaces such as SequencedCollection/Constable/ConstantDesc, so the test
+    // builds the exact expected set while remaining compatible with earlier runtimes that lack them.
+    private void addIfPresent(final Set<Class<?>> types, final String className) {
+        try {
+            types.add(Class.forName(className));
+        } catch (final ClassNotFoundException ignored) {
+        }
     }
 }
