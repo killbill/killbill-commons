@@ -17,7 +17,7 @@
 
 package org.killbill.commons.skeleton.modules;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SomeGuiceyDependency {

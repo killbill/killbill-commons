@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import javax.servlet.Filter;
-import javax.servlet.http.HttpServlet;
+import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServlet;
 
 import org.glassfish.jersey.server.ServerProperties;
 import org.killbill.commons.utils.Joiner;

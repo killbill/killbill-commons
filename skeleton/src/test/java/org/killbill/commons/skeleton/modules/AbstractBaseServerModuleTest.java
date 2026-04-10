@@ -22,7 +22,7 @@ package org.killbill.commons.skeleton.modules;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextEvent;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
