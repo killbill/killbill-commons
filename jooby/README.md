@@ -17,6 +17,15 @@ The following upstream modules are merged into this single artifact:
 Not forked:
 - `org.jooby:jooby-netty` — Kill Bill uses Jetty; SSE/WebSocket are handled via the core SPI layer (`org.jooby.spi.*`).
 
+## Current Maintained Baseline
+
+- The fork remains based on upstream **Jooby 1.6.9** and is maintained in place.
+- The current web/runtime baseline is **Guice 7.0.0**, **Jetty 11.0.24**, and
+  **`jakarta.servlet-api` 5.0.0**.
+- Jooby tests run in the standard Maven lifecycle; the old `-Pjooby` gate is gone.
+- Active Jooby test baseline: **124** Java files in `src/test/java`, **108** runnable test
+  classes, **923** tests.
+
 ## Building & Testing
 
 `killbill-jooby` keeps the upstream **JUnit 4** test stack. It does **not** use the
@@ -37,3 +46,5 @@ Changes with upstream:
 ```
 git diff -w 85a50d5e894d14068b2e90a0601481cf52a0abec...HEAD jooby/src/main/java/org/jooby
 ```
+
+For a detailed audit of the maintained-fork deltas, see `jooby/CHANGES.md`.

@@ -37,7 +37,7 @@ Jetty 11 / Servlet 5 (`jakarta.servlet` namespace):
 
 | File | Change | Reason |
 |---|---|---|
-| `pom.xml` | Added local `jetty.version=11.0.24` and `jakarta.servlet.version=5.0.0`; updated `jetty-server` and `jakarta.servlet-api`; excluded `org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api` from `jetty-server` | Jetty 11 is the latest `11.0.x` patch line compatible with the repository's managed `slf4j-api:2.0.9`; the exclusion avoids duplicate Servlet 5 classes on the test classpath |
+| `pom.xml` | Switched the maintained fork to Jetty `11.0.24` and `jakarta.servlet-api` `5.0.0`; updated `jetty-server` / `jakarta.servlet-api`; excluded `org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api` from `jetty-server` | Jetty 11 is the latest `11.0.x` patch line compatible with the repository's managed `slf4j-api:2.0.9`; the exclusion avoids duplicate Servlet 5 classes on the test classpath |
 | `src/main/java/org/jooby/internal/jetty/JettyHandler.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Jetty 11 uses Servlet 5 / Jakarta namespace only |
 | `src/main/java/org/jooby/internal/jetty/JettyResponse.java` | Replaced `javax.servlet.http.*` imports with `jakarta.servlet.http.*` | Jetty 11 uses Servlet 5 / Jakarta namespace only |
 | `src/main/java/org/jooby/internal/jetty/JettySse.java` | Replaced `javax.servlet.http.HttpServletResponse` with `jakarta.servlet.http.HttpServletResponse` | Jetty 11 uses Servlet 5 / Jakarta namespace only |
@@ -68,7 +68,7 @@ Differences from upstream dependency versions:
 
 | Dependency | Upstream | Kill Bill Fork | Reason |
 |---|---|---|---|
-| `com.google.inject:guice` | 4.2.0 | 5.1.0 (managed by killbill-oss-parent) | Kill Bill standardized version |
+| `com.google.inject:guice` | 4.2.0 | 7.0.0 (managed in root pom) | Current Kill Bill Jakarta baseline |
 | `com.google.inject.extensions:guice-multibindings` | 4.2.0 | **removed** | `Multibinder` merged into core Guice since 4.2 |
 | `org.jooby:funzy` | 0.1.0 (external dep) | **removed** (source inlined) | 3 classes copied into `org.jooby.funzy` package |
 | `org.eclipse.jetty:jetty-server` | 9.4.24.v20191120 | 11.0.24 | Jetty 11 is the newest `11.0.x` line compatible with the repository-managed `slf4j-api:2.0.9`; local exclusion avoids duplicate Servlet API classes |
@@ -159,7 +159,7 @@ Notable rewrites and follow-up restorations:
 | `FileConfTest.java` | Rewritten as a real filesystem test | Replaces EasyMock + PowerMock constructor/static mocking |
 | `LogbackConfTest.java` | Rewritten as a real filesystem/config-driven test | Replaces MockUnit-based lookup stubbing |
 | `RequestScopeTest.java` | Rewritten as a direct behavior test | Exercises circular-proxy handling without a compile-time Guice internal type dependency |
-| `JettyHandlerTest.java` | Rewritten around current Jetty 10 adapter behavior | Upstream websocket-era expectations no longer matched the fork |
+| `JettyHandlerTest.java` | Rewritten around current Jetty adapter behavior | Upstream websocket-era expectations no longer matched the maintained fork |
 | `JettyServerTest.java` | Rewritten around real `Server`, `ServerConnector`, and `ContextHandler` objects | Replaces removed Jetty 9 websocket factory assumptions |
 | `SseFeature.java` | Rewritten to use JDK 11 `HttpClient` | Replaces removed Ning AsyncHttpClient dependency |
 
