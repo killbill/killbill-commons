@@ -17,7 +17,7 @@ package org.jooby;
 
 import static java.util.Objects.requireNonNull;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.util.function.Supplier;
 
 /**

@@ -19,9 +19,9 @@ import com.typesafe.config.Config;
 import org.jooby.funzy.Throwing;
 import org.jooby.funzy.Try;
 
-import javax.annotation.Nonnull;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

@@ -27,8 +27,8 @@ import org.jooby.Cookie.Definition;
 
 import com.google.common.collect.ImmutableList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Give you access to the actual HTTP response. You can read/write headers and write HTTP body.
