@@ -20,7 +20,7 @@ package org.skife.config;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DataAmount {
+public final class DataAmount {
 
     private static final Pattern SPLIT = Pattern.compile("^(\\d+)\\s*([a-zA-Z]+)$");
     private static final Pattern NUM_ONLY = Pattern.compile("^(\\d+)$");

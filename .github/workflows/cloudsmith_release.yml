@@ -5,7 +5,7 @@ on:
 
 jobs:
   cloudsmith_release:
-    uses: killbill/gh-actions-shared/.github/workflows/cloudsmith_release.yml@main
+    uses: killbill/gh-actions-shared/.github/workflows/cloudsmith_release.yml@java21
     with:
       group_id: org.kill-bill.commons
     secrets:

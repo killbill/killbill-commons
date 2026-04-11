@@ -119,4 +119,19 @@
         <Class name="org.jooby.internal.ssl.SslContextProvider" />
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
     </Match>
+
+    <!-- AT_STALE_THREAD_WRITE_OF_PRIMITIVE: Jooby bootstrap flags are configured during
+         single-threaded app construction and then snapshotted into immutable runtime config. -->
+    <Match>
+        <Class name="org.jooby.Jooby" />
+        <Bug pattern="AT_STALE_THREAD_WRITE_OF_PRIMITIVE" />
+    </Match>
+
+    <!-- CT_CONSTRUCTOR_THROW: Internal framework types and vendored upstream helpers validate
+         request/template/bootstrap state eagerly in constructors and fail fast when invalid.
+         Reworking those constructors would be invasive framework churn in maintained vendored code. -->
+    <Match>
+        <Class name="~(org\.jooby\.internal\.BodyReferenceImpl|org\.jooby\.internal\.CookieImpl|org\.jooby\.internal\.RequestImpl|org\.jooby\.internal\.URLAsset|org\.jooby\.internal\.jetty\.JettyServer|org\.jooby\.internal\.mvc\.MvcWebSocket|org\.jooby\.internal\.parser\.bean\.BeanPlan)" />
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
 </FindBugsFilter>

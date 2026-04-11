@@ -134,4 +134,30 @@
         <Bug pattern="DM_STRING_CTOR" />
     </Match>
 
+    <Match>
+        <!--
+        Vendored jDBI helper types eagerly validate mapper, template, and SQL-object metadata in
+        their constructors and intentionally fail fast when that reflective/configuration setup is
+        invalid. SpotBugs reports these as CT_CONSTRUCTOR_THROW on Java 21, but changing the
+        constructor behavior would be invasive framework work across the forked jDBI surface.
+        -->
+        <Class name="~(org\.killbill\.commons\.jdbi\.ReusableStringTemplate3StatementLocator|org\.killbill\.commons\.jdbi\.mapper\.LowerToCamelBeanMapper|org\.skife\.jdbi\.v2\.BeanMapper|org\.skife\.jdbi\.v2\.BeanPropertyArguments|org\.skife\.jdbi\.v2\.BuiltInArgumentFactory\\$P|org\.skife\.jdbi\.v2\.Cleanables|org\.skife\.jdbi\.v2\.DBI|org\.skife\.jdbi\.v2\.GeneratedKeys|org\.skife\.jdbi\.v2\.InferredMapperFactory|org\.skife\.jdbi\.v2\.ReflectionBeanMapper|org\.skife\.jdbi\.v2\.ResultSetResultIterator|org\.skife\.jdbi\.v2\.sqlobject\.BatchHandler|org\.skife\.jdbi\.v2\.sqlobject\.CallHandler|org\.skife\.jdbi\.v2\.sqlobject\.CustomizingStatementHandler|org\.skife\.jdbi\.v2\.sqlobject\.ResultReturnThing\\$SingleValueResultReturnThing|org\.skife\.jdbi\.v2\.sqlobject\.UpdateHandler|org\.skife\.jdbi\.v2\.sqlobject\.customizers\.RegisterContainerMapper\\$MyCustomizer|org\.skife\.jdbi\.v2\.sqlobject\.stringtemplate\.StringTemplate3StatementLocator)" />
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
+
+    <Match>
+        <Class name="org.skife.jdbi.v2.BuiltInArgumentFactory$P" />
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
+
+    <Match>
+        <Class name="org.skife.jdbi.v2.sqlobject.ResultReturnThing$SingleValueResultReturnThing" />
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
+
+    <Match>
+        <Class name="org.skife.jdbi.v2.sqlobject.customizers.RegisterContainerMapper$MyCustomizer" />
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
+
 </FindBugsFilter>
