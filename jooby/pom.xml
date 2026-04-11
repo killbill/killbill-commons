@@ -30,27 +30,23 @@
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
     </properties>
     <dependencies>
-        <!-- Guice (Kill Bill managed 5.1.0; Multibinder is in core since 4.2) -->
+        <!-- Core dependencies -->
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
         </dependency>
-        <!-- Guava (Kill Bill managed) -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-        <!-- Typesafe Config (Kill Bill managed) -->
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
         </dependency>
-        <!-- SLF4J (Kill Bill managed) -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <!-- JSR305 annotations (@Nullable, @Nonnull) -->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
@@ -72,6 +68,7 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
+
         <!-- Jetty Server (Kill Bill managed 10.0.16) -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -111,7 +108,8 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
         </dependency>
-        <!-- Jackson (Kill Bill managed) -->
+
+        <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -136,12 +134,15 @@
             <artifactId>jackson-module-afterburner</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+
+        <!-- JUnit types are referenced from main sources (e.g. JoobyRule) -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
+
         <!-- Test-only dependencies -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -207,21 +208,21 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-            </plugin>
+            <!-- Needed, because jooby originally use JUnit -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M7</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit47</artifactId>
+                        <version>3.0.0-M7</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>false</skip>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
             <!-- Exclude upstream resource files from Apache RAT license check -->
@@ -232,50 +233,9 @@
                     <excludes combine.children="append">
                         <exclude>src/main/resources/**</exclude>
                         <exclude>src/test/resources/**</exclude>
-                        <exclude>src/test/java-excluded/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>jooby</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>default-testCompile</id>
-                                <phase>test-compile</phase>
-                                <goals>
-                                    <goal>testCompile</goal>
-                                </goals>
-                                <!-- No testExcludes needed: PowerMock-dependent files are in src/test/java-excluded/ -->
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>3.0.0-M7</version>
-                        <configuration>
-                            <skip>false</skip>
-                            <reuseForks>false</reuseForks>
-                            <argLine>-XX:-OmitStackTraceInFastThrow --illegal-access=permit</argLine>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.apache.maven.surefire</groupId>
-                                <artifactId>surefire-junit47</artifactId>
-                                <version>3.0.0-M7</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
