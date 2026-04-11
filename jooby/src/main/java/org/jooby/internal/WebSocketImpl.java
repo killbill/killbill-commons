@@ -34,7 +34,7 @@ import org.jooby.spi.NativeWebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.io.EOFException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;

@@ -23,9 +23,9 @@ import org.jooby.Jooby;
 import org.jooby.funzy.Throwing;
 import org.jooby.spi.Server;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 public class ServerInitializer implements ServletContextListener {
 

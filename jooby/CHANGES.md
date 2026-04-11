@@ -29,6 +29,34 @@ The following files were modified from upstream to adapt to Jetty 10 API changes
 | `RoutePattern.java` | Simplified the glob-route regex to remove nested ambiguous quantifiers | Fixes CodeQL ReDoS warning without changing route-matching semantics |
 | `PemReader.java` | Simplified PEM block regex whitespace handling from redundant alternation to `\\s+` | Fixes CodeQL ReDoS warning while keeping the same accepted PEM formats |
 
+### Kill Bill fork maintenance — Jetty 11 / Jakarta servlet migration
+
+The following files were modified from the Kill Bill Jetty 10 baseline to migrate the fork to
+Jetty 11 / Servlet 5 (`jakarta.servlet` namespace):
+
+| File | Change | Reason |
+|---|---|---|
+| `pom.xml` | Added local `jetty.version=11.0.24` and `jakarta.servlet.version=5.0.0`; updated `jetty-server` and `jakarta.servlet-api`; excluded `org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api` from `jetty-server` | Jetty 11 is the latest `11.0.x` patch line compatible with the repository's managed `slf4j-api:2.0.9`; the exclusion avoids duplicate Servlet 5 classes on the test classpath |
+| `src/main/java/org/jooby/internal/jetty/JettyHandler.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Jetty 11 uses Servlet 5 / Jakarta namespace only |
+| `src/main/java/org/jooby/internal/jetty/JettyResponse.java` | Replaced `javax.servlet.http.*` imports with `jakarta.servlet.http.*` | Jetty 11 uses Servlet 5 / Jakarta namespace only |
+| `src/main/java/org/jooby/internal/jetty/JettySse.java` | Replaced `javax.servlet.http.HttpServletResponse` with `jakarta.servlet.http.HttpServletResponse` | Jetty 11 uses Servlet 5 / Jakarta namespace only |
+| `src/main/java/org/jooby/servlet/ServerInitializer.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Servlet adapter now compiles against Servlet 5 |
+| `src/main/java/org/jooby/servlet/ServletHandler.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Servlet adapter now compiles against Servlet 5 |
+| `src/main/java/org/jooby/servlet/ServletServletRequest.java` | Replaced `javax.servlet.*` imports/usages, including fully-qualified `Cookie` reference | Servlet adapter now compiles against Servlet 5 |
+| `src/main/java/org/jooby/servlet/ServletServletResponse.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Servlet adapter now compiles against Servlet 5 |
+| `src/main/java/org/jooby/servlet/ServletUpload.java` | Replaced `javax.servlet.http.Part` with `jakarta.servlet.http.Part` | Servlet adapter now compiles against Servlet 5 |
+| `src/test/java/org/jooby/internal/jetty/JettyHandlerTest.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Align Jetty adapter tests with Servlet 5 |
+| `src/test/java/org/jooby/internal/jetty/JettyResponseTest.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Align Jetty adapter tests with Servlet 5 |
+| `src/test/java/org/jooby/internal/jetty/JettySseTest.java` | Replaced `javax.servlet.AsyncContext` with `jakarta.servlet.AsyncContext` | Align Jetty adapter tests with Servlet 5 |
+| `src/test/java/org/jooby/servlet/ServerInitializerTest.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Align servlet adapter tests with Servlet 5 |
+| `src/test/java/org/jooby/servlet/ServletHandlerTest.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Align servlet adapter tests with Servlet 5 |
+| `src/test/java/org/jooby/servlet/ServletServletRequestTest.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Align servlet adapter tests with Servlet 5 |
+| `src/test/java/org/jooby/servlet/ServletServletResponseTest.java` | Replaced `javax.servlet.*` imports with `jakarta.servlet.*` | Align servlet adapter tests with Servlet 5 |
+
+Jooby API signatures and lifecycle hooks now import `jakarta.annotation.*` directly. The old
+package-level `@ParametersAreNonnullByDefault` marker was removed because the Jakarta annotation
+API does not provide an equivalent package-default annotation.
+
 ## POM / Dependency Changes
 
 The `jooby/pom.xml` is written from scratch (not a copy of any upstream POM). It merges
@@ -42,22 +70,22 @@ Differences from upstream dependency versions:
 | `com.google.inject:guice` | 4.2.0 | 5.1.0 (managed by killbill-oss-parent) | Kill Bill standardized version |
 | `com.google.inject.extensions:guice-multibindings` | 4.2.0 | **removed** | `Multibinder` merged into core Guice since 4.2 |
 | `org.jooby:funzy` | 0.1.0 (external dep) | **removed** (source inlined) | 3 classes copied into `org.jooby.funzy` package |
-| `org.eclipse.jetty:jetty-server` | 9.4.24.v20191120 | 10.0.16 (managed) | Kill Bill standardized version |
-| `org.eclipse.jetty.http2:http2-server` | 9.4.24.v20191120 | 10.0.16 | Aligned with jetty-server |
+| `org.eclipse.jetty:jetty-server` | 9.4.24.v20191120 | 11.0.24 | Jetty 11 is the newest `11.0.x` line compatible with the repository-managed `slf4j-api:2.0.9`; local exclusion avoids duplicate Servlet API classes |
+| `org.eclipse.jetty.http2:http2-server` | 9.4.24.v20191120 | 11.0.24 | Aligned with jetty-server |
 | `org.eclipse.jetty.websocket:websocket-server` | 9.4.24.v20191120 | **removed** | WebSocket factory code removed from Jetty adapter; `websocket-jetty-api` added separately |
 | `org.eclipse.jetty:jetty-alpn-openjdk8-server` | 9.4.24.v20191120 | **removed** | Not available in Jetty 10; ALPN is built-in |
-| `javax.servlet:javax.servlet-api` | 3.1.0 | `jakarta.servlet:jakarta.servlet-api` 4.0.4 | Kill Bill transitional artifact (still ships `javax.servlet` packages) |
+| `javax.servlet:javax.servlet-api` | 3.1.0 | `jakarta.servlet:jakarta.servlet-api` 5.0.0 | True Jakarta Servlet 5 API for Jetty 11 / `jakarta.servlet.*` sources |
 | `org.ow2.asm:asm` | 7.3.1 | 9.7 | Updated for JDK 11+ compatibility |
 | `com.google.guava:guava` | 25.1-jre | 31.1-jre (managed) | Kill Bill standardized version |
 | `com.typesafe:config` | 1.3.3 | 1.4.2 (managed) | Kill Bill standardized version |
 | `org.slf4j:slf4j-api` | 1.7.x | 2.0.9 (managed) | Kill Bill standardized version |
 | `org.powermock:powermock-*` | 2.0.0 | **removed** | Not managed by killbill-oss-parent; obsolete for modern JDKs |
-| `jakarta.annotation:jakarta.annotation-api` | not present | 1.3.5 (managed) | Added for `@PostConstruct`/`@PreDestroy` in `LifeCycle.java` |
+| `jakarta.annotation:jakarta.annotation-api` | not present | 2.1.1 (managed) | Used directly for `@PostConstruct`/`@PreDestroy` and nullability annotations after removing Jooby's direct `javax.annotation` usage |
 | `com.github.spotbugs:spotbugs-annotations` | not present | **not included** | Not needed; no forked source uses `@SuppressFBWarnings`, and SpotBugs triage uses the exclusion filter instead |
-| `org.eclipse.jetty:jetty-alpn-server` | not present | 10.0.16 | Required by `JettyServer.java` for ALPN/HTTP2 support |
-| `org.eclipse.jetty.websocket:websocket-jetty-api` | not present (was part of websocket-server) | 10.0.16 | Jetty 10 split WebSocket API into separate artifact |
-| `org.eclipse.jetty:jetty-io` | transitive | 10.0.16 (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
-| `org.eclipse.jetty:jetty-util` | transitive | 10.0.16 (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
+| `org.eclipse.jetty:jetty-alpn-server` | not present | 11.0.24 | Required by `JettyServer.java` for ALPN/HTTP2 support |
+| `org.eclipse.jetty.websocket:websocket-jetty-api` | not present (was part of websocket-server) | 11.0.24 | Jetty 10/11 split WebSocket API into separate artifact |
+| `org.eclipse.jetty:jetty-io` | transitive | 11.0.24 (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
+| `org.eclipse.jetty:jetty-util` | transitive | 11.0.24 (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
 | `jakarta.inject:jakarta.inject-api` | transitive via Guice | 2.0.1 (managed in root pom, explicit in fork) | Used directly for injection annotations; provider-facing Guice bindings still use `com.google.inject.Provider` where required |
 | `junit:junit` | optional (compile) | compile + optional | Parent forces test scope; explicit compile needed for `JoobyRule` |
 | `org.mockito:mockito-core` | not present | 5.3.1 (managed, test) | Sole active mocking framework for the migrated test tree |

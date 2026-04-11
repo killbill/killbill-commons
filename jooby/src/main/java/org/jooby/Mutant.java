@@ -25,7 +25,7 @@ import com.google.common.primitives.Primitives;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * <p>

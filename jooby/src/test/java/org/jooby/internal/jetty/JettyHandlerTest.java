@@ -26,9 +26,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;

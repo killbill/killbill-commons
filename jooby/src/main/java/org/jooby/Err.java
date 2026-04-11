@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * An exception that carry a {@link Status}. The status field will be set in the HTTP

@@ -19,7 +19,7 @@ import org.jooby.Route.Mapper;
 import org.jooby.funzy.Try;
 import org.jooby.handlers.AssetHandler;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.util.ArrayList;

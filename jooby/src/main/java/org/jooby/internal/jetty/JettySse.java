@@ -24,7 +24,7 @@ import org.eclipse.jetty.server.Response;
 import org.jooby.Sse;
 import org.jooby.funzy.Try;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;

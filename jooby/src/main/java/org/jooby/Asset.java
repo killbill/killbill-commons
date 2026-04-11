@@ -25,7 +25,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import org.jooby.funzy.Throwing;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Usually a public file/resource like javascript, css, images files, etc...

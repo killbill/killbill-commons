@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import javax.servlet.http.Part;
+import jakarta.servlet.http.Part;
 
 import org.jooby.spi.NativeUpload;
 

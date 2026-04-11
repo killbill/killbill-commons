@@ -22,8 +22,8 @@ import static java.util.Objects.requireNonNull;
 import org.jooby.funzy.Throwing;
 import org.jooby.internal.CookieImpl;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URLDecoder;

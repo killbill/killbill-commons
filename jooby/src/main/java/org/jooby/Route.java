@@ -33,12 +33,11 @@ import org.jooby.internal.RoutePattern;
 import org.jooby.internal.RouteSourceImpl;
 import org.jooby.internal.SourceProvider;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

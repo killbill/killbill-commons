@@ -18,7 +18,7 @@ package org.jooby;
 import com.google.common.io.BaseEncoding;
 import static java.util.Objects.requireNonNull;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Optional;

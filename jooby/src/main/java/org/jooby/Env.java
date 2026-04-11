@@ -23,8 +23,8 @@ import com.typesafe.config.Config;
 import static java.util.Objects.requireNonNull;
 import org.jooby.funzy.Throwing;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;

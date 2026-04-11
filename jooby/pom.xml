@@ -47,11 +47,7 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-        </dependency>
-        <!-- javax.annotation (@PostConstruct, @PreDestroy) — Kill Bill managed, transitional -->
+        <!-- jakarta.annotation annotations are used directly in Jooby lifecycle and nullability signatures -->
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
@@ -63,45 +59,48 @@
             <version>9.7</version>
             <optional>true</optional>
         </dependency>
-        <!-- Servlet API (Kill Bill managed, transitional jakarta groupId shipping javax packages) -->
+        <!-- Servlet API (Jetty 11 / Servlet 5, jakarta namespace) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
 
-        <!-- Jetty Server (Kill Bill managed 10.0.16) -->
+        <!-- Jetty Server (Jetty 11.x, jakarta.servlet-based) -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
+            <exclusions>
+                <!-- Keep the standard jakarta.servlet-api dependency above and avoid duplicate
+                     jakarta.servlet classes from Jetty's JPMS/OSGi wrapper artifact. -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty.toolchain</groupId>
+                    <artifactId>jetty-jakarta-servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Jetty HTTP/2 -->
         <dependency>
             <groupId>org.eclipse.jetty.http2</groupId>
             <artifactId>http2-server</artifactId>
-            <version>${jetty.version}</version>
         </dependency>
         <!-- Jetty ALPN -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-alpn-server</artifactId>
-            <version>${jetty.version}</version>
         </dependency>
         <!-- Jetty WebSocket API (used directly in Jooby SPI layer) -->
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>websocket-jetty-api</artifactId>
-            <version>${jetty.version}</version>
         </dependency>
         <!-- Jetty IO/Util (transitive, but used directly in source) -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-io</artifactId>
-            <version>${jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
-            <version>${jetty.version}</version>
         </dependency>
         <!-- jakarta.inject (managed in the root pom, but imported directly) -->
         <dependency>
