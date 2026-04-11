@@ -229,3 +229,4 @@ Temporary Items
 *.tmproj
 *.tmproject
 tmtags
+/.codex
