@@ -149,14 +149,18 @@ public class SSIHandler extends AssetHandler {
 
   private String file(final String key) {
     String file = Route.normalize(key.trim());
-    return text(getClass().getResourceAsStream(file));
+    InputStream stream = getClass().getResourceAsStream(file);
+    if (stream == null) {
+      throw new NoSuchElementException("Resource not found: " + file);
+    }
+    return text(stream);
   }
 
   private String text(final InputStream stream) {
     try (InputStream in = stream) {
-      return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
-    } catch (IOException | NullPointerException x) {
-      throw new NoSuchElementException();
+      return CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
+    } catch (IOException x) {
+      throw new NoSuchElementException(x.getMessage());
     }
   }
 }
