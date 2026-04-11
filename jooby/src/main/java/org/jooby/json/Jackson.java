@@ -33,7 +33,7 @@ import org.jooby.MediaType;
 import org.jooby.Parser;
 import org.jooby.Renderer;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;

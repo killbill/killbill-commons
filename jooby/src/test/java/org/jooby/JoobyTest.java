@@ -90,8 +90,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import com.google.inject.Provider;
+import jakarta.inject.Singleton;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.nio.charset.Charset;

@@ -34,7 +34,7 @@ import org.jooby.mvc.Flash;
 import org.jooby.mvc.Header;
 import org.jooby.mvc.Local;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.killbill.CreatorName;
 import org.killbill.clock.Clock;

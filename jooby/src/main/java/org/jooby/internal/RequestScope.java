@@ -52,9 +52,9 @@ public class RequestScope implements Scope {
 
         scopedObjects.put(key, current);
       }
-      if (current instanceof javax.inject.Provider) {
-        if (!javax.inject.Provider.class.isAssignableFrom(key.getTypeLiteral().getRawType())) {
-          return (T) ((javax.inject.Provider) current).get();
+      if (current instanceof com.google.inject.Provider) {
+        if (!com.google.inject.Provider.class.isAssignableFrom(key.getTypeLiteral().getRawType())) {
+          return (T) ((com.google.inject.Provider) current).get();
         }
       }
       return current;

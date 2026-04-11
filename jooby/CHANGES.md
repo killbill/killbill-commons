@@ -58,7 +58,7 @@ Differences from upstream dependency versions:
 | `org.eclipse.jetty.websocket:websocket-jetty-api` | not present (was part of websocket-server) | 10.0.16 | Jetty 10 split WebSocket API into separate artifact |
 | `org.eclipse.jetty:jetty-io` | transitive | 10.0.16 (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
 | `org.eclipse.jetty:jetty-util` | transitive | 10.0.16 (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
-| `javax.inject:javax.inject` | transitive via Guice | managed (explicit) | Used directly in source; declared explicitly to satisfy dependency:analyze |
+| `jakarta.inject:jakarta.inject-api` | transitive via Guice | 2.0.1 (managed in root pom, explicit in fork) | Used directly for injection annotations; provider-facing Guice bindings still use `com.google.inject.Provider` where required |
 | `junit:junit` | optional (compile) | compile + optional | Parent forces test scope; explicit compile needed for `JoobyRule` |
 | `org.mockito:mockito-core` | not present | 5.3.1 (managed, test) | Sole active mocking framework for the migrated test tree |
 | `org.easymock:easymock` | present (test) | **removed** | Replaced by mockito-core in the active test tree |

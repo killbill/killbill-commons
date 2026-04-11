@@ -101,7 +101,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.lang.reflect.Type;
@@ -3250,7 +3250,7 @@ public class Jooby implements Router, LifeCycle, Registry {
 
   /**
    * Bind a {@link Config} and make it available for injection. Each property of the config is also
-   * binded it and ready to be injected with {@link javax.inject.Named}.
+   * binded it and ready to be injected with {@link jakarta.inject.Named}.
    *
    * @param binder Guice binder.
    * @param config App config.

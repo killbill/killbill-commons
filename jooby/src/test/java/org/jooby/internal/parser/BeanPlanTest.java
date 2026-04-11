@@ -17,7 +17,7 @@ package org.jooby.internal.parser;
 
 import static org.junit.Assert.assertEquals;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jooby.internal.ParameterNameProvider;
 import org.jooby.internal.parser.bean.BeanPlan;

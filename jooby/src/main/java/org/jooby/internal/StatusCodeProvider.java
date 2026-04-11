@@ -18,7 +18,7 @@ package org.jooby.internal;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jooby.Err;
 import org.jooby.Status;

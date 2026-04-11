@@ -19,7 +19,7 @@ import com.google.inject.TypeLiteral;
 import static java.util.Objects.requireNonNull;
 import org.jooby.Parser;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 

@@ -24,7 +24,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jooby.Parser;
 

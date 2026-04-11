@@ -15,7 +15,7 @@
  */
 package org.jooby.scope;
 
-import javax.inject.Provider;
+import com.google.inject.Provider;
 
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;

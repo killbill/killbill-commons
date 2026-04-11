@@ -19,8 +19,8 @@ import com.typesafe.config.Config;
 import static java.util.Objects.requireNonNull;
 import org.jooby.funzy.Try;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import com.google.inject.Provider;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileNotFoundException;

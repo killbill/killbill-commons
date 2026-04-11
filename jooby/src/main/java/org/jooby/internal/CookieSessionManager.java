@@ -25,8 +25,8 @@ import org.jooby.internal.parser.ParserExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
