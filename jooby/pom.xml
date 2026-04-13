@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020-2021 Equinix, Inc
+  ~ Copyright 2014-2021 The Billing Project, LLC
+  ~
+  ~ The Billing Project licenses this file to you under the Apache License, version 2.0
+  ~ (the "License"); you may not use this file except in compliance with the
+  ~ License.  You may obtain a copy of the License at:
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  ~ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+  ~ License for the specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.kill-bill.commons</groupId>
+        <artifactId>killbill-commons</artifactId>
+        <version>0.27.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>killbill-jooby</artifactId>
+    <name>Kill Bill Jooby</name>
+    <description>Fork of Jooby 1.6.9 (core, servlet, jetty, jackson, funzy)</description>
+    <properties>
+        <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+    </properties>
+    <dependencies>
+        <!-- Core dependencies -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- jakarta.annotation annotations are used directly in Jooby lifecycle and nullability signatures -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+        <!-- ASM — used only in RouteMetadata.java; shaded to org.jooby.internal.asm -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.7</version>
+            <optional>true</optional>
+        </dependency>
+        <!-- Servlet API (Jetty 11 / Servlet 5, jakarta namespace) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+
+        <!-- Jetty Server (Jetty 11.x, jakarta.servlet-based) -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <exclusions>
+                <!-- Keep the standard jakarta.servlet-api dependency above and avoid duplicate
+                     jakarta.servlet classes from Jetty's JPMS/OSGi wrapper artifact. -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty.toolchain</groupId>
+                    <artifactId>jetty-jakarta-servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Jetty HTTP/2 -->
+        <dependency>
+            <groupId>org.eclipse.jetty.http2</groupId>
+            <artifactId>http2-server</artifactId>
+        </dependency>
+        <!-- Jetty ALPN -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-alpn-server</artifactId>
+        </dependency>
+        <!-- Jetty WebSocket API (used directly in Jooby SPI layer) -->
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-jetty-api</artifactId>
+        </dependency>
+        <!-- Jetty IO/Util (transitive, but used directly in source) -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+        </dependency>
+        <!-- jakarta.inject (managed in the root pom, but imported directly) -->
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+        </dependency>
+
+        <!-- Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-afterburner</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- JUnit types are referenced from main sources (e.g. JoobyRule) -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Test-only dependencies -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.16</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>fluent-hc</artifactId>
+            <version>4.5.14</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.5.14</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!-- Shade ASM into org.jooby.internal.asm to avoid classpath conflicts -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>shade-asm</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.ow2.asm:*</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.objectweb.asm</pattern>
+                                    <shadedPattern>org.jooby.internal.asm</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Needed, because jooby originally use JUnit -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M7</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit47</artifactId>
+                        <version>3.0.0-M7</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <skip>false</skip>
+                    <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
+            <!-- Exclude upstream resource files from Apache RAT license check -->
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <excludes combine.children="append">
+                        <exclude>src/main/resources/**</exclude>
+                        <exclude>src/test/resources/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.26.14-SNAPSHOT</version>
+        <version>0.27.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-skeleton</artifactId>
@@ -50,8 +50,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+            <artifactId>jackson-jakarta-rs-json-provider</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -74,6 +74,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
@@ -81,11 +86,6 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -97,8 +97,8 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.eclipse.jetty.orbit</groupId>
-                    <artifactId>javax.servlet</artifactId>
+                    <groupId>org.eclipse.jetty.toolchain</groupId>
+                    <artifactId>jetty-jakarta-servlet-api</artifactId>
                 </exclusion>
                 <exclusion>
                     <!-- https://github.com/eclipse/jetty.project/issues/5943 (somehow not properly inherited in the verify phase) -->

@@ -19,10 +19,10 @@ package org.killbill.commons.skeleton.modules;
 
 import java.util.Set;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.servlet.ServletException;
-import javax.ws.rs.ext.MessageBodyWriter;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.servlet.ServletException;
+import jakarta.ws.rs.ext.MessageBodyWriter;
 
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
@@ -37,7 +37,7 @@ import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.utils.Strings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 

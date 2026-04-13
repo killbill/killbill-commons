@@ -21,7 +21,7 @@ package org.killbill.commons.skeleton.listeners;
 
 import java.util.List;
 
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextEvent;
 
 import org.killbill.commons.utils.Strings;
 import org.slf4j.Logger;

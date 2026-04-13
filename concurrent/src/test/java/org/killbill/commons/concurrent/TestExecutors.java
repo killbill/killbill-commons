@@ -39,6 +39,10 @@ import org.testng.annotations.Test;
 @Test(singleThreaded = true)
 public class TestExecutors {
 
+    // JDK 21 changed Thread.toString() to include the numeric thread id and extra metadata.
+    // These tests only care that the executor thread name is present, not the JVM-specific prefix.
+    private static final String TEST_EXECUTOR_THREAD_PATTERN = "Thread\\[[^\\]]*TestLoggingExecutor-[^\\]]+\\]";
+
     private void registerAppenders(final Logger loggingLogger, final Logger failsafeLogger, final WriterAppender dummyAppender) {
         dummyAppender.setImmediateFlush(true);
         loggingLogger.setLevel(Level.DEBUG);
@@ -103,8 +107,10 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: Fail!\r?\n"));
-        assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
+        // Match the log severity/message/exception content while tolerating both pre-JDK-21 and
+        // JDK-21+ thread string formats.
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.RuntimeException: Fail!"));
+        assertPattern(actual, finishedExecutingPattern());
     }
 
     private void errorTest(final ExecutorService executorService) throws Exception {
@@ -124,8 +130,10 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.OutOfMemoryError: Poof!\r?\n"));
-        assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
+        // Keep this assertion focused on the wrapped error logging rather than the exact
+        // Thread.toString() rendering chosen by the current JDK.
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.OutOfMemoryError: Poof!"));
+        assertPattern(actual, finishedExecutingPattern());
     }
 
     private void callableTest(final ExecutorService executorService) throws Exception {
@@ -168,9 +176,11 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.Exception: Oops!\r?\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended with an exception\r?\njava.lang.OutOfMemoryError: Uh oh!\r?\n"));
-        assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
+        // Callable logging uses DEBUG for checked exceptions and ERROR for Errors; the helper keeps
+        // that semantic assertion stable across JDK thread formatting changes.
+        assertPattern(actual, exceptionLogPattern("DEBUG", "ended with an exception", "java.lang.Exception: Oops!"));
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended with an exception", "java.lang.OutOfMemoryError: Uh oh!"));
+        assertPattern(actual, finishedExecutingPattern());
     }
 
     private void scheduledTest(final ScheduledExecutorService executorService) throws Exception {
@@ -239,12 +249,26 @@ public class TestExecutors {
 
         final String actual = bos.toString();
 
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: D'oh!\r?\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.OutOfMemoryError: Zoinks!\r?\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: Eep!\r?\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.OutOfMemoryError: Zounds!\r?\n"));
-        assertPattern(actual, Pattern.compile("ERROR - Thread\\[TestLoggingExecutor-[^\\]]+\\] ended abnormally with an exception\r?\njava.lang.RuntimeException: Egad!\r?\n"));
-        assertPattern(actual, Pattern.compile("DEBUG - Thread\\[TestLoggingExecutor-[^\\]]+\\] finished executing$"));
+        // Scheduled executors emit several wrapped failures; use the shared helper so each
+        // assertion still verifies the exact throwable/message without depending on thread ids.
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.RuntimeException: D'oh!"));
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.OutOfMemoryError: Zoinks!"));
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.RuntimeException: Eep!"));
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.OutOfMemoryError: Zounds!"));
+        assertPattern(actual, exceptionLogPattern("ERROR", "ended abnormally with an exception", "java.lang.RuntimeException: Egad!"));
+        assertPattern(actual, finishedExecutingPattern());
+    }
+
+    // Build the regex from the stable log semantics and allow either legacy or JDK 21+ thread
+    // renderings; \R keeps the assertion platform-neutral for line endings too.
+    private Pattern exceptionLogPattern(final String level, final String message, final String throwable) {
+        return Pattern.compile(Pattern.quote(level + " - ") + TEST_EXECUTOR_THREAD_PATTERN + Pattern.quote(" " + message) + "\\R" + Pattern.quote(throwable) + "\\R");
+    }
+
+    // Same rationale as exceptionLogPattern: verify the message, but ignore JVM-specific thread
+    // formatting details that changed in Java 21.
+    private Pattern finishedExecutingPattern() {
+        return Pattern.compile(Pattern.quote("DEBUG - ") + TEST_EXECUTOR_THREAD_PATTERN + Pattern.quote(" finished executing") + "$");
     }
 
     private void assertPattern(final String actual, final Pattern expected) {

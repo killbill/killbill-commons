@@ -25,8 +25,8 @@ import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import javax.sql.DataSource;
 
 import org.killbill.commons.embeddeddb.EmbeddedDB;

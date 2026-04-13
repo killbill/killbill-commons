@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.commons</groupId>
         <artifactId>killbill-commons</artifactId>
-        <version>0.26.14-SNAPSHOT</version>
+        <version>0.27.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>killbill-queue</artifactId>
@@ -73,8 +73,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

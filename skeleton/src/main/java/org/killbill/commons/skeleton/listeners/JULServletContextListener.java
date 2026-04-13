@@ -23,8 +23,8 @@ import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 

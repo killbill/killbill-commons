@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TimeSpan {
+public final class TimeSpan {
 
     private static final Pattern SPLIT = Pattern.compile("^(\\d+)\\s?(\\w+)$");
     private static final HashMap<String, TimeUnit> UNITS = new HashMap<String, TimeUnit>();

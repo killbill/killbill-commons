@@ -1,0 +1,114 @@
+/*
+ * Copyright 2026 The Billing Project, LLC
+ *
+ * The Billing Project licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+package org.jooby.internal;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.jooby.Request;
+import org.jooby.Response;
+import org.jooby.Route;
+
+public class RouteChain implements Route.Chain {
+
+  private Route[] routes;
+
+  private String prefix;
+
+  private int i = 0;
+
+  private RequestImpl rreq;
+
+  private ResponseImpl rrsp;
+
+  private boolean hasAttrs;
+
+  public RouteChain(final RequestImpl req, final ResponseImpl rsp, final Route[] routes) {
+    this.routes = routes;
+    this.rreq = req;
+    this.rrsp = rsp;
+
+    // eager decision if we need to wrap a route to get all the attrs within the change.
+    this.hasAttrs = hasAttributes(routes);
+  }
+
+  private boolean hasAttributes(final Route[] routes) {
+    for (int i = 0; i < routes.length; i++) {
+      if (routes[i].attributes().size() > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public void next(final String prefix, final Request req, final Response rsp) throws Throwable {
+    if (rsp.committed()) {
+      return;
+    }
+
+    if (prefix != null) {
+      this.prefix = prefix;
+    }
+
+    Route route = next(this.prefix);
+    // set route
+    rreq.route(hasAttrs ? attrs(route, routes, i - 1) : route);
+    rrsp.route(route);
+
+    get(route).handle(req, rsp, this);
+  }
+
+  private Route next(final String prefix) {
+    Route route = routes[i++];
+    if (prefix == null) {
+      return route;
+    }
+    while (!route.apply(prefix)) {
+      route = routes[i++];
+    }
+    return route;
+  }
+
+  @Override
+  public List<Route> routes() {
+    return Arrays.asList(routes).subList(i, routes.length - 1);
+  }
+
+  private RouteWithFilter get(final Route next) {
+    return (RouteWithFilter) Route.Forwarding.unwrap(next);
+  }
+
+  private static Route attrs(final Route route, final Route[] routes, final int i) {
+    Map<String, Object> attrs = new HashMap<>(16);
+    for (int t = i; t < routes.length; t++) {
+      routes[t].attributes().forEach((name, value) -> attrs.putIfAbsent(name, value));
+    }
+    return new Route.Forwarding(route) {
+      @Override public <T> T attr(String name) {
+        return (T) attrs.get(name);
+      }
+
+      @Override
+      public Map<String, Object> attributes() {
+        return attrs;
+      }
+    };
+  }
+
+}

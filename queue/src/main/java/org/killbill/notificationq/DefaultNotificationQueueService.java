@@ -22,8 +22,8 @@ package org.killbill.notificationq;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import javax.sql.DataSource;
 
 import org.killbill.clock.Clock;
