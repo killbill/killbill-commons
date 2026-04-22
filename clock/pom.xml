@@ -33,6 +33,13 @@
             <artifactId>guice</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- required during redis testing (RedissonClient) -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>${netty.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>it.ozimov</groupId>
             <artifactId>embedded-redis</artifactId>
@@ -51,6 +58,12 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
