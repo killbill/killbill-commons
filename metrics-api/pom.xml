@@ -27,5 +27,5 @@
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
     </properties>
-    <dependencies />
+    <dependencies/>
 </project>
