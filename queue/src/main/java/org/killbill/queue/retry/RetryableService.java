@@ -138,6 +138,7 @@ public abstract class RetryableService {
         final DateTime effectiveDate = computeRetryDate(exception, originalEffectiveDate, retryNb);
         if (effectiveDate == null) {
             log.warn("Error processing event, NOT scheduling retry for event='{}', retryNb='{}'", originalNotificationEvent, retryNb, exception);
+            onRetriesExhausted(originalNotificationEvent, searchKey1, searchKey2);
             throw new RetryableInternalException(false);
         }
         log.warn("Error processing event, scheduling retry for event='{}', effectiveDate='{}', retryNb='{}'", originalNotificationEvent, effectiveDate, retryNb, exception);
@@ -148,8 +149,18 @@ public abstract class RetryableService {
             throw new RetryableInternalException(true);
         } catch (final IOException e) {
             log.error("Unable to schedule retry for event='{}', effectiveDate='{}'", originalNotificationEvent, effectiveDate, e);
+            onRetriesExhausted(originalNotificationEvent, searchKey1, searchKey2);
             throw new RetryableInternalException(false);
         }
+    }
+
+    /**
+     * Called when the retry schedule is exhausted for an event, or when a retry cannot be scheduled
+     * due to a serialization error. Subclasses can override to take remedial action (e.g. parking
+     * the account). searchKey1 = accountRecordId, searchKey2 = tenantRecordId.
+     */
+    protected void onRetriesExhausted(final QueueEvent event, final Long searchKey1, final Long searchKey2) {
+        // no-op by default
     }
 
     private DateTime computeRetryDate(final QueueRetryException queueRetryException, final DateTime initialEventDateTime, final int retryNb) {
