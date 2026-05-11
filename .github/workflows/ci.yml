@@ -7,6 +7,6 @@ on:
 
 jobs:
   ci:
-    uses: killbill/gh-actions-shared/.github/workflows/ci.yml@main
+    uses: killbill/gh-actions-shared/.github/workflows/ci.yml@maint-for-0-24-x
     with:
       test-profile-matrix: '[ "travis", "mysql", "postgresql", "jdbi", "config-magic" ]'
