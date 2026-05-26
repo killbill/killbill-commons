@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.KeyException;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
@@ -28,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.io.BaseEncoding;
-import com.google.common.io.Files;
 
 /**
  * Reads a PEM file and converts it into a list of DERs so that they are imported into a
@@ -53,7 +53,7 @@ final class PemReader {
 
   static List<ByteBuffer> readCertificates(final File file)
       throws CertificateException, IOException {
-    String content = Files.toString(file, StandardCharsets.US_ASCII);
+    String content = Files.readString(file.toPath(), StandardCharsets.US_ASCII);
 
     BaseEncoding base64 = base64();
     List<ByteBuffer> certs = new ArrayList<ByteBuffer>();
@@ -78,7 +78,7 @@ final class PemReader {
   }
 
   static ByteBuffer readPrivateKey(final File file) throws KeyException, IOException {
-    String content = Files.toString(file, StandardCharsets.US_ASCII);
+    String content = Files.readString(file.toPath(), StandardCharsets.US_ASCII);
 
     Matcher m = KEY_PATTERN.matcher(content);
     if (!m.find()) {

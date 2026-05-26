@@ -20,9 +20,9 @@ import static java.util.Objects.requireNonNull;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 
 import com.google.common.io.BaseEncoding;
-import com.google.common.primitives.Longs;
 import org.jooby.funzy.Throwing;
 
 import jakarta.annotation.Nonnull;
@@ -141,8 +141,8 @@ public interface Asset {
       BaseEncoding b64 = BaseEncoding.base64();
       int lhash = resource().toURI().hashCode();
 
-      b.append(b64.encode(Longs.toByteArray(lastModified() ^ lhash)));
-      b.append(b64.encode(Longs.toByteArray(length() ^ lhash)));
+      b.append(b64.encode(ByteBuffer.allocate(Long.BYTES).putLong(lastModified() ^ lhash).array()));
+      b.append(b64.encode(ByteBuffer.allocate(Long.BYTES).putLong(length() ^ lhash).array()));
       b.append('"');
       return b.toString();
     } catch (URISyntaxException x) {

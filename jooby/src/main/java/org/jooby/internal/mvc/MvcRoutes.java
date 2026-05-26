@@ -16,7 +16,6 @@
 package org.jooby.internal.mvc;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.collect.ImmutableSet;
 import org.jooby.Env;
 import org.jooby.MediaType;
 import org.jooby.Route;
@@ -43,8 +42,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,17 +58,29 @@ public class MvcRoutes {
 
   private static final String[] EMPTY = new String[0];
 
-  private static final Set<Class<? extends Annotation>> VERBS = ImmutableSet.of(GET.class,
-      POST.class, PUT.class, DELETE.class, PATCH.class, HEAD.class, OPTIONS.class, TRACE.class,
-      CONNECT.class);
+  private static final Set<Class<? extends Annotation>> VERBS;
+  static {
+    Set<Class<? extends Annotation>> verbs = new LinkedHashSet<>();
+    verbs.add(GET.class);
+    verbs.add(POST.class);
+    verbs.add(PUT.class);
+    verbs.add(DELETE.class);
+    verbs.add(PATCH.class);
+    verbs.add(HEAD.class);
+    verbs.add(OPTIONS.class);
+    verbs.add(TRACE.class);
+    verbs.add(CONNECT.class);
+    VERBS = Collections.unmodifiableSet(verbs);
+  }
 
-  private static final Set<Class<? extends Annotation>> IGNORE = ImmutableSet
-      .<Class<? extends Annotation>>builder()
-      .addAll(VERBS)
-      .add(Path.class)
-      .add(Produces.class)
-      .add(Consumes.class)
-      .build();
+  private static final Set<Class<? extends Annotation>> IGNORE;
+  static {
+    Set<Class<? extends Annotation>> ignore = new java.util.LinkedHashSet<>(VERBS);
+    ignore.add(Path.class);
+    ignore.add(Produces.class);
+    ignore.add(Consumes.class);
+    IGNORE = Collections.unmodifiableSet(ignore);
+  }
 
   public static List<Route.Definition> routes(final Env env, final RouteMetadata classInfo,
       final String rpath, boolean caseSensitiveRouting, final Class<?> routeClass) {

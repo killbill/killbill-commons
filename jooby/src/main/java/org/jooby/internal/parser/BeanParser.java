@@ -16,7 +16,6 @@
 package org.jooby.internal.parser;
 
 import com.google.common.primitives.Primitives;
-import com.google.common.reflect.Reflection;
 import com.google.inject.TypeLiteral;
 import org.jooby.Err;
 import org.jooby.Mutant;
@@ -29,6 +28,7 @@ import org.jooby.internal.mvc.RequestParam;
 import org.jooby.internal.parser.bean.BeanPlan;
 import org.jooby.funzy.Try;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,7 +94,7 @@ public class BeanParser implements Parser {
 
   private Object newBeanInterface(final Request req, final Response rsp, final Route.Chain chain,
       final Class<?> beanType) {
-    return Reflection.newProxy(beanType, (proxy, method, args) -> {
+    return Proxy.newProxyInstance(beanType.getClassLoader(), new Class<?>[]{beanType}, (proxy, method, args) -> {
       StringBuilder name = new StringBuilder(method.getName()
           .replace("get", "")
           .replace("is", ""));

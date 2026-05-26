@@ -20,7 +20,6 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -484,7 +483,7 @@ public class HttpHandlerImpl implements HttpHandler {
   private static List<Route> alternative(final Set<Route.Definition> routeDefs, final String verb,
       final String uri) {
     List<Route> routes = new LinkedList<>();
-    Set<String> verbs = Sets.newHashSet(Route.METHODS);
+    Set<String> verbs = new java.util.HashSet<>(Route.METHODS);
     verbs.remove(verb);
     for (String alt : verbs) {
       findRoutes(routeDefs, alt, uri, MediaType.all, MediaType.ALL)

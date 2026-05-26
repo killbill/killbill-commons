@@ -15,7 +15,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.typesafe.config.Config;
@@ -248,8 +247,8 @@ public class RequestImpl implements Request {
   public Mutant cookie(final String name) {
     List<String> values = req.cookies().stream().filter(c -> c.name().equalsIgnoreCase(name))
         .findFirst()
-        .map(cookie -> ImmutableList.of(cookie.value().orElse("")))
-        .orElse(ImmutableList.of());
+        .map(cookie -> List.of(cookie.value().orElse("")))
+        .orElse(Collections.emptyList());
 
     return new MutantImpl(require(ParserExecutor.class),
         new StrParamReferenceImpl("cookie", name, values));
@@ -298,12 +297,12 @@ public class RequestImpl implements Request {
   public List<Locale> locales(
       final BiFunction<List<Locale.LanguageRange>, List<Locale>, List<Locale>> filter) {
     return lang.map(h -> filter.apply(LocaleUtils.range(h), locales))
-        .orElseGet(() -> filter.apply(ImmutableList.of(), locales));
+        .orElseGet(() -> filter.apply(Collections.emptyList(), locales));
   }
 
   @Override
   public Locale locale(final BiFunction<List<LanguageRange>, List<Locale>, Locale> filter) {
-    Supplier<Locale> def = () -> filter.apply(ImmutableList.of(), locales);
+    Supplier<Locale> def = () -> filter.apply(Collections.emptyList(), locales);
     // don't fail on bad Accept-Language header, just fallback to default locale.
     return lang.map(h -> Try.apply(() -> filter.apply(LocaleUtils.range(h), locales)).orElseGet(def))
         .orElseGet(def);

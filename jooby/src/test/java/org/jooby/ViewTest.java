@@ -19,7 +19,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+
 
 public class ViewTest {
 
@@ -64,15 +65,15 @@ public class ViewTest {
 
   @Test
   public void viewBuildModelMap() {
-    View view = Results.html("v").put("m", ImmutableMap.of("k", "v"));
+    View view = Results.html("v").put("m", Map.of("k", "v"));
     assertEquals("v", view.name());
     assertEquals(1, view.model().size());
-    assertEquals(ImmutableMap.of("k", "v"), view.model().get("m"));
+    assertEquals(Map.of("k", "v"), view.model().get("m"));
   }
 
   @Test
   public void viewPutMap() {
-    View view = Results.html("v").put(ImmutableMap.of("k", "v"));
+    View view = Results.html("v").put(Map.of("k", "v"));
     assertEquals("v", view.name());
     assertEquals(1, view.model().size());
     assertEquals("v", view.model().get("k"));

@@ -28,7 +28,6 @@ import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -168,10 +167,10 @@ public class MvcWebSocketTest {
     Pojo pojo = new Pojo();
     new MockUnit(WebSocket.class, Injector.class, PojoListSocket.class, Binder.class, Mutant.class)
         .expect(childInjector(PojoListSocket.class))
-        .expect(mutant(TypeLiteral.get(Types.listOf(Pojo.class)), ImmutableList.of(pojo)))
+        .expect(mutant(TypeLiteral.get(Types.listOf(Pojo.class)), List.of(pojo)))
         .expect(unit -> {
           PojoListSocket socket = unit.get(PojoListSocket.class);
-          socket.onMessage(ImmutableList.of(pojo));
+          socket.onMessage(List.of(pojo));
         })
         .run(unit -> {
           new MvcWebSocket(unit.get(WebSocket.class), PojoListSocket.class)

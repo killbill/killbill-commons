@@ -15,7 +15,6 @@
  */
 package org.jooby;
 
-import com.google.common.collect.ImmutableMap;
 import issues.RouteSourceLocation;
 import org.jooby.Route.Definition;
 import org.jooby.internal.RouteImpl;
@@ -28,6 +27,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -315,7 +315,7 @@ public class RouteDefinitionTest {
     assertEquals("/cat/5", route.apply("/{type}/{id}").reverse("cat", 5));
 
     assertEquals("/ccat/1",
-        route.apply("/c{type}/{id}").reverse(ImmutableMap.of("type", "cat", "id", 1)));
+        route.apply("/c{type}/{id}").reverse(Map.of("type", "cat", "id", 1)));
 
     assertEquals("/cat/tom", route.apply("/cat/tom").reverse("cat", 1));
   }

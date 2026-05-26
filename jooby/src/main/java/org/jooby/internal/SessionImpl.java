@@ -29,7 +29,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableList;
 import static java.util.Objects.requireNonNull;
 import org.jooby.Mutant;
 import org.jooby.Session;
@@ -153,7 +152,7 @@ public class SessionImpl implements Session {
   @Override
   public Mutant get(final String name) {
     String value = attributes.get(name);
-    List<String> values = value == null ? Collections.emptyList() : ImmutableList.of(value);
+    List<String> values = value == null ? Collections.emptyList() : List.of(value);
     return new MutantImpl(resolver, new StrParamReferenceImpl("session attribute", name, values));
   }
 
@@ -181,7 +180,7 @@ public class SessionImpl implements Session {
     String value = attributes.remove(name);
     List<String> values = Collections.emptyList();
     if (value != null) {
-      values = ImmutableList.of(value);
+      values = List.of(value);
       dirty = true;
     }
     return new MutantImpl(resolver, new StrParamReferenceImpl("session attribute", name, values));

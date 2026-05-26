@@ -29,8 +29,6 @@ import org.jooby.Route;
 import org.jooby.Session;
 import org.jooby.Status;
 
-import com.google.common.collect.ImmutableSet;
-
 /**
  * <h1>Cross Site Request Forgery handler</h1>
  *
@@ -82,7 +80,7 @@ import com.google.common.collect.ImmutableSet;
  */
 public class CsrfHandler implements Route.Filter {
 
-  private final Set<String> REQUIRE_ON = ImmutableSet.of("POST", "PUT", "DELETE", "PATCH");
+  private final Set<String> REQUIRE_ON = Set.of("POST", "PUT", "DELETE", "PATCH");
 
   private String name;
 

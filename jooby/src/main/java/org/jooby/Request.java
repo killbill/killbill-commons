@@ -15,8 +15,6 @@
  */
 package org.jooby;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.net.UrlEscapers;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -27,6 +25,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.LanguageRange;
@@ -680,7 +679,7 @@ public interface Request extends Registry {
    */
   @Nonnull
   default Optional<MediaType> accepts(final MediaType... types) {
-    return accepts(ImmutableList.copyOf(types));
+    return accepts(List.of(types));
   }
 
   /**
@@ -1310,7 +1309,7 @@ public interface Request extends Registry {
    */
   @Nonnull
   default Request push(final String path) {
-    return push(path, ImmutableMap.of());
+    return push(path, Collections.emptyMap());
   }
 
   /**

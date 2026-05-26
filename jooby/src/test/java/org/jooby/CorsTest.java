@@ -19,13 +19,13 @@ import static com.typesafe.config.ConfigValueFactory.fromAnyRef;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
 import org.jooby.handlers.Cors;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -138,10 +138,10 @@ public class CorsTest {
         .withValue("enabled", fromAnyRef(true))
         .withValue("credentials", fromAnyRef(true))
         .withValue("maxAge", fromAnyRef("30m"))
-        .withValue("origin", fromAnyRef(Lists.newArrayList()))
-        .withValue("exposedHeaders", fromAnyRef(Lists.newArrayList("X")))
-        .withValue("allowedMethods", fromAnyRef(Lists.newArrayList()))
-        .withValue("allowedHeaders", fromAnyRef(Lists.newArrayList()));
+        .withValue("origin", fromAnyRef(new ArrayList<>()))
+        .withValue("exposedHeaders", fromAnyRef(new ArrayList<>(Arrays.asList("X"))))
+        .withValue("allowedMethods", fromAnyRef(new ArrayList<>()))
+        .withValue("allowedHeaders", fromAnyRef(new ArrayList<>()));
     return config;
   }
 

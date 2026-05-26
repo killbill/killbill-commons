@@ -35,7 +35,7 @@ import org.jooby.test.MockUnit;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.google.common.base.Charsets;
+import java.nio.charset.StandardCharsets;
 
 public class WsBinaryMessageTest {
 
@@ -82,7 +82,7 @@ public class WsBinaryMessageTest {
                   new Class[]{byte[].class }, bytes);
 
               unit.mockConstructor(InputStreamReader.class, new Class[]{
-                  InputStream.class, Charset.class }, null, Charsets.UTF_8);
+                  InputStream.class, Charset.class }, null, StandardCharsets.UTF_8);
             })
         .run(unit -> {
           Reader result = new WsBinaryMessage(buffer).to(Reader.class);

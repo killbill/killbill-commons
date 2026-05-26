@@ -17,13 +17,14 @@ package org.jooby;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 public class ResultTest {
 
@@ -134,7 +135,7 @@ public class ResultTest {
     assertEquals(7.0f, result.headers().get("float"));
     assertEquals(8.0d, result.headers().get("double"));
     assertEquals(date, result.headers().get("date"));
-    assertEquals(Lists.newArrayList(1, 2, 3), result.headers().get("list"));
+    assertEquals(new ArrayList<>(Arrays.asList(1, 2, 3)), result.headers().get("list"));
   }
 
   @Test
@@ -214,7 +215,7 @@ public class ResultTest {
         .when(MediaType.all, () -> value);
     Result clone = result.clone();
     assertEquals(json, result.get());
-    assertEquals(value, clone.get(ImmutableList.of(MediaType.html)));
+    assertEquals(value, clone.get(List.of(MediaType.html)));
   }
 
   @Test

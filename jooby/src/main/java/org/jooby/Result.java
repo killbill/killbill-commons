@@ -17,6 +17,7 @@ package org.jooby;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,8 +25,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -107,7 +106,7 @@ public class Result {
     public <T> T get(final List<MediaType> types) {
       Supplier<Object> provider = MediaType
           .matcher(types)
-          .first(ImmutableList.copyOf(data.keySet()))
+          .first(List.copyOf(data.keySet()))
           .map(it -> data.remove(it))
           .orElseThrow(
               () -> new Err(Status.NOT_ACCEPTABLE, Joiner.on(", ").join(types)));
@@ -131,7 +130,7 @@ public class Result {
 
   }
 
-  private static Map<String, Object> NO_HEADERS = ImmutableMap.of();
+  private static Map<String, Object> NO_HEADERS = Collections.emptyMap();
 
   /** Response headers. */
   protected Map<String, Object> headers = NO_HEADERS;
@@ -326,7 +325,7 @@ public class Result {
     requireNonNull(name, "Header's name is required.");
     requireNonNull(values, "Header's values are required.");
 
-    return header(name, ImmutableList.copyOf(values));
+    return header(name, List.of(values));
   }
 
   /**
@@ -356,10 +355,9 @@ public class Result {
   }
 
   private void setHeader(final String name, final Object val) {
-    headers = ImmutableMap.<String, Object> builder()
-        .putAll(headers)
-        .put(name, val)
-        .build();
+    var newMap = new LinkedHashMap<>(headers);
+    newMap.put(name, val);
+    headers = Collections.unmodifiableMap(newMap);
   }
 
 }

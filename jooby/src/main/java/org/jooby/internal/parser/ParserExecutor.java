@@ -32,7 +32,6 @@ import org.jooby.Status;
 import org.jooby.internal.StatusCodeProvider;
 import org.jooby.internal.StrParamReferenceImpl;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -51,7 +50,7 @@ public class ParserExecutor {
   public ParserExecutor(final Injector injector, final Set<Parser> parsers,
       final StatusCodeProvider sc) {
     this.injector = injector;
-    this.parsers = ImmutableList.copyOf(parsers);
+    this.parsers = List.copyOf(parsers);
     this.sc = sc;
   }
 
@@ -155,7 +154,7 @@ public class ParserExecutor {
         if (nextval instanceof String) {
           ParamReference<?> pref = (ParamReference) value;
           return new StrParamReferenceImpl(pref.type(), pref.name(),
-              ImmutableList.of((String) nextval));
+              List.of((String) nextval));
         }
         return nextval;
       }

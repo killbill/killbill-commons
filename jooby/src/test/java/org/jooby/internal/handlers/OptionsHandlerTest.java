@@ -17,6 +17,8 @@ package org.jooby.internal.handlers;
 
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,7 +34,6 @@ import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
 
 public class OptionsHandlerTest {
 
@@ -68,7 +69,7 @@ public class OptionsHandlerTest {
           when(rsp.status(Status.OK)).thenReturn(rsp);
         })
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet(unit.get(Route.Definition.class));
+          Set<Definition> routes = new HashSet<>(Collections.singleton(unit.get(Route.Definition.class)));
           new OptionsHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
@@ -98,7 +99,7 @@ public class OptionsHandlerTest {
           when(rsp.status(Status.OK)).thenReturn(rsp);
         })
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet(unit.get(Route.Definition.class));
+          Set<Definition> routes = new HashSet<>(Collections.singleton(unit.get(Route.Definition.class)));
           new OptionsHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
@@ -111,7 +112,7 @@ public class OptionsHandlerTest {
         .expect(next)
         .expect(allow(true))
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet(unit.get(Route.Definition.class));
+          Set<Definition> routes = new HashSet<>(Collections.singleton(unit.get(Route.Definition.class)));
           new OptionsHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
