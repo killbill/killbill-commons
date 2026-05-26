@@ -177,6 +177,10 @@
             <version>4.5.14</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-utils</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
