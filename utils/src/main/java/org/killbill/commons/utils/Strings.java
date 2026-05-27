@@ -184,4 +184,38 @@ public final class Strings {
         }
         return result.toString();
     }
+
+    /**
+     * Verbatim copy of Guava's <code>Strings.padEnd(string, int, char)</code>. See:
+     * <a href="https://javadoc.io/doc/com.google.guava/guava/31.0.1-jre/com/google/common/base/Strings.html">javadoc</a>
+     */
+    public static String padEnd(final String string, final int minLength, final char padChar) {
+        Preconditions.checkNotNull(string); // eager for GWT.
+        if (string.length() >= minLength) {
+            return string;
+        }
+        StringBuilder sb = new StringBuilder(minLength);
+        sb.append(string);
+        for (int i = string.length(); i < minLength; i++) {
+            sb.append(padChar);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Verbatim copy of Guava's <code>Strings.padStart(string, int, char)</code>. See:
+     * <a href="https://javadoc.io/doc/com.google.guava/guava/31.0.1-jre/com/google/common/base/Strings.html">javadoc</a>
+     */
+    public static String padStart(String string, int minLength, char padChar) {
+        Preconditions.checkNotNull(string); // eager for GWT.
+        if (string.length() >= minLength) {
+            return string;
+        }
+        StringBuilder sb = new StringBuilder(minLength);
+        for (int i = string.length(); i < minLength; i++) {
+            sb.append(padChar);
+        }
+        sb.append(string);
+        return sb.toString();
+    }
 }
