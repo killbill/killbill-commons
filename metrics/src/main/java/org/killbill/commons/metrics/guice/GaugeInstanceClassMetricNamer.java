@@ -19,7 +19,7 @@ package org.killbill.commons.metrics.guice;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import org.killbill.commons.metrics.api.annotation.Gauge;
 

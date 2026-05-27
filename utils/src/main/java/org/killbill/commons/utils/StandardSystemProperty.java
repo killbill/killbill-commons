@@ -18,7 +18,7 @@
 
 package org.killbill.commons.utils;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 public enum StandardSystemProperty {
 
@@ -148,7 +148,7 @@ public enum StandardSystemProperty {
      *   <li>{@code jdk.module.*} (added in Java 9, optional)
      * </ul>
      */
-    @CheckForNull
+    @Nullable
     public String value() {
         return System.getProperty(key);
     }

@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
 import org.killbill.commons.utils.Primitives;
@@ -232,7 +232,7 @@ final class SubscriberRegistry {
         }
 
         @Override
-        public boolean equals(@CheckForNull final Object o) {
+        public boolean equals(@Nullable final Object o) {
             if (o instanceof MethodIdentifier) {
                 final MethodIdentifier ident = (MethodIdentifier) o;
                 return name.equals(ident.name) && parameterTypes.equals(ident.parameterTypes);

@@ -20,7 +20,7 @@ package org.killbill.commons.utils.collect;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
 
@@ -47,7 +47,7 @@ public abstract class AbstractIterator<T> implements Iterator<T> {
         FAILED,
     }
 
-    @CheckForNull
+    @Nullable
     private T next;
 
     /**
@@ -74,7 +74,7 @@ public abstract class AbstractIterator<T> implements Iterator<T> {
      *     this method. Any further attempts to use the iterator will result in an {@link
      *     IllegalStateException}.
      */
-    @CheckForNull
+    @Nullable
     protected abstract T computeNext();
 
     /**
@@ -84,7 +84,7 @@ public abstract class AbstractIterator<T> implements Iterator<T> {
      * @return {@code null}; a convenience so your {@code computeNext} implementation can use the
      *     simple statement {@code return endOfData();}
      */
-    @CheckForNull
+    @Nullable
     protected final T endOfData() {
         state = State.DONE;
         return null;
@@ -143,7 +143,7 @@ public abstract class AbstractIterator<T> implements Iterator<T> {
     /**
      * See Guava's <code>NullnessCasts</code> javadoc.
      */
-    static <T> T uncheckedCastNullableTToT(@CheckForNull final T t) {
+    static <T> T uncheckedCastNullableTToT(@Nullable final T t) {
         return t;
     }
 }

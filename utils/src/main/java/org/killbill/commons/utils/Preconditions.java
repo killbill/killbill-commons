@@ -17,8 +17,7 @@
 
 package org.killbill.commons.utils;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ public final class Preconditions {
      *     string using {@link String#valueOf(Object)}
      * @throws IllegalStateException if {@code expression} is false
      */
-    public static void checkState(final boolean expression, @CheckForNull final Object errorMessage) {
+    public static void checkState(final boolean expression, @Nullable final Object errorMessage) {
         if (!expression) {
             throw new IllegalStateException(String.valueOf(errorMessage));
         }
@@ -79,9 +78,9 @@ public final class Preconditions {
      * @return the non-null reference that was validated
      * @throws NullPointerException if {@code reference} is null
      */
-    public static <T> T checkNotNull(@CheckForNull final T reference,
+    public static <T> T checkNotNull(@Nullable final T reference,
                                      final String errorMessageTemplate,
-                                     @CheckForNull @Nullable final Object... errorMessageArgs) {
+                                     @Nullable final Object... errorMessageArgs) {
         if (reference == null) {
             throw new NullPointerException(lenientFormat(errorMessageTemplate, errorMessageArgs));
         }
@@ -94,7 +93,7 @@ public final class Preconditions {
      *
      * <p>See {@link #checkState(boolean, String, Object...)} for details.
      */
-    public static void checkState(final boolean b, final String errorMessageTemplate, @CheckForNull final Object p1) {
+    public static void checkState(final boolean b, final String errorMessageTemplate, @Nullable final Object p1) {
         if (!b) {
             throw new IllegalStateException(lenientFormat(errorMessageTemplate, p1));
         }
@@ -124,7 +123,7 @@ public final class Preconditions {
      * @return the non-null reference that was validated
      * @throws NullPointerException if {@code reference} is null
      */
-    public static <T> T checkNotNull(@CheckForNull final T reference, @CheckForNull final Object errorMessage) {
+    public static <T> T checkNotNull(@Nullable final T reference, @Nullable final Object errorMessage) {
         if (reference == null) {
             throw new NullPointerException(String.valueOf(errorMessage));
         }
@@ -136,14 +135,14 @@ public final class Preconditions {
      *
      * <p>See {@link #checkNotNull(Object, String, Object...)} for details.
      */
-    public static <T> T checkNotNull(@CheckForNull final T obj, final String errorMessageTemplate, @CheckForNull final Object p1) {
+    public static <T> T checkNotNull(@Nullable final T obj, final String errorMessageTemplate, @Nullable final Object p1) {
         if (obj == null) {
             throw new NullPointerException(lenientFormat(errorMessageTemplate, p1));
         }
         return obj;
     }
 
-    private static String lenientFormat(@CheckForNull String template, @CheckForNull Object... args) {
+    private static String lenientFormat(@Nullable String template, @Nullable Object... args) {
         template = String.valueOf(template); // null -> "null"
 
         if (args == null) {
@@ -183,7 +182,7 @@ public final class Preconditions {
         return builder.toString();
     }
 
-    private static String lenientToString(@CheckForNull final Object o) {
+    private static String lenientToString(@Nullable final Object o) {
         if (o == null) {
             return "null";
         }
