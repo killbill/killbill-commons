@@ -29,8 +29,8 @@
     <name>Kill Bill library of embedded dbs: PostgreSQL</name>
     <dependencies>
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.airlift</groupId>
