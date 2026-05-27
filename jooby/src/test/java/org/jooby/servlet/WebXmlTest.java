@@ -23,7 +23,7 @@ import java.io.InputStreamReader;
 
 import org.junit.Test;
 
-import com.google.common.io.CharStreams;
+import org.killbill.commons.utils.io.CharStreams;
 
 public class WebXmlTest {
 

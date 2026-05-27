@@ -16,9 +16,9 @@
 package org.jooby;
 
 import com.google.common.base.CaseFormat;
-import static com.google.common.base.Preconditions.checkArgument;
-import com.google.common.base.Strings;
 import com.google.common.primitives.Primitives;
+import org.killbill.commons.utils.Strings;
+import static org.killbill.commons.utils.Preconditions.checkArgument;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import static java.util.Objects.requireNonNull;

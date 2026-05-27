@@ -15,7 +15,7 @@
  */
 package org.jooby.internal.mvc;
 
-import com.google.common.base.Strings;
+import org.killbill.commons.utils.Strings;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
 import org.jooby.Cookie;

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.google.common.base.Joiner;
+import org.killbill.commons.utils.Joiner;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;

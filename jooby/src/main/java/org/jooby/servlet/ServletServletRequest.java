@@ -40,7 +40,7 @@ import org.jooby.Router;
 import org.jooby.spi.NativeRequest;
 import org.jooby.spi.NativeUpload;
 
-import com.google.common.base.Strings;
+import org.killbill.commons.utils.Strings;
 
 public class ServletServletRequest implements NativeRequest {
 

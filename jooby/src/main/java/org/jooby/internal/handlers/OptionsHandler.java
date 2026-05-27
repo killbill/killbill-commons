@@ -27,7 +27,7 @@ import org.jooby.Route;
 import org.jooby.Route.Definition;
 import org.jooby.Status;
 
-import com.google.common.base.Joiner;
+import org.killbill.commons.utils.Joiner;
 import com.google.inject.Inject;
 
 public class OptionsHandler implements Route.Handler {

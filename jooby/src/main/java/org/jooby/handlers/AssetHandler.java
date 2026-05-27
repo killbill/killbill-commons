@@ -15,7 +15,7 @@
  */
 package org.jooby.handlers;
 
-import com.google.common.base.Strings;
+import org.killbill.commons.utils.Strings;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
 import org.jooby.Asset;

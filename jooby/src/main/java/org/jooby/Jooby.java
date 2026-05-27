@@ -15,13 +15,13 @@
  */
 package org.jooby;
 
-import com.google.common.base.Joiner;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import com.google.common.escape.Escaper;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.net.UrlEscapers;
-import com.google.common.util.concurrent.MoreExecutors;
+import org.killbill.commons.utils.Joiner;
+import static org.killbill.commons.utils.Preconditions.checkArgument;
+import static org.killbill.commons.utils.Preconditions.checkState;
+import org.killbill.commons.utils.concurrent.DirectExecutor;
 import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -2638,9 +2638,9 @@ public class Jooby implements Router, LifeCycle, Registry {
     /** executors: */
     if (!defaultExecSet) {
       // default executor
-      executor(MoreExecutors.directExecutor());
+      executor(DirectExecutor.INSTANCE);
     }
-    executor("direct", MoreExecutors.directExecutor());
+    executor("direct", DirectExecutor.INSTANCE);
     executor("server", ServerExecutorProvider.class);
 
     /** Some basic xss functions. */
