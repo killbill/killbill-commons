@@ -19,6 +19,7 @@ package org.killbill.commons.utils;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import jakarta.annotation.Nullable;
@@ -62,6 +63,10 @@ public final class Joiner {
      */
     public String join(final Iterator<?> parts) {
         return appendTo(new StringBuilder(), parts).toString();
+    }
+
+    public String join(final Object[] obj) {
+        return join(Arrays.asList(obj));
     }
 
     /**
