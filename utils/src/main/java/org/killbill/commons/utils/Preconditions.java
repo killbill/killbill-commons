@@ -257,4 +257,26 @@ public final class Preconditions {
             throw new IllegalArgumentException(lenientFormat(errorMessageTemplate, errorMessageArgs));
         }
     }
+
+    public static void checkArgument(final boolean expression) {
+        if (!expression) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    /**
+     * Ensures that {@code index} specifies a valid <i>position</i> in an array, list or string of
+     * size {@code size}. A position index may range from zero to {@code size}, inclusive.
+     *
+     * @param index a user-supplied index identifying a position in an array, list or string
+     * @param size the size of that array, list or string
+     * @return the value of {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or is greater than {@code size}
+     */
+    public static int checkPositionIndex(int index, int size) {
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException("index (" + index + ") must not be negative and must not be greater than size (" + size + ")");
+        }
+        return index;
+    }
 }

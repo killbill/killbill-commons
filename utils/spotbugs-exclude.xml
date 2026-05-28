@@ -44,4 +44,11 @@
         <Method name="equals" />
         <Bug pattern="NP_METHOD_PARAMETER_TIGHTENS_ANNOTATION" />
     </Match>
+
+    <!-- Verbatim copy from Guava ByteStreams.LimitedInputStream — mark/reset synchronization
+         is identical to the original and acceptable for single-threaded stream usage. -->
+    <Match>
+        <Class name="org.killbill.commons.utils.io.ByteStreams$LimitedInputStream" />
+        <Bug pattern="AT_NONATOMIC_64BIT_PRIMITIVE,AT_NONATOMIC_OPERATIONS_ON_SHARED_VARIABLE" />
+    </Match>
 </FindBugsFilter>
