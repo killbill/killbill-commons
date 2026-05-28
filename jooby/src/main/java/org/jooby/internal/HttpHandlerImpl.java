@@ -16,7 +16,7 @@
 package org.jooby.internal;
 
 import org.killbill.commons.utils.Strings;
-import com.google.common.base.Throwables;
+import org.killbill.commons.utils.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;

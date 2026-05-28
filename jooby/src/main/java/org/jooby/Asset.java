@@ -21,8 +21,8 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 
-import com.google.common.io.BaseEncoding;
 import org.jooby.funzy.Throwing;
 
 import jakarta.annotation.Nonnull;
@@ -138,11 +138,11 @@ public interface Asset {
       StringBuilder b = new StringBuilder(32);
       b.append("W/\"");
 
-      BaseEncoding b64 = BaseEncoding.base64();
+      Base64.Encoder b64 = Base64.getEncoder();
       int lhash = resource().toURI().hashCode();
 
-      b.append(b64.encode(ByteBuffer.allocate(Long.BYTES).putLong(lastModified() ^ lhash).array()));
-      b.append(b64.encode(ByteBuffer.allocate(Long.BYTES).putLong(length() ^ lhash).array()));
+      b.append(b64.encodeToString(ByteBuffer.allocate(Long.BYTES).putLong(lastModified() ^ lhash).array()));
+      b.append(b64.encodeToString(ByteBuffer.allocate(Long.BYTES).putLong(length() ^ lhash).array()));
       b.append('"');
       return b.toString();
     } catch (URISyntaxException x) {

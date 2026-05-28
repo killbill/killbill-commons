@@ -15,7 +15,7 @@
  */
 package org.jooby.servlet;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 import static java.util.Objects.requireNonNull;
 
 import org.jooby.funzy.Try;

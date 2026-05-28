@@ -17,7 +17,6 @@ package org.jooby;
 
 import com.google.common.base.Splitter;
 import org.killbill.commons.utils.Strings;
-import com.google.common.io.BaseEncoding;
 import static java.util.Objects.requireNonNull;
 import org.jooby.funzy.Throwing;
 import org.jooby.internal.CookieImpl;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -417,9 +415,6 @@ public interface Cookie {
    */
   public class Signature {
 
-    /** Remove trailing '='. */
-    private static final Pattern EQ = Pattern.compile("=+$");
-
     /** Algorithm name. */
     public static final String HMAC_SHA256 = "HmacSHA256";
 
@@ -448,7 +443,7 @@ public interface Cookie {
         Mac mac = Mac.getInstance(HMAC_SHA256);
         mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
         byte[] bytes = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
-        return EQ.matcher(BaseEncoding.base64().encode(bytes)).replaceAll("") + SEP + value;
+        return java.util.Base64.getEncoder().withoutPadding().encodeToString(bytes) + SEP + value;
       } catch (Exception ex) {
         throw new IllegalArgumentException("Can't sign value", ex);
       }

@@ -15,7 +15,7 @@
  */
 package org.jooby.internal.parser;
 
-import com.google.common.primitives.Primitives;
+import org.killbill.commons.utils.Primitives;
 import com.google.inject.TypeLiteral;
 import org.jooby.Err;
 import org.jooby.Mutant;

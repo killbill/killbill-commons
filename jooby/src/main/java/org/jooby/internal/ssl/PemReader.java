@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.io.BaseEncoding;
+import java.util.Base64;
 
 /**
  * Reads a PEM file and converts it into a list of DERs so that they are imported into a
@@ -51,16 +51,18 @@ final class PemReader {
           "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", // Footer
       Pattern.CASE_INSENSITIVE);
 
+  private static final Base64.Decoder BASE64_DECODER = Base64.getMimeDecoder();
+
   static List<ByteBuffer> readCertificates(final File file)
       throws CertificateException, IOException {
     String content = Files.readString(file.toPath(), StandardCharsets.US_ASCII);
 
-    BaseEncoding base64 = base64();
-    List<ByteBuffer> certs = new ArrayList<ByteBuffer>();
+    // Originally, we have local variables: base64 = return BaseEncoding.base64().withSeparator("\n", '\n');
+    List<ByteBuffer> certs = new ArrayList<>();
     Matcher m = CERT_PATTERN.matcher(content);
     int start = 0;
     while (m.find(start)) {
-      ByteBuffer buffer = ByteBuffer.wrap(base64.decode(m.group(1)));
+      ByteBuffer buffer = ByteBuffer.wrap(BASE64_DECODER.decode(m.group(1)));
       certs.add(buffer);
 
       start = m.end();
@@ -73,10 +75,6 @@ final class PemReader {
     return certs;
   }
 
-  private static BaseEncoding base64() {
-    return BaseEncoding.base64().withSeparator("\n", '\n');
-  }
-
   static ByteBuffer readPrivateKey(final File file) throws KeyException, IOException {
     String content = Files.readString(file.toPath(), StandardCharsets.US_ASCII);
 
@@ -86,7 +84,7 @@ final class PemReader {
     }
 
     String value = m.group(1);
-    return ByteBuffer.wrap(base64().decode(value));
+    return ByteBuffer.wrap(BASE64_DECODER.decode(value));
   }
 
   private PemReader() {

@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 
-import com.google.common.primitives.Primitives;
+import org.killbill.commons.utils.Primitives;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
 

@@ -15,7 +15,7 @@
  */
 package org.jooby.internal.jetty;
 
-import com.google.common.primitives.Primitives;
+import org.killbill.commons.utils.Primitives;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;

@@ -15,7 +15,7 @@
  */
 package org.jooby.internal.mvc;
 
-import com.google.common.base.CaseFormat;
+import org.killbill.commons.utils.CaseFormat;
 import org.jooby.Env;
 import org.jooby.MediaType;
 import org.jooby.Route;

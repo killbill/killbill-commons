@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.io.BaseEncoding;
+import java.util.Base64;
 import static java.util.Objects.requireNonNull;
 
 import jakarta.annotation.Nonnull;
@@ -240,7 +240,7 @@ public interface Session {
     default String generateID() {
       byte[] bytes = new byte[30];
       rnd.nextBytes(bytes);
-      return BaseEncoding.base64Url().encode(bytes);
+      return Base64.getUrlEncoder().encodeToString(bytes);
     }
   }
 
