@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.html.HtmlEscapers;
+import org.killbill.commons.utils.html.HtmlEscapers;
 import com.typesafe.config.Config;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;

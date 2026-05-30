@@ -15,9 +15,9 @@
  */
 package org.jooby;
 
-import com.google.common.escape.Escaper;
-import com.google.common.html.HtmlEscapers;
-import com.google.common.net.UrlEscapers;
+import org.killbill.commons.utils.escape.Escaper;
+import org.killbill.commons.utils.html.HtmlEscapers;
+import org.killbill.commons.utils.net.UrlEscapers;
 import org.killbill.commons.utils.Joiner;
 import static org.killbill.commons.utils.Preconditions.checkArgument;
 import static org.killbill.commons.utils.Preconditions.checkState;

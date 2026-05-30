@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.net.UrlEscapers;
+import org.killbill.commons.utils.net.UrlEscapers;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import static java.util.Objects.requireNonNull;
