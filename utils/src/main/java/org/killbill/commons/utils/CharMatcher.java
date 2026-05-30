@@ -16,7 +16,7 @@ package org.killbill.commons.utils;
 
 /**
  * Verbatim copy of guava's com.google.common.base.CharMatcher (v.31.0.1) — minimal subset used by
- * CaseFormat. See <a href="https://github.com/killbill/killbill/issues/1615">More</a>.
+ * CaseFormat and Splitter.
  *
  * <p>Determines a true or false value for any Java {@code char} value, just as {@link
  * java.util.function.Predicate} does for any {@link Object}.
@@ -29,6 +29,14 @@ public abstract class CharMatcher {
     /** Returns a {@code char} matcher that matches only one specified BMP character. */
     public static CharMatcher is(final char match) {
         return new Is(match);
+    }
+
+    /**
+     * Returns a {@code char} matcher that matches any character present in the given character
+     * sequence.
+     */
+    public static CharMatcher anyOf(final CharSequence sequence) {
+        return new AnyOf(sequence.toString());
     }
 
     /**
@@ -100,6 +108,26 @@ public abstract class CharMatcher {
         @Override
         public String toString() {
             return "CharMatcher.inRange('" + startInclusive + "', '" + endInclusive + "')";
+        }
+    }
+
+    // Implementation of anyOf(CharSequence)
+    private static final class AnyOf extends CharMatcher {
+
+        private final String chars;
+
+        AnyOf(String chars) {
+            this.chars = chars;
+        }
+
+        @Override
+        public boolean matches(char c) {
+            return chars.indexOf(c) >= 0;
+        }
+
+        @Override
+        public String toString() {
+            return "CharMatcher.anyOf(\"" + chars + "\")";
         }
     }
 }
