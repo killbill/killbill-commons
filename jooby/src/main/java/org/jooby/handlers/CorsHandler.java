@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.killbill.commons.utils.Joiner;
-import com.google.common.base.Splitter;
+import org.killbill.commons.utils.Splitter;
 
 /**
  * Handle preflight and simple CORS requests. CORS options are set via: {@link Cors}.

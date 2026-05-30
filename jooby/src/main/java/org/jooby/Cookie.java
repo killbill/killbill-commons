@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.base.Splitter;
+import org.killbill.commons.utils.Splitter;
 import org.killbill.commons.utils.Strings;
 import static java.util.Objects.requireNonNull;
 import org.jooby.funzy.Throwing;

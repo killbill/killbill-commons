@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.base.Splitter;
+import org.killbill.commons.utils.Splitter;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
