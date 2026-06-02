@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jooby.Env;
-import org.jooby.funzy.Try;
+import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.killbill.commons.utils.io.Closeables;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -33,25 +33,25 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import org.killbill.commons.utils.cache.Cache;
+import org.killbill.commons.utils.cache.CacheBuilder;
 import org.killbill.commons.utils.io.Resources;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 
 public class RouteMetadata implements ParameterNameProvider {
 
   private static final String[] NO_ARG = new String[0];
 
-  private final LoadingCache<Class<?>, Map<String, Object>> cache;
+  private final Cache<Class<?>, Map<String, Object>> cache;
 
   public RouteMetadata(final Env env) {
-    CacheLoader<Class<?>, Map<String, Object>> loader = CacheLoader
-        .from(RouteMetadata::extractMetadata);
-
     cache = env.name().equals("dev")
-        ? CacheBuilder.newBuilder().maximumSize(0).build(loader)
-        : CacheBuilder.newBuilder().build(loader);
+        ? CacheBuilder.<Class<?>, Map<String, Object>>newBuilder().maximumSize(0).build(RouteMetadata::extractMetadata)
+        : CacheBuilder.<Class<?>, Map<String, Object>>newBuilder().build(RouteMetadata::extractMetadata);
+  }
+
+  @VisibleForTesting
+  public RouteMetadata(final Cache<Class<?>, Map<String, Object>> cache) {
+    this.cache = cache;
   }
 
   @Override
@@ -67,12 +67,11 @@ public class RouteMetadata implements ParameterNameProvider {
   }
 
   private Map<String, Object> md(final Executable exec) {
-    return Try.apply(() -> cache.getUnchecked(exec.getDeclaringClass()))
-        .unwrap(UncheckedExecutionException.class)
-        .get();
+    return cache.get(exec.getDeclaringClass());
   }
 
-  private static Map<String, Object> extractMetadata(final Class<?> owner) {
+  @VisibleForTesting
+  public static Map<String, Object> extractMetadata(final Class<?> owner) {
     InputStream stream = null;
     try {
       Map<String, Object> md = new HashMap<>();
