@@ -27,15 +27,19 @@ import org.killbill.commons.utils.annotation.VisibleForTesting;
 
 /**
  * <p>
- *     Default {@link Cache} implementation, that provide ability to:
+ *     Default {@link Cache} implementation, that provides:
  *     <ol>
- *         <li>Add maxSize to the cache. If more entry added, the oldest entry get removed automatically</li>
+ *         <li>A maximum size. If more entries are added, the least recently used entry is removed automatically.</li>
  *         <li>
- *             Add lazy-loading capability with {@code cacheLoader} parameter in constructor. This {@code cacheLoader}
- *             will be called if {@link #get(Object)} return {@code null}. {@code cacheLoader} also will take precedence
- *             over loader defined in {@link #getOrLoad(Object, Function)}.
+ *             Lazy-loading capability with the {@code cacheLoader} constructor parameter. This {@code cacheLoader} will
+ *             be called if no value is found in the cache. Non-null values returned by {@code cacheLoader} are stored in
+ *             the cache. {@code cacheLoader} also takes precedence over the loader defined in
+ *             {@link #getOrLoad(Object, Function)}.
  *         </li>
- *         <li>Add timout (similar to expire-after-write in Guava and Caffeine) capability</li>
+ *         <li>
+ *             Expire-after-write capability. Accessing an entry does not extend its lifetime. Expired entries are
+ *             evicted lazily when accessed.
+ *         </li>
  *     </ol>
  * </p>
  * @param <K> cache key
@@ -52,9 +56,9 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     private final Function<K, V> cacheLoader;
 
     /**
-     * Create cache with maximum entry size, without any timout (live forever) and no cache loader.
+     * Create cache with maximum entry size, no expiration, and no cache loader.
      *
-     * @param maxSize max entry that should be existed in cache.
+     * @param maxSize maximum number of entries to keep in cache
      */
     public DefaultCache(final int maxSize) {
         this(maxSize, NO_TIMEOUT, noCacheLoader());
@@ -72,11 +76,13 @@ public class DefaultCache<K, V> implements Cache<K, V> {
     }
 
     /**
-     * Create cache with maximum entry size, timeout (in second), and cacheLoader capability.
+     * Create cache with maximum entry size, expire-after-write duration, and cacheLoader capability.
      *
-     * @param maxSize cache maximum size. If more entry added, the oldest entry get removed automatically.
-     * @param timeoutInSecond cache entry expire time. Entry will eventually be removed after specifics time defined
-     *                        here. Use {@link DefaultCache#NO_TIMEOUT} to make entry live forever.
+     * @param maxSize cache maximum size. If more entries are added, the least recently used entry is removed
+     *                automatically.
+     * @param timeoutInSecond expire-after-write duration in seconds. Entries expire after this duration from the time
+     *                        they are written; reads do not extend the expiration time. Expired entries are evicted
+     *                        lazily when accessed. Use {@link DefaultCache#NO_TIMEOUT} to make entries live forever.
      * @param cacheLoader cache loader. Use {@link #noCacheLoader()} to make this cache should not attempt to load
      *                    anything if value is null.
      */
@@ -139,6 +145,10 @@ public class DefaultCache<K, V> implements Cache<K, V> {
         }
     }
 
+    /**
+     * Returns the value from {@link #get(Object)} if one can be found or loaded. If {@link #get(Object)} returns
+     * {@code null}, this method calls {@code loader} and returns its result without storing that result in this cache.
+     */
     @Override
     public V getOrLoad(final K key, final Function<K, V> loader) {
         Preconditions.checkNotNull(loader, "loader parameter in #getOrLoad() is null");
