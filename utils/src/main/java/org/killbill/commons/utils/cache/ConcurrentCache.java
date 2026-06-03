@@ -17,7 +17,10 @@
 package org.killbill.commons.utils.cache;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import org.killbill.commons.utils.Preconditions;
@@ -31,6 +34,8 @@ import org.killbill.commons.utils.annotation.VisibleForTesting;
  *     <li>Time-to-live expiration (lazy eviction on access)</li>
  *     <li>Autoloading via a {@code cacheLoader} function on {@link #get(Object)}</li>
  *     <li>Ad-hoc loading via parameter on {@link #getOrLoad(Object, Function)} (ignores constructor loader)</li>
+ *     <li>Load coalescing: concurrent misses for the same key share one in-flight load,
+ *         and the loader runs outside CHM internals (no bin-lock held during computation)</li>
  *     <li>Configurable {@code concurrencyLevel} hint passed to ConcurrentHashMap</li>
  * </ul>
  *
@@ -48,7 +53,9 @@ public class ConcurrentCache<K, V> implements Cache<K, V> {
     private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
     @VisibleForTesting
-    final ConcurrentHashMap<K, CacheEntry<V>> map;
+    final ConcurrentMap<K, CacheEntry<V>> map;
+
+    private final ConcurrentMap<K, CompletableFuture<V>> inFlight;
 
     private final int maxSize;
     private final long timeToLiveMillis;
@@ -109,6 +116,7 @@ public class ConcurrentCache<K, V> implements Cache<K, V> {
         this.timeToLiveMillis = timeoutInSecond * 1_000;
         this.cacheLoader = cacheLoader;
         this.map = new ConcurrentHashMap<>(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, concurrencyLevel);
+        this.inFlight = new ConcurrentHashMap<>();
     }
 
     /**
@@ -126,14 +134,56 @@ public class ConcurrentCache<K, V> implements Cache<K, V> {
             return cached;
         }
 
-        if (cacheLoader != null) {
-            final V value = cacheLoader.apply(key);
-            if (value != null) {
-                put(key, value);
-            }
-            return value;
+        if (cacheLoader == null) {
+            return null;
         }
-        return null;
+
+        if (maxSize == 0) {
+            // No-cache mode: always call loader, never store
+            return cacheLoader.apply(key);
+        }
+
+        return getInternal(key);
+    }
+
+    private V getInternal(final K key) {
+        final CompletableFuture<V> fresh = new CompletableFuture<>();
+        final CompletableFuture<V> existing = inFlight.putIfAbsent(key, fresh);
+
+        if (existing != null) {
+            try {
+                // Another thread is already loading this key.
+                return existing.join();
+            } catch (final CompletionException ce) {
+                final Throwable cause = ce.getCause();
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                } else if (cause instanceof Error) {
+                    throw (Error) cause;
+                }
+                throw ce;
+            }
+        }
+
+        try {
+            // This thread won the race, so it runs the loader.
+            final V value = cacheLoader.apply(key);
+
+            if (value != null) {
+                map.put(key, new CacheEntry<>(value, computeExpiresAt()));
+                evictIfOverSize();
+            }
+
+            // Wake up any other threads waiting for this key.
+            fresh.complete(value);
+            return value;
+        } catch (final RuntimeException | Error e) {
+            fresh.completeExceptionally(e);
+            throw e;
+        } finally {
+            // Loading is finished, successful or not.
+            inFlight.remove(key, fresh);
+        }
     }
 
     /**

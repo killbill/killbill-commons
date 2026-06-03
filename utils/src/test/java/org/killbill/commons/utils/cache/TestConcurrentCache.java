@@ -458,5 +458,184 @@ public class TestConcurrentCache {
 
         // Value should be in cache
         Assert.assertEquals(cache.get(1), "loaded-1");
+        Assert.assertEquals(loadCount.get(), 1);
+    }
+
+    @Test(groups = "fast")
+    public void testInFlightCoalescesLoaderForSameKey() throws Exception {
+        // Loader blocks until we release it, so we can deterministically queue up waiters
+        final CountDownLatch loaderEntered = new CountDownLatch(1);
+        final CountDownLatch loaderRelease = new CountDownLatch(1);
+        final AtomicInteger loadCount = new AtomicInteger(0);
+
+        final ConcurrentCache<String, String> cache = new ConcurrentCache<>(key -> {
+            loadCount.incrementAndGet();
+            loaderEntered.countDown();
+            await(loaderRelease);
+            return "value-" + key;
+        });
+
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
+        try {
+            // Thread A starts loading — will block inside the loader
+            final var futureA = executor.submit(() -> cache.get("k"));
+
+            // Wait until the loader is actually executing
+            Assert.assertTrue(loaderEntered.await(5, TimeUnit.SECONDS));
+
+            // Thread B and C join the in-flight load (they should NOT start their own loader)
+            final var futureB = executor.submit(() -> cache.get("k"));
+            final var futureC = executor.submit(() -> cache.get("k"));
+
+            // Give B and C time to reach the in-flight join point
+            Thread.sleep(50);
+
+            // Loader has been called exactly once
+            Assert.assertEquals(loadCount.get(), 1);
+
+            // Release the loader — all three threads should get the same value
+            loaderRelease.countDown();
+
+            Assert.assertEquals(futureA.get(5, TimeUnit.SECONDS), "value-k");
+            Assert.assertEquals(futureB.get(5, TimeUnit.SECONDS), "value-k");
+            Assert.assertEquals(futureC.get(5, TimeUnit.SECONDS), "value-k");
+
+            // Still only one loader invocation
+            Assert.assertEquals(loadCount.get(), 1);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test(groups = "fast")
+    public void testInFlightExceptionPropagatedToWaiters() throws Exception {
+        final CountDownLatch loaderEntered = new CountDownLatch(1);
+        final CountDownLatch loaderRelease = new CountDownLatch(1);
+
+        final ConcurrentCache<String, String> cache = new ConcurrentCache<>(key -> {
+            loaderEntered.countDown();
+            await(loaderRelease);
+            throw new IllegalStateException("loader-failed");
+        });
+
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            // Thread A starts loading
+            final var futureA = executor.submit(() -> cache.get("k"));
+            Assert.assertTrue(loaderEntered.await(5, TimeUnit.SECONDS));
+
+            // Thread B joins the in-flight load
+            final var futureB = executor.submit(() -> cache.get("k"));
+            Thread.sleep(50);
+
+            // Release loader — it throws
+            loaderRelease.countDown();
+
+            // Both threads see the same unwrapped exception type
+            assertThrowsCause(futureA, IllegalStateException.class, "loader-failed");
+            assertThrowsCause(futureB, IllegalStateException.class, "loader-failed");
+
+            // Nothing stored in cache
+            Assert.assertEquals(cache.map.size(), 0);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test(groups = "fast")
+    public void testInFlightCleanedUpAfterFailureAllowsRetry() throws Exception {
+        final AtomicInteger loadCount = new AtomicInteger(0);
+        final CountDownLatch firstLoaderEntered = new CountDownLatch(1);
+        final CountDownLatch firstLoaderRelease = new CountDownLatch(1);
+
+        final ConcurrentCache<String, String> cache = new ConcurrentCache<>(key -> {
+            final int attempt = loadCount.incrementAndGet();
+            if (attempt == 1) {
+                firstLoaderEntered.countDown();
+                await(firstLoaderRelease);
+                throw new RuntimeException("first-load-fails");
+            }
+            return "retry-success";
+        });
+
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            // First load — will fail
+            final var futureA = executor.submit(() -> cache.get("k"));
+            Assert.assertTrue(firstLoaderEntered.await(5, TimeUnit.SECONDS));
+            firstLoaderRelease.countDown();
+            assertThrowsCause(futureA, RuntimeException.class, "first-load-fails");
+
+            // In-flight entry should be cleaned up — next get() retries
+            final String result = cache.get("k");
+            Assert.assertEquals(result, "retry-success");
+            Assert.assertEquals(loadCount.get(), 2);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test(groups = "fast")
+    public void testInFlightDoesNotBlockDifferentKeys() throws Exception {
+        final CountDownLatch loaderEnteredK1 = new CountDownLatch(1);
+        final CountDownLatch loaderReleaseK1 = new CountDownLatch(1);
+        final AtomicInteger loadCount = new AtomicInteger(0);
+
+        final ConcurrentCache<String, String> cache = new ConcurrentCache<>(key -> {
+            loadCount.incrementAndGet();
+            if ("k1".equals(key)) {
+                loaderEnteredK1.countDown();
+                await(loaderReleaseK1);
+            }
+            return "value-" + key;
+        });
+
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            // Start loading k1 (blocks)
+            final var futureK1 = executor.submit(() -> cache.get("k1"));
+            Assert.assertTrue(loaderEnteredK1.await(5, TimeUnit.SECONDS));
+
+            // k2 should load independently while k1 is still in-flight
+            final var futureK2 = executor.submit(() -> cache.get("k2"));
+            Assert.assertEquals(futureK2.get(5, TimeUnit.SECONDS), "value-k2");
+
+            // k1 still blocked — release it
+            loaderReleaseK1.countDown();
+            Assert.assertEquals(futureK1.get(5, TimeUnit.SECONDS), "value-k1");
+
+            Assert.assertEquals(loadCount.get(), 2);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    // --- Helpers ---
+
+    private static void await(final CountDownLatch latch) {
+        try {
+            if (!latch.await(5, TimeUnit.SECONDS)) {
+                throw new AssertionError("Latch timed out");
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void assertThrowsCause(final java.util.concurrent.Future<?> future,
+                                           final Class<? extends Throwable> expectedType,
+                                           final String expectedMessage) {
+        try {
+            future.get(5, TimeUnit.SECONDS);
+            Assert.fail("Expected exception not thrown");
+        } catch (final java.util.concurrent.ExecutionException ee) {
+            final Throwable cause = ee.getCause();
+            Assert.assertTrue(expectedType.isInstance(cause),
+                    "Expected " + expectedType.getName() + " but got " + cause.getClass().getName());
+            Assert.assertEquals(cause.getMessage(), expectedMessage);
+        } catch (final Exception e) {
+            Assert.fail("Unexpected exception: " + e);
+        }
     }
 }
