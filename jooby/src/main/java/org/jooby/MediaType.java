@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static org.killbill.commons.utils.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -79,7 +77,7 @@ public class MediaType implements Comparable<MediaType> {
      * @return True if the matcher matches the given media type.
      */
     public boolean matches(final MediaType candidate) {
-      return doFirst(ImmutableList.of(candidate)).isPresent();
+      return doFirst(List.of(candidate)).isPresent();
     }
 
     /**
@@ -117,7 +115,7 @@ public class MediaType implements Comparable<MediaType> {
      * @return A first most relevant media type or an empty optional.
      */
     public Optional<MediaType> first(final MediaType candidate) {
-      return first(ImmutableList.of(candidate));
+      return first(List.of(candidate));
     }
 
     /**
@@ -160,10 +158,10 @@ public class MediaType implements Comparable<MediaType> {
      */
     public List<MediaType> filter(final List<MediaType> types) {
       checkArgument(types != null && types.size() > 0, "Media types are required");
-      ImmutableList.Builder<MediaType> result = ImmutableList.builder();
+      List<MediaType> result = new ArrayList<>();
       final List<MediaType> sortedTypes;
       if (types.size() == 1) {
-        sortedTypes = ImmutableList.of(types.get(0));
+        sortedTypes = List.of(types.get(0));
       } else {
         sortedTypes = new ArrayList<>(types);
         Collections.sort(sortedTypes);
@@ -175,7 +173,7 @@ public class MediaType implements Comparable<MediaType> {
           }
         }
       }
-      return result.build();
+      return Collections.unmodifiableList(result);
     }
 
     /**
@@ -202,7 +200,7 @@ public class MediaType implements Comparable<MediaType> {
   /**
    * Default parameters.
    */
-  private static final Map<String, String> DEFAULT_PARAMS = ImmutableMap.of("q", "1");
+  private static final Map<String, String> DEFAULT_PARAMS = Map.of("q", "1");
 
   /**
    * A JSON media type.
@@ -247,7 +245,7 @@ public class MediaType implements Comparable<MediaType> {
   public static final MediaType all = new MediaType("*", "*");
 
   /** Any media type. */
-  public static final List<MediaType> ALL = ImmutableList.of(MediaType.all);
+  public static final List<MediaType> ALL = List.of(MediaType.all);
 
   /** Form multipart-data media type. */
   public static final MediaType multipart = new MediaType("multipart", "form-data");
@@ -300,15 +298,15 @@ public class MediaType implements Comparable<MediaType> {
   private static final ConcurrentHashMap<String, List<MediaType>> cache = new ConcurrentHashMap<>();
 
   static {
-    cache.put("html", ImmutableList.of(html));
-    cache.put("json", ImmutableList.of(json));
-    cache.put("css", ImmutableList.of(css));
-    cache.put("js", ImmutableList.of(js));
-    cache.put("octetstream", ImmutableList.of(octetstream));
-    cache.put("form", ImmutableList.of(form));
-    cache.put("multipart", ImmutableList.of(multipart));
-    cache.put("xml", ImmutableList.of(xml));
-    cache.put("plain", ImmutableList.of(plain));
+    cache.put("html", List.of(html));
+    cache.put("json", List.of(json));
+    cache.put("css", List.of(css));
+    cache.put("js", List.of(js));
+    cache.put("octetstream", List.of(octetstream));
+    cache.put("form", List.of(form));
+    cache.put("multipart", List.of(multipart));
+    cache.put("xml", List.of(xml));
+    cache.put("plain", List.of(plain));
     cache.put("*", ALL);
   }
 
@@ -326,7 +324,7 @@ public class MediaType implements Comparable<MediaType> {
   private MediaType(final String type, final String subtype, final Map<String, String> parameters) {
     this.type = requireNonNull(type, "A mime type is required.");
     this.subtype = requireNonNull(subtype, "A mime subtype is required.");
-    this.params = ImmutableMap.copyOf(requireNonNull(parameters, "Parameters are required."));
+    this.params = Collections.unmodifiableMap(new LinkedHashMap<>(requireNonNull(parameters, "Parameters are required.")));
     this.wildcardType = "*".equals(type);
     this.wildcardSubtype = "*".equals(subtype);
     this.name = type + "/" + subtype;
@@ -576,7 +574,7 @@ public class MediaType implements Comparable<MediaType> {
    * @return A media type matcher.
    */
   public static Matcher matcher(final MediaType acceptable) {
-    return matcher(ImmutableList.of(acceptable));
+    return matcher(List.of(acceptable));
   }
 
   /**

@@ -24,8 +24,7 @@ import org.junit.runner.Runner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.InitializationError;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import java.util.function.Predicate;
 
 /**
  * JUnit suite for Jooby. Internal use only.
@@ -49,7 +48,7 @@ public class JoobySuite extends Suite {
   @SuppressWarnings("rawtypes")
   private List<Runner> runners(final Class<?> klass) throws InitializationError {
     List<Runner> runners = new ArrayList<>();
-    Predicate<Class> filter = Predicates.alwaysTrue();
+    Predicate<Class> filter = c -> true;
     OnServer onserver = klass.getAnnotation(OnServer.class);
     if (onserver != null) {
       List<Class<?>> server = Arrays.asList(onserver.value());
@@ -60,7 +59,7 @@ public class JoobySuite extends Suite {
     for (String server : servers) {
       try {
         Class<?> serverClass = getClass().getClassLoader().loadClass(server);
-        if (filter.apply(serverClass)) {
+        if (filter.test(serverClass)) {
           runners.add(new JoobyRunner(getTestClass().getJavaClass(), serverClass));
         }
       } catch (ClassNotFoundException ex) {

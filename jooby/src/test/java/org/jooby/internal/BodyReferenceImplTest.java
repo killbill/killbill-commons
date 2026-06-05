@@ -17,6 +17,8 @@ package org.jooby.internal;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +36,7 @@ import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 
 public class BodyReferenceImplTest {
 
@@ -77,7 +79,7 @@ public class BodyReferenceImplTest {
         .expect(unit -> {
           InputStream in = unit.get(InputStream.class);
 
-          when(in.read(unit.capture(byte[].class))).thenThrow(new IOException());
+          when(in.transferTo(any(OutputStream.class))).thenThrow(new IOException());
 
           OutputStream out = unit.get(ByteArrayOutputStream.class);
 

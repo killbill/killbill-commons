@@ -23,14 +23,15 @@ import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
+import java.nio.charset.StandardCharsets;
 
 public class ResponseForwardingTest {
 
@@ -173,15 +174,15 @@ public class ResponseForwardingTest {
     new MockUnit(Response.class)
         .expect(unit -> {
           Response rsp = unit.get(Response.class);
-          when(rsp.charset()).thenReturn(Charsets.UTF_8);
+          when(rsp.charset()).thenReturn(StandardCharsets.UTF_8);
 
-          when(rsp.charset(Charsets.US_ASCII)).thenReturn(null);
+          when(rsp.charset(StandardCharsets.US_ASCII)).thenReturn(null);
         })
         .run(unit -> {
           Response rsp = new Response.Forwarding(unit.get(Response.class));
-          assertEquals(Charsets.UTF_8, rsp.charset());
+          assertEquals(StandardCharsets.UTF_8, rsp.charset());
 
-          assertEquals(rsp, rsp.charset(Charsets.US_ASCII));
+          assertEquals(rsp, rsp.charset(StandardCharsets.US_ASCII));
         });
   }
 
@@ -337,12 +338,12 @@ public class ResponseForwardingTest {
         .expect(unit -> {
           Response rsp = unit.get(Response.class);
 
-          when(rsp.header("h", Lists.<Object> newArrayList("v1", 2))).thenReturn(rsp);
+          when(rsp.header("h", new ArrayList<>(Arrays.<Object>asList("v1", 2)))).thenReturn(rsp);
         })
         .run(unit -> {
           Response rsp = new Response.Forwarding(unit.get(Response.class));
 
-          assertEquals(rsp, rsp.header("h", Lists.<Object> newArrayList("v1", 2)));
+          assertEquals(rsp, rsp.header("h", new ArrayList<>(Arrays.<Object>asList("v1", 2))));
         });
   }
 

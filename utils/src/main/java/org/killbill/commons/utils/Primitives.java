@@ -30,6 +30,9 @@ public final class Primitives {
     /** A map from primitive types to their corresponding wrapper types. */
     private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER_TYPE;
 
+    /** A map from wrapper types to their corresponding primitive types. */
+    private static final Map<Class<?>, Class<?>> WRAPPER_TO_PRIMITIVE_TYPE;
+
     static {
         final Map<Class<?>, Class<?>> primToWrap = new LinkedHashMap<>(16);
         final Map<Class<?>, Class<?>> wrapToPrim = new LinkedHashMap<>(16);
@@ -45,6 +48,7 @@ public final class Primitives {
         add(primToWrap, wrapToPrim, void.class, Void.class);
 
         PRIMITIVE_TO_WRAPPER_TYPE = Collections.unmodifiableMap(primToWrap);
+        WRAPPER_TO_PRIMITIVE_TYPE = Collections.unmodifiableMap(wrapToPrim);
     }
 
     private static void add(final Map<Class<?>, Class<?>> forward, final Map<Class<?>, Class<?>> backward, final Class<?> key, final Class<?> value) {
@@ -69,5 +73,15 @@ public final class Primitives {
         // cast is safe: long.class and Long.class are both of type Class<Long>
         @SuppressWarnings("unchecked") final Class<T> wrapped = (Class<T>) PRIMITIVE_TO_WRAPPER_TYPE.get(type);
         return (wrapped == null) ? type : wrapped;
+    }
+
+    /**
+     * Returns {@code true} if {@code type} is one of the nine primitive-wrapper types, such as
+     * {@link Integer}.
+     *
+     * @see Class#isPrimitive
+     */
+    public static boolean isWrapperType(final Class<?> type) {
+        return WRAPPER_TO_PRIMITIVE_TYPE.containsKey(Preconditions.checkNotNull(type));
     }
 }

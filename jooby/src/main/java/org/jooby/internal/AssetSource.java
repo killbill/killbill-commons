@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import com.google.common.base.Strings;
+import org.killbill.commons.utils.Strings;
 
 import java.net.MalformedURLException;
 import java.net.URL;

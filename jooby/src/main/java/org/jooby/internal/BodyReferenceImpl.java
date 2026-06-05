@@ -26,7 +26,7 @@ import java.nio.file.Files;
 
 import org.jooby.Parser;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 import org.jooby.funzy.Try;
 
 public class BodyReferenceImpl implements Parser.BodyReference {

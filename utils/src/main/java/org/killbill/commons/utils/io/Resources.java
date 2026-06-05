@@ -42,4 +42,16 @@ public final class Resources {
         Preconditions.checkArgument(url != null, "resource %s not found.", resourceName);
         return url;
     }
+
+    /**
+     * Given a {@code resourceName} that is relative to {@code contextClass}, returns a {@code URL}
+     * pointing to the named resource.
+     *
+     * @throws IllegalArgumentException if the resource is not found
+     */
+    public static URL getResource(final Class<?> contextClass, final String resourceName) {
+        final URL url = contextClass.getResource(resourceName);
+        Preconditions.checkArgument(url != null, "resource %s relative to %s not found.", resourceName, contextClass.getName());
+        return url;
+    }
 }

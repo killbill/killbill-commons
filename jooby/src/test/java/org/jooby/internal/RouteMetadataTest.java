@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 
-import com.google.common.io.Resources;
+import org.killbill.commons.utils.io.Resources;
 import com.typesafe.config.Config;
 
 public class RouteMetadataTest {

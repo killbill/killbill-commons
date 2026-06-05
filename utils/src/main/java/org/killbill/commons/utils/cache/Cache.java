@@ -22,23 +22,31 @@ import java.util.function.Function;
 public interface Cache <K, V> {
 
     /**
-     * Get the cache value, or null if no value associated with key. Value returned by this method depends on
-     * implementation logic.
+     * Get the cache value associated with {@code key}.
      *
-     * @param key to load the value
-     * @return cache value, or null
-     * @throws NullPointerException is key is null
+     * Implementations may define additional behavior on a cache miss. For example, a loading implementation may load and
+     * store a value before returning.
+     *
+     * @param key cache key
+     * @return cache value, or null if no value can be found or loaded
+     * @throws NullPointerException if key is null
      */
     V get(K key);
 
     /**
-     * Get or load the cache. Note that value returned from loader parameter will not update cache.
+     * Get or load the cache value associated with {@code key}.
      *
-     * Implementation may decide to load it first from any other source/loader before loader parameter called.
+     * The supplied {@code loader} gives the implementation a way to produce a value when no value is available through
+     * its normal lookup or loading path. Implementations define:
+     * <ul>
+     *     <li>whether any configured loader or read-through source is consulted before {@code loader};</li>
+     *     <li>whether a value returned by {@code loader} is stored in the cache;</li>
+     *     <li>whether concurrent loads for the same key are deduplicated or atomic.</li>
+     * </ul>
      *
-     * @param key to load the value
-     * @param loader algorithm to load a value if, not exist in cache
-     * @return cache value, or depends on {@code loader} algorithm
+     * @param key cache key
+     * @param loader algorithm to load a value if this cache cannot find or load one
+     * @return cache value, or value returned by {@code loader}
      * @throws NullPointerException if key or loader is null
      */
     V getOrLoad(K key, Function<K, V> loader);

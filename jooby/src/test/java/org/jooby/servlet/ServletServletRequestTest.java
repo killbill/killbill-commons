@@ -19,7 +19,10 @@ import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.servlet.ServletException;
@@ -29,9 +32,6 @@ import org.jooby.MediaType;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 
 public class ServletServletRequestTest {
 
@@ -159,11 +159,11 @@ public class ServletServletRequestTest {
           when(req.getContentType()).thenReturn("text/html");
           when(req.getPathInfo()).thenReturn("/");
           when(req.getParameterNames()).thenReturn(
-              Iterators.asEnumeration(Lists.newArrayList("p1", "p2").iterator()));
+              Collections.enumeration(Arrays.asList("p1", "p2")));
           when(req.getContextPath()).thenReturn("");
         })
         .run(unit -> {
-          assertEquals(Lists.newArrayList("p1", "p2"),
+          assertEquals(new ArrayList<>(Arrays.asList("p1", "p2")),
               new ServletServletRequest(unit.get(HttpServletRequest.class), tmpdir)
                   .paramNames());
         });
@@ -182,7 +182,7 @@ public class ServletServletRequestTest {
           when(req.getContextPath()).thenReturn("");
         })
         .run(unit -> {
-          assertEquals(Lists.newArrayList("a", "b"),
+          assertEquals(new ArrayList<>(Arrays.asList("a", "b")),
               new ServletServletRequest(unit.get(HttpServletRequest.class), tmpdir)
                   .params("x"));
         });
@@ -201,7 +201,7 @@ public class ServletServletRequestTest {
           when(req.getContextPath()).thenReturn("");
         })
         .run(unit -> {
-          assertEquals(Lists.newArrayList(),
+          assertEquals(new ArrayList<>(),
               new ServletServletRequest(unit.get(HttpServletRequest.class), tmpdir)
                   .params("x"));
         });
@@ -223,7 +223,7 @@ public class ServletServletRequestTest {
           when(req.getAttribute("server.attribute")).thenReturn(serverAttribute);
         })
         .run(unit -> {
-          assertEquals(ImmutableMap.of("server.attribute", serverAttribute),
+          assertEquals(Map.of("server.attribute", serverAttribute),
               new ServletServletRequest(unit.get(HttpServletRequest.class), tmpdir)
                   .attributes());
         });
@@ -278,7 +278,7 @@ public class ServletServletRequestTest {
           when(req.getContextPath()).thenReturn("");
         })
         .run(unit -> {
-          assertEquals(Lists.newArrayList(),
+          assertEquals(new ArrayList<>(),
               new ServletServletRequest(unit.get(HttpServletRequest.class), tmpdir)
                   .upgrade(ServletServletRequest.class));
         });

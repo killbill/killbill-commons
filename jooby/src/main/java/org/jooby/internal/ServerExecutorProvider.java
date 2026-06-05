@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import com.google.common.util.concurrent.MoreExecutors;
+import org.killbill.commons.utils.concurrent.DirectExecutor;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import org.jooby.spi.Server;
@@ -34,8 +34,8 @@ public class ServerExecutorProvider implements Provider<Executor>
     requireNonNull(serverHolder, "Server holder is required.");
 
     executor = (serverHolder.server != null) ?
-               serverHolder.server.executor().orElse(MoreExecutors.directExecutor()) :
-               MoreExecutors.directExecutor();
+               serverHolder.server.executor().orElse(DirectExecutor.INSTANCE) :
+               DirectExecutor.INSTANCE;
   }
 
   @Override

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
-import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
 
 /**
@@ -69,7 +68,7 @@ public class Cors {
     private boolean wild;
 
     public Matcher(final List<String> values, final Predicate<T> predicate) {
-      this.values = ImmutableList.copyOf(values);
+      this.values = List.copyOf(values);
       this.predicate = predicate;
       this.wild = values.contains("*");
     }
@@ -281,7 +280,7 @@ public class Cors {
    * @return True if a header is allowed.
    */
   public boolean allowHeader(final String header) {
-    return allowHeaders(ImmutableList.of(header));
+    return allowHeaders(List.of(header));
   }
 
   /**
@@ -384,7 +383,7 @@ public class Cors {
 
   @SuppressWarnings({"unchecked", "rawtypes" })
   private List<String> list(final Object value) {
-    return value instanceof List ? (List) value : ImmutableList.of(value.toString());
+    return value instanceof List ? (List) value : List.of(value.toString());
   }
 
   private static Matcher<List<String>> allMatch(final List<String> values) {

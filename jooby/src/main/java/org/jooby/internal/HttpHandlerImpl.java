@@ -15,12 +15,10 @@
  */
 package org.jooby.internal;
 
-import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Sets;
+import org.killbill.commons.utils.Strings;
+import org.killbill.commons.utils.Throwables;
+import org.killbill.commons.utils.cache.Cache;
+import org.killbill.commons.utils.cache.CacheBuilder;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -163,7 +161,7 @@ public class HttpHandlerImpl implements HttpHandler {
 
   private List<Locale> locales;
 
-  private final LoadingCache<RouteKey, Route[]> routeCache;
+  private final Cache<RouteKey, Route[]> routeCache;
 
   private final String redirectHttps;
 
@@ -301,7 +299,7 @@ public class HttpHandlerImpl implements HttpHandler {
 
       // usual req/rsp
       Route[] routes = routeCache
-          .getUnchecked(new RouteKey(method, path, type, req.accept()));
+          .get(new RouteKey(method, path, type, req.accept()));
 
       RouteChain chain = new RouteChain(req, rsp, routes);
       scope.put(CHAIN, chain);
@@ -484,7 +482,7 @@ public class HttpHandlerImpl implements HttpHandler {
   private static List<Route> alternative(final Set<Route.Definition> routeDefs, final String verb,
       final String uri) {
     List<Route> routes = new LinkedList<>();
-    Set<String> verbs = Sets.newHashSet(Route.METHODS);
+    Set<String> verbs = new java.util.HashSet<>(Route.METHODS);
     verbs.remove(verb);
     for (String alt : verbs) {
       findRoutes(routeDefs, alt, uri, MediaType.all, MediaType.ALL)
@@ -525,15 +523,10 @@ public class HttpHandlerImpl implements HttpHandler {
     return param.size() == 0 ? request.method() : param.get(0);
   }
 
-  private static LoadingCache<RouteKey, Route[]> routeCache(final Set<Route.Definition> routes,
+  private static Cache<RouteKey, Route[]> routeCache(final Set<Route.Definition> routes,
       final Config conf) {
-    return CacheBuilder.from(conf.getString("server.routes.Cache"))
-        .build(new CacheLoader<RouteKey, Route[]>() {
-          @Override
-          public Route[] load(final RouteKey key) throws Exception {
-            return routes(routes, key.method, key.path, key.consumes, key.produces);
-          }
-        });
+    return CacheBuilder.<RouteKey, Route[]>from(conf.getString("server.routes.Cache"))
+        .build(key -> routes(routes, key.method, key.path, key.consumes, key.produces));
   }
 
   private static Function<String, String> rootpath(final String applicationPath) {

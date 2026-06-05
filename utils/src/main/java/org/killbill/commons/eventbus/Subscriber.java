@@ -22,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
 import org.killbill.commons.utils.annotation.VisibleForTesting;
@@ -129,7 +129,7 @@ class Subscriber {
     }
 
     @Override
-    public final boolean equals(@CheckForNull final Object obj) {
+    public final boolean equals(@Nullable final Object obj) {
         if (obj instanceof Subscriber) {
             final Subscriber that = (Subscriber) obj;
             // Use == so that different equal instances will still receive events.

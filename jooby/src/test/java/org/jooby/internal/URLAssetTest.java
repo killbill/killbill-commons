@@ -30,7 +30,7 @@ import org.jooby.MediaType;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 
 public class URLAssetTest {
 

@@ -35,7 +35,7 @@ import org.jooby.Renderer;
 import org.jooby.Status;
 import org.jooby.View;
 
-import com.google.common.base.Joiner;
+import org.killbill.commons.utils.Joiner;
 
 public abstract class AbstractRendererContext implements Renderer.Context {
 

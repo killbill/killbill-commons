@@ -15,9 +15,7 @@
  */
 package org.jooby.internal.mvc;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
+import org.killbill.commons.utils.Strings;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
 import org.jooby.Cookie;
@@ -38,6 +36,8 @@ import jakarta.inject.Named;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,7 +62,7 @@ public class RequestParam {
   private static final Map<Object, GetValue> injector;
 
   static {
-    Builder<Object, GetValue> builder = ImmutableMap.<Object, GetValue> builder();
+    Map<Object, GetValue> builder = new LinkedHashMap<>();
     /**
      * Body
      */
@@ -144,7 +144,7 @@ public class RequestParam {
       return param.optional ? req.ifFlash(param.name) : req.flash(param.name);
     });
 
-    injector = builder.build();
+    injector = Collections.unmodifiableMap(builder);
   }
 
   public final String name;

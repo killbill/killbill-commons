@@ -15,16 +15,13 @@
  */
 package org.jooby;
 
-import com.google.common.base.Joiner;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.escape.Escaper;
-import com.google.common.html.HtmlEscapers;
-import com.google.common.net.UrlEscapers;
-import com.google.common.util.concurrent.MoreExecutors;
+import org.killbill.commons.utils.escape.Escaper;
+import org.killbill.commons.utils.html.HtmlEscapers;
+import org.killbill.commons.utils.net.UrlEscapers;
+import org.killbill.commons.utils.Joiner;
+import static org.killbill.commons.utils.Preconditions.checkArgument;
+import static org.killbill.commons.utils.Preconditions.checkState;
+import org.killbill.commons.utils.concurrent.DirectExecutor;
 import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -118,6 +115,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -513,7 +511,7 @@ public class Jooby implements Router, LifeCycle, Registry {
 
     String path;
 
-    ImmutableMap.Builder<String, Object> attrs = ImmutableMap.builder();
+    Map<String, Object> attrs = new LinkedHashMap<>();
 
     private List<MediaType> consumes;
 
@@ -583,7 +581,7 @@ public class Jooby implements Router, LifeCycle, Registry {
     }
 
     public Route.Definition apply(final Route.Definition route) {
-      attrs.build().forEach(route::attr);
+      attrs.forEach(route::attr);
       if (name != null) {
         route.name(name);
       }
@@ -2640,9 +2638,9 @@ public class Jooby implements Router, LifeCycle, Registry {
     /** executors: */
     if (!defaultExecSet) {
       // default executor
-      executor(MoreExecutors.directExecutor());
+      executor(DirectExecutor.INSTANCE);
     }
-    executor("direct", MoreExecutors.directExecutor());
+    executor("direct", DirectExecutor.INSTANCE);
     executor("server", ServerExecutorProvider.class);
 
     /** Some basic xss functions. */
@@ -2822,9 +2820,9 @@ public class Jooby implements Router, LifeCycle, Registry {
 
     // clear bag and freeze it
     this.bag.clear();
-    this.bag = ImmutableSet.of();
+    this.bag = Collections.emptySet();
     this.executors.clear();
-    this.executors = ImmutableList.of();
+    this.executors = Collections.emptyList();
 
     return injector;
   }
@@ -3024,7 +3022,11 @@ public class Jooby implements Router, LifeCycle, Registry {
 
     // set module config
     Config moduleStack = ConfigFactory.empty();
-    for (Config module : ImmutableList.copyOf(modules).reverse()) {
+    // FIXME: Java 21 has better .reverse() support.
+    //  Not using it yet since I don't think we really need hard 'Java 21' minimum, yet
+    List<Config> reversedModules = new ArrayList<>(modules);
+    Collections.reverse(reversedModules);
+    for (Config module : reversedModules) {
       moduleStack = moduleStack.withFallback(module);
     }
 
@@ -3162,7 +3164,7 @@ public class Jooby implements Router, LifeCycle, Registry {
     if (!conf.hasPath("application.lang")) {
       locales = Optional.ofNullable(this.languages)
           .map(langs -> LocaleUtils.parse(Joiner.on(",").join(langs)))
-          .orElse(ImmutableList.of(Locale.getDefault()));
+          .orElse(List.of(Locale.getDefault()));
     } else {
       locales = LocaleUtils.parse(conf.getString("application.lang"));
     }
@@ -3303,7 +3305,7 @@ public class Jooby implements Router, LifeCycle, Registry {
       logback = conf.getString("logback.configurationFile");
     } else {
       String env = conf.hasPath("application.env") ? conf.getString("application.env") : null;
-      ImmutableList.Builder<File> files = ImmutableList.builder();
+      List<File> files = new ArrayList<>();
       // TODO: sanitization of arguments
       File userdir = new File(System.getProperty("user.dir"));
       File confdir = new File(userdir, "conf");
@@ -3313,8 +3315,7 @@ public class Jooby implements Router, LifeCycle, Registry {
       }
       files.add(new File(userdir, "logback.xml"));
       files.add(new File(confdir, "logback.xml"));
-      logback = files.build()
-          .stream()
+      logback = files.stream()
           .filter(File::exists)
           .map(File::getAbsolutePath)
           .findFirst()

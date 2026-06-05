@@ -15,9 +15,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
@@ -128,7 +125,7 @@ public class ParamConverterTest {
   }
 
   private Object data(final String... value) {
-    return new StrParamReferenceImpl("parameter", "test", ImmutableList.copyOf(value));
+    return new StrParamReferenceImpl("parameter", "test", new ArrayList<>(Arrays.asList(value)));
   }
 
   @Test
@@ -171,7 +168,7 @@ public class ParamConverterTest {
   @Test
   public void shouldConvertListOfBeanWithStringConstructor() throws Throwable {
     ParserExecutor resolver = newParser();
-    assertEquals(Lists.newArrayList(new StringBean("231")),
+    assertEquals(new ArrayList<>(Arrays.asList(new StringBean("231"))),
         resolver.convert(TypeLiteral.get(Types.listOf(StringBean.class)), data("231")));
   }
 
@@ -293,14 +290,14 @@ public class ParamConverterTest {
   @Test
   public void shouldConvertToListOfBytes() throws Throwable {
     ParserExecutor resolver = newParser();
-    assertEquals(Lists.newArrayList((byte) 23, (byte) 45),
+    assertEquals(new ArrayList<>(Arrays.asList((byte) 23, (byte) 45)),
         resolver.convert(TypeLiteral.get(Types.listOf(Byte.class)), data("23", "45")));
   }
 
   @Test
   public void shouldConvertToSetOfBytes() throws Throwable {
     ParserExecutor resolver = newParser();
-    assertEquals(Sets.newHashSet((byte) 23, (byte) 45),
+    assertEquals(new HashSet<>(Arrays.asList((byte) 23, (byte) 45)),
         resolver.convert(TypeLiteral.get(Types.setOf(Byte.class)), data("23", "45", "23")));
   }
 
@@ -343,11 +340,11 @@ public class ParamConverterTest {
   @Test
   public void shouldConvertToListOfBoolean() throws Throwable {
     ParserExecutor resolver = newParser();
-    assertEquals(Lists.newArrayList(true, false),
+    assertEquals(new ArrayList<>(Arrays.asList(true, false)),
         resolver.convert(TypeLiteral.get(Types.listOf(Boolean.class)),
             data("true", "false")));
 
-    assertEquals(Lists.newArrayList(false, false),
+    assertEquals(new ArrayList<>(Arrays.asList(false, false)),
         resolver.convert(TypeLiteral.get(Types.listOf(Boolean.class)),
             data("false", "false")));
   }
@@ -355,11 +352,11 @@ public class ParamConverterTest {
   @Test
   public void shouldConvertToSetOfBoolean() throws Throwable {
     ParserExecutor resolver = newParser();
-    assertEquals(Sets.newHashSet(true, false),
+    assertEquals(new HashSet<>(Arrays.asList(true, false)),
         resolver.convert(TypeLiteral.get(Types.setOf(Boolean.class)),
             data("true", "false")));
 
-    assertEquals(Sets.newHashSet(false),
+    assertEquals(new HashSet<>(Collections.singletonList(false)),
         resolver.convert(TypeLiteral.get(Types.setOf(Boolean.class)),
             data("false", "false")));
   }
@@ -388,14 +385,14 @@ public class ParamConverterTest {
   @Test
   public void shouldConvertToMediaType() throws Throwable {
     ParserExecutor resolver = newParser();
-    assertEquals(Lists.newArrayList(MediaType.valueOf("text/html")),
+    assertEquals(new ArrayList<>(Arrays.asList(MediaType.valueOf("text/html"))),
         resolver.convert(TypeLiteral.get(Types.listOf(MediaType.class)),
             data("text/html")));
   }
 
   private ParserExecutor newParser() {
     return new ParserExecutor(mock(Injector.class),
-        Sets.newLinkedHashSet(
+        new LinkedHashSet<>(
             Arrays.asList(
                 BuiltinParser.Basic,
                 BuiltinParser.Collection,

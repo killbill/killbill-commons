@@ -29,7 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
 
@@ -132,7 +132,7 @@ public final class Iterators {
     }
 
     /** Returns {@code true} if {@code iterator} contains {@code element}. */
-    public static boolean contains(final Iterator<?> iterator, @CheckForNull final Object element) {
+    public static boolean contains(final Iterator<?> iterator, @Nullable final Object element) {
         if (element == null) {
             while (iterator.hasNext()) {
                 if (iterator.next() == null) {

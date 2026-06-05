@@ -29,8 +29,6 @@ import org.jooby.WebSocket.OnError;
 import org.jooby.WebSocket.SuccessCallback;
 import org.jooby.spi.NativeWebSocket;
 
-import com.google.common.collect.ImmutableList;
-
 public class WebSocketRendererContext extends AbstractRendererContext {
 
   private NativeWebSocket ws;
@@ -44,7 +42,7 @@ public class WebSocketRendererContext extends AbstractRendererContext {
   public WebSocketRendererContext(final List<Renderer> renderers, final NativeWebSocket ws,
       final MediaType type, final Charset charset, Locale locale, final SuccessCallback success,
       final OnError err) {
-    super(renderers, ImmutableList.of(type), charset, locale, Collections.emptyMap());
+    super(renderers, List.of(type), charset, locale, Collections.emptyMap());
     this.ws = ws;
     this.type = type;
     this.success = success;

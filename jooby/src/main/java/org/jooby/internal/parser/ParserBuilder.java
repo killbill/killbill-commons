@@ -15,6 +15,8 @@
  */
 package org.jooby.internal.parser;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jooby.Mutant;
@@ -25,14 +27,12 @@ import org.jooby.internal.BodyReferenceImpl;
 import org.jooby.internal.EmptyBodyReference;
 import org.jooby.internal.StrParamReferenceImpl;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.TypeLiteral;
 
 @SuppressWarnings("rawtypes")
 public class ParserBuilder implements Parser.Builder {
 
-  private ImmutableMap.Builder<TypeLiteral<?>, Parser.Callback> strategies = ImmutableMap
-      .builder();
+  private Map<TypeLiteral<?>, Parser.Callback> strategies = new LinkedHashMap<>();
 
   public final TypeLiteral<?> toType;
 
@@ -92,7 +92,7 @@ public class ParserBuilder implements Parser.Builder {
 
   @SuppressWarnings("unchecked")
   public Object parse() throws Throwable {
-    Map<TypeLiteral<?>, Callback> map = strategies.build();
+    Map<TypeLiteral<?>, Callback> map = Collections.unmodifiableMap(strategies);
     Callback callback = map.get(type);
     if (callback == null) {
       return ctx.next(toType, value);

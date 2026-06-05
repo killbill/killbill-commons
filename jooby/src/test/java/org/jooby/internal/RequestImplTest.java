@@ -21,7 +21,9 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jooby.Err;
@@ -31,8 +33,6 @@ import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 
 public class RequestImplTest {
@@ -60,8 +60,8 @@ public class RequestImplTest {
         .expect(contentType)
         .run(unit -> {
           new RequestImpl(unit.get(Injector.class), unit.get(NativeRequest.class), "/", 8080,
-              unit.get(Route.class), StandardCharsets.UTF_8, ImmutableList.of(Locale.ENGLISH),
-              ImmutableMap.of(), ImmutableMap.of(), 1L);
+              unit.get(Route.class), StandardCharsets.UTF_8, List.of(Locale.ENGLISH),
+              Map.of(), Map.of(), 1L);
         });
   }
 
@@ -79,9 +79,9 @@ public class RequestImplTest {
         .run(unit -> {
           RequestImpl req = new RequestImpl(unit.get(Injector.class), unit.get(NativeRequest.class),
               "/", 8080,
-              unit.get(Route.class), StandardCharsets.UTF_8, ImmutableList.of(Locale.ENGLISH),
-              ImmutableMap.of(),
-              ImmutableMap.of(), 1L);
+              unit.get(Route.class), StandardCharsets.UTF_8, List.of(Locale.ENGLISH),
+              Map.of(),
+              Map.of(), 1L);
           assertEquals(true, req.matches("/path/**"));
         });
   }
@@ -98,9 +98,9 @@ public class RequestImplTest {
         .run(unit -> {
           RequestImpl req = new RequestImpl(unit.get(Injector.class), unit.get(NativeRequest.class),
               "/", 8080,
-              unit.get(Route.class), StandardCharsets.UTF_8, ImmutableList.of(Locale.ENGLISH),
-              ImmutableMap.of(),
-              ImmutableMap.of(), 1L);
+              unit.get(Route.class), StandardCharsets.UTF_8, List.of(Locale.ENGLISH),
+              Map.of(),
+              Map.of(), 1L);
           assertEquals(Locale.ENGLISH, req.locale());
         });
   }
@@ -119,9 +119,9 @@ public class RequestImplTest {
         .run(unit -> {
           try {
             new RequestImpl(unit.get(Injector.class), unit.get(NativeRequest.class), "/", 8080,
-                unit.get(Route.class), StandardCharsets.UTF_8, ImmutableList.of(Locale.ENGLISH),
-                ImmutableMap.of(),
-                ImmutableMap.of(), 1L).file("f");
+                unit.get(Route.class), StandardCharsets.UTF_8, List.of(Locale.ENGLISH),
+                Map.of(),
+                Map.of(), 1L).file("f");
             fail("expecting error");
           } catch (IOException ex) {
             assertEquals(cause, ex);
@@ -138,7 +138,7 @@ public class RequestImplTest {
         .expect(contentType)
         .expect(unit -> {
           Route route = unit.get(Route.class);
-          when(route.vars()).thenReturn(ImmutableMap.of());
+          when(route.vars()).thenReturn(Map.of());
 
           NativeRequest req = unit.get(NativeRequest.class);
           when(req.paramNames()).thenThrow(cause);
@@ -146,9 +146,9 @@ public class RequestImplTest {
         .run(unit -> {
           try {
             new RequestImpl(unit.get(Injector.class), unit.get(NativeRequest.class), "/", 8080,
-                unit.get(Route.class), StandardCharsets.UTF_8, ImmutableList.of(Locale.ENGLISH),
-                ImmutableMap.of(),
-                ImmutableMap.of(), 1L).params();
+                unit.get(Route.class), StandardCharsets.UTF_8, List.of(Locale.ENGLISH),
+                Map.of(),
+                Map.of(), 1L).params();
             fail("expecting error");
           } catch (Err ex) {
             assertEquals(400, ex.statusCode());
@@ -166,7 +166,7 @@ public class RequestImplTest {
         .expect(contentType)
         .expect(unit -> {
           Route route = unit.get(Route.class);
-          when(route.vars()).thenReturn(ImmutableMap.of());
+          when(route.vars()).thenReturn(Map.of());
 
           NativeRequest req = unit.get(NativeRequest.class);
           when(req.params("p")).thenThrow(cause);
@@ -174,9 +174,9 @@ public class RequestImplTest {
         .run(unit -> {
           try {
             new RequestImpl(unit.get(Injector.class), unit.get(NativeRequest.class), "/", 8080,
-                unit.get(Route.class), StandardCharsets.UTF_8, ImmutableList.of(Locale.ENGLISH),
-                ImmutableMap.of(),
-                ImmutableMap.of(), 1L).param("p");
+                unit.get(Route.class), StandardCharsets.UTF_8, List.of(Locale.ENGLISH),
+                Map.of(),
+                Map.of(), 1L).param("p");
             fail("expecting error");
           } catch (Err ex) {
             assertEquals(400, ex.statusCode());

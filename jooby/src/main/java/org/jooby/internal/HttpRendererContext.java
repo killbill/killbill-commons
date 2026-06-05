@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 import org.jooby.Err;
 import org.jooby.MediaType;
 import org.jooby.Renderer;

@@ -15,9 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.escape.Escapers;
-import com.google.common.html.HtmlEscapers;
+import org.killbill.commons.utils.html.HtmlEscapers;
 import com.typesafe.config.Config;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -32,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -58,7 +57,7 @@ public class DefaultErrHandlerTest {
           new Err.DefHandler().handle(req, rsp, ex);
         }, unit -> {
           Result result = capturedResult.get();
-          View view = (View) result.ifGet(ImmutableList.of(MediaType.html)).get();
+          View view = (View) result.ifGet(List.of(MediaType.html)).get();
           assertEquals("err", view.name());
           checkErr(stacktrace, "Server Error(500)", (Map<String, Object>) view.model()
               .get("err"));
@@ -120,7 +119,7 @@ public class DefaultErrHandlerTest {
             },
             unit -> {
               Result result = capturedResult.get();
-              View view = (View) result.ifGet(ImmutableList.of(MediaType.html)).get();
+              View view = (View) result.ifGet(List.of(MediaType.html)).get();
               assertEquals("err", view.name());
               checkErr(stacktrace, "Server Error(500): Something something dark",
                   (Map<String, Object>) view.model()
@@ -151,7 +150,7 @@ public class DefaultErrHandlerTest {
                     },
                     unit -> {
                       Result result = capturedResult.get();
-                      View view = (View) result.ifGet(ImmutableList.of(MediaType.html)).get();
+                      View view = (View) result.ifGet(List.of(MediaType.html)).get();
                       assertEquals("err", view.name());
                       checkErr(stacktrace, "Server Error(500): Something something &lt;em&gt;dark&lt;/em&gt;",
                               (Map<String, Object>) view.model()

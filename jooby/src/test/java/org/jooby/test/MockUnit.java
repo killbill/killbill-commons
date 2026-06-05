@@ -15,8 +15,6 @@
  */
 package org.jooby.test;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import static java.util.Objects.requireNonNull;
 import org.jooby.funzy.Try;
 import org.mockito.ArgumentCaptor;
@@ -96,7 +94,7 @@ public class MockUnit {
 
   private List<Object> mocks = new LinkedList<>();
 
-  private Multimap<Class, Object> globalMock = ArrayListMultimap.create();
+  private Map<Class, List<Object>> globalMock = new LinkedHashMap<>();
 
   private Map<Class, List<ArgumentCaptor<Object>>> captures = new LinkedHashMap<>();
 
@@ -228,18 +226,18 @@ public class MockUnit {
 
   public <T> T registerMock(final Class<T> type) {
     T mock = mock(type);
-    globalMock.put(type, mock);
+    globalMock.computeIfAbsent(type, k -> new ArrayList<>()).add(mock);
     return mock;
   }
 
   public <T> T registerMock(final Class<T> type, final T mock) {
-    globalMock.put(type, mock);
+    globalMock.computeIfAbsent(type, k -> new ArrayList<>()).add(mock);
     return mock;
   }
 
   public <T> T get(final Class<T> type) {
     try {
-      List<Object> collection = (List<Object>) requireNonNull(globalMock.get(type));
+      List<Object> collection = requireNonNull(globalMock.get(type), "Mock not found: " + type);
       Object result = collection.get(collection.size() - 1);
       // If this is a pre-mock that has been replaced by a construction mock, return the latter
       Object constructed = preMockToConstructed.get(result);
@@ -250,7 +248,7 @@ public class MockUnit {
   }
 
   public <T> T first(final Class<T> type) {
-    List<Object> collection = (List<Object>) requireNonNull(globalMock.get(type),
+    List<Object> collection = requireNonNull(globalMock.get(type),
         "Mock not found: " + type);
     Object result = collection.get(0);
     Object constructed = preMockToConstructed.get(result);

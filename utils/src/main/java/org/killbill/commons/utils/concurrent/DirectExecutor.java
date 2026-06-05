@@ -24,6 +24,9 @@ import java.util.concurrent.Executor;
  * to avoid circular dependency.
  *
  * An {@link Executor} that runs each task in the thread that invokes {@link Executor#execute}.
+ *
+ * Changes:
+ * - Guava implements toString() as "MoreExecutors.directExecutor()", while this enum as "DirectExecutor.INSTANCE"
  */
 public enum DirectExecutor implements Executor {
 
@@ -33,4 +36,10 @@ public enum DirectExecutor implements Executor {
     public void execute(final Runnable command) {
         command.run();
     }
+
+    @Override
+    public String toString() {
+        return "DirectExecutor.INSTANCE";
+    }
+
 }

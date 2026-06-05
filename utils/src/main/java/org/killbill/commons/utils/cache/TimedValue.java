@@ -27,7 +27,8 @@ class TimedValue<V> {
     private final V value;
 
     /**
-     * @param timeoutMillis timeout in millisecond
+     * @param timeoutMillis expire-after-write duration in milliseconds. The expiration timestamp is calculated when this
+     *                      value is created and is not extended by reads.
      */
     TimedValue(final long timeoutMillis, final V value) {
         this.expireTime = System.currentTimeMillis() + timeoutMillis;

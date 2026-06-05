@@ -15,8 +15,7 @@
  */
 package org.jooby.servlet;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 import static java.util.Objects.requireNonNull;
 
 import org.jooby.funzy.Try;
@@ -55,7 +54,7 @@ public class ServletServletResponse implements NativeResponse {
     if (headers == null || headers.size() == 0) {
       return Collections.emptyList();
     }
-    return ImmutableList.copyOf(headers);
+    return List.copyOf(headers);
   }
 
   @Override

@@ -22,7 +22,7 @@ package org.killbill.automaton.dot;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.MapJoiner;
 

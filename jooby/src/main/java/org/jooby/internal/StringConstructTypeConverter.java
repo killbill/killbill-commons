@@ -19,7 +19,7 @@ import java.util.Locale;
 
 import org.jooby.internal.parser.StringConstructorParser;
 
-import com.google.common.primitives.Primitives;
+import org.killbill.commons.utils.Primitives;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.spi.TypeConverter;

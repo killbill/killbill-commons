@@ -15,8 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
+import org.killbill.commons.utils.Splitter;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
@@ -25,6 +24,8 @@ import org.jooby.funzy.Throwing;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -332,11 +333,11 @@ public interface Env extends LifeCycle {
     String name = config.hasPath("application.env") ? config.getString("application.env") : "dev";
     return new Env() {
 
-      private ImmutableList.Builder<Throwing.Consumer<Registry>> start = ImmutableList.builder();
+      private List<Throwing.Consumer<Registry>> start = new ArrayList<>();
 
-      private ImmutableList.Builder<Throwing.Consumer<Registry>> started = ImmutableList.builder();
+      private List<Throwing.Consumer<Registry>> started = new ArrayList<>();
 
-      private ImmutableList.Builder<Throwing.Consumer<Registry>> shutdown = ImmutableList.builder();
+      private List<Throwing.Consumer<Registry>> shutdown = new ArrayList<>();
 
       private Map<String, Function<String, String>> xss = new HashMap<>();
 
@@ -393,7 +394,7 @@ public interface Env extends LifeCycle {
 
       @Override
       public List<Throwing.Consumer<Registry>> stopTasks() {
-        return shutdown.build();
+        return Collections.unmodifiableList(shutdown);
       }
 
       @Override
@@ -416,12 +417,12 @@ public interface Env extends LifeCycle {
 
       @Override
       public List<Throwing.Consumer<Registry>> startTasks() {
-        return this.start.build();
+        return Collections.unmodifiableList(this.start);
       }
 
       @Override
       public List<Throwing.Consumer<Registry>> startedTasks() {
-        return this.started.build();
+        return Collections.unmodifiableList(this.started);
       }
 
       @Override

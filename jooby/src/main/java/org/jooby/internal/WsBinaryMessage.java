@@ -31,8 +31,7 @@ import org.jooby.MediaType;
 import org.jooby.Mutant;
 import org.jooby.Status;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
+import java.nio.charset.StandardCharsets;
 import com.google.inject.TypeLiteral;
 
 public class WsBinaryMessage implements Mutant {
@@ -132,14 +131,14 @@ public class WsBinaryMessage implements Mutant {
       return (T) new ByteArrayInputStream(buffer.array());
     }
     if (rawType == Reader.class) {
-      return (T) new InputStreamReader(new ByteArrayInputStream(buffer.array()), Charsets.UTF_8);
+      return (T) new InputStreamReader(new ByteArrayInputStream(buffer.array()), StandardCharsets.UTF_8);
     }
     throw typeError(rawType);
   }
 
   @Override
   public Map<String, Mutant> toMap() {
-    return ImmutableMap.of("message", this);
+    return Map.of("message", this);
   }
 
   @Override

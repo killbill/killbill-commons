@@ -15,8 +15,8 @@
  */
 package org.jooby.internal.parser.bean;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
+import org.killbill.commons.utils.CharMatcher;
+import org.killbill.commons.utils.Splitter;
 import com.google.inject.TypeLiteral;
 import org.jooby.Request;
 import org.jooby.internal.ParameterNameProvider;

@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 /**
  * Verbatim copy to guava's Strings (v.31.0.1). <a href="https://github.com/killbill/killbill/issues/1615">See more</a>
@@ -69,7 +69,7 @@ public final class Strings {
      * @param string the string to test and possibly return
      * @return {@code string} itself if it is non-null; {@code ""} if it is null
      */
-    public static String nullToEmpty(@CheckForNull final String string) {
+    public static String nullToEmpty(@Nullable final String string) {
         return (string == null) ? "" : string;
     }
 
@@ -183,5 +183,39 @@ public final class Strings {
             result.append(ch);
         }
         return result.toString();
+    }
+
+    /**
+     * Verbatim copy of Guava's <code>Strings.padEnd(string, int, char)</code>. See:
+     * <a href="https://javadoc.io/doc/com.google.guava/guava/31.0.1-jre/com/google/common/base/Strings.html">javadoc</a>
+     */
+    public static String padEnd(final String string, final int minLength, final char padChar) {
+        Preconditions.checkNotNull(string); // eager for GWT.
+        if (string.length() >= minLength) {
+            return string;
+        }
+        StringBuilder sb = new StringBuilder(minLength);
+        sb.append(string);
+        for (int i = string.length(); i < minLength; i++) {
+            sb.append(padChar);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Verbatim copy of Guava's <code>Strings.padStart(string, int, char)</code>. See:
+     * <a href="https://javadoc.io/doc/com.google.guava/guava/31.0.1-jre/com/google/common/base/Strings.html">javadoc</a>
+     */
+    public static String padStart(String string, int minLength, char padChar) {
+        Preconditions.checkNotNull(string); // eager for GWT.
+        if (string.length() >= minLength) {
+            return string;
+        }
+        StringBuilder sb = new StringBuilder(minLength);
+        for (int i = string.length(); i < minLength; i++) {
+            sb.append(padChar);
+        }
+        sb.append(string);
+        return sb.toString();
     }
 }

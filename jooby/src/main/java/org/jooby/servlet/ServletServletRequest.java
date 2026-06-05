@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -39,9 +40,7 @@ import org.jooby.Router;
 import org.jooby.spi.NativeRequest;
 import org.jooby.spi.NativeUpload;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
+import org.killbill.commons.utils.Strings;
 
 public class ServletServletRequest implements NativeRequest {
 
@@ -107,11 +106,11 @@ public class ServletServletRequest implements NativeRequest {
   }
 
   private <T> List<T> toList(final Enumeration<T> enumeration) {
-    Builder<T> result = ImmutableList.builder();
+    List<T> result = new ArrayList<>();
     while (enumeration.hasMoreElements()) {
       result.add(enumeration.nextElement());
     }
-    return result.build();
+    return Collections.unmodifiableList(result);
   }
 
   @Override
@@ -152,7 +151,7 @@ public class ServletServletRequest implements NativeRequest {
   public List<Cookie> cookies() {
     jakarta.servlet.http.Cookie[] cookies = req.getCookies();
     if (cookies == null) {
-      return ImmutableList.of();
+      return Collections.emptyList();
     }
     return Arrays.stream(cookies)
         .map(c -> {

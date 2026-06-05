@@ -21,11 +21,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Optional;
 
 import org.jooby.Cookie.Definition;
-
-import com.google.common.collect.ImmutableList;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -384,7 +383,7 @@ public interface Response {
    */
   @Nonnull
   default Response header(final String name, final Object... values) {
-    return header(name, ImmutableList.builder().add(values).build());
+    return header(name, List.of(values));
   }
 
   /**

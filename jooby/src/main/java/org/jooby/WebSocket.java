@@ -15,7 +15,7 @@
  */
 package org.jooby;
 
-import com.google.common.base.Preconditions;
+import org.killbill.commons.utils.Preconditions;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import static java.util.Objects.requireNonNull;

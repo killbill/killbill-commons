@@ -22,50 +22,46 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.jooby.Parser;
 
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.TypeLiteral;
 
 @SuppressWarnings({"unchecked", "rawtypes" })
 public enum BuiltinParser implements Parser {
 
   Basic {
-    private final Map<Class<?>, Function<String, Object>> parsers = ImmutableMap
-        .<Class<?>, Function<String, Object>> builder()
-        .put(BigDecimal.class, NOT_EMPTY.andThen(BigDecimal::new))
-        .put(BigInteger.class, NOT_EMPTY.andThen(BigInteger::new))
-        .put(Byte.class, NOT_EMPTY.andThen(Byte::valueOf))
-        .put(byte.class, NOT_EMPTY.andThen(Byte::valueOf))
-        .put(Double.class, NOT_EMPTY.andThen(Double::valueOf))
-        .put(double.class, NOT_EMPTY.andThen(Double::valueOf))
-        .put(Float.class, NOT_EMPTY.andThen(Float::valueOf))
-        .put(float.class, NOT_EMPTY.andThen(Float::valueOf))
-        .put(Integer.class, NOT_EMPTY.andThen(Integer::valueOf))
-        .put(int.class, NOT_EMPTY.andThen(Integer::valueOf))
-        .put(Long.class, NOT_EMPTY.andThen(this::toLong))
-        .put(long.class, NOT_EMPTY.andThen(this::toLong))
-        .put(Short.class, NOT_EMPTY.andThen(Short::valueOf))
-        .put(short.class, NOT_EMPTY.andThen(Short::valueOf))
-        .put(Boolean.class, NOT_EMPTY.andThen(this::toBoolean))
-        .put(boolean.class, NOT_EMPTY.andThen(this::toBoolean))
-        .put(Character.class, NOT_EMPTY.andThen(this::toCharacter))
-        .put(char.class, NOT_EMPTY.andThen(this::toCharacter))
-        .put(String.class, this::toString)
-        .build();
+    private final Map<Class<?>, Function<String, Object>> parsers = Map.ofEntries(
+        Map.entry(BigDecimal.class, NOT_EMPTY.andThen(BigDecimal::new)),
+        Map.entry(BigInteger.class, NOT_EMPTY.andThen(BigInteger::new)),
+        Map.entry(Byte.class, NOT_EMPTY.andThen(Byte::valueOf)),
+        Map.entry(byte.class, NOT_EMPTY.andThen(Byte::valueOf)),
+        Map.entry(Double.class, NOT_EMPTY.andThen(Double::valueOf)),
+        Map.entry(double.class, NOT_EMPTY.andThen(Double::valueOf)),
+        Map.entry(Float.class, NOT_EMPTY.andThen(Float::valueOf)),
+        Map.entry(float.class, NOT_EMPTY.andThen(Float::valueOf)),
+        Map.entry(Integer.class, NOT_EMPTY.andThen(Integer::valueOf)),
+        Map.entry(int.class, NOT_EMPTY.andThen(Integer::valueOf)),
+        Map.entry(Long.class, NOT_EMPTY.andThen(this::toLong)),
+        Map.entry(long.class, NOT_EMPTY.andThen(this::toLong)),
+        Map.entry(Short.class, NOT_EMPTY.andThen(Short::valueOf)),
+        Map.entry(short.class, NOT_EMPTY.andThen(Short::valueOf)),
+        Map.entry(Boolean.class, NOT_EMPTY.andThen(this::toBoolean)),
+        Map.entry(boolean.class, NOT_EMPTY.andThen(this::toBoolean)),
+        Map.entry(Character.class, NOT_EMPTY.andThen(this::toCharacter)),
+        Map.entry(char.class, NOT_EMPTY.andThen(this::toCharacter)),
+        Map.entry(String.class, (Function<String, Object>) this::toString)
+    );
 
     @Override
     public Object parse(final TypeLiteral<?> type, final Parser.Context ctx) throws Throwable {
@@ -112,14 +108,10 @@ public enum BuiltinParser implements Parser {
   },
 
   Collection {
-    private final Map<Class<?>, Supplier<ImmutableCollection.Builder<?>>> parsers = ImmutableMap.<Class<?>, Supplier<ImmutableCollection.Builder<?>>> builder()
-        .put(List.class, ImmutableList.Builder::new)
-        .put(Set.class, ImmutableSet.Builder::new)
-        .put(SortedSet.class, ImmutableSortedSet::naturalOrder)
-        .build();
+    private static final Set<Class<?>> SUPPORTED = Set.of(List.class, Set.class, SortedSet.class);
 
     private boolean matches(final TypeLiteral<?> toType) {
-      return parsers.containsKey(toType.getRawType())
+      return SUPPORTED.contains(toType.getRawType())
           && toType.getType() instanceof ParameterizedType;
     }
 
@@ -127,13 +119,27 @@ public enum BuiltinParser implements Parser {
     public Object parse(final TypeLiteral<?> type, final Parser.Context ctx) throws Throwable {
       if (matches(type)) {
         return ctx.param(values -> {
-          ImmutableCollection.Builder builder = parsers.get(type.getRawType()).get();
+          Class<?> rawType = type.getRawType();
+          java.util.Collection result;
+          if (SortedSet.class.isAssignableFrom(rawType)) {
+            result = new TreeSet<>();
+          } else if (Set.class.isAssignableFrom(rawType)) {
+            result = new java.util.LinkedHashSet<>();
+          } else {
+            result = new ArrayList<>();
+          }
           TypeLiteral<?> paramType = TypeLiteral.get(((ParameterizedType) type.getType())
               .getActualTypeArguments()[0]);
           for (Object value : values) {
-            builder.add(ctx.next(paramType, value));
+            result.add(ctx.next(paramType, value));
           }
-          return builder.build();
+          if (SortedSet.class.isAssignableFrom(rawType)) {
+            return Collections.unmodifiableSortedSet((SortedSet) result);
+          } else if (Set.class.isAssignableFrom(rawType)) {
+            return Collections.unmodifiableSet((Set) result);
+          } else {
+            return Collections.unmodifiableList((List) result);
+          }
         });
       } else {
         return ctx.next();
@@ -196,7 +202,7 @@ public enum BuiltinParser implements Parser {
   Bytes {
     @Override
     public Object parse(final TypeLiteral<?> type, final Parser.Context ctx) throws Throwable {
-      if (type.getRawType() == byte[].class) {
+      if (byte[].class.equals(type.getRawType())) {
         return ctx.body(body -> body.bytes());
       }
       return ctx.next();

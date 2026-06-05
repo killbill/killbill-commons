@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
 
@@ -51,12 +51,12 @@ import static java.util.Objects.requireNonNull;
  * @since 4.0
  */
 public final class ThreadFactoryBuilder {
-    @CheckForNull
+    @Nullable
     private String nameFormat = null;
-    @CheckForNull private Boolean daemon = null;
-    @CheckForNull private Integer priority = null;
-    @CheckForNull private UncaughtExceptionHandler uncaughtExceptionHandler = null;
-    @CheckForNull private ThreadFactory backingThreadFactory = null;
+    @Nullable private Boolean daemon = null;
+    @Nullable private Integer priority = null;
+    @Nullable private UncaughtExceptionHandler uncaughtExceptionHandler = null;
+    @Nullable private ThreadFactory backingThreadFactory = null;
 
     /** Creates a new {@link ThreadFactory} builder. */
     public ThreadFactoryBuilder() {}

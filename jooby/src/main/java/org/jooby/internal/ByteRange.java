@@ -15,7 +15,7 @@
  */
 package org.jooby.internal;
 
-import com.google.common.base.Splitter;
+import org.killbill.commons.utils.Splitter;
 import org.jooby.Err;
 import org.jooby.Status;
 

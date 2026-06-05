@@ -17,6 +17,8 @@ package org.jooby.internal.handlers;
 
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,7 +33,6 @@ import org.jooby.test.MockUnit;
 import org.jooby.test.MockUnit.Block;
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
 
 public class HeadHandlerTest {
 
@@ -68,7 +69,7 @@ public class HeadHandlerTest {
         })
         .expect(len)
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet(unit.get(Route.Definition.class));
+          Set<Definition> routes = new HashSet<>(Collections.singleton(unit.get(Route.Definition.class)));
           new HeadHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
@@ -89,7 +90,7 @@ public class HeadHandlerTest {
         })
         .expect(next)
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet(unit.get(Route.Definition.class));
+          Set<Definition> routes = new HashSet<>(Collections.singleton(unit.get(Route.Definition.class)));
           new HeadHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
@@ -106,7 +107,7 @@ public class HeadHandlerTest {
         })
         .expect(next)
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet(unit.get(Route.Definition.class));
+          Set<Definition> routes = new HashSet<>(Collections.singleton(unit.get(Route.Definition.class)));
           new HeadHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
@@ -119,7 +120,7 @@ public class HeadHandlerTest {
         .expect(path)
         .expect(next)
         .run(unit -> {
-          Set<Definition> routes = Sets.newHashSet();
+          Set<Definition> routes = new HashSet<>();
           new HeadHandler(routes)
               .handle(unit.get(Request.class), unit.get(Response.class),
                   unit.get(Route.Chain.class));
