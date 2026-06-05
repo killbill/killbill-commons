@@ -26,6 +26,7 @@ import org.killbill.commons.utils.Preconditions;
 import org.killbill.commons.utils.annotation.VisibleForTesting;
 
 /**
+ * <strong>deprecated</scrong>. Use {@link CaffeineCache} instead via {@link CacheBuilder}.
  * <p>
  *     Default {@link Cache} implementation, that provides:
  *     <ol>
@@ -45,6 +46,7 @@ import org.killbill.commons.utils.annotation.VisibleForTesting;
  * @param <K> cache key
  * @param <V> cache value
  */
+@Deprecated
 public class DefaultCache<K, V> implements Cache<K, V> {
 
     public static final long NO_TIMEOUT = 0;
