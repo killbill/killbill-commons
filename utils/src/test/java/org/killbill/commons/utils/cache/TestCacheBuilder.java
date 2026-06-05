@@ -16,6 +16,10 @@
 
 package org.killbill.commons.utils.cache;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -48,28 +52,59 @@ public class TestCacheBuilder {
 
         cache.put(1, "A");
         cache.put(2, "B");
-        cache.put(3, "C"); // evicts 1
+        cache.put(3, "C");
 
-        Assert.assertNull(cache.get(1));
-        Assert.assertNotNull(cache.get(2));
-        Assert.assertNotNull(cache.get(3));
+        Assert.assertTrue(countPresent(cache, 1, 2, 3) <= 2);
     }
 
     @Test(groups = "fast")
     public void testNewBuilderMaximumSizeZero() {
+        final AtomicInteger loadCount = new AtomicInteger(0);
         final Cache<Integer, String> cache = CacheBuilder.<Integer, String>newBuilder()
                 .maximumSize(0)
-                .build(key -> "loaded-" + key);
+                .build(key -> {
+                    loadCount.incrementAndGet();
+                    return "loaded-" + key;
+                });
 
         // Always calls loader, never caches
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(cache.get(1), "loaded-1");
+        Assert.assertEquals(loadCount.get(), 2);
     }
 
     @Test(groups = "fast")
     public void testNewBuilderWithExpireAfterWrite() throws InterruptedException {
         final Cache<Integer, String> cache = CacheBuilder.<Integer, String>newBuilder()
-                .expireAfterWrite(1)
+                .expireAfterWrite(Duration.ofSeconds(1))
+                .build();
+
+        cache.put(1, "A");
+        Assert.assertEquals(cache.get(1), "A");
+
+        Thread.sleep(1100);
+        Assert.assertNull(cache.get(1));
+    }
+
+    @Test(groups = "fast")
+    public void testNewBuilderWithExpireAfterWriteDurationZero() {
+        final AtomicInteger loadCount = new AtomicInteger(0);
+        final Cache<Integer, String> cache = CacheBuilder.<Integer, String>newBuilder()
+                .expireAfterWrite(Duration.ZERO)
+                .build(key -> {
+                    loadCount.incrementAndGet();
+                    return "loaded-" + key;
+                });
+
+        Assert.assertEquals(cache.get(1), "loaded-1");
+        Assert.assertEquals(cache.get(1), "loaded-1");
+        Assert.assertEquals(loadCount.get(), 2);
+    }
+
+    @Test(groups = "fast")
+    public void testNewBuilderWithExpireAfterWriteTimeUnit() throws InterruptedException {
+        final Cache<Integer, String> cache = CacheBuilder.<Integer, String>newBuilder()
+                .expireAfterWrite(1, TimeUnit.SECONDS)
                 .build();
 
         cache.put(1, "A");
@@ -100,9 +135,7 @@ public class TestCacheBuilder {
         cache.put(2, "B");
         cache.put(3, "C");
 
-        Assert.assertNull(cache.get(1));
-        Assert.assertNotNull(cache.get(2));
-        Assert.assertNotNull(cache.get(3));
+        Assert.assertTrue(countPresent(cache, 1, 2, 3) <= 2);
     }
 
     @Test(groups = "fast")
@@ -164,6 +197,20 @@ public class TestCacheBuilder {
     }
 
     @Test(groups = "fast")
+    public void testFromSpecExpireAfterWriteZero() {
+        final AtomicInteger loadCount = new AtomicInteger(0);
+        final Cache<Integer, String> cache = CacheBuilder.<Integer, String>from("expireAfterWrite=0")
+                .build(key -> {
+                    loadCount.incrementAndGet();
+                    return "loaded-" + key;
+                });
+
+        Assert.assertEquals(cache.get(1), "loaded-1");
+        Assert.assertEquals(cache.get(1), "loaded-1");
+        Assert.assertEquals(loadCount.get(), 2);
+    }
+
+    @Test(groups = "fast")
     public void testFromSpecMultipleKeys() {
         final Cache<Integer, String> cache = CacheBuilder.<Integer, String>from(
                 "concurrencyLevel=8,maximumSize=3").build();
@@ -173,7 +220,7 @@ public class TestCacheBuilder {
         cache.put(3, "C");
         cache.put(4, "D");
 
-        Assert.assertNull(cache.get(1));
+        Assert.assertTrue(countPresent(cache, 1, 2, 3, 4) <= 3);
     }
 
     @Test(groups = "fast")
@@ -226,10 +273,40 @@ public class TestCacheBuilder {
     @Test(groups = "fast")
     public void testExpireAfterWriteRejectsNegative() {
         try {
-            CacheBuilder.<String, String>newBuilder().expireAfterWrite(-1);
+            CacheBuilder.<String, String>newBuilder().expireAfterWrite(-1, TimeUnit.SECONDS);
             Assert.fail("Should reject negative expireAfterWrite");
         } catch (final IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("expireAfterWrite must be >= 0"));
+        }
+    }
+
+    @Test(groups = "fast")
+    public void testExpireAfterWriteDurationRejectsNegative() {
+        try {
+            CacheBuilder.<String, String>newBuilder().expireAfterWrite(Duration.ofNanos(-1));
+            Assert.fail("Should reject negative expireAfterWrite");
+        } catch (final IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("expireAfterWrite must be >= 0"));
+        }
+    }
+
+    @Test(groups = "fast")
+    public void testExpireAfterWriteDurationRejectsNull() {
+        try {
+            CacheBuilder.<String, String>newBuilder().expireAfterWrite((Duration) null);
+            Assert.fail("Should reject null expireAfterWrite duration");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "expireAfterWrite duration is null");
+        }
+    }
+
+    @Test(groups = "fast")
+    public void testExpireAfterWriteTimeUnitRejectsNullUnit() {
+        try {
+            CacheBuilder.<String, String>newBuilder().expireAfterWrite(1, null);
+            Assert.fail("Should reject null expireAfterWrite unit");
+        } catch (final NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "expireAfterWrite unit is null");
         }
     }
 
@@ -251,5 +328,15 @@ public class TestCacheBuilder {
         } catch (final IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Unknown duration unit"));
         }
+    }
+
+    private int countPresent(final Cache<Integer, String> cache, final int... keys) {
+        int present = 0;
+        for (final int key : keys) {
+            if (cache.get(key) != null) {
+                present++;
+            }
+        }
+        return present;
     }
 }

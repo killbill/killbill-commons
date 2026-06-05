@@ -16,30 +16,29 @@
 
 package org.killbill.commons.utils.cache;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.killbill.commons.utils.Preconditions;
 
 /**
- * Builder for constructing {@link ConcurrentCache} instances, supporting both programmatic configuration
+ * Builder for constructing {@link Cache} instances, supporting both programmatic configuration
  * and Guava-compatible spec string parsing via {@link #from(String)}.
  *
  * <p>Spec string format: comma-separated {@code key=value} pairs. Supported keys:</p>
  * <ul>
- *     <li>{@code maximumSize=N} — max cache entries (0 = no caching)</li>
- *     <li>{@code concurrencyLevel=N} — ConcurrentHashMap sizing hint</li>
- *     <li>{@code expireAfterWrite=Nd|Nh|Nm|Ns} — time-to-live (d=days, h=hours, m=minutes, s=seconds)</li>
+ *     <li>{@code maximumSize=N} — max cache entries, delegated to Caffeine (0 = do not retain entries)</li>
+ *     <li>{@code concurrencyLevel=N} — accepted for compatibility, not used by Caffeine</li>
+ *     <li>{@code expireAfterWrite=Nd|Nh|Nm|Ns} — time-to-live (d=days, h=hours, m=minutes, s=seconds, 0 = immediate expiry)</li>
  * </ul>
  *
  * <p>Example: {@code CacheBuilder.from("maximumSize=200,concurrencyLevel=8").build(loader)}</p>
  */
 public final class CacheBuilder<K, V> {
 
-    private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
-
-    private int maxSize = Integer.MAX_VALUE;
-    private long timeoutInSecond = ConcurrentCache.NO_TIMEOUT;
-    private int concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
+    private Long maxSize;
+    private Duration expireAfterWrite;
 
     private CacheBuilder() {
     }
@@ -52,11 +51,11 @@ public final class CacheBuilder<K, V> {
     }
 
     /**
-     * Creates a builder configured from a Guava-compatible spec string.
+     * Creates a builder configured from a Guava-compatible spec string. Supported configurations are:
+     * <code>maximumSize</code>, <code>concurrencyLevel</code> (implementation dependent) and
+     * <code>expireAfterWrite</code>.
      *
-     * @param spec comma-separated key=value pairs (e.g. "maximumSize=200,concurrencyLevel=8")
-     * @return configured builder
-     * @throws IllegalArgumentException if the spec contains invalid values
+     * <p>Ex: {@code CacheBuilder.from("maximumSize=200,concurrencyLevel=8,expireAfterWrite=20s").build(loader)}</p>
      */
     public static <K, V> CacheBuilder<K, V> from(final String spec) {
         Preconditions.checkNotNull(spec, "spec is null");
@@ -82,13 +81,13 @@ public final class CacheBuilder<K, V> {
 
             switch (key) {
                 case "maximumSize":
-                    builder.maximumSize(Integer.parseInt(value));
+                    builder.maximumSize(Long.parseLong(value));
                     break;
                 case "concurrencyLevel":
                     builder.concurrencyLevel(Integer.parseInt(value));
                     break;
                 case "expireAfterWrite":
-                    builder.timeoutInSecond = parseDuration(value);
+                    builder.expireAfterWrite(parseDuration(value));
                     break;
                 default:
                     // Ignore unknown keys for forward compatibility
@@ -99,32 +98,45 @@ public final class CacheBuilder<K, V> {
     }
 
     /**
-     * Sets the maximum number of entries. 0 means no caching (loader called every time, nothing stored).
+     * Sets the maximum number of entries. 0 means entries are not retained.
      */
     public CacheBuilder<K, V> maximumSize(final long maxSize) {
         Preconditions.checkArgument(maxSize >= 0, "maximumSize must be >= 0, got: %s", maxSize);
-        this.maxSize = (int) Math.min(maxSize, Integer.MAX_VALUE);
+        this.maxSize = maxSize;
         return this;
     }
 
     /**
-     * Sets the concurrency level hint for the underlying ConcurrentHashMap.
+     * Accepts the concurrency level setting for Guava spec compatibility. Caffeine does not support this setting and
+     * the value is ignored.
      */
     public CacheBuilder<K, V> concurrencyLevel(final int concurrencyLevel) {
         Preconditions.checkArgument(concurrencyLevel > 0, "concurrencyLevel must be > 0, got: %s", concurrencyLevel);
-        this.concurrencyLevel = concurrencyLevel;
         return this;
     }
 
     /**
      * Sets the time-to-live for cache entries.
      *
-     * @param timeoutInSecond TTL in seconds. 0 means no expiry.
+     * @param duration TTL duration. 0 means immediate expiry.
      */
-    public CacheBuilder<K, V> expireAfterWrite(final long timeoutInSecond) {
-        Preconditions.checkArgument(timeoutInSecond >= 0, "expireAfterWrite must be >= 0, got: %s", timeoutInSecond);
-        this.timeoutInSecond = timeoutInSecond;
+    public CacheBuilder<K, V> expireAfterWrite(final Duration duration) {
+        Preconditions.checkNotNull(duration, "expireAfterWrite duration is null");
+        Preconditions.checkArgument(!duration.isNegative(), "expireAfterWrite must be >= 0, got: %s", duration);
+        this.expireAfterWrite = duration;
         return this;
+    }
+
+    /**
+     * Sets the time-to-live for cache entries.
+     *
+     * @param duration TTL duration. 0 means immediate expiry.
+     * @param unit TTL duration unit
+     */
+    public CacheBuilder<K, V> expireAfterWrite(final long duration, final TimeUnit unit) {
+        Preconditions.checkArgument(duration >= 0, "expireAfterWrite must be >= 0, got: %s", duration);
+        Preconditions.checkNotNull(unit, "expireAfterWrite unit is null");
+        return expireAfterWrite(Duration.ofNanos(unit.toNanos(duration)));
     }
 
     /**
@@ -141,27 +153,27 @@ public final class CacheBuilder<K, V> {
      * @param loader function to load values on cache miss. May be null.
      */
     public Cache<K, V> build(final Function<K, V> loader) {
-        return new ConcurrentCache<>(maxSize, timeoutInSecond, concurrencyLevel, loader);
+        return new CaffeineCache<>(maxSize, expireAfterWrite, loader);
     }
 
     /**
      * Parses a duration string: a number followed by a unit (d=days, h=hours, m=minutes, s=seconds).
      * If no unit suffix, assumes seconds.
      */
-    private static long parseDuration(final String value) {
+    private static Duration parseDuration(final String value) {
         Preconditions.checkArgument(!value.isEmpty(), "expireAfterWrite value is empty");
 
         final char last = value.charAt(value.length() - 1);
         if (Character.isDigit(last)) {
-            return Long.parseLong(value);
+            return Duration.ofSeconds(Long.parseLong(value));
         }
 
         final long number = Long.parseLong(value.substring(0, value.length() - 1));
         switch (last) {
-            case 'd': return number * 86400;
-            case 'h': return number * 3600;
-            case 'm': return number * 60;
-            case 's': return number;
+            case 'd': return Duration.ofDays(number);
+            case 'h': return Duration.ofHours(number);
+            case 'm': return Duration.ofMinutes(number);
+            case 's': return Duration.ofSeconds(number);
             default:
                 throw new IllegalArgumentException("Unknown duration unit: " + last + " in '" + value + "'");
         }
