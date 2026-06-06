@@ -243,9 +243,52 @@ public class TestCacheBuilder {
     public void testFromSpecIgnoresUnknownKeys() {
         // Unknown keys should be silently ignored
         final Cache<String, String> cache = CacheBuilder.<String, String>from(
-                "maximumSize=10,recordStats,weakKeys").build();
+                "maximumSize=10,recordStats").build();
         cache.put("a", "1");
         Assert.assertEquals(cache.get("a"), "1");
+    }
+
+    // --- weakKeys ---
+
+    @Test(groups = "fast")
+    public void testNewBuilderWithWeakKeys() {
+        final Cache<String, String> cache = CacheBuilder.<String, String>newBuilder()
+                .weakKeys()
+                .build();
+
+        cache.put("key", "value");
+        Assert.assertEquals(cache.get("key"), "value");
+
+        cache.invalidate("key");
+        Assert.assertNull(cache.get("key"));
+    }
+
+    @Test(groups = "fast")
+    public void testFromSpecWeakKeys() {
+        final Cache<String, String> cache = CacheBuilder.<String, String>from("weakKeys")
+                .build();
+
+        cache.put("k", "v");
+        Assert.assertEquals(cache.get("k"), "v");
+    }
+
+    @Test(groups = "fast")
+    public void testFromSpecWeakKeysWithOtherSettings() {
+        final Cache<String, String> cache = CacheBuilder.<String, String>from("weakKeys,maximumSize=100")
+                .build();
+
+        cache.put("k", "v");
+        Assert.assertEquals(cache.get("k"), "v");
+    }
+
+    @Test(groups = "fast")
+    public void testWeakKeysRejectsDoubleSet() {
+        try {
+            CacheBuilder.<String, String>newBuilder().weakKeys().weakKeys();
+            Assert.fail("Should reject setting weakKeys twice");
+        } catch (final IllegalStateException e) {
+            Assert.assertTrue(e.getMessage().contains("Key strength was already set"));
+        }
     }
 
     // --- Validation ---

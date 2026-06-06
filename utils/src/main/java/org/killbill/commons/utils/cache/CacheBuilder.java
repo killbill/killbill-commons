@@ -22,6 +22,8 @@ import java.util.function.Function;
 
 import org.killbill.commons.utils.Preconditions;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 /**
  * Builder for constructing {@link Cache} instances, supporting both programmatic configuration
  * and Guava-compatible spec string parsing via {@link #from(String)}.
@@ -39,6 +41,7 @@ public final class CacheBuilder<K, V> {
 
     private Long maxSize;
     private Duration expireAfterWrite;
+    private Strength keyStrength;
 
     private CacheBuilder() {
     }
@@ -72,7 +75,15 @@ public final class CacheBuilder<K, V> {
             }
             final int eq = trimmed.indexOf('=');
             if (eq < 0) {
-                // Bare key (e.g. "recordStats") — ignore
+                // Bare key (e.g. "weakKeys")
+                switch (trimmed) {
+                    case "weakKeys":
+                        builder.weakKeys();
+                        break;
+                    default:
+                        // Ignore unknown bare keys for forward compatibility
+                        break;
+                }
                 continue;
             }
 
@@ -140,6 +151,17 @@ public final class CacheBuilder<K, V> {
     }
 
     /**
+     * Implementation behavior will match what described by Caffeine's
+     * <a href="https://www.javadoc.io/doc/com.github.ben-manes.caffeine/caffeine/latest/com.github.benmanes.caffeine/com/github/benmanes/caffeine/cache/Caffeine.html#weakKeys()">{@code weakKeys()}</a>
+     * @throws IllegalStateException if the key strength was already set
+     */
+    public CacheBuilder<K, V> weakKeys() {
+        Preconditions.checkState(keyStrength == null, "Key strength was already set to: " + keyStrength);
+        keyStrength = Strength.WEAK;
+        return this;
+    }
+
+    /**
      * Builds a cache without a loader. Values must be populated via {@link Cache#put} or
      * {@link Cache#getOrLoad}.
      */
@@ -153,7 +175,7 @@ public final class CacheBuilder<K, V> {
      * @param loader function to load values on cache miss. May be null.
      */
     public Cache<K, V> build(final Function<K, V> loader) {
-        return new CaffeineCache<>(maxSize, expireAfterWrite, loader);
+        return new CaffeineCache<>(maxSize, expireAfterWrite, loader, keyStrength);
     }
 
     /**

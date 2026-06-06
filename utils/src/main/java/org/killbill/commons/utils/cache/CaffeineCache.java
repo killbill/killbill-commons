@@ -21,6 +21,8 @@ import java.util.function.Function;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import jakarta.annotation.Nullable;
+
 import org.killbill.commons.utils.Preconditions;
 import org.killbill.commons.utils.annotation.VisibleForTesting;
 
@@ -29,7 +31,10 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
 
     private final LoadingCache<K, V> delegate;
 
-    CaffeineCache(final Long maxSize, final Duration expireAfterWrite, final Function<K, V> cacheLoader) {
+    CaffeineCache(final Long maxSize,
+                  final Duration expireAfterWrite,
+                  @Nullable final Function<K, V> cacheLoader,
+                  @Nullable final Strength keyStrength) {
         Preconditions.checkArgument(maxSize == null || maxSize >= 0, "cache maxSize should >= 0");
         Preconditions.checkArgument(expireAfterWrite == null || !expireAfterWrite.isNegative(), "cache expireAfterWrite should >= 0");
 
@@ -40,6 +45,10 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
         }
         if (expireAfterWrite != null) {
             builder.expireAfterWrite(expireAfterWrite);
+        }
+        // Additional check for weak. Otherwise, SOFT will also create weakKeys(), which weird.
+        if (keyStrength != null && keyStrength.equals(Strength.WEAK)) {
+            builder.weakKeys();
         }
 
         this.delegate = builder.build(cacheLoader == null ? key -> null : cacheLoader::apply);

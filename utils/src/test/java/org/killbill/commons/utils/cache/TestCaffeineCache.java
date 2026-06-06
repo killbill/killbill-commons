@@ -24,16 +24,18 @@ import org.testng.annotations.Test;
 
 public class TestCaffeineCache {
 
+    // --- Basic operations ---
+
     @Test(groups = "fast")
     public void testGetReturnsNullWithoutLoader() {
-        final Cache<String, String> cache = new CaffeineCache<>(null, null, null);
+        final Cache<String, String> cache = new CaffeineCache<>(null, null, null, null);
 
         Assert.assertNull(cache.get("missing"));
     }
 
     @Test(groups = "fast")
     public void testPutGetAndInvalidate() {
-        final Cache<String, String> cache = new CaffeineCache<>(null, null, null);
+        final Cache<String, String> cache = new CaffeineCache<>(null, null, null, null);
 
         cache.put("key", "value");
         Assert.assertEquals(cache.get("key"), "value");
@@ -42,23 +44,27 @@ public class TestCaffeineCache {
         Assert.assertNull(cache.get("key"));
     }
 
+    // --- Configured loader ---
+
     @Test(groups = "fast")
     public void testConfiguredLoaderCachesValue() {
         final AtomicInteger loadCount = new AtomicInteger();
         final Cache<Integer, String> cache = new CaffeineCache<>(null, null, key -> {
             loadCount.incrementAndGet();
             return "loaded-" + key;
-        });
+        }, null);
 
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(loadCount.get(), 1);
     }
 
+    // --- getOrLoad ---
+
     @Test(groups = "fast")
     public void testGetOrLoadCachesValue() {
         final AtomicInteger loadCount = new AtomicInteger();
-        final Cache<Integer, String> cache = new CaffeineCache<>(null, null, null);
+        final Cache<Integer, String> cache = new CaffeineCache<>(null, null, null, null);
 
         Assert.assertEquals(cache.getOrLoad(1, key -> {
             loadCount.incrementAndGet();
@@ -75,7 +81,7 @@ public class TestCaffeineCache {
         final Cache<Integer, String> cache = new CaffeineCache<>(null, null, key -> {
             configuredLoaderCalls.incrementAndGet();
             return "configured-" + key;
-        });
+        }, null);
 
         Assert.assertEquals(cache.getOrLoad(1, key -> {
             suppliedLoaderCalls.incrementAndGet();
@@ -88,7 +94,7 @@ public class TestCaffeineCache {
     @Test(groups = "fast")
     public void testGetOrLoadReturnsCachedValue() {
         final AtomicInteger suppliedLoaderCalls = new AtomicInteger();
-        final Cache<Integer, String> cache = new CaffeineCache<>(null, null, key -> "configured-" + key);
+        final Cache<Integer, String> cache = new CaffeineCache<>(null, null, key -> "configured-" + key, null);
 
         Assert.assertEquals(cache.get(1), "configured-1");
         Assert.assertEquals(cache.getOrLoad(1, key -> {
@@ -98,9 +104,11 @@ public class TestCaffeineCache {
         Assert.assertEquals(suppliedLoaderCalls.get(), 0);
     }
 
+    // --- maximumSize ---
+
     @Test(groups = "fast")
     public void testMaximumSizeBoundsEntries() {
-        final Cache<Integer, String> cache = new CaffeineCache<>(2L, null, null);
+        final Cache<Integer, String> cache = new CaffeineCache<>(2L, null, null, null);
 
         cache.put(1, "A");
         cache.put(2, "B");
@@ -115,12 +123,14 @@ public class TestCaffeineCache {
         final Cache<Integer, String> cache = new CaffeineCache<>(0L, null, key -> {
             loadCount.incrementAndGet();
             return "loaded-" + key;
-        });
+        }, null);
 
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(loadCount.get(), 2);
     }
+
+    // --- expireAfterWrite ---
 
     @Test(groups = "fast")
     public void testExpireAfterWriteZeroDoesNotRetainEntries() {
@@ -128,16 +138,55 @@ public class TestCaffeineCache {
         final Cache<Integer, String> cache = new CaffeineCache<>(null, Duration.ZERO, key -> {
             loadCount.incrementAndGet();
             return "loaded-" + key;
-        });
+        }, null);
 
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(cache.get(1), "loaded-1");
         Assert.assertEquals(loadCount.get(), 2);
     }
 
+    // --- weakKeys ---
+
+    @Test(groups = "fast")
+    public void testWeakKeysConfigurationAccepted() {
+        // Verifies weakKeys doesn't throw and cache is functional
+        final Cache<String, String> cache = new CaffeineCache<>(null, null, null, Strength.WEAK);
+
+        cache.put("key", "value");
+        Assert.assertEquals(cache.get("key"), "value");
+
+        cache.invalidate("key");
+        Assert.assertNull(cache.get("key"));
+    }
+
+    @Test(groups = "fast")
+    public void testWeakKeysWithLoader() {
+        final AtomicInteger loadCount = new AtomicInteger();
+        final Cache<String, String> cache = new CaffeineCache<>(null, null, key -> {
+            loadCount.incrementAndGet();
+            return "loaded-" + key;
+        }, Strength.WEAK);
+
+        Assert.assertEquals(cache.get("myKey"), "loaded-myKey");
+        Assert.assertEquals(cache.get("myKey"), "loaded-myKey");
+        // Loaded once, served from cache on second call
+        Assert.assertEquals(loadCount.get(), 1);
+    }
+
+    @Test(groups = "fast")
+    public void testWeakKeysWithMaxSizeAndLoader() {
+        final Cache<String, String> cache = new CaffeineCache<>(100L, null, key -> "loaded-" + key, Strength.WEAK);
+
+        Assert.assertEquals(cache.get("a"), "loaded-a");
+        Assert.assertEquals(cache.get("b"), "loaded-b");
+        Assert.assertEquals(cache.get("a"), "loaded-a");
+    }
+
+    // --- Null argument validation ---
+
     @Test(groups = "fast")
     public void testNullArgumentsRejected() {
-        final Cache<Integer, String> cache = new CaffeineCache<>(null, null, null);
+        final Cache<Integer, String> cache = new CaffeineCache<>(null, null, null, null);
 
         assertThrowsNullPointerException(() -> cache.get(null), "Cannot #get() cache with key = null");
         assertThrowsNullPointerException(() -> cache.getOrLoad(1, null), "loader parameter in #getOrLoad() is null");
@@ -145,6 +194,8 @@ public class TestCaffeineCache {
         assertThrowsNullPointerException(() -> cache.put(1, null), "value in #put() is null");
         assertThrowsNullPointerException(() -> cache.invalidate(null), "Cannot invalidate. Cache with null key is not allowed");
     }
+
+    // --- Helpers ---
 
     private int countPresent(final Cache<Integer, String> cache, final int... keys) {
         int present = 0;
