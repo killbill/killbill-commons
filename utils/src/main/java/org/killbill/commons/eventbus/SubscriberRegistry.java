@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+
 import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
@@ -41,8 +41,7 @@ import org.killbill.commons.utils.Primitives;
 import org.killbill.commons.utils.TypeToken;
 import org.killbill.commons.utils.annotation.VisibleForTesting;
 import org.killbill.commons.utils.cache.Cache;
-import org.killbill.commons.utils.cache.DefaultCache;
-import org.killbill.commons.utils.cache.DefaultSynchronizedCache;
+import org.killbill.commons.utils.cache.CacheBuilder;
 import org.killbill.commons.utils.collect.Iterators;
 import org.killbill.commons.utils.collect.MultiValueHashMap;
 import org.killbill.commons.utils.collect.MultiValueMap;
@@ -141,11 +140,10 @@ final class SubscriberRegistry {
      * instances of this class; this greatly improves performance if multiple EventBus instances are
      * created and objects of the same class are registered on all of them.
      */
-    private static final Cache<Class<?>, List<Method>> subscriberMethodsCache = new DefaultSynchronizedCache<>(
-            Integer.MAX_VALUE,
-            DefaultCache.NO_TIMEOUT,
-            SubscriberRegistry::getAnnotatedMethodsNotCached
-    );
+    private static final Cache<Class<?>, List<Method>> subscriberMethodsCache =
+            CacheBuilder.<Class<?>, List<Method>>newBuilder()
+                        .weakKeys()
+                        .build(SubscriberRegistry::getAnnotatedMethodsNotCached);
 
     /**
      * Returns all subscribers for the given listener grouped by the type of event they subscribe to.
@@ -197,15 +195,11 @@ final class SubscriberRegistry {
      *
      * <a href="https://github.com/google/guava/blob/master/guava/src/com/google/common/eventbus/SubscriberRegistry.java#L218">Guava version</a>
      * */
-    private static final Cache<Class<?>, Set<Class<?>>> flattenHierarchyCache = new DefaultSynchronizedCache<>(
-            // max size in our cache is mandatory. OTOH, guava version of flattenHierarchyCache have no maxSize.
-            Integer.MAX_VALUE,
-            DefaultCache.NO_TIMEOUT,
-            // Note Issue: 1615: Originally, flattenHierarchyCache data type was "LoadingCache" from Guava:
-            // https://github.com/google/guava/blob/master/guava/src/com/google/common/eventbus/SubscriberRegistry.java#L219
-            // CacheLoader used ImmutableSet as return value. Somehow ImmutableSet maintains its order, where
-            // HashSet isn't. This is why we have LinkedHashSet here.
-            key -> new LinkedHashSet<>(TypeToken.getRawTypes(key)));
+    /** Global cache of classes to their flattened hierarchy of supertypes. */
+    private static final Cache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
+            CacheBuilder.<Class<?>, Set<Class<?>>>newBuilder()
+                        .weakKeys()
+                        .build(TypeToken::getRawTypes);
 
     /**
      * Flattens a class's type hierarchy into a set of {@code Class} objects including all
