@@ -17,7 +17,12 @@
 
 package org.killbill.commons.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,31 +34,35 @@ public final class TypeToken {
      * Mimic the same behavior of Guava's {@code TypeToken.of(clazz).getTypes().rawTypes()}.
      */
     public static Set<Class<?>> getRawTypes(final Class<?> clazz) {
-        final Set<Class<?>> result = new LinkedHashSet<>();
-        result.add(clazz);
-        result.addAll(getInterfaces(clazz));
+        final Map<Class<?>, Integer> depths = new HashMap<>();
+        collectTypes(clazz, depths);
 
-        Class<?> superClass = clazz.getSuperclass();
-        while (superClass != null) {
-            result.addAll(getRawTypes(superClass));
-            superClass = superClass.getSuperclass();
-        }
+        final List<Class<?>> types = new ArrayList<>(depths.keySet());
+        types.sort((left, right) -> depths.get(right).compareTo(depths.get(left)));
 
-        return result;
+        return Collections.unmodifiableSet(new LinkedHashSet<>(types));
     }
 
-    static Set<Class<?>> getInterfaces(final Class<?> clazz) {
-        final Set<Class<?>> result = new LinkedHashSet<>();
-
-        Set<Class<?>> interfaces = Set.of(clazz.getInterfaces());
-        while (!interfaces.isEmpty()) {
-            result.addAll(interfaces);
-            for (final Class<?> anInterface : interfaces) {
-                interfaces = Set.of(anInterface.getInterfaces());
-                result.addAll(interfaces);
-            }
+    private static int collectTypes(final Class<?> type, final Map<Class<?>, Integer> depths) {
+        final Integer existing = depths.get(type);
+        if (existing != null) {
+            return existing;
         }
 
-        return result;
+        int aboveMe = type.isInterface() ? 1 : 0;
+
+        for (final Class<?> interfaceType : type.getInterfaces()) {
+            aboveMe = Math.max(aboveMe, collectTypes(interfaceType, depths));
+        }
+
+        final Class<?> superclass = type.getSuperclass();
+        if (superclass != null) {
+            aboveMe = Math.max(aboveMe, collectTypes(superclass, depths));
+        }
+
+        final int depth = aboveMe + 1;
+        depths.put(type, depth);
+        return depth;
     }
+
 }
