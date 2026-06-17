@@ -24,7 +24,7 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import javax.sql.DataSource;

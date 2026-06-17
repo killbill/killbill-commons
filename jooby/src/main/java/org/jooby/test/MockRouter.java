@@ -15,9 +15,6 @@
  */
 package org.jooby.test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.reflect.Reflection;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -37,8 +34,10 @@ import org.jooby.Status;
 import org.jooby.funzy.Try;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -251,7 +250,7 @@ public class MockRouter {
 
     @Override
     public List<Route> routes() {
-      return ImmutableList.of();
+      return Collections.emptyList();
     }
 
     @Override
@@ -435,7 +434,7 @@ public class MockRouter {
 
   @SuppressWarnings("rawtypes")
   private static Injector proxyInjector(final ClassLoader loader, final Map<Key, Object> registry) {
-    return Reflection.newProxy(Injector.class, (proxy, method, args) -> {
+    return (Injector) Proxy.newProxyInstance(Injector.class.getClassLoader(), new Class<?>[]{Injector.class}, (proxy, method, args) -> {
       if (method.getName().equals("getInstance")) {
         Key key = (Key) args[0];
         Object value = registry.get(key);
@@ -445,7 +444,7 @@ public class MockRouter {
           // Skip proxy and some useless lines:
           Try.apply(() -> {
             StackTraceElement[] stacktrace = iex.getStackTrace();
-            return Lists.newArrayList(stacktrace).subList(CLEAN_STACK, stacktrace.length);
+            return new ArrayList<>(Arrays.asList(stacktrace)).subList(CLEAN_STACK, stacktrace.length);
           }).onSuccess(stacktrace -> iex
               .setStackTrace(stacktrace.toArray(new StackTraceElement[stacktrace.size()])));
           throw iex;
@@ -465,8 +464,9 @@ public class MockRouter {
     }
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private static <T> T empty(final Class<T> type) {
-    return Reflection.newProxy(type, (proxy, method, args) -> {
+    return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, (proxy, method, args) -> {
       throw new UnsupportedOperationException(method.toString());
     });
   }

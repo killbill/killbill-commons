@@ -20,8 +20,8 @@ package org.killbill.commons.metrics.guice.annotation;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Looks for annotations on the enclosing class of the method.

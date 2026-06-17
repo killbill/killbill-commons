@@ -15,7 +15,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -291,16 +290,16 @@ public class WebSocketImplTest {
         .run(unit -> {
           WebSocketImpl ws = new WebSocketImpl(
               unit.get(WebSocket.OnOpen1.class), path, pattern, vars, consumes, produces);
-          assertEquals(ImmutableMap.of(), ws.attributes());
+          assertEquals(Map.of(), ws.attributes());
 
           ws.set("foo", "bar");
           assertEquals("bar", ws.get("foo"));
           assertEquals(Optional.empty(), ws.ifGet("bar"));
           assertEquals(Optional.of("bar"), ws.unset("foo"));
-          assertEquals(ImmutableMap.of(), ws.attributes());
+          assertEquals(Map.of(), ws.attributes());
           ws.set("foo", "bar");
           ws.unset();
-          assertEquals(ImmutableMap.of(), ws.attributes());
+          assertEquals(Map.of(), ws.attributes());
 
           try {
             ws.get("foo");

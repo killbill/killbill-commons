@@ -15,7 +15,7 @@
  */
 package org.jooby.servlet;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 import static org.mockito.Mockito.when;
 import org.jooby.funzy.Throwing;
 import org.jooby.test.MockUnit;

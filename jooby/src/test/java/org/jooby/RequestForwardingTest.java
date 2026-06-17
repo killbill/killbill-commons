@@ -31,8 +31,7 @@ import org.jooby.Request.Forwarding;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
+import java.nio.charset.StandardCharsets;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
@@ -415,10 +414,10 @@ public class RequestForwardingTest {
     new MockUnit(Request.class)
         .expect(unit -> {
           Request req = unit.get(Request.class);
-          when(req.charset()).thenReturn(Charsets.UTF_8);
+          when(req.charset()).thenReturn(StandardCharsets.UTF_8);
         })
         .run(unit -> {
-          assertEquals(Charsets.UTF_8, new Request.Forwarding(unit.get(Request.class)).charset());
+          assertEquals(StandardCharsets.UTF_8, new Request.Forwarding(unit.get(Request.class)).charset());
         });
   }
 
@@ -675,11 +674,11 @@ public class RequestForwardingTest {
     new MockUnit(Request.class)
         .expect(unit -> {
           Request req = unit.get(Request.class);
-          when(req.push("/path", ImmutableMap.of("k", "v"))).thenReturn(req);
+          when(req.push("/path", Map.of("k", "v"))).thenReturn(req);
         })
         .run(unit -> {
           Forwarding req = new Request.Forwarding(unit.get(Request.class));
-          assertEquals(req, req.push("/path", ImmutableMap.of("k", "v")));
+          assertEquals(req, req.push("/path", Map.of("k", "v")));
         });
   }
 

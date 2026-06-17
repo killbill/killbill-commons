@@ -19,9 +19,10 @@ package org.killbill.commons.utils;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Iterator;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -62,6 +63,10 @@ public final class Joiner {
      */
     public String join(final Iterator<?> parts) {
         return appendTo(new StringBuilder(), parts).toString();
+    }
+
+    public String join(final Object[] obj) {
+        return join(Arrays.asList(obj));
     }
 
     /**
@@ -106,7 +111,7 @@ public final class Joiner {
      * Returns a string containing the string representation of each argument, using the previously
      * configured separator between each.
      */
-    public String join(@CheckForNull final Object first, @CheckForNull final Object second, final Object... rest) {
+    public String join(@Nullable final Object first, @Nullable final Object second, final Object... rest) {
         return join(iterable(first, second, rest));
     }
 
@@ -122,7 +127,7 @@ public final class Joiner {
             }
 
             @Override
-            @CheckForNull
+            @Nullable
             public Object get(final int index) {
                 switch (index) {
                     case 0:

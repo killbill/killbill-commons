@@ -25,7 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.CaseFormat;
+import org.killbill.commons.utils.CaseFormat;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 

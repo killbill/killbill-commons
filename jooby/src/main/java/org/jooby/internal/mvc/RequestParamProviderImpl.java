@@ -19,11 +19,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 
 public class RequestParamProviderImpl implements RequestParamProvider {
 
@@ -40,11 +38,11 @@ public class RequestParamProviderImpl implements RequestParamProvider {
       return Collections.emptyList();
     }
 
-    Builder<RequestParam> builder = ImmutableList.builder();
+    List<RequestParam> builder = new ArrayList<>();
     for (Parameter parameter : parameters) {
       builder.add(new RequestParam(parameter, provider.name(parameter)));
     }
-    return builder.build();
+    return Collections.unmodifiableList(builder);
   }
 
 }

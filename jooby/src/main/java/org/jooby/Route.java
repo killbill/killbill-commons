@@ -15,13 +15,10 @@
  */
 package org.jooby;
 
-import com.google.common.base.CaseFormat;
-import static com.google.common.base.Preconditions.checkArgument;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.primitives.Primitives;
+import org.killbill.commons.utils.CaseFormat;
+import org.killbill.commons.utils.Primitives;
+import org.killbill.commons.utils.Strings;
+import static org.killbill.commons.utils.Preconditions.checkArgument;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import static java.util.Objects.requireNonNull;
@@ -723,7 +720,7 @@ public interface Route {
 
     private List<RoutePattern> excludes = Collections.emptyList();
 
-    private Map<String, Object> attributes = ImmutableMap.of();
+    private Map<String, Object> attributes = Collections.emptyMap();
 
     private Mapper<?> mapper;
 
@@ -928,10 +925,9 @@ public interface Route {
       requireNonNull(value, "Attribute value is required.");
 
       if (valid(value)) {
-        attributes = ImmutableMap.<String, Object>builder()
-            .putAll(attributes)
-            .put(name, value)
-            .build();
+        var newMap = new java.util.LinkedHashMap<>(attributes);
+        newMap.put(name, value);
+        attributes = Collections.unmodifiableMap(newMap);
       }
       return this;
     }
@@ -1102,10 +1098,10 @@ public interface Route {
     public Definition consumes(final List<MediaType> types) {
       checkArgument(types != null && types.size() > 0, "Consumes types are required");
       if (types.size() > 1) {
-        this.consumes = Lists.newLinkedList(types);
+        this.consumes = new java.util.LinkedList<>(types);
         Collections.sort(this.consumes);
       } else {
-        this.consumes = ImmutableList.of(types.get(0));
+        this.consumes = List.of(types.get(0));
       }
       return this;
     }
@@ -1114,10 +1110,10 @@ public interface Route {
     public Definition produces(final List<MediaType> types) {
       checkArgument(types != null && types.size() > 0, "Produces types are required");
       if (types.size() > 1) {
-        this.produces = Lists.newLinkedList(types);
+        this.produces = new java.util.LinkedList<>(types);
         Collections.sort(this.produces);
       } else {
-        this.produces = ImmutableList.of(types.get(0));
+        this.produces = List.of(types.get(0));
       }
       return this;
     }
@@ -2034,17 +2030,15 @@ public interface Route {
   /**
    * Well known HTTP methods.
    */
-  List<String> METHODS = ImmutableList.<String>builder()
-      .add(GET,
-          POST,
-          PUT,
-          DELETE,
-          PATCH,
-          HEAD,
-          CONNECT,
-          OPTIONS,
-          TRACE)
-      .build();
+  List<String> METHODS = List.of(GET,
+      POST,
+      PUT,
+      DELETE,
+      PATCH,
+      HEAD,
+      CONNECT,
+      OPTIONS,
+      TRACE);
 
   /**
    * @return Current request path.

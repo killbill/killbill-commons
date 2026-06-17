@@ -23,7 +23,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 import org.killbill.commons.utils.Preconditions;
 
@@ -32,7 +32,7 @@ import org.killbill.commons.utils.Preconditions;
  */
 class ConcatenatedIterator<T> implements Iterator<T> {
     /* The last iterator to return an element.  Calls to remove() go to this iterator. */
-    @CheckForNull
+    @Nullable
     private Iterator<? extends T> toRemove;
 
     /* The iterator currently returning elements. */
@@ -45,11 +45,11 @@ class ConcatenatedIterator<T> implements Iterator<T> {
      * operation O(1).
      */
 
-    @CheckForNull
+    @Nullable
     private Iterator<? extends Iterator<? extends T>> topMetaIterator;
 
     // Only becomes nonnull if we encounter nested concatenations.
-    @CheckForNull
+    @Nullable
     private Deque<Iterator<? extends Iterator<? extends T>>> metaIterators;
 
     ConcatenatedIterator(final Iterator<? extends Iterator<? extends T>> metaIterator) {
@@ -58,7 +58,7 @@ class ConcatenatedIterator<T> implements Iterator<T> {
     }
 
     // Returns a nonempty meta-iterator or, if all meta-iterators are empty, null.
-    @CheckForNull
+    @Nullable
     private Iterator<? extends Iterator<? extends T>> getTopMetaIterator() {
         while (topMetaIterator == null || !topMetaIterator.hasNext()) {
             if (metaIterators != null && !metaIterators.isEmpty()) {

@@ -15,7 +15,6 @@
  */
 package org.jooby;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Key;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -97,7 +96,7 @@ public class EnvTest {
     Config config = ConfigFactory.empty();
 
     Env env = Env.DEFAULT.build(config);
-    assertEquals("foo.bar - foo.bar", env.resolver().source(ImmutableMap.of("var", "foo.bar"))
+    assertEquals("foo.bar - foo.bar", env.resolver().source(Map.of("var", "foo.bar"))
         .resolve("${var} - ${var}"));
   }
 
@@ -107,7 +106,7 @@ public class EnvTest {
 
     Env env = Env.DEFAULT.build(config);
     assertEquals("${varx} - ${varx}",
-        env.resolver().ignoreMissing().source(ImmutableMap.of("var", "foo.bar"))
+        env.resolver().ignoreMissing().source(Map.of("var", "foo.bar"))
             .resolve("${varx} - ${varx}"));
   }
 

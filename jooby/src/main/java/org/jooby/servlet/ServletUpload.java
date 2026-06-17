@@ -27,7 +27,6 @@ import jakarta.servlet.http.Part;
 
 import org.jooby.spi.NativeUpload;
 
-import com.google.common.collect.ImmutableList;
 
 public class ServletUpload implements NativeUpload {
 
@@ -61,7 +60,7 @@ public class ServletUpload implements NativeUpload {
     if (headers == null) {
       return Collections.emptyList();
     }
-    return ImmutableList.copyOf(headers);
+    return List.copyOf(headers);
   }
 
   @Override

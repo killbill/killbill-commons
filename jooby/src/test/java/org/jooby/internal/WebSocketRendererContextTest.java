@@ -17,6 +17,8 @@ package org.jooby.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -33,7 +35,6 @@ import org.jooby.spi.NativeWebSocket;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
 
 public class WebSocketRendererContextTest {
 
@@ -44,7 +45,7 @@ public class WebSocketRendererContextTest {
         WebSocket.OnError.class)
         .run(unit -> {
           WebSocketRendererContext ctx = new WebSocketRendererContext(
-              Lists.newArrayList(unit.get(Renderer.class)),
+              new ArrayList<>(Collections.singletonList(unit.get(Renderer.class))),
               unit.get(NativeWebSocket.class),
               produces,
               StandardCharsets.UTF_8,
@@ -62,7 +63,7 @@ public class WebSocketRendererContextTest {
         WebSocket.OnError.class, InputStream.class)
         .run(unit -> {
           WebSocketRendererContext ctx = new WebSocketRendererContext(
-              Lists.newArrayList(unit.get(Renderer.class)),
+              new ArrayList<>(Collections.singletonList(unit.get(Renderer.class))),
               unit.get(NativeWebSocket.class),
               produces,
               StandardCharsets.UTF_8,

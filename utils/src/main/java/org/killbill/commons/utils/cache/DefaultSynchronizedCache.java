@@ -20,8 +20,10 @@ package org.killbill.commons.utils.cache;
 import java.util.function.Function;
 
 /**
+ * <strong>Deprecated</strong>. Use {@link CaffeineCache} and {@link CacheBuilder} instead.
  * {@link DefaultCache} that synchronize {@link Cache} methods call.
  */
+@Deprecated
 public class DefaultSynchronizedCache<K, V> extends DefaultCache<K, V> implements Cache<K, V> {
 
     public DefaultSynchronizedCache(final int maxSize) {

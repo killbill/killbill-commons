@@ -15,7 +15,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableList;
 import static java.util.Objects.requireNonNull;
 import org.jooby.Asset;
 import org.jooby.Cookie;
@@ -347,7 +346,7 @@ public class ResponseImpl implements Response {
     /**
      * Do we need to figure it out Content-Length?
      */
-    List<MediaType> produces = this.type == null ? route.produces() : ImmutableList.of(type);
+    List<MediaType> produces = this.type == null ? route.produces() : List.of(type);
     Object value = finalResult.get(produces);
 
     if (value != null) {

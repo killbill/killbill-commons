@@ -30,6 +30,20 @@ public class TestTypeToken {
 
     private static class SuperList extends ArrayList<String> implements List<String>, Collection<String> {}
 
+    private interface LeftRoot {}
+
+    private interface LeftParent extends LeftRoot {}
+
+    private interface LeftChild extends LeftParent {}
+
+    private interface RightRoot {}
+
+    private interface RightParent extends RightRoot {}
+
+    private interface RightChild extends RightParent {}
+
+    private static class BranchedInterfaces implements LeftChild, RightChild {}
+
     @Test(groups = "fast")
     public void testGetRawTypes() {
         Set<Class<?>> types = TypeToken.getRawTypes(Object.class);
@@ -73,6 +87,23 @@ public class TestTypeToken {
         addIfPresent(stringExpected, "java.lang.constant.ConstantDesc");
         stringExpected.add(Object.class);
         Assert.assertEquals(types, stringExpected);
+    }
+
+    @Test(groups = "fast")
+    public void testGetRawTypesTraversesAllInterfaceBranches() {
+        final Set<Class<?>> expected = new LinkedHashSet<>();
+        expected.add(BranchedInterfaces.class);
+        expected.add(LeftChild.class);
+        expected.add(LeftParent.class);
+        expected.add(LeftRoot.class);
+        expected.add(RightChild.class);
+        expected.add(RightParent.class);
+        expected.add(RightRoot.class);
+        expected.add(Object.class);
+
+        // Guava's TypeToken.of(BranchedInterfaces.class).getTypes().rawTypes() contains every type
+        // below. The local implementation loses one root because it continues only one branch.
+        Assert.assertEquals(TypeToken.getRawTypes(BranchedInterfaces.class), expected);
     }
 
     // Newer JDKs add interfaces such as SequencedCollection/Constable/ConstantDesc, so the test

@@ -19,12 +19,14 @@ import static org.junit.Assert.assertEquals;
 
 import jakarta.inject.Inject;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 import org.jooby.internal.ParameterNameProvider;
 import org.jooby.internal.parser.bean.BeanPlan;
 import org.jooby.test.MockUnit;
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
 
 public class BeanPlanTest {
 
@@ -105,7 +107,7 @@ public class BeanPlanTest {
     new MockUnit(ParameterNameProvider.class)
         .run(unit -> {
           BeanPlan plan = new BeanPlan(unit.get(ParameterNameProvider.class), Ext.class);
-          Ext bean = (Ext) plan.newBean(p -> p.name, Sets.newHashSet("foo", "bar"));
+          Ext bean = (Ext) plan.newBean(p -> p.name, new HashSet<>(Arrays.asList("foo", "bar")));
           assertEquals("foo", bean.foo);
           assertEquals("bar", bean.bar);
         });
@@ -116,7 +118,7 @@ public class BeanPlanTest {
     new MockUnit(ParameterNameProvider.class)
         .run(unit -> {
           BeanPlan plan = new BeanPlan(unit.get(ParameterNameProvider.class), SetterLike.class);
-          SetterLike bean = (SetterLike) plan.newBean(p -> p.name, Sets.newHashSet("bar"));
+          SetterLike bean = (SetterLike) plan.newBean(p -> p.name, new HashSet<>(Arrays.asList("bar")));
           assertEquals("^bar", bean.bar);
         });
   }
@@ -126,7 +128,7 @@ public class BeanPlanTest {
     new MockUnit(ParameterNameProvider.class)
         .run(unit -> {
           BeanPlan plan = new BeanPlan(unit.get(ParameterNameProvider.class), BadSetter.class);
-          BadSetter bean = (BadSetter) plan.newBean(p -> p.name, Sets.newHashSet("bar"));
+          BadSetter bean = (BadSetter) plan.newBean(p -> p.name, new HashSet<>(Arrays.asList("bar")));
           assertEquals("bar", bean.bar);
         });
   }
@@ -136,7 +138,7 @@ public class BeanPlanTest {
     new MockUnit(ParameterNameProvider.class)
         .run(unit -> {
           BeanPlan plan = new BeanPlan(unit.get(ParameterNameProvider.class), GraphMethod.class);
-          GraphMethod bean = (GraphMethod) plan.newBean(p -> p.name, Sets.newHashSet("base[foo]"));
+          GraphMethod bean = (GraphMethod) plan.newBean(p -> p.name, new HashSet<>(Arrays.asList("base[foo]")));
           assertEquals("base[foo]", bean.base.foo);
         });
   }

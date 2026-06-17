@@ -17,7 +17,7 @@
 
 package org.killbill.commons.metrics.guice;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import org.killbill.commons.metrics.api.MetricRegistry;
 import org.killbill.commons.metrics.api.annotation.Counted;

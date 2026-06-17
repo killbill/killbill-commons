@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 
-import javax.annotation.CheckForNull;
+import jakarta.annotation.Nullable;
 
 /**
  * Verbatim copy of Guava's {@code com.google.common.reflect.AbstractInvocationHandler}.
@@ -64,8 +64,8 @@ public abstract class AbstractInvocationHandler implements InvocationHandler {
      * </ul>
      */
     @Override
-    @CheckForNull
-    public final Object invoke(final Object proxy, final Method method, @CheckForNull Object[] args) throws Throwable {
+    @Nullable
+    public final Object invoke(final Object proxy, final Method method, @Nullable Object[] args) throws Throwable {
         if (args == null) {
             args = NO_ARGS;
         }
@@ -99,7 +99,7 @@ public abstract class AbstractInvocationHandler implements InvocationHandler {
      * <p>Unlike {@link #invoke}, {@code args} will never be null. When the method has no parameter,
      * an empty array is passed in.
      */
-    @CheckForNull
+    @Nullable
     protected abstract Object handleInvocation(Object proxy, Method method, Object[] args) throws Throwable;
 
     /**
@@ -114,7 +114,7 @@ public abstract class AbstractInvocationHandler implements InvocationHandler {
      * <p>Subclasses can override this method to provide custom equality.
      */
     @Override
-    public boolean equals(@CheckForNull final Object obj) {
+    public boolean equals(@Nullable final Object obj) {
         return super.equals(obj);
     }
 

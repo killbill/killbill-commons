@@ -15,7 +15,7 @@
  */
 package jetty;
 
-import com.google.common.io.ByteStreams;
+import org.killbill.commons.utils.io.ByteStreams;
 import org.jooby.Jooby;
 import org.jooby.MediaType;
 import org.jooby.Results;

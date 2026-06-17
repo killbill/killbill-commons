@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -37,7 +38,6 @@ import org.junit.Test;
 
 import static org.mockito.Mockito.doAnswer;
 
-import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 
 public class CookieSessionManagerTest {
@@ -138,7 +138,7 @@ public class CookieSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
 
-              when(session.attributes()).thenReturn(ImmutableMap.of("foo", "2"));
+              when(session.attributes()).thenReturn(Map.of("foo", "2"));
 
               Request req = unit.get(Request.class);
               when(req.ifSession()).thenReturn(Optional.of(session));
@@ -214,7 +214,7 @@ public class CookieSessionManagerTest {
             .expect(unit -> {
               SessionImpl session = unit.get(SessionImpl.class);
 
-              when(session.attributes()).thenReturn(ImmutableMap.of("foo", "1"));
+              when(session.attributes()).thenReturn(Map.of("foo", "1"));
 
               Request req = unit.get(Request.class);
               when(req.ifSession()).thenReturn(Optional.of(session));
@@ -302,7 +302,7 @@ public class CookieSessionManagerTest {
             .expect(sessionBuilder(Session.COOKIE_SESSION, false, -1))
             .expect(unit -> {
               Session.Builder builder = unit.get(Session.Builder.class);
-              when(builder.set(ImmutableMap.of("foo", "1"))).thenReturn(builder);
+              when(builder.set(Map.of("foo", "1"))).thenReturn(builder);
               when(builder.build()).thenReturn(unit.get(SessionImpl.class));
             })
             .expect(push)

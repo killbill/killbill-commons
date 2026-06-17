@@ -15,8 +15,6 @@
  */
 package org.jooby;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -38,6 +36,7 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,10 +58,10 @@ public class SseTest {
 
     when(request.require(Injector.class)).thenReturn(injector);
     when(request.route()).thenReturn(route);
-    when(request.attributes()).thenReturn(ImmutableMap.of());
+    when(request.attributes()).thenReturn(Map.of());
     when(request.header("Last-Event-ID")).thenReturn(lastEventId);
 
-    when(injector.getInstance(Renderer.KEY)).thenReturn(Sets.newHashSet());
+    when(injector.getInstance(Renderer.KEY)).thenReturn(new HashSet<>());
   };
 
   private Block locale = unit -> {

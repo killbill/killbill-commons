@@ -19,7 +19,7 @@ package org.killbill.commons.metrics.guice;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.killbill.commons.metrics.api.Meter;

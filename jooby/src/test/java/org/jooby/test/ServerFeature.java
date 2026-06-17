@@ -15,7 +15,7 @@
  */
 package org.jooby.test;
 
-import static com.google.common.base.Preconditions.checkState;
+import static org.killbill.commons.utils.Preconditions.checkState;
 
 import java.io.IOException;
 
@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 
-import com.google.common.base.Joiner;
+import org.killbill.commons.utils.Joiner;
 
 /**
  * Internal use only.

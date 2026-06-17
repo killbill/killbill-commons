@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,10 +37,6 @@ import org.jooby.internal.parser.StaticMethodParser;
 import org.jooby.internal.parser.StringConstructorParser;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 import com.typesafe.config.ConfigFactory;
@@ -67,32 +64,32 @@ public class MutantImplTest {
 
   @Test
   public void asBooleanList() throws Exception {
-    assertEquals(ImmutableList.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(List.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("true", "false").toList(boolean.class));
 
-    assertEquals(ImmutableList.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(List.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("true", "false").toList(Boolean.class));
 
-    assertEquals(ImmutableList.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(List.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("true", "false").to(new TypeLiteral<List<Boolean>>() {
         }));
   }
 
   @Test
   public void asBooleanSet() throws Exception {
-    assertEquals(ImmutableSet.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(Set.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("true", "false").toSet(boolean.class));
 
-    assertEquals(ImmutableSet.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(Set.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("true", "false").toSet(Boolean.class));
   }
 
   @Test
   public void asBooleanSortedSet() throws Exception {
-    assertEquals(ImmutableSet.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(Set.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("false", "true").toSortedSet(boolean.class));
 
-    assertEquals(ImmutableSet.of(Boolean.TRUE, Boolean.FALSE),
+    assertEquals(Set.of(Boolean.TRUE, Boolean.FALSE),
         newMutant("false", "true").toSortedSet(Boolean.class));
   }
 
@@ -138,28 +135,28 @@ public class MutantImplTest {
 
   @Test
   public void asByteList() throws Exception {
-    assertEquals(ImmutableList.of((byte) 1, (byte) 2, (byte) 3),
+    assertEquals(List.of((byte) 1, (byte) 2, (byte) 3),
         newMutant("1", "2", "3").toList(byte.class));
 
-    assertEquals(ImmutableList.of((byte) 1, (byte) 2, (byte) 3),
+    assertEquals(List.of((byte) 1, (byte) 2, (byte) 3),
         newMutant("1", "2", "3").toList(Byte.class));
   }
 
   @Test
   public void asByteSet() throws Exception {
-    assertEquals(ImmutableSet.of((byte) 1, (byte) 2, (byte) 3),
+    assertEquals(Set.of((byte) 1, (byte) 2, (byte) 3),
         newMutant("1", "2", "3").toSet(byte.class));
 
-    assertEquals(ImmutableSet.of((byte) 1, (byte) 2, (byte) 3),
+    assertEquals(Set.of((byte) 1, (byte) 2, (byte) 3),
         newMutant("1", "2", "3").toSet(Byte.class));
   }
 
   @Test
   public void asByteSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of((byte) 1, (byte) 2, (byte) 3),
+    assertEquals(Set.of((byte) 1, (byte) 2, (byte) 3),
         newMutant("1", "2", "3").toSortedSet(byte.class));
 
-    assertEquals(ImmutableSortedSet.of((byte) 1, (byte) 2, (byte) 3),
+    assertEquals(Set.of((byte) 1, (byte) 2, (byte) 3),
         newMutant("1", "2", "3").toSortedSet(Byte.class));
   }
 
@@ -191,28 +188,28 @@ public class MutantImplTest {
 
   @Test
   public void asShortList() throws Exception {
-    assertEquals(ImmutableList.of((short) 1, (short) 2, (short) 3),
+    assertEquals(List.of((short) 1, (short) 2, (short) 3),
         newMutant("1", "2", "3").toList(short.class));
 
-    assertEquals(ImmutableList.of((short) 1, (short) 2, (short) 3),
+    assertEquals(List.of((short) 1, (short) 2, (short) 3),
         newMutant("1", "2", "3").toList(Short.class));
   }
 
   @Test
   public void asShortSet() throws Exception {
-    assertEquals(ImmutableSet.of((short) 1, (short) 2, (short) 3),
+    assertEquals(Set.of((short) 1, (short) 2, (short) 3),
         newMutant("1", "2", "3").toSet(short.class));
 
-    assertEquals(ImmutableSet.of((short) 1, (short) 2, (short) 3),
+    assertEquals(Set.of((short) 1, (short) 2, (short) 3),
         newMutant("1", "2", "3").toSet(Short.class));
   }
 
   @Test
   public void asShortSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of((short) 1, (short) 2, (short) 3),
+    assertEquals(Set.of((short) 1, (short) 2, (short) 3),
         newMutant("1", "2", "3").toSortedSet(short.class));
 
-    assertEquals(ImmutableSortedSet.of((short) 1, (short) 2, (short) 3),
+    assertEquals(Set.of((short) 1, (short) 2, (short) 3),
         newMutant("1", "2", "3").toSortedSet(Short.class));
   }
 
@@ -236,32 +233,32 @@ public class MutantImplTest {
 
   @Test
   public void asIntList() throws Exception {
-    assertEquals(ImmutableList.of(1, 2, 3),
+    assertEquals(List.of(1, 2, 3),
         newMutant("1", "2", "3").toList(int.class));
 
-    assertEquals(ImmutableList.of(1, 2, 3),
+    assertEquals(List.of(1, 2, 3),
         newMutant("1", "2", "3").toList(Integer.class));
   }
 
   @Test
   public void asIntSet() throws Exception {
-    assertEquals(ImmutableSet.of(1, 2, 3),
+    assertEquals(Set.of(1, 2, 3),
         newMutant("1", "2", "3").toSet(int.class));
 
-    assertEquals(ImmutableSet.of(1, 2, 3),
+    assertEquals(Set.of(1, 2, 3),
         newMutant("1", "2", "3").toSet(Integer.class));
 
-    assertEquals(ImmutableSet.of(1, 2, 3),
+    assertEquals(Set.of(1, 2, 3),
         newMutant("1", "2", "3").to(new TypeLiteral<Set<Integer>>() {
         }));
   }
 
   @Test
   public void asIntSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of(1, 2, 3),
+    assertEquals(Set.of(1, 2, 3),
         newMutant("1", "2", "3").toSortedSet(int.class));
 
-    assertEquals(ImmutableSet.of(1, 2, 3),
+    assertEquals(Set.of(1, 2, 3),
         newMutant("1", "2", "3").toSortedSet(Integer.class));
   }
 
@@ -295,34 +292,34 @@ public class MutantImplTest {
 
   @Test
   public void asLongList() throws Exception {
-    assertEquals(ImmutableList.of(1l, 2l, 3l),
+    assertEquals(List.of(1l, 2l, 3l),
         newMutant("1", "2", "3").toList(long.class));
 
-    assertEquals(ImmutableList.of(1l, 2l, 3l),
+    assertEquals(List.of(1l, 2l, 3l),
         newMutant("1", "2", "3").toList(Long.class));
   }
 
   @Test
   public void asMediaTypeList() throws Exception {
-    assertEquals(ImmutableList.of(MediaType.valueOf("application/json")),
+    assertEquals(List.of(MediaType.valueOf("application/json")),
         newMutant("application/json").toList(MediaType.class));
   }
 
   @Test
   public void asLongSet() throws Exception {
-    assertEquals(ImmutableSet.of(1l, 2l, 3l),
+    assertEquals(Set.of(1l, 2l, 3l),
         newMutant("1", "2", "3").toSet(long.class));
 
-    assertEquals(ImmutableSet.of(1l, 2l, 3l),
+    assertEquals(Set.of(1l, 2l, 3l),
         newMutant("1", "2", "3").toSet(Long.class));
   }
 
   @Test
   public void asLongSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of(1l, 2l, 3l),
+    assertEquals(Set.of(1l, 2l, 3l),
         newMutant("1", "2", "3").toSortedSet(long.class));
 
-    assertEquals(ImmutableSortedSet.of(1l, 2l, 3l),
+    assertEquals(Set.of(1l, 2l, 3l),
         newMutant("1", "2", "3").toSortedSet(Long.class));
   }
 
@@ -349,29 +346,29 @@ public class MutantImplTest {
 
   @Test
   public void asFloatList() throws Exception {
-    assertEquals(ImmutableList.of(1f, 2f, 3f),
+    assertEquals(List.of(1f, 2f, 3f),
         newMutant("1", "2", "3").toList(float.class));
 
-    assertEquals(ImmutableList.of(1f, 2f, 3f),
+    assertEquals(List.of(1f, 2f, 3f),
         newMutant("1", "2", "3").toList(Float.class));
   }
 
   @Test
   public void asFloatSet() throws Exception {
-    assertEquals(ImmutableSet.of(1f, 2f, 3f),
+    assertEquals(Set.of(1f, 2f, 3f),
         newMutant("1", "2", "3").toSet(float.class));
 
     Set<Float> asSet = newMutant("1", "2", "3").toSet(Float.class);
-    assertEquals(ImmutableSet.of(1f, 2f, 3f),
+    assertEquals(Set.of(1f, 2f, 3f),
         asSet);
   }
 
   @Test
   public void asFloatSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of(1f, 2f, 3f),
+    assertEquals(Set.of(1f, 2f, 3f),
         newMutant("1", "2", "3").toSortedSet(float.class));
 
-    assertEquals(ImmutableSortedSet.of(1f, 2f, 3f),
+    assertEquals(Set.of(1f, 2f, 3f),
         newMutant("1", "2", "3").toSortedSet(Float.class));
   }
 
@@ -398,28 +395,28 @@ public class MutantImplTest {
 
   @Test
   public void asDoubleList() throws Exception {
-    assertEquals(ImmutableList.of(1d, 2d, 3d),
+    assertEquals(List.of(1d, 2d, 3d),
         newMutant("1", "2", "3").toList(double.class));
 
-    assertEquals(ImmutableList.of(1d, 2d, 3d),
+    assertEquals(List.of(1d, 2d, 3d),
         newMutant("1", "2", "3").toList(Double.class));
   }
 
   @Test
   public void asDoubleSet() throws Exception {
-    assertEquals(ImmutableSet.of(1d, 2d, 3d),
+    assertEquals(Set.of(1d, 2d, 3d),
         newMutant("1", "2", "3").toSet(double.class));
 
-    assertEquals(ImmutableSet.of(1d, 2d, 3d),
+    assertEquals(Set.of(1d, 2d, 3d),
         newMutant("1", "2", "3").toSet(Double.class));
   }
 
   @Test
   public void asDoubleSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of(1d, 2d, 3d),
+    assertEquals(Set.of(1d, 2d, 3d),
         newMutant("1", "2", "3").toSortedSet(double.class));
 
-    assertEquals(ImmutableSortedSet.of(1d, 2d, 3d),
+    assertEquals(Set.of(1d, 2d, 3d),
         newMutant("1", "2", "3").toSortedSet(Double.class));
   }
 
@@ -443,19 +440,19 @@ public class MutantImplTest {
 
   @Test
   public void asEnumList() throws Exception {
-    assertEquals(ImmutableList.of(LETTER.A, LETTER.B),
+    assertEquals(List.of(LETTER.A, LETTER.B),
         newMutant("A", "B").toList(LETTER.class));
   }
 
   @Test
   public void asEnumSet() throws Exception {
-    assertEquals(ImmutableSet.of(LETTER.A, LETTER.B),
+    assertEquals(Set.of(LETTER.A, LETTER.B),
         newMutant("A", "B").toSet(LETTER.class));
   }
 
   @Test
   public void asEnumSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of(LETTER.A, LETTER.B),
+    assertEquals(Set.of(LETTER.A, LETTER.B),
         newMutant("A", "B").toSortedSet(LETTER.class));
   }
 
@@ -486,7 +483,7 @@ public class MutantImplTest {
 
   @Test
   public void asStringList() throws Exception {
-    assertEquals(ImmutableList.of("aa", "bb"),
+    assertEquals(List.of("aa", "bb"),
         newMutant("aa", "bb").toList(String.class));
 
     assertEquals("[aa, bb]", newMutant("aa", "bb").toString());
@@ -494,13 +491,13 @@ public class MutantImplTest {
 
   @Test
   public void asStringSet() throws Exception {
-    assertEquals(ImmutableSet.of("aa", "bb"),
+    assertEquals(Set.of("aa", "bb"),
         newMutant("aa", "bb", "bb").toSet());
   }
 
   @Test
   public void asStringSortedSet() throws Exception {
-    assertEquals(ImmutableSortedSet.of("aa", "bb"),
+    assertEquals(Set.of("aa", "bb"),
         newMutant("aa", "bb", "bb").toSortedSet());
   }
 
@@ -537,13 +534,13 @@ public class MutantImplTest {
   private Mutant newMutant(final String value) {
     StrParamReferenceImpl reference = new StrParamReferenceImpl("parameter", "test", value == null
         ? Collections.emptyList()
-        : ImmutableList.of(value));
+        : List.of(value));
     return new MutantImpl(newConverter(), reference);
   }
 
   private ParserExecutor newConverter() {
     return new ParserExecutor(mock(Injector.class),
-        Sets.newLinkedHashSet(
+        new LinkedHashSet<>(
             Arrays.asList(
                 BuiltinParser.Basic,
                 BuiltinParser.Collection,

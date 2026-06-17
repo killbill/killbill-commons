@@ -15,7 +15,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.TypeLiteral;
 import org.jooby.Err;
 import org.jooby.MediaType;
@@ -95,7 +94,7 @@ public class MutantImpl implements Mutant {
     if (data instanceof Map) {
       return (Map<String, Mutant>) data;
     }
-    return ImmutableMap.of((String) md()[0], this);
+    return Map.of((String) md()[0], this);
   }
 
   @SuppressWarnings("rawtypes")

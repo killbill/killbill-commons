@@ -15,7 +15,6 @@
  */
 package org.jooby.internal;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 
@@ -208,7 +207,7 @@ public class WebSocketImpl implements WebSocket {
     this.injector = requireNonNull(injector, "Injector required.");
     this.ws = requireNonNull(ws, "WebSocket is required.");
     this.locale = req.locale();
-    renderers = ImmutableList.copyOf(injector.getInstance(Renderer.KEY));
+    renderers = List.copyOf(injector.getInstance(Renderer.KEY));
 
     /**
      * Bind callbacks
@@ -220,7 +219,7 @@ public class WebSocketImpl implements WebSocket {
     ws.onTextMessage(message -> Try
         .run(sync(() -> messageCallback.onMessage(
             new MutantImpl(injector.getInstance(ParserExecutor.class), consumes,
-                new StrParamReferenceImpl("body", "message", ImmutableList.of(message))))))
+                new StrParamReferenceImpl("body", "message", List.of(message))))))
         .onFailure(this::handleErr));
 
     ws.onCloseMessage((code, reason) -> {

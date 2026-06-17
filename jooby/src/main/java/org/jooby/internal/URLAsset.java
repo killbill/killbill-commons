@@ -27,9 +27,7 @@ import java.util.function.BiConsumer;
 
 import org.jooby.Asset;
 import org.jooby.MediaType;
-
-import com.google.common.io.Closeables;
-import org.jooby.funzy.Try;
+import org.killbill.commons.utils.io.Closeables;
 
 public class URLAsset implements Asset {
 

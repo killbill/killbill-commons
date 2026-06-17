@@ -15,7 +15,6 @@
  */
 package org.jooby;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -535,7 +534,7 @@ public abstract class Sse implements AutoCloseable {
 
   protected void handshake(final Request req, final Runnable handler) throws Exception {
     this.injector = req.require(Injector.class);
-    this.renderers = ImmutableList.copyOf(injector.getInstance(Renderer.KEY));
+    this.renderers = List.copyOf(injector.getInstance(Renderer.KEY));
     this.produces = req.route().produces();
     this.locals = req.attributes();
     this.lastEventId = req.header("Last-Event-ID");
@@ -869,7 +868,7 @@ public abstract class Sse implements AutoCloseable {
   }
 
   private CompletableFuture<Optional<Object>> send(final Event event) {
-    List<MediaType> produces = event.type().<List<MediaType>>map(ImmutableList::of)
+    List<MediaType> produces = event.type().<List<MediaType>>map(List::of)
         .orElse(this.produces);
     SseRenderer ctx = new SseRenderer(renderers, produces, StandardCharsets.UTF_8, locale, locals);
     return Try.apply(() -> {

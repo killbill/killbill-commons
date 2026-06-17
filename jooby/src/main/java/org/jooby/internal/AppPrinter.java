@@ -15,10 +15,10 @@
  */
 package org.jooby.internal;
 
-import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 import org.jooby.Route;
 import org.jooby.WebSocket;
+import org.killbill.commons.utils.Strings;
 import org.slf4j.Logger;
 
 import java.util.Set;

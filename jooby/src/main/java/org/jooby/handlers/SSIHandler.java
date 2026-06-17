@@ -27,7 +27,7 @@ import org.jooby.Request;
 import org.jooby.Response;
 import org.jooby.Route;
 
-import com.google.common.io.CharStreams;
+import org.killbill.commons.utils.io.CharStreams;
 
 /**
  * <h1>server side include</h1>
