@@ -35,10 +35,6 @@ public class JoobySuite extends Suite {
 
   private List<Runner> runners;
 
-  static {
-    System.setProperty("io.netty.leakDetectionLevel", "advanced");
-  }
-
   public JoobySuite(final Class<?> klass) throws InitializationError {
     super(klass, Collections.emptyList());
 
