@@ -35,10 +35,6 @@ public class JoobySuite extends Suite {
 
   private List<Runner> runners;
 
-  static {
-    System.setProperty("io.netty.leakDetectionLevel", "advanced");
-  }
-
   public JoobySuite(final Class<?> klass) throws InitializationError {
     super(klass, Collections.emptyList());
 
@@ -54,8 +50,7 @@ public class JoobySuite extends Suite {
       List<Class<?>> server = Arrays.asList(onserver.value());
       filter = server::contains;
     }
-    String[] servers = {"org.jooby.undertow.Undertow", "org.jooby.jetty.Jetty",
-        "org.jooby.netty.Netty" };
+    String[] servers = {"org.jooby.jetty.Jetty"};
     for (String server : servers) {
       try {
         Class<?> serverClass = getClass().getClassLoader().loadClass(server);

@@ -93,8 +93,7 @@ public class JoobyRunner extends BlockJUnit4ClassRunner {
           .withValue("server.threads.Max", ConfigValueFactory.fromAnyRef(maxThreads))
           .withValue("application.port", ConfigValueFactory.fromAnyRef(port))
           .withValue("undertow.ioThreads", ConfigValueFactory.fromAnyRef(2))
-          .withValue("undertow.workerThreads", ConfigValueFactory.fromAnyRef(4))
-          .withValue("netty.threads.Parent", ConfigValueFactory.fromAnyRef(2));
+          .withValue("undertow.workerThreads", ConfigValueFactory.fromAnyRef(4));
 
       if (server != null) {
         config = config.withFallback(ConfigFactory.empty()
