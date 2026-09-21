@@ -66,6 +66,7 @@
     </issueManagement>
     <properties>
         <check.fail-spotbugs>true</check.fail-spotbugs>
+        <repository.cloudsmith.repo>killbill-commons</repository.cloudsmith.repo>
         <surefireArgLine>-Xmx${build.jvmsize} --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</surefireArgLine>
     </properties>
     <dependencyManagement>
