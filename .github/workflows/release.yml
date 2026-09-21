@@ -19,7 +19,7 @@ on:
 
 jobs:
   release:
-    uses: killbill/gh-actions-shared/.github/workflows/release.yml@java21
+    uses: killbill/gh-actions-shared/.github/workflows/release.yml@main
     with:
       parent_version: ${{ github.event.inputs.parent_version }}
       perform_version: ${{ github.event.inputs.perform_version }}

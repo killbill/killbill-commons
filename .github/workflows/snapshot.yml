@@ -6,7 +6,7 @@ on:
 
 jobs:
   snapshot:
-    uses: killbill/gh-actions-shared/.github/workflows/snapshot.yml@java21
+    uses: killbill/gh-actions-shared/.github/workflows/snapshot.yml@main
     secrets:
       CLOUDSMITH_CENTRAL_PASSWORD: ${{ secrets.CLOUDSMITH_CENTRAL_PASSWORD }}
       CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD: ${{ secrets.CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD }}
