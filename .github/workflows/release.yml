@@ -23,6 +23,8 @@ jobs:
     with:
       parent_version: ${{ github.event.inputs.parent_version }}
       perform_version: ${{ github.event.inputs.perform_version }}
+      release_oss_parent: ${{ github.event.inputs.release_oss_parent }}
+      oss_parent_dispatch_property: 'commons_version'
     secrets:
       BUILD_USER: ${{ secrets.BUILD_USER }}
       BUILD_TOKEN: ${{ secrets.BUILD_TOKEN }}
@@ -32,3 +34,4 @@ jobs:
       CLOUDSMITH_DISTRIBUTION_MAN_PASSWORD: ${{ secrets.CLOUDSMITH_DISTRIBUTION_MAN_PASSWORD }}
       GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      GH_WORKFLOW_PAT: ${{ secrets.GH_WORKFLOW_PAT }}
