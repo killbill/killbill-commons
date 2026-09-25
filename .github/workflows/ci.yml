@@ -7,6 +7,9 @@ on:
 
 jobs:
   ci:
-    uses: killbill/gh-actions-shared/.github/workflows/ci.yml@java21
+    uses: killbill/gh-actions-shared/.github/workflows/ci.yml@main
     with:
-      test-profile-matrix: '[ "travis", "mysql", "postgresql", "jdbi", "config-magic" ]'
+      failure-upload-path: 'target/*'
+    secrets:
+      CLOUDSMITH_CENTRAL_PASSWORD: ${{ secrets.CLOUDSMITH_CENTRAL_PASSWORD }}
+      CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD: ${{ secrets.CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD }}
