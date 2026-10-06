@@ -2,14 +2,22 @@ name: ci
 
 on:
   push:
+    branches: [ master ]
   pull_request:
   workflow_dispatch:
+    inputs:
+      purge-cache:
+        description: 'Purge Maven dependency cache before build'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   ci:
     uses: killbill/gh-actions-shared/.github/workflows/ci.yml@main
     with:
       failure-upload-path: 'target/*'
+      purge-cache: ${{ inputs.purge-cache || false }}
     secrets:
       CLOUDSMITH_CENTRAL_PASSWORD: ${{ secrets.CLOUDSMITH_CENTRAL_PASSWORD }}
       CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD: ${{ secrets.CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD }}
